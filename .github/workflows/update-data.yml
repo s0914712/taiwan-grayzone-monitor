@@ -36,7 +36,12 @@ jobs:
         run: |
           python src/fetch_gfw_data.py
         continue-on-error: true
-          
+
+      - name: Analyze suspicious vessels (CSIS methodology)
+        run: |
+          python src/analyze_suspicious.py
+        continue-on-error: true
+
       - name: Generate dashboard data
         run: |
           python src/generate_dashboard.py

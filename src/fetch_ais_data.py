@@ -12,7 +12,7 @@ import os
 import json
 import asyncio
 import websockets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 
 # 配置
@@ -29,14 +29,35 @@ DRILL_ZONES = {
     'west': {'name': '西區', 'bounds': [[23.5, 118.5], [25.0, 120.0]]}
 }
 
-# 電纜路線（簡化座標用於距離計算）
-CABLE_ROUTES = [
-    {'name': 'Taiwan-Matsu No.4', 'coords': [[25.17, 121.46], [26.16, 120.32], [25.97, 119.94]]},
-    {'name': 'TPKM2', 'coords': [[25.05, 121.5], [25.0, 120.5], [24.5, 119.5], [26.1, 119.9]]},
-    {'name': 'TPKM3', 'coords': [[25.1, 121.45], [24.95, 120.45], [24.45, 119.45], [26.05, 119.85]]},
-    {'name': 'TSE-1', 'coords': [[25.0, 121.5], [25.5, 120.0], [26.0, 119.3]]},
-    {'name': 'CSCN', 'coords': [[25.15, 121.55], [25.2, 120.2], [24.45, 118.8]]},
-]
+# 漁撈熱點定義（台灣周邊已知高產漁場）
+# 參考：漁業署公開漁場資料、GFW fishing effort 熱區
+FISHING_HOTSPOTS = {
+    'taiwan_bank': {
+        'name': '台灣灘漁場',
+        'bounds': [[22.0, 117.0], [23.5, 119.5]],
+        'description': '台灣海峽西南部淺灘，底拖網主要漁場'
+    },
+    'penghu': {
+        'name': '澎湖漁場',
+        'bounds': [[23.0, 119.0], [24.0, 120.0]],
+        'description': '澎湖群島周邊，刺網與延繩釣漁場'
+    },
+    'kuroshio_east': {
+        'name': '東部黑潮漁場',
+        'bounds': [[22.5, 121.0], [24.5, 122.0]],
+        'description': '黑潮流經台灣東部，鮪魚延繩釣漁場'
+    },
+    'northeast': {
+        'name': '東北漁場',
+        'bounds': [[24.8, 121.5], [25.8, 123.0]],
+        'description': '基隆-宜蘭外海，鎖管棒受網漁場'
+    },
+    'southwest': {
+        'name': '西南沿岸漁場',
+        'bounds': [[22.0, 120.0], [23.0, 120.8]],
+        'description': '東港-小琉球，近海拖網漁場'
+    },
+}
 
 # 船隻類型對照
 VESSEL_TYPE_MAP = {
@@ -70,25 +91,16 @@ VESSEL_TYPE_MAP = {
 
 def is_in_zone(lat, lon, bounds):
     """檢查座標是否在指定區域內"""
-    return (bounds[0][0] <= lat <= bounds[1][0] and 
+    return (bounds[0][0] <= lat <= bounds[1][0] and
             bounds[0][1] <= lon <= bounds[1][1])
 
 
-def distance_to_cable(lat, lon, cable_coords):
-    """計算船隻到電纜的最近距離（簡化計算，單位：度）"""
-    min_dist = float('inf')
-    for coord in cable_coords:
-        dist = ((lat - coord[0])**2 + (lon - coord[1])**2)**0.5
-        min_dist = min(min_dist, dist)
-    return min_dist
-
-
-def is_near_cable(lat, lon, threshold=0.3):
-    """檢查船隻是否在電纜附近（約30公里）"""
-    for cable in CABLE_ROUTES:
-        if distance_to_cable(lat, lon, cable['coords']) < threshold:
-            return True
-    return False
+def get_fishing_hotspot(lat, lon):
+    """檢查船隻是否在漁撈熱點內，回傳熱點 ID 或 None"""
+    for hotspot_id, hotspot in FISHING_HOTSPOTS.items():
+        if is_in_zone(lat, lon, hotspot['bounds']):
+            return hotspot_id
+    return None
 
 
 async def collect_ais_data():
@@ -143,31 +155,31 @@ async def collect_ais_data():
                             'speed': 0,
                             'heading': 0,
                             'in_drill_zone': None,
-                            'near_cable': False,
+                            'in_fishing_hotspot': None,
                             'last_update': datetime.now(timezone.utc).isoformat()
                         }
-                    
+
                     vessel = vessels[mmsi]
                     vessel['lat'] = lat
                     vessel['lon'] = lon
                     vessel['last_update'] = datetime.now(timezone.utc).isoformat()
-                    
+
                     if meta.get('ShipName'):
                         vessel['name'] = meta['ShipName'].strip()
-                    
+
                     # 處理位置報告
                     if data.get('MessageType') == 'PositionReport':
                         pr = data.get('Message', {}).get('PositionReport', {})
                         vessel['speed'] = pr.get('Sog', 0)
                         vessel['heading'] = pr.get('TrueHeading') or pr.get('Cog', 0)
-                    
+
                     # 處理靜態資料
                     if data.get('MessageType') == 'ShipStaticData':
                         sd = data.get('Message', {}).get('ShipStaticData', {})
                         vessel['type'] = sd.get('Type', 0)
                         vessel['type_name'] = VESSEL_TYPE_MAP.get(vessel['type'], 'other')
                         vessel['destination'] = sd.get('Destination', '')
-                    
+
                     # 檢查是否在軍演區
                     for zone_id, zone in DRILL_ZONES.items():
                         if is_in_zone(lat, lon, zone['bounds']):
@@ -175,9 +187,9 @@ async def collect_ais_data():
                             break
                     else:
                         vessel['in_drill_zone'] = None
-                    
-                    # 檢查是否在電纜附近
-                    vessel['near_cable'] = is_near_cable(lat, lon)
+
+                    # 檢查是否在漁撈熱點
+                    vessel['in_fishing_hotspot'] = get_fishing_hotspot(lat, lon)
                     
                     # 進度顯示
                     if message_count % 100 == 0:
@@ -223,15 +235,18 @@ def generate_mock_data():
             'speed': random.uniform(0, 15),
             'heading': random.uniform(0, 360),
             'in_drill_zone': None,
-            'near_cable': is_near_cable(lat, lon),
+            'in_fishing_hotspot': None,
             'last_update': datetime.now(timezone.utc).isoformat()
         }
-        
+
         # 檢查軍演區
         for zone_id, zone in DRILL_ZONES.items():
             if is_in_zone(lat, lon, zone['bounds']):
                 vessel['in_drill_zone'] = zone_id
                 break
+
+        # 檢查漁撈熱點
+        vessel['in_fishing_hotspot'] = get_fishing_hotspot(lat, lon)
         
         vessels[mmsi] = vessel
     
@@ -244,34 +259,118 @@ def analyze_data(vessels):
         'total_vessels': len(vessels),
         'by_type': defaultdict(int),
         'in_drill_zones': defaultdict(int),
-        'near_cables': 0,
+        'in_fishing_hotspots': defaultdict(int),
         'fishing_vessels': 0,
+        'suspicious_count': 0,
         'avg_speed': 0,
     }
-    
+
     total_speed = 0
     for v in vessels.values():
         stats['by_type'][v['type_name']] += 1
-        
+
         if v['in_drill_zone']:
             stats['in_drill_zones'][v['in_drill_zone']] += 1
-        
-        if v['near_cable']:
-            stats['near_cables'] += 1
-        
+
+        if v.get('in_fishing_hotspot'):
+            stats['in_fishing_hotspots'][v['in_fishing_hotspot']] += 1
+
         if v['type_name'] == 'fishing':
             stats['fishing_vessels'] += 1
-        
+
+        # 即時可疑判定：漁船在軍演區但不在漁撈熱點
+        if (v['type_name'] == 'fishing' and
+                v['in_drill_zone'] and
+                not v.get('in_fishing_hotspot')):
+            v['suspicious'] = True
+            stats['suspicious_count'] += 1
+        else:
+            v['suspicious'] = False
+
         total_speed += v['speed']
-    
+
     if len(vessels) > 0:
         stats['avg_speed'] = round(total_speed / len(vessels), 2)
-    
+
     # 轉換 defaultdict 為普通 dict
     stats['by_type'] = dict(stats['by_type'])
     stats['in_drill_zones'] = dict(stats['in_drill_zones'])
-    
+    stats['in_fishing_hotspots'] = dict(stats['in_fishing_hotspots'])
+
     return stats
+
+
+def update_vessel_history(vessels):
+    """累積船隻歷史觀測記錄，用於 CSIS 行為分析"""
+    os.makedirs('data', exist_ok=True)
+    history_file = 'data/vessel_history.json'
+
+    # 載入既有歷史
+    history = {}
+    if os.path.exists(history_file):
+        try:
+            with open(history_file, 'r', encoding='utf-8') as f:
+                history = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            history = {}
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    for v in vessels.values():
+        mmsi = v['mmsi']
+        if mmsi not in history:
+            history[mmsi] = {
+                'mmsi': mmsi,
+                'names_seen': [],
+                'types_seen': [],
+                'total_snapshots': 0,
+                'drill_zone_snapshots': 0,
+                'fishing_hotspot_snapshots': 0,
+                'first_seen': now,
+                'last_seen': now,
+                'snapshots': [],
+            }
+
+        profile = history[mmsi]
+        profile['total_snapshots'] += 1
+        profile['last_seen'] = now
+
+        # 追蹤船名變更（AIS 異常指標）
+        name = v.get('name', '')
+        if name and name not in profile['names_seen']:
+            profile['names_seen'].append(name)
+
+        # 追蹤船型變更
+        type_name = v.get('type_name', 'unknown')
+        if type_name not in profile['types_seen']:
+            profile['types_seen'].append(type_name)
+
+        if v.get('in_drill_zone'):
+            profile['drill_zone_snapshots'] += 1
+
+        if v.get('in_fishing_hotspot'):
+            profile['fishing_hotspot_snapshots'] += 1
+
+        # 保留最近 30 筆快照摘要（用於 going dark 偵測）
+        profile['snapshots'].append({
+            'time': now,
+            'lat': v['lat'],
+            'lon': v['lon'],
+            'zone': v.get('in_drill_zone'),
+            'hotspot': v.get('in_fishing_hotspot'),
+            'speed': v.get('speed', 0),
+            'name': name,
+        })
+        profile['snapshots'] = profile['snapshots'][-30:]
+
+    # 清理超過 30 天未出現的船隻
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    history = {k: v for k, v in history.items() if v['last_seen'] >= cutoff}
+
+    with open(history_file, 'w', encoding='utf-8') as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
+
+    print(f"📜 已更新船隻歷史: {len(history)} 艘追蹤中")
 
 
 def save_data(vessels, stats):
@@ -299,8 +398,8 @@ def save_data(vessels, stats):
         'ais_data': {
             'vessel_count': stats['total_vessels'],
             'fishing_count': stats['fishing_vessels'],
-            'near_cable_count': stats['near_cables'],
             'in_drill_zone_count': sum(stats['in_drill_zones'].values()),
+            'suspicious_count': stats['suspicious_count'],
             'drill_zone_breakdown': stats['in_drill_zones'],
             'type_breakdown': stats['by_type'],
             'avg_speed': stats['avg_speed']
@@ -340,14 +439,17 @@ async def main():
     print("\n📊 統計摘要:")
     print(f"   總船隻數: {stats['total_vessels']}")
     print(f"   漁船數量: {stats['fishing_vessels']}")
-    print(f"   電纜附近: {stats['near_cables']}")
     print(f"   軍演區內: {sum(stats['in_drill_zones'].values())}")
+    print(f"   可疑船隻: {stats['suspicious_count']}")
     print(f"   平均航速: {stats['avg_speed']} kn")
     print(f"   類型分布: {stats['by_type']}")
-    
+
+    # 累積歷史記錄
+    update_vessel_history(vessels)
+
     # 儲存資料
     save_data(vessels, stats)
-    
+
     print("\n✅ 完成!")
 
 
