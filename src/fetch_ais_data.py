@@ -29,15 +29,6 @@ DRILL_ZONES = {
     'west': {'name': '西區', 'bounds': [[23.5, 118.5], [25.0, 120.0]]}
 }
 
-# 電纜路線（簡化座標用於距離計算）
-CABLE_ROUTES = [
-    {'name': 'Taiwan-Matsu No.4', 'coords': [[25.17, 121.46], [26.16, 120.32], [25.97, 119.94]]},
-    {'name': 'TPKM2', 'coords': [[25.05, 121.5], [25.0, 120.5], [24.5, 119.5], [26.1, 119.9]]},
-    {'name': 'TPKM3', 'coords': [[25.1, 121.45], [24.95, 120.45], [24.45, 119.45], [26.05, 119.85]]},
-    {'name': 'TSE-1', 'coords': [[25.0, 121.5], [25.5, 120.0], [26.0, 119.3]]},
-    {'name': 'CSCN', 'coords': [[25.15, 121.55], [25.2, 120.2], [24.45, 118.8]]},
-]
-
 # 船隻類型對照
 VESSEL_TYPE_MAP = {
     30: 'fishing',
@@ -72,23 +63,6 @@ def is_in_zone(lat, lon, bounds):
     """檢查座標是否在指定區域內"""
     return (bounds[0][0] <= lat <= bounds[1][0] and 
             bounds[0][1] <= lon <= bounds[1][1])
-
-
-def distance_to_cable(lat, lon, cable_coords):
-    """計算船隻到電纜的最近距離（簡化計算，單位：度）"""
-    min_dist = float('inf')
-    for coord in cable_coords:
-        dist = ((lat - coord[0])**2 + (lon - coord[1])**2)**0.5
-        min_dist = min(min_dist, dist)
-    return min_dist
-
-
-def is_near_cable(lat, lon, threshold=0.3):
-    """檢查船隻是否在電纜附近（約30公里）"""
-    for cable in CABLE_ROUTES:
-        if distance_to_cable(lat, lon, cable['coords']) < threshold:
-            return True
-    return False
 
 
 async def collect_ais_data():
@@ -143,7 +117,6 @@ async def collect_ais_data():
                             'speed': 0,
                             'heading': 0,
                             'in_drill_zone': None,
-                            'near_cable': False,
                             'last_update': datetime.now(timezone.utc).isoformat()
                         }
                     
@@ -175,9 +148,6 @@ async def collect_ais_data():
                             break
                     else:
                         vessel['in_drill_zone'] = None
-                    
-                    # 檢查是否在電纜附近
-                    vessel['near_cable'] = is_near_cable(lat, lon)
                     
                     # 進度顯示
                     if message_count % 100 == 0:
@@ -223,7 +193,6 @@ def generate_mock_data():
             'speed': random.uniform(0, 15),
             'heading': random.uniform(0, 360),
             'in_drill_zone': None,
-            'near_cable': is_near_cable(lat, lon),
             'last_update': datetime.now(timezone.utc).isoformat()
         }
         
@@ -244,7 +213,6 @@ def analyze_data(vessels):
         'total_vessels': len(vessels),
         'by_type': defaultdict(int),
         'in_drill_zones': defaultdict(int),
-        'near_cables': 0,
         'fishing_vessels': 0,
         'avg_speed': 0,
     }
@@ -255,10 +223,7 @@ def analyze_data(vessels):
         
         if v['in_drill_zone']:
             stats['in_drill_zones'][v['in_drill_zone']] += 1
-        
-        if v['near_cable']:
-            stats['near_cables'] += 1
-        
+
         if v['type_name'] == 'fishing':
             stats['fishing_vessels'] += 1
         
@@ -299,7 +264,6 @@ def save_data(vessels, stats):
         'ais_data': {
             'vessel_count': stats['total_vessels'],
             'fishing_count': stats['fishing_vessels'],
-            'near_cable_count': stats['near_cables'],
             'in_drill_zone_count': sum(stats['in_drill_zones'].values()),
             'drill_zone_breakdown': stats['in_drill_zones'],
             'type_breakdown': stats['by_type'],
@@ -340,7 +304,6 @@ async def main():
     print("\n📊 統計摘要:")
     print(f"   總船隻數: {stats['total_vessels']}")
     print(f"   漁船數量: {stats['fishing_vessels']}")
-    print(f"   電纜附近: {stats['near_cables']}")
     print(f"   軍演區內: {sum(stats['in_drill_zones'].values())}")
     print(f"   平均航速: {stats['avg_speed']} kn")
     print(f"   類型分布: {stats['by_type']}")
