@@ -10,15 +10,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <style>
         :root {
-            --bg-primary: rgba(10, 15, 28, 0.92);
-            --bg-secondary: rgba(20, 30, 50, 0.85);
-            --bg-card: rgba(25, 35, 60, 0.9);
+            --bg-primary: #0a0f1c;
+            --bg-secondary: #141e32;
+            --bg-card: rgba(25, 35, 60, 0.95);
             --text-primary: #e8eef7;
             --text-secondary: #8aa4c8;
             --accent-cyan: #00f5ff;
@@ -27,147 +33,72 @@
             --accent-green: #00ff88;
             --accent-yellow: #ffd700;
             --border-glow: rgba(0, 245, 255, 0.3);
-            --grid-line: rgba(0, 245, 255, 0.08);
         }
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
-            overflow-x: hidden;
         }
         
-        /* 背景地圖 iframe */
-        .map-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            grid-template-rows: auto 1fr;
             height: 100vh;
-            z-index: 0;
-            opacity: 0.6;
-            filter: saturate(0.7) brightness(0.5);
-            pointer-events: none;
         }
         
-        .map-background iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        @media (max-width: 1000px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 50vh auto;
+            }
         }
         
-        /* 覆蓋層 - 漸層遮罩 */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-            background: 
-                linear-gradient(180deg, 
-                    rgba(10, 15, 28, 0.95) 0%, 
-                    rgba(10, 15, 28, 0.7) 30%,
-                    rgba(10, 15, 28, 0.5) 50%,
-                    rgba(10, 15, 28, 0.7) 70%,
-                    rgba(10, 15, 28, 0.95) 100%
-                ),
-                radial-gradient(ellipse at 20% 20%, rgba(0, 245, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 80%, rgba(255, 107, 53, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-        }
-        
-        /* 掃描線效果 */
-        .scanlines {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0, 245, 255, 0.015) 2px,
-                rgba(0, 245, 255, 0.015) 4px
-            );
-            animation: scanline-move 8s linear infinite;
-        }
-        
-        @keyframes scanline-move {
-            0% { background-position: 0 0; }
-            100% { background-position: 0 100%; }
-        }
-        
-        /* 主要內容區 */
-        .dashboard {
-            position: relative;
-            z-index: 10;
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        
-        /* 頂部標題區 */
         .header {
+            grid-column: 1 / -1;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 30px;
-            padding: 20px 30px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-glow);
-            border-radius: 12px;
-            backdrop-filter: blur(20px);
-        }
-        
-        .header-left h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 28px;
-            font-weight: 900;
-            letter-spacing: 3px;
-            color: var(--accent-cyan);
-            text-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
-            margin-bottom: 8px;
-        }
-        
-        .header-left .subtitle {
-            font-size: 14px;
-            color: var(--text-secondary);
-            letter-spacing: 1px;
-        }
-        
-        .header-right {
-            text-align: right;
-        }
-        
-        .status-indicator {
-            display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
+            padding: 12px 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-glow);
+        }
+        
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--accent-cyan);
+            text-shadow: 0 0 20px rgba(0, 245, 255, 0.5);
+        }
+        
+        .header .subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
             background: rgba(0, 255, 136, 0.1);
             border: 1px solid rgba(0, 255, 136, 0.3);
-            border-radius: 20px;
+            border-radius: 15px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
+            font-size: 10px;
             color: var(--accent-green);
-            margin-bottom: 10px;
         }
         
         .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             background: var(--accent-green);
             border-radius: 50%;
             animation: pulse 2s infinite;
@@ -178,454 +109,609 @@
             50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(0, 255, 136, 0); }
         }
         
-        .last-update {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: var(--text-secondary);
+        .map-section { position: relative; background: var(--bg-primary); }
+        
+        #map { width: 100%; height: 100%; background: #0a1628; }
+        
+        .map-overlay {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
         
-        /* 統計卡片區 */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        @media (max-width: 1200px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        
-        @media (max-width: 600px) {
-            .stats-grid { grid-template-columns: 1fr; }
-        }
-        
-        .stat-card {
+        .overlay-card {
             background: var(--bg-card);
             border: 1px solid var(--border-glow);
-            border-radius: 12px;
-            padding: 24px;
-            backdrop-filter: blur(15px);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
+            border-radius: 8px;
+            padding: 10px 14px;
+            backdrop-filter: blur(10px);
+            min-width: 130px;
         }
         
-        .stat-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent-cyan);
-            box-shadow: 0 10px 40px rgba(0, 245, 255, 0.2);
-        }
-        
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-orange));
-        }
-        
-        .stat-card.alert::before {
-            background: linear-gradient(90deg, var(--accent-red), var(--accent-orange));
-            animation: alert-pulse 1s infinite;
-        }
-        
-        @keyframes alert-pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .stat-label {
-            font-size: 12px;
+        .overlay-card .label {
+            font-size: 9px;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 12px;
         }
         
-        .stat-value {
+        .overlay-card .value {
             font-family: 'Orbitron', sans-serif;
-            font-size: 42px;
+            font-size: 26px;
             font-weight: 700;
             color: var(--accent-cyan);
-            line-height: 1;
+            margin-top: 2px;
+        }
+        
+        .overlay-card.alert .value { color: var(--accent-red); }
+        
+        .map-legend {
+            position: absolute;
+            bottom: 25px;
+            left: 12px;
+            z-index: 1000;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 10px 14px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .legend-title {
+            font-size: 10px;
+            color: var(--text-secondary);
             margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
-        .stat-card.alert .stat-value {
-            color: var(--accent-red);
-        }
-        
-        .stat-trend {
+        .legend-item {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
+            margin: 5px 0;
+            font-size: 11px;
         }
         
-        .stat-trend.up { color: var(--accent-red); }
-        .stat-trend.down { color: var(--accent-green); }
-        .stat-trend.neutral { color: var(--text-secondary); }
-        
-        /* 圖表區 */
-        .charts-section {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
         }
         
-        @media (max-width: 1000px) {
-            .charts-section { grid-template-columns: 1fr; }
+        .legend-dot.dark { background: var(--accent-red); }
+        .legend-dot.suspicious { background: var(--accent-orange); }
+        .legend-dot.normal { background: var(--accent-cyan); opacity: 0.5; }
+        
+        .legend-zone {
+            width: 18px;
+            height: 10px;
+            border: 2px dashed;
+            border-radius: 2px;
         }
         
-        .chart-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-glow);
-            border-radius: 12px;
-            padding: 24px;
-            backdrop-filter: blur(15px);
+        .legend-zone.drill { border-color: var(--accent-red); background: rgba(255, 51, 102, 0.15); }
+        .legend-zone.hotspot { border-color: var(--accent-green); background: rgba(0, 255, 136, 0.1); }
+        
+        .sidebar {
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-glow);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         
-        .chart-title {
-            font-size: 16px;
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid rgba(0, 245, 255, 0.1);
+        }
+        
+        .section-title {
+            font-size: 12px;
             font-weight: 500;
             color: var(--text-primary);
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--grid-line);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
-        .chart-container {
-            height: 300px;
-            position: relative;
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
         
-        /* 軍演區域面板 */
-        .drill-zones {
+        .stat-mini {
             background: var(--bg-card);
-            border: 1px solid var(--border-glow);
-            border-radius: 12px;
-            padding: 24px;
-            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 245, 255, 0.15);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
         }
+        
+        .stat-mini .value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+        
+        .stat-mini .label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            margin-top: 3px;
+        }
+        
+        .stat-mini.trend-up .value { color: var(--accent-red); }
+        .stat-mini.trend-down .value { color: var(--accent-green); }
+        
+        .chart-container { height: 160px; margin-top: 8px; }
+        
+        .zone-list { display: flex; flex-direction: column; gap: 6px; }
         
         .zone-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--grid-line);
+            padding: 8px 10px;
+            background: var(--bg-card);
+            border-radius: 5px;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
         }
         
-        .zone-item:last-child {
-            border-bottom: none;
+        .zone-item:hover { background: rgba(0, 245, 255, 0.1); }
+        .zone-item.active {
+            border-left-color: var(--accent-cyan);
+            background: rgba(0, 245, 255, 0.15);
         }
         
         .zone-name {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
+            font-size: 12px;
         }
         
-        .zone-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
+        .zone-color {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
         }
-        
-        .zone-indicator.north { background: var(--accent-cyan); }
-        .zone-indicator.east { background: var(--accent-orange); }
-        .zone-indicator.south { background: var(--accent-green); }
-        .zone-indicator.west { background: var(--accent-yellow); }
         
         .zone-status {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 4px;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 8px;
             background: rgba(0, 245, 255, 0.1);
             color: var(--accent-cyan);
         }
         
-        .zone-status.active {
-            background: rgba(255, 51, 102, 0.2);
-            color: var(--accent-red);
-            animation: alert-pulse 1s infinite;
+        .alert-box {
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 6px;
+            padding: 10px;
         }
         
-        /* 警報區 */
-        .alerts-section {
-            background: var(--bg-card);
-            border: 1px solid rgba(255, 51, 102, 0.3);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 30px;
-            backdrop-filter: blur(15px);
-        }
-        
-        .alerts-section.no-alerts {
-            border-color: var(--border-glow);
-        }
-        
-        .alert-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            padding: 15px;
+        .alert-box.warning {
             background: rgba(255, 51, 102, 0.1);
-            border-radius: 8px;
-            margin-bottom: 10px;
+            border-color: rgba(255, 51, 102, 0.3);
         }
         
-        .alert-item:last-child {
-            margin-bottom: 0;
-        }
-        
-        .alert-icon {
-            font-size: 24px;
-        }
-        
-        .alert-content h4 {
-            color: var(--accent-red);
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
-        
-        .alert-content p {
-            font-size: 13px;
+        .alert-text {
+            font-size: 11px;
             color: var(--text-secondary);
-        }
-        
-        .no-alert-message {
             text-align: center;
+        }
+        
+        .method-info {
+            font-size: 10px;
             color: var(--text-secondary);
-            padding: 20px;
-        }
-        
-        /* 底部資訊 */
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: var(--text-secondary);
-            font-size: 12px;
-        }
-        
-        .footer a {
-            color: var(--accent-cyan);
-            text-decoration: none;
-        }
-        
-        /* 地圖切換按鈕 */
-        .map-toggle {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            padding: 12px 20px;
+            line-height: 1.5;
+            padding: 10px;
             background: var(--bg-card);
-            border: 1px solid var(--border-glow);
-            border-radius: 8px;
-            color: var(--text-primary);
-            cursor: pointer;
-            font-family: 'Noto Sans TC', sans-serif;
-            font-size: 13px;
-            backdrop-filter: blur(15px);
-            transition: all 0.3s ease;
+            border-radius: 5px;
         }
         
-        .map-toggle:hover {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
-        }
+        .method-info ul { margin-top: 6px; padding-left: 14px; }
+        .method-info li { margin: 3px 0; }
         
-        /* 載入動畫 */
-        .loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 200px;
+        .update-info {
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            border-top: 1px solid rgba(0, 245, 255, 0.1);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
             color: var(--text-secondary);
+            text-align: center;
+            margin-top: auto;
         }
         
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--grid-line);
-            border-top-color: var(--accent-cyan);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
+        .leaflet-container { background: #0a1628; font-family: 'Noto Sans TC', sans-serif; }
+        
+        .leaflet-popup-content-wrapper {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border-radius: 8px;
+            border: 1px solid var(--border-glow);
         }
         
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .leaflet-popup-tip { background: var(--bg-card); }
+        .leaflet-popup-content { margin: 10px 12px; font-size: 11px; }
+        
+        .vessel-popup h4 {
+            color: var(--accent-cyan);
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        
+        .vessel-popup .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+        }
+        
+        .vessel-popup .label { color: var(--text-secondary); }
+        
+        @keyframes dark-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.3); }
         }
     </style>
 </head>
 <body>
-    <!-- 背景地圖 -->
-    <div class="map-background" id="mapBackground">
-        <iframe 
-            src="https://smc.peering.tw/" 
-            title="Taiwan Submarine Cable Map"
-            loading="lazy"
-        ></iframe>
-    </div>
-    
-    <!-- 覆蓋層 -->
-    <div class="overlay"></div>
-    <div class="scanlines"></div>
-    
-    <!-- 主要內容 -->
-    <div class="dashboard">
-        <!-- 頂部標題 -->
+    <div class="app-container">
         <header class="header">
-            <div class="header-left">
+            <div>
                 <h1>GRAY ZONE MONITOR</h1>
-                <div class="subtitle">台灣周邊灰色地帶船隻監測系統 | 基於 CSIS 方法論</div>
+                <div class="subtitle">台灣周邊灰色地帶船隻監測 | CSIS 方法論</div>
             </div>
-            <div class="header-right">
-                <div class="status-indicator">
-                    <span class="status-dot"></span>
-                    <span>SYSTEM ONLINE</span>
-                </div>
-                <div class="last-update" id="lastUpdate">載入中...</div>
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                <span>ONLINE</span>
             </div>
         </header>
         
-        <!-- 統計卡片 -->
-        <div class="stats-grid" id="statsGrid">
-            <div class="stat-card">
-                <div class="stat-label">今日暗船偵測</div>
-                <div class="stat-value" id="todayDark">--</div>
-                <div class="stat-trend neutral" id="todayTrend">
-                    <span>↔</span> <span>載入中</span>
+        <div class="map-section">
+            <div id="map"></div>
+            
+            <div class="map-overlay">
+                <div class="overlay-card">
+                    <div class="label">暗船偵測</div>
+                    <div class="value" id="todayDark">--</div>
                 </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">7日平均</div>
-                <div class="stat-value" id="avg7d">--</div>
-                <div class="stat-trend neutral">
-                    <span>艘/日</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">30日趨勢</div>
-                <div class="stat-value" id="trend30d">--</div>
-                <div class="stat-trend neutral" id="trend30dLabel">
-                    <span>vs 上月</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">監測天數</div>
-                <div class="stat-value" id="totalDays">--</div>
-                <div class="stat-trend neutral">
-                    <span>連續追蹤</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 警報區 -->
-        <div class="alerts-section no-alerts" id="alertsSection">
-            <div class="chart-title">⚠️ 異常警報</div>
-            <div class="no-alert-message" id="alertsContent">
-                目前無異常警報
-            </div>
-        </div>
-        
-        <!-- 圖表區 -->
-        <div class="charts-section">
-            <div class="chart-card">
-                <div class="chart-title">📊 每日暗船偵測趨勢</div>
-                <div class="chart-container">
-                    <canvas id="dailyChart"></canvas>
+                <div class="overlay-card">
+                    <div class="label">可疑船隻</div>
+                    <div class="value" id="suspiciousCount">--</div>
                 </div>
             </div>
             
-            <div class="drill-zones">
-                <div class="chart-title">🎯 軍演監測區域</div>
-                <div class="zone-item">
-                    <div class="zone-name">
-                        <div class="zone-indicator north"></div>
-                        <span>北區 (台灣北方)</span>
-                    </div>
-                    <div class="zone-status">監測中</div>
+            <div class="map-legend">
+                <div class="legend-title">圖例</div>
+                <div class="legend-item">
+                    <div class="legend-dot dark"></div>
+                    <span>暗船 (無AIS)</span>
                 </div>
-                <div class="zone-item">
-                    <div class="zone-name">
-                        <div class="zone-indicator east"></div>
-                        <span>東區 (太平洋側)</span>
-                    </div>
-                    <div class="zone-status">監測中</div>
+                <div class="legend-item">
+                    <div class="legend-dot suspicious"></div>
+                    <span>可疑船隻</span>
                 </div>
-                <div class="zone-item">
-                    <div class="zone-name">
-                        <div class="zone-indicator south"></div>
-                        <span>南區 (巴士海峽)</span>
-                    </div>
-                    <div class="zone-status">監測中</div>
+                <div class="legend-item">
+                    <div class="legend-dot normal"></div>
+                    <span>一般偵測</span>
                 </div>
-                <div class="zone-item">
-                    <div class="zone-name">
-                        <div class="zone-indicator west"></div>
-                        <span>西區 (台灣海峽)</span>
-                    </div>
-                    <div class="zone-status">監測中</div>
+                <div class="legend-item">
+                    <div class="legend-zone drill"></div>
+                    <span>軍演區域</span>
                 </div>
-                
-                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--grid-line);">
-                    <div class="chart-title" style="margin-bottom: 10px;">📋 方法論說明</div>
-                    <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
-                        基於 CSIS「Signals in the Swarm」報告，監測以下可疑行為：<br>
-                        • 暗船：SAR 衛星偵測但無 AIS 訊號<br>
-                        • 軍演區滯留：停留時間 >30%<br>
-                        • 漁撈熱點迴避：漁場時間 <10%
-                    </p>
+                <div class="legend-item">
+                    <div class="legend-zone hotspot"></div>
+                    <span>漁撈熱點</span>
                 </div>
             </div>
         </div>
         
-        <!-- 底部 -->
-        <footer class="footer">
-            <p>資料來源：<a href="https://globalfishingwatch.org/" target="_blank">Global Fishing Watch</a> | 
-            背景地圖：<a href="https://smc.peering.tw/" target="_blank">台灣海纜動態地圖</a></p>
-            <p style="margin-top: 8px;">⚠️ 本系統僅供研究參考，不構成任何軍事判斷依據</p>
-        </footer>
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="section-title">📊 統計</div>
+                <div class="stats-row">
+                    <div class="stat-mini">
+                        <div class="value" id="avg7d">--</div>
+                        <div class="label">7日平均</div>
+                    </div>
+                    <div class="stat-mini" id="trendCard">
+                        <div class="value" id="trend">--</div>
+                        <div class="label">趨勢</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="section-title">⚠️ 警報</div>
+                <div class="alert-box" id="alertBox">
+                    <div class="alert-text" id="alertText">✅ 無異常</div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="section-title">📈 趨勢</div>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="section-title">🎯 監測區域</div>
+                <div class="zone-list" id="zoneList">
+                    <div class="zone-item" data-zone="north">
+                        <div class="zone-name">
+                            <div class="zone-color" style="background: #00f5ff;"></div>
+                            <span>北區</span>
+                        </div>
+                        <div class="zone-status">監測中</div>
+                    </div>
+                    <div class="zone-item" data-zone="east">
+                        <div class="zone-name">
+                            <div class="zone-color" style="background: #ff6b35;"></div>
+                            <span>東區</span>
+                        </div>
+                        <div class="zone-status">監測中</div>
+                    </div>
+                    <div class="zone-item" data-zone="south">
+                        <div class="zone-name">
+                            <div class="zone-color" style="background: #00ff88;"></div>
+                            <span>南區</span>
+                        </div>
+                        <div class="zone-status">監測中</div>
+                    </div>
+                    <div class="zone-item" data-zone="west">
+                        <div class="zone-name">
+                            <div class="zone-color" style="background: #ffd700;"></div>
+                            <span>西區</span>
+                        </div>
+                        <div class="zone-status">監測中</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="section-title">📋 方法論</div>
+                <div class="method-info">
+                    基於 CSIS「Signals in the Swarm」：
+                    <ul>
+                        <li>暗船：SAR偵測但無AIS</li>
+                        <li>軍演區滯留 >30%</li>
+                        <li>漁撈熱點 <10%</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="update-info" id="updateInfo">
+                最後更新: 載入中...
+            </div>
+        </aside>
     </div>
     
-    <!-- 地圖切換按鈕 -->
-    <button class="map-toggle" onclick="toggleMap()">
-        🗺️ 切換背景地圖
-    </button>
-    
     <script>
-        // 圖表實例
-        let dailyChart = null;
-        let mapVisible = true;
+        const TAIWAN_CENTER = [23.5, 121.0];
+        const map = L.map('map', {
+            center: TAIWAN_CENTER,
+            zoom: 6,
+            zoomControl: true,
+            attributionControl: false
+        });
         
-        // 載入資料
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            opacity: 0.85
+        }).addTo(map);
+        
+        L.control.attribution({position: 'bottomright'})
+            .addAttribution('© CARTO | GFW')
+            .addTo(map);
+        
+        const DRILL_ZONES = {
+            north: { name: '北區', color: '#00f5ff', coords: [[25.5, 121.0], [25.5, 122.5], [26.8, 122.5], [26.8, 121.0]] },
+            east: { name: '東區', color: '#ff6b35', coords: [[23.0, 122.5], [23.0, 125.0], [25.5, 125.0], [25.5, 122.5]] },
+            south: { name: '南區', color: '#00ff88', coords: [[21.5, 119.0], [21.5, 121.0], [23.0, 121.0], [23.0, 119.0]] },
+            west: { name: '西區', color: '#ffd700', coords: [[23.5, 118.5], [23.5, 120.0], [25.0, 120.0], [25.0, 118.5]] }
+        };
+        
+        const FISHING_HOTSPOTS = [
+            { name: '台灣堆', coords: [[22.5, 119.0], [22.5, 120.5], [24.0, 120.5], [24.0, 119.0]] },
+            { name: '東部外海', coords: [[22.0, 121.5], [22.0, 123.0], [24.5, 123.0], [24.5, 121.5]] }
+        ];
+        
+        const zonePolygons = {};
+        Object.entries(DRILL_ZONES).forEach(([key, zone]) => {
+            const polygon = L.polygon(zone.coords, {
+                color: zone.color,
+                weight: 2,
+                opacity: 0.8,
+                fillColor: zone.color,
+                fillOpacity: 0.12,
+                dashArray: '8, 4'
+            }).addTo(map);
+            polygon.bindTooltip(zone.name + ' 軍演區', { permanent: false, direction: 'center' });
+            zonePolygons[key] = polygon;
+        });
+        
+        FISHING_HOTSPOTS.forEach(hotspot => {
+            L.polygon(hotspot.coords, {
+                color: '#00ff88',
+                weight: 1,
+                opacity: 0.4,
+                fillColor: '#00ff88',
+                fillOpacity: 0.05,
+                dashArray: '4, 8'
+            }).addTo(map).bindTooltip(hotspot.name + ' 漁場', { permanent: false });
+        });
+        
+        const taiwanOutline = [
+            [25.3, 121.0], [25.0, 121.5], [24.5, 121.8], [24.0, 121.5],
+            [23.5, 121.3], [23.0, 121.0], [22.5, 120.8], [22.0, 120.7],
+            [21.9, 120.8], [22.0, 120.4], [22.5, 120.2], [23.0, 120.1],
+            [23.5, 120.0], [24.0, 120.2], [24.5, 120.5], [25.0, 121.0], [25.3, 121.0]
+        ];
+        L.polyline(taiwanOutline, { color: '#4a90d9', weight: 2, opacity: 0.5 }).addTo(map);
+        
+        const vesselMarkers = L.layerGroup().addTo(map);
+        
+        function generateMockVessels() {
+            const vessels = [];
+            
+            for (let i = 0; i < 12; i++) {
+                const zone = Object.values(DRILL_ZONES)[Math.floor(Math.random() * 4)];
+                const lat = zone.coords[0][0] + Math.random() * (zone.coords[2][0] - zone.coords[0][0]);
+                const lon = zone.coords[0][1] + Math.random() * (zone.coords[2][1] - zone.coords[0][1]);
+                vessels.push({
+                    id: `DARK-${i + 1}`,
+                    type: 'dark',
+                    lat: lat,
+                    lon: lon,
+                    heading: Math.random() * 360,
+                    speed: Math.random() * 4
+                });
+            }
+            
+            for (let i = 0; i < 18; i++) {
+                vessels.push({
+                    id: `SUS-${i + 1}`,
+                    type: 'suspicious',
+                    lat: 22 + Math.random() * 4.5,
+                    lon: 119 + Math.random() * 5.5,
+                    heading: Math.random() * 360,
+                    speed: Math.random() * 6,
+                    drillZoneTime: 0.3 + Math.random() * 0.35,
+                    hotspotTime: Math.random() * 0.08
+                });
+            }
+            
+            for (let i = 0; i < 25; i++) {
+                vessels.push({
+                    id: `AIS-${1000 + i}`,
+                    type: 'normal',
+                    lat: 21.5 + Math.random() * 5,
+                    lon: 118.5 + Math.random() * 6,
+                    heading: Math.random() * 360,
+                    speed: 5 + Math.random() * 10
+                });
+            }
+            
+            return vessels;
+        }
+        
+        function createVesselMarker(vessel) {
+            let color, radius;
+            
+            switch (vessel.type) {
+                case 'dark':
+                    color = '#ff3366';
+                    radius = 7;
+                    break;
+                case 'suspicious':
+                    color = '#ff6b35';
+                    radius = 5;
+                    break;
+                default:
+                    color = '#00f5ff';
+                    radius = 3;
+            }
+            
+            const marker = L.circleMarker([vessel.lat, vessel.lon], {
+                radius: radius,
+                fillColor: color,
+                color: color,
+                weight: vessel.type === 'dark' ? 3 : 2,
+                opacity: 0.9,
+                fillOpacity: vessel.type === 'dark' ? 0.8 : 0.6
+            });
+            
+            let popupContent = `<div class="vessel-popup">`;
+            popupContent += `<h4>${vessel.type === 'dark' ? '🔴 暗船' : vessel.type === 'suspicious' ? '🟠 可疑' : '🔵 一般'}</h4>`;
+            popupContent += `<div class="info-row"><span class="label">ID:</span><span>${vessel.id}</span></div>`;
+            popupContent += `<div class="info-row"><span class="label">位置:</span><span>${vessel.lat.toFixed(2)}°N, ${vessel.lon.toFixed(2)}°E</span></div>`;
+            popupContent += `<div class="info-row"><span class="label">航速:</span><span>${vessel.speed.toFixed(1)} kn</span></div>`;
+            
+            if (vessel.type === 'suspicious') {
+                popupContent += `<div class="info-row"><span class="label">軍演區:</span><span style="color:#ff6b35">${(vessel.drillZoneTime * 100).toFixed(0)}%</span></div>`;
+                popupContent += `<div class="info-row"><span class="label">漁場:</span><span style="color:#00ff88">${(vessel.hotspotTime * 100).toFixed(0)}%</span></div>`;
+            }
+            
+            if (vessel.type === 'dark') {
+                popupContent += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);color:#ff3366;font-size:10px;">⚠️ 無AIS - SAR衛星偵測</div>`;
+            }
+            
+            popupContent += `</div>`;
+            marker.bindPopup(popupContent);
+            
+            return marker;
+        }
+        
+        function updateVessels(vessels) {
+            vesselMarkers.clearLayers();
+            vessels.forEach(v => vesselMarkers.addLayer(createVesselMarker(v)));
+            
+            document.getElementById('todayDark').textContent = vessels.filter(v => v.type === 'dark').length;
+            document.getElementById('suspiciousCount').textContent = vessels.filter(v => v.type === 'suspicious').length;
+        }
+        
+        let trendChart = null;
+        
+        function updateTrendChart(daily) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+            
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: daily.map(d => d.date),
+                    datasets: [{
+                        data: daily.map(d => d.dark_vessels),
+                        borderColor: '#00f5ff',
+                        backgroundColor: 'rgba(0, 245, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: {
+                            grid: { color: 'rgba(0, 245, 255, 0.1)' },
+                            ticks: { color: '#8aa4c8', font: { size: 9 } }
+                        }
+                    }
+                }
+            });
+        }
+        
         async function loadData() {
             try {
                 const response = await fetch('data.json?' + Date.now());
                 const data = await response.json();
                 updateDashboard(data);
-            } catch (error) {
-                console.error('載入資料失敗:', error);
-                // 使用預設資料
+            } catch (e) {
                 updateDashboard(generateMockData());
             }
         }
         
-        // 生成模擬資料
         function generateMockData() {
             const daily = [];
             const now = new Date();
-            
             for (let i = 29; i >= 0; i--) {
                 const date = new Date(now);
                 date.setDate(date.getDate() - i);
@@ -635,194 +721,56 @@
                     total_detections: Math.floor(400 + Math.random() * 600)
                 });
             }
-            
             return {
                 updated_at: new Date().toISOString(),
                 vessel_monitoring: {
                     daily: daily,
-                    summary: {
-                        avg_daily_dark_vessels: 450,
-                        recent_7d_avg: 480,
-                        trend_pct: 12.5,
-                        total_days: 30
-                    },
-                    alerts: [],
-                    is_mock: true
+                    summary: { avg_daily_dark_vessels: 450, recent_7d_avg: 480, trend_pct: 8.5 },
+                    alerts: []
                 }
             };
         }
         
-        // 更新 Dashboard
         function updateDashboard(data) {
             const vessel = data.vessel_monitoring || {};
             const daily = vessel.daily || [];
             const summary = vessel.summary || {};
-            const alerts = vessel.alerts || [];
             
-            // 更新時間
-            const updateTime = new Date(data.updated_at);
-            document.getElementById('lastUpdate').textContent = 
-                `最後更新: ${updateTime.toLocaleString('zh-TW')}`;
+            document.getElementById('updateInfo').textContent = 
+                `最後更新: ${new Date(data.updated_at).toLocaleString('zh-TW')}`;
             
-            // 更新統計卡片
-            const latest = daily[daily.length - 1] || {};
-            document.getElementById('todayDark').textContent = 
-                latest.dark_vessels?.toLocaleString() || '--';
-            
-            document.getElementById('avg7d').textContent = 
-                Math.round(summary.recent_7d_avg || 0).toLocaleString();
+            document.getElementById('avg7d').textContent = Math.round(summary.recent_7d_avg || 0);
             
             const trend = summary.trend_pct || 0;
-            const trendEl = document.getElementById('trend30d');
-            const trendLabelEl = document.getElementById('trend30dLabel');
-            trendEl.textContent = `${trend >= 0 ? '+' : ''}${trend.toFixed(1)}%`;
+            document.getElementById('trend').textContent = `${trend >= 0 ? '+' : ''}${trend.toFixed(1)}%`;
             
-            if (trend > 10) {
-                trendLabelEl.className = 'stat-trend up';
-                trendLabelEl.innerHTML = '<span>↑</span> <span>顯著上升</span>';
-            } else if (trend < -10) {
-                trendLabelEl.className = 'stat-trend down';
-                trendLabelEl.innerHTML = '<span>↓</span> <span>顯著下降</span>';
-            } else {
-                trendLabelEl.className = 'stat-trend neutral';
-                trendLabelEl.innerHTML = '<span>↔</span> <span>持平</span>';
-            }
+            const trendCard = document.getElementById('trendCard');
+            trendCard.classList.remove('trend-up', 'trend-down');
+            if (trend > 5) trendCard.classList.add('trend-up');
+            else if (trend < -5) trendCard.classList.add('trend-down');
             
-            document.getElementById('totalDays').textContent = 
-                (summary.total_days || daily.length).toString();
+            if (daily.length > 0) updateTrendChart(daily);
             
-            // 更新警報
-            updateAlerts(alerts);
-            
-            // 更新圖表
-            updateChart(daily);
-            
-            // 檢查是否為模擬資料
-            if (vessel.is_mock) {
-                console.log('⚠️ 使用模擬資料');
-            }
+            updateVessels(generateMockVessels());
         }
         
-        // 更新警報區
-        function updateAlerts(alerts) {
-            const section = document.getElementById('alertsSection');
-            const content = document.getElementById('alertsContent');
-            
-            if (alerts && alerts.length > 0) {
-                section.classList.remove('no-alerts');
-                content.innerHTML = alerts.map(alert => `
-                    <div class="alert-item">
-                        <div class="alert-icon">⚠️</div>
-                        <div class="alert-content">
-                            <h4>${alert.type === 'high_dark_vessels' ? '暗船數量異常' : '警報'}</h4>
-                            <p>${alert.message} (${alert.date})</p>
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                section.classList.add('no-alerts');
-                content.innerHTML = '<div class="no-alert-message">✅ 目前無異常警報</div>';
-            }
-        }
-        
-        // 更新圖表
-        function updateChart(daily) {
-            const ctx = document.getElementById('dailyChart').getContext('2d');
-            
-            if (dailyChart) {
-                dailyChart.destroy();
-            }
-            
-            const labels = daily.map(d => d.date);
-            const darkData = daily.map(d => d.dark_vessels);
-            const totalData = daily.map(d => d.total_detections);
-            
-            dailyChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: '暗船數',
-                            data: darkData,
-                            borderColor: '#00f5ff',
-                            backgroundColor: 'rgba(0, 245, 255, 0.1)',
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 6,
-                            pointHoverBackgroundColor: '#00f5ff',
-                            borderWidth: 2
-                        },
-                        {
-                            label: '總偵測數',
-                            data: totalData,
-                            borderColor: '#ff6b35',
-                            backgroundColor: 'transparent',
-                            tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 6,
-                            pointHoverBackgroundColor: '#ff6b35',
-                            borderWidth: 1,
-                            borderDash: [5, 5]
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#8aa4c8',
-                                font: { family: 'Noto Sans TC' }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(20, 30, 50, 0.95)',
-                            titleColor: '#e8eef7',
-                            bodyColor: '#8aa4c8',
-                            borderColor: '#00f5ff',
-                            borderWidth: 1,
-                            padding: 12
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'day',
-                                displayFormats: { day: 'MM/dd' }
-                            },
-                            grid: { color: 'rgba(0, 245, 255, 0.08)' },
-                            ticks: { color: '#8aa4c8', maxTicksLimit: 10 }
-                        },
-                        y: {
-                            grid: { color: 'rgba(0, 245, 255, 0.08)' },
-                            ticks: { color: '#8aa4c8' }
-                        }
-                    }
+        document.querySelectorAll('.zone-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const zoneKey = item.dataset.zone;
+                const zone = DRILL_ZONES[zoneKey];
+                
+                document.querySelectorAll('.zone-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                if (zone) {
+                    map.flyToBounds(L.latLngBounds(zone.coords), { padding: [50, 50], duration: 1 });
                 }
             });
-        }
-        
-        // 切換背景地圖
-        function toggleMap() {
-            const mapBg = document.getElementById('mapBackground');
-            mapVisible = !mapVisible;
-            mapBg.style.opacity = mapVisible ? '0.6' : '0';
-        }
-        
-        // 初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            loadData();
-            // 每 5 分鐘自動更新
-            setInterval(loadData, 5 * 60 * 1000);
         });
+        
+        loadData();
+        setInterval(loadData, 5 * 60 * 1000);
+        setInterval(() => updateVessels(generateMockVessels()), 30000);
     </script>
 </body>
 </html>
