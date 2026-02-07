@@ -117,8 +117,7 @@ def main():
     print(f"執行時間: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
     
     if not API_TOKEN:
-        print("⚠️ 未設定 GFW_API_TOKEN，使用模擬資料")
-        generate_mock_data()
+        print("⚠️ 未設定 GFW_API_TOKEN，跳過 GFW 資料收集")
         return
     
     # 計算日期範圍（最近 30 天）
@@ -210,48 +209,6 @@ def main():
     print(f"   平均每日偵測: {output['summary']['avg_daily_detections']:.0f}")
     print(f"   平均每日暗船: {output['summary']['avg_daily_dark_vessels']:.0f}")
     print(f"   7日趨勢: {trend:+.1f}%")
-
-
-def generate_mock_data():
-    """產生模擬資料（無 API Token 時使用）"""
-    
-    import random
-    
-    end_date = datetime.utcnow()
-    daily_list = []
-    
-    for i in range(30):
-        date = (end_date - timedelta(days=29-i)).strftime('%Y-%m-%d')
-        daily_list.append({
-            'date': date,
-            'total_detections': random.randint(300, 800),
-            'dark_vessels': random.randint(200, 600),
-        })
-    
-    output = {
-        'updated_at': datetime.utcnow().isoformat() + 'Z',
-        'data_range': {
-            'start': daily_list[0]['date'],
-            'end': daily_list[-1]['date']
-        },
-        'summary': {
-            'total_days': len(daily_list),
-            'avg_daily_detections': sum(d['total_detections'] for d in daily_list) / len(daily_list),
-            'avg_daily_dark_vessels': sum(d['dark_vessels'] for d in daily_list) / len(daily_list),
-            'recent_7d_avg': sum(d['dark_vessels'] for d in daily_list[-7:]) / 7,
-            'trend_pct': random.uniform(-15, 25)
-        },
-        'daily': daily_list,
-        'drill_zones': DRILL_ZONES,
-        'alerts': [],
-        'is_mock': True
-    }
-    
-    output_path = DATA_DIR / 'vessel_data.json'
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
-    
-    print(f"\n✅ 模擬資料已儲存: {output_path}")
 
 
 if __name__ == "__main__":
