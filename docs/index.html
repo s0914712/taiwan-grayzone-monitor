@@ -525,52 +525,21 @@
                     updateSuspiciousList();
                 }
 
-                if (data.ais_snapshot && data.ais_snapshot.vessels) {
+                if (data.ais_snapshot && data.ais_snapshot.vessels && data.ais_snapshot.vessels.length > 0) {
                     displayVessels(data.ais_snapshot.vessels);
                     const updateTime = new Date(data.updated_at).toLocaleString('zh-TW');
                     document.getElementById('updateInfo').textContent = '更新: ' + updateTime;
                     document.getElementById('dataStatus').textContent = '✅ AIS 資料已載入';
                     document.getElementById('dataStatus').classList.add('live');
                 } else {
-                    generateMockVessels();
-                    document.getElementById('dataStatus').textContent = '📊 展示資料';
+                    document.getElementById('dataStatus').textContent = '⚠️ 尚無 AIS 資料';
+                    document.getElementById('updateInfo').textContent = '等待 API 資料收集...';
                 }
             } catch (e) {
-                console.log('載入 data.json 失敗，使用模擬資料');
-                generateMockVessels();
-                document.getElementById('dataStatus').textContent = '📊 展示資料';
+                console.log('載入 data.json 失敗:', e);
+                document.getElementById('dataStatus').textContent = '❌ 資料載入失敗';
+                document.getElementById('updateInfo').textContent = '請確認 data.json 是否存在';
             }
-        }
-        
-        function generateMockVessels() {
-            const mockVessels = [];
-            const types = ['fishing', 'cargo', 'tanker', 'other'];
-
-            for (let i = 0; i < 45; i++) {
-                const lat = 21.5 + Math.random() * 5.5;
-                const lon = 117.5 + Math.random() * 7;
-                const type_name = types[Math.floor(Math.random() * types.length)];
-                const zone = getZoneForPosition(lat, lon);
-                const hotspot = getFishingHotspot(lat, lon);
-
-                // CSIS 判定：漁船在軍演區但不在漁場
-                const suspicious = (type_name === 'fishing' && zone && !hotspot);
-
-                mockVessels.push({
-                    mmsi: '10000' + i.toString().padStart(4, '0'),
-                    name: 'VESSEL-' + i.toString().padStart(3, '0'),
-                    lat: lat,
-                    lon: lon,
-                    type_name: type_name,
-                    speed: Math.random() * 15,
-                    in_drill_zone: zone,
-                    in_fishing_hotspot: hotspot,
-                    suspicious: suspicious
-                });
-            }
-
-            displayVessels(mockVessels);
-            document.getElementById('updateInfo').textContent = '模擬資料: ' + new Date().toLocaleString('zh-TW');
         }
         
         function displayVessels(vesselList) {

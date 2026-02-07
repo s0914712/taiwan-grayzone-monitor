@@ -107,8 +107,8 @@ async def collect_ais_data():
     """連接 AISStream 並收集資料"""
     
     if not API_KEY:
-        print("⚠️ 未設定 AISSTREAM_API_KEY，使用模擬資料")
-        return generate_mock_data()
+        print("⚠️ 未設定 AISSTREAM_API_KEY，跳過 AIS 資料收集")
+        return {}
     
     vessels = {}
     message_count = 0
@@ -207,49 +207,8 @@ async def collect_ais_data():
     
     except Exception as e:
         print(f"❌ 連接錯誤: {e}")
-        return generate_mock_data()
-    
-    return vessels
+        return {}
 
-
-def generate_mock_data():
-    """生成模擬資料（當無法連接 API 時使用）"""
-    import random
-    
-    print("📦 生成模擬資料...")
-    
-    vessels = {}
-    for i in range(50):
-        mmsi = str(100000000 + i)
-        lat = random.uniform(22.0, 26.0)
-        lon = random.uniform(118.0, 124.0)
-        vtype = random.choice([30, 70, 71, 80, 0])
-        
-        vessel = {
-            'mmsi': mmsi,
-            'name': f'MOCK-{i:03d}',
-            'lat': lat,
-            'lon': lon,
-            'type': vtype,
-            'type_name': VESSEL_TYPE_MAP.get(vtype, 'other'),
-            'speed': random.uniform(0, 15),
-            'heading': random.uniform(0, 360),
-            'in_drill_zone': None,
-            'in_fishing_hotspot': None,
-            'last_update': datetime.now(timezone.utc).isoformat()
-        }
-
-        # 檢查軍演區
-        for zone_id, zone in DRILL_ZONES.items():
-            if is_in_zone(lat, lon, zone['bounds']):
-                vessel['in_drill_zone'] = zone_id
-                break
-
-        # 檢查漁撈熱點
-        vessel['in_fishing_hotspot'] = get_fishing_hotspot(lat, lon)
-        
-        vessels[mmsi] = vessel
-    
     return vessels
 
 
