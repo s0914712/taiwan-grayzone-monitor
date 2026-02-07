@@ -5,19 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>台灣灰色地帶監測 | Taiwan Gray Zone Monitor</title>
     
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    
-    <!-- Leaflet CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <style>
@@ -32,6 +23,7 @@
             --accent-red: #ff3366;
             --accent-green: #00ff88;
             --accent-yellow: #ffd700;
+            --accent-purple: #9b59b6;
             --border-glow: rgba(0, 245, 255, 0.3);
         }
         
@@ -41,21 +33,20 @@
             font-family: 'Noto Sans TC', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
         
         .app-container {
             display: grid;
-            grid-template-columns: 1fr 380px;
+            grid-template-columns: 1fr 300px;
             grid-template-rows: auto 1fr;
             height: 100vh;
         }
         
-        @media (max-width: 1000px) {
-            .app-container {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto 50vh auto;
-            }
+        @media (max-width: 900px) {
+            .app-container { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
         }
         
         .header {
@@ -63,139 +54,98 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 20px;
+            padding: 8px 16px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-glow);
         }
         
         .header h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: 20px;
+            font-size: 14px;
             font-weight: 900;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             color: var(--accent-cyan);
-            text-shadow: 0 0 20px rgba(0, 245, 255, 0.5);
+            text-shadow: 0 0 15px rgba(0, 245, 255, 0.5);
         }
         
-        .header .subtitle {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-        
-        .status-badge {
+        .header-info {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            border-radius: 15px;
+            gap: 10px;
+        }
+        
+        .data-status {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
+            font-size: 9px;
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            border: 1px solid var(--border-glow);
+        }
+        
+        .data-status.live {
             color: var(--accent-green);
+            border-color: var(--accent-green);
         }
         
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            background: var(--accent-green);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); }
-            50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(0, 255, 136, 0); }
-        }
-        
-        .map-section { position: relative; background: var(--bg-primary); }
-        
+        .map-section { position: relative; }
         #map { width: 100%; height: 100%; background: #0a1628; }
         
         .map-overlay {
             position: absolute;
-            top: 12px;
-            left: 12px;
+            top: 8px;
+            left: 8px;
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 5px;
         }
         
         .overlay-card {
             background: var(--bg-card);
             border: 1px solid var(--border-glow);
-            border-radius: 8px;
-            padding: 10px 14px;
+            border-radius: 5px;
+            padding: 6px 10px;
             backdrop-filter: blur(10px);
-            min-width: 130px;
+            min-width: 95px;
         }
         
-        .overlay-card .label {
-            font-size: 9px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .overlay-card .value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 26px;
-            font-weight: 700;
-            color: var(--accent-cyan);
-            margin-top: 2px;
-        }
-        
+        .overlay-card .label { font-size: 8px; color: var(--text-secondary); text-transform: uppercase; }
+        .overlay-card .value { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: var(--accent-cyan); }
         .overlay-card.alert .value { color: var(--accent-red); }
         
         .map-legend {
             position: absolute;
-            bottom: 25px;
-            left: 12px;
+            bottom: 15px;
+            left: 8px;
             z-index: 1000;
             background: var(--bg-card);
             border: 1px solid var(--border-glow);
-            border-radius: 8px;
-            padding: 10px 14px;
-            backdrop-filter: blur(10px);
+            border-radius: 5px;
+            padding: 8px 10px;
+            font-size: 8px;
         }
         
-        .legend-title {
-            font-size: 10px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .legend-section { margin-bottom: 6px; }
+        .legend-title { font-size: 7px; color: var(--text-secondary); margin-bottom: 3px; text-transform: uppercase; }
+        .legend-item { display: flex; align-items: center; gap: 4px; margin: 2px 0; }
+        .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+        .legend-line { width: 14px; height: 2px; border-radius: 1px; }
+        
+        .layer-toggles {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 1000;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 5px;
+            padding: 6px 8px;
         }
         
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin: 5px 0;
-            font-size: 11px;
-        }
-        
-        .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-        
-        .legend-dot.dark { background: var(--accent-red); }
-        .legend-dot.suspicious { background: var(--accent-orange); }
-        .legend-dot.normal { background: var(--accent-cyan); opacity: 0.5; }
-        
-        .legend-zone {
-            width: 18px;
-            height: 10px;
-            border: 2px dashed;
-            border-radius: 2px;
-        }
-        
-        .legend-zone.drill { border-color: var(--accent-red); background: rgba(255, 51, 102, 0.15); }
-        .legend-zone.hotspot { border-color: var(--accent-green); background: rgba(0, 255, 136, 0.1); }
+        .layer-toggle { display: flex; align-items: center; gap: 5px; margin: 3px 0; cursor: pointer; font-size: 9px; }
+        .layer-toggle input { width: 12px; height: 12px; accent-color: var(--accent-cyan); }
         
         .sidebar {
             background: var(--bg-secondary);
@@ -205,178 +155,68 @@
             flex-direction: column;
         }
         
-        .sidebar-section {
-            padding: 16px;
-            border-bottom: 1px solid rgba(0, 245, 255, 0.1);
-        }
+        .sidebar-section { padding: 10px; border-bottom: 1px solid rgba(0, 245, 255, 0.1); }
+        .section-title { font-size: 10px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
         
-        .section-title {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-primary);
-            margin-bottom: 12px;
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
+        .stat-box { background: var(--bg-card); border-radius: 4px; padding: 6px; text-align: center; }
+        .stat-box .value { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700; color: var(--accent-cyan); }
+        .stat-box .label { font-size: 7px; color: var(--text-secondary); margin-top: 1px; }
+        
+        .cable-list, .vessel-list { max-height: 130px; overflow-y: auto; }
+        .cable-item, .vessel-item {
             display: flex;
             align-items: center;
-            gap: 6px;
-        }
-        
-        .stats-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        
-        .stat-mini {
+            gap: 5px;
+            padding: 4px 5px;
+            margin: 2px 0;
             background: var(--bg-card);
-            border: 1px solid rgba(0, 245, 255, 0.15);
-            border-radius: 6px;
-            padding: 10px;
-            text-align: center;
+            border-radius: 3px;
+            font-size: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
         }
+        .cable-item:hover, .vessel-item:hover { background: rgba(0, 245, 255, 0.15); }
+        .cable-dot { width: 6px; height: 6px; border-radius: 2px; flex-shrink: 0; }
+        .cable-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cable-type { font-size: 7px; padding: 1px 4px; border-radius: 4px; background: rgba(0, 245, 255, 0.1); color: var(--text-secondary); }
         
-        .stat-mini .value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--accent-cyan);
-        }
-        
-        .stat-mini .label {
-            font-size: 9px;
-            color: var(--text-secondary);
-            margin-top: 3px;
-        }
-        
-        .stat-mini.trend-up .value { color: var(--accent-red); }
-        .stat-mini.trend-down .value { color: var(--accent-green); }
-        
-        .chart-container { height: 160px; margin-top: 8px; }
-        
-        .zone-list { display: flex; flex-direction: column; gap: 6px; }
-        
+        .zone-list { }
         .zone-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 10px;
+            padding: 4px 6px;
+            margin: 2px 0;
             background: var(--bg-card);
-            border-radius: 5px;
-            border-left: 3px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .zone-item:hover { background: rgba(0, 245, 255, 0.1); }
-        .zone-item.active {
-            border-left-color: var(--accent-cyan);
-            background: rgba(0, 245, 255, 0.15);
-        }
-        
-        .zone-name {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-        }
-        
-        .zone-color {
-            width: 8px;
-            height: 8px;
-            border-radius: 2px;
-        }
-        
-        .zone-status {
-            font-family: 'JetBrains Mono', monospace;
+            border-radius: 3px;
             font-size: 9px;
-            padding: 2px 6px;
-            border-radius: 8px;
-            background: rgba(0, 245, 255, 0.1);
-            color: var(--accent-cyan);
+            cursor: pointer;
         }
-        
-        .alert-box {
-            background: rgba(0, 255, 136, 0.05);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            border-radius: 6px;
-            padding: 10px;
-        }
-        
-        .alert-box.warning {
-            background: rgba(255, 51, 102, 0.1);
-            border-color: rgba(255, 51, 102, 0.3);
-        }
-        
-        .alert-text {
-            font-size: 11px;
-            color: var(--text-secondary);
-            text-align: center;
-        }
-        
-        .method-info {
-            font-size: 10px;
-            color: var(--text-secondary);
-            line-height: 1.5;
-            padding: 10px;
-            background: var(--bg-card);
-            border-radius: 5px;
-        }
-        
-        .method-info ul { margin-top: 6px; padding-left: 14px; }
-        .method-info li { margin: 3px 0; }
+        .zone-item:hover { background: rgba(0, 245, 255, 0.15); }
+        .zone-count { font-family: 'Orbitron', sans-serif; font-weight: 700; }
         
         .update-info {
-            padding: 12px 16px;
+            padding: 8px 10px;
             background: var(--bg-primary);
-            border-top: 1px solid rgba(0, 245, 255, 0.1);
             font-family: 'JetBrains Mono', monospace;
-            font-size: 9px;
+            font-size: 8px;
             color: var(--text-secondary);
             text-align: center;
             margin-top: auto;
         }
         
-        .leaflet-container { background: #0a1628; font-family: 'Noto Sans TC', sans-serif; }
-        
-        .leaflet-popup-content-wrapper {
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border-radius: 8px;
-            border: 1px solid var(--border-glow);
-        }
-        
+        .leaflet-popup-content-wrapper { background: var(--bg-card); color: var(--text-primary); border-radius: 5px; border: 1px solid var(--border-glow); }
         .leaflet-popup-tip { background: var(--bg-card); }
-        .leaflet-popup-content { margin: 10px 12px; font-size: 11px; }
-        
-        .vessel-popup h4 {
-            color: var(--accent-cyan);
-            margin-bottom: 6px;
-            font-size: 13px;
-        }
-        
-        .vessel-popup .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 3px 0;
-        }
-        
-        .vessel-popup .label { color: var(--text-secondary); }
-        
-        @keyframes dark-pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.3); }
-        }
+        .leaflet-popup-content { margin: 6px 8px; font-size: 9px; line-height: 1.4; }
     </style>
 </head>
 <body>
     <div class="app-container">
         <header class="header">
-            <div>
-                <h1>GRAY ZONE MONITOR</h1>
-                <div class="subtitle">台灣周邊灰色地帶船隻監測 | CSIS 方法論</div>
-            </div>
-            <div class="status-badge">
-                <span class="status-dot"></span>
-                <span>ONLINE</span>
+            <h1>🛰️ 台灣灰色地帶 & 海底電纜監測</h1>
+            <div class="header-info">
+                <div class="data-status" id="dataStatus">⏳ 載入中...</div>
             </div>
         </header>
         
@@ -385,392 +225,558 @@
             
             <div class="map-overlay">
                 <div class="overlay-card">
-                    <div class="label">暗船偵測</div>
-                    <div class="value" id="todayDark">--</div>
+                    <div class="label">船隻數</div>
+                    <div class="value" id="vesselCount">0</div>
                 </div>
                 <div class="overlay-card">
-                    <div class="label">可疑船隻</div>
-                    <div class="value" id="suspiciousCount">--</div>
+                    <div class="label">電纜附近</div>
+                    <div class="value" id="nearCableCount">0</div>
+                </div>
+                <div class="overlay-card">
+                    <div class="label">軍演區</div>
+                    <div class="value" id="drillZoneCount">0</div>
                 </div>
             </div>
             
+            <div class="layer-toggles">
+                <label class="layer-toggle"><input type="checkbox" id="showCables" checked onchange="toggleLayer('cables')"> 海底電纜</label>
+                <label class="layer-toggle"><input type="checkbox" id="showLanding" checked onchange="toggleLayer('landing')"> 登陸點</label>
+                <label class="layer-toggle"><input type="checkbox" id="showDrillZones" checked onchange="toggleLayer('drillZones')"> 軍演區域</label>
+                <label class="layer-toggle"><input type="checkbox" id="showVessels" checked onchange="toggleLayer('vessels')"> 船隻</label>
+            </div>
+            
             <div class="map-legend">
-                <div class="legend-title">圖例</div>
-                <div class="legend-item">
-                    <div class="legend-dot dark"></div>
-                    <span>暗船 (無AIS)</span>
+                <div class="legend-section">
+                    <div class="legend-title">船隻類型</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#00ff88"></div> 漁船</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#00f5ff"></div> 貨船</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ff6b35"></div> 油輪</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ff3366"></div> 其他</div>
                 </div>
-                <div class="legend-item">
-                    <div class="legend-dot suspicious"></div>
-                    <span>可疑船隻</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot normal"></div>
-                    <span>一般偵測</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-zone drill"></div>
-                    <span>軍演區域</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-zone hotspot"></div>
-                    <span>漁撈熱點</span>
+                <div class="legend-section">
+                    <div class="legend-title">海底電纜</div>
+                    <div class="legend-item"><div class="legend-line" style="background:#ff6b35"></div> 國內</div>
+                    <div class="legend-item"><div class="legend-line" style="background:#ffd700"></div> 兩岸</div>
+                    <div class="legend-item"><div class="legend-line" style="background:#9b59b6"></div> 國際</div>
                 </div>
             </div>
         </div>
         
         <aside class="sidebar">
             <div class="sidebar-section">
-                <div class="section-title">📊 統計</div>
-                <div class="stats-row">
-                    <div class="stat-mini">
-                        <div class="value" id="avg7d">--</div>
-                        <div class="label">7日平均</div>
+                <div class="section-title">📊 統計數據</div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="value" id="statTotal">0</div>
+                        <div class="label">總船隻</div>
                     </div>
-                    <div class="stat-mini" id="trendCard">
-                        <div class="value" id="trend">--</div>
-                        <div class="label">趨勢</div>
+                    <div class="stat-box">
+                        <div class="value" id="statFishing">0</div>
+                        <div class="label">漁船</div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="section-title">⚠️ 警報</div>
-                <div class="alert-box" id="alertBox">
-                    <div class="alert-text" id="alertText">✅ 無異常</div>
-                </div>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="section-title">📈 趨勢</div>
-                <div class="chart-container">
-                    <canvas id="trendChart"></canvas>
-                </div>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="section-title">🎯 監測區域</div>
-                <div class="zone-list" id="zoneList">
-                    <div class="zone-item" data-zone="north">
-                        <div class="zone-name">
-                            <div class="zone-color" style="background: #00f5ff;"></div>
-                            <span>北區</span>
-                        </div>
-                        <div class="zone-status">監測中</div>
+                    <div class="stat-box">
+                        <div class="value" id="statCargo">0</div>
+                        <div class="label">貨船</div>
                     </div>
-                    <div class="zone-item" data-zone="east">
-                        <div class="zone-name">
-                            <div class="zone-color" style="background: #ff6b35;"></div>
-                            <span>東區</span>
-                        </div>
-                        <div class="zone-status">監測中</div>
-                    </div>
-                    <div class="zone-item" data-zone="south">
-                        <div class="zone-name">
-                            <div class="zone-color" style="background: #00ff88;"></div>
-                            <span>南區</span>
-                        </div>
-                        <div class="zone-status">監測中</div>
-                    </div>
-                    <div class="zone-item" data-zone="west">
-                        <div class="zone-name">
-                            <div class="zone-color" style="background: #ffd700;"></div>
-                            <span>西區</span>
-                        </div>
-                        <div class="zone-status">監測中</div>
+                    <div class="stat-box">
+                        <div class="value" id="statTanker">0</div>
+                        <div class="label">油輪</div>
                     </div>
                 </div>
             </div>
             
             <div class="sidebar-section">
-                <div class="section-title">📋 方法論</div>
-                <div class="method-info">
-                    基於 CSIS「Signals in the Swarm」：
-                    <ul>
-                        <li>暗船：SAR偵測但無AIS</li>
-                        <li>軍演區滯留 >30%</li>
-                        <li>漁撈熱點 <10%</li>
-                    </ul>
-                </div>
+                <div class="section-title">⚠️ 軍演監測區</div>
+                <div class="zone-list" id="zoneList"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="section-title">📡 海底電纜 (10條)</div>
+                <div class="cable-list" id="cableList"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="section-title">🚢 近期船隻</div>
+                <div class="vessel-list" id="vesselList"></div>
             </div>
             
             <div class="update-info" id="updateInfo">
-                最後更新: 載入中...
+                資料更新時間: --
             </div>
         </aside>
     </div>
     
     <script>
-        const TAIWAN_CENTER = [23.5, 121.0];
-        const map = L.map('map', {
-            center: TAIWAN_CENTER,
-            zoom: 6,
-            zoomControl: true,
-            attributionControl: false
-        });
+        // =============================================
+        // 全域設定
+        // =============================================
         
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            opacity: 0.85
-        }).addTo(map);
+        let map;
+        let layers = { cables: null, landing: null, drillZones: null, vessels: null };
+        let vessels = new Map();
+        let vesselMarkers = {};
         
-        L.control.attribution({position: 'bottomright'})
-            .addAttribution('© CARTO | GFW')
-            .addTo(map);
-        
+        // 軍演監測區
         const DRILL_ZONES = {
-            north: { name: '北區', color: '#00f5ff', coords: [[25.5, 121.0], [25.5, 122.5], [26.8, 122.5], [26.8, 121.0]] },
-            east: { name: '東區', color: '#ff6b35', coords: [[23.0, 122.5], [23.0, 125.0], [25.5, 125.0], [25.5, 122.5]] },
-            south: { name: '南區', color: '#00ff88', coords: [[21.5, 119.0], [21.5, 121.0], [23.0, 121.0], [23.0, 119.0]] },
-            west: { name: '西區', color: '#ffd700', coords: [[23.5, 118.5], [23.5, 120.0], [25.0, 120.0], [25.0, 118.5]] }
+            north: { name: '北部海域', color: '#00f5ff', coords: [[25.5, 121.0], [25.5, 122.5], [26.8, 122.5], [26.8, 121.0]] },
+            east: { name: '東部海域', color: '#ff6b35', coords: [[23.0, 122.5], [23.0, 125.0], [25.5, 125.0], [25.5, 122.5]] },
+            south: { name: '南部海域', color: '#00ff88', coords: [[21.5, 119.0], [21.5, 121.0], [23.0, 121.0], [23.0, 119.0]] },
+            west: { name: '西部海域', color: '#ffd700', coords: [[23.5, 118.5], [23.5, 120.0], [25.0, 120.0], [25.0, 118.5]] }
         };
         
-        const FISHING_HOTSPOTS = [
-            { name: '台灣堆', coords: [[22.5, 119.0], [22.5, 120.5], [24.0, 120.5], [24.0, 119.0]] },
-            { name: '東部外海', coords: [[22.0, 121.5], [22.0, 123.0], [24.5, 123.0], [24.5, 121.5]] }
+        // 海底電纜資料 (修正後的路線)
+        // 參考: submarinecablemap.com, submarinenetworks.com
+        const CABLES = [
+            // === 國內電纜 ===
+            { 
+                id: "matsu4", 
+                name: "Taiwan-Matsu No.4", 
+                color: "#FF6B35", 
+                type: "domestic",
+                description: "台灣本島-馬祖",
+                // 淡水 → 馬祖
+                coords: [[25.17, 121.44], [25.5, 120.8], [26.0, 120.3], [26.15, 119.95]]
+            },
+            { 
+                id: "tpkm2", 
+                name: "TPKM2", 
+                color: "#00F5FF", 
+                type: "domestic",
+                description: "台灣-澎湖-金門-馬祖 2號",
+                // 淡水 → 澎湖 → 金門 → 馬祖
+                coords: [[25.17, 121.44], [24.5, 120.5], [23.57, 119.57], [24.44, 118.32], [26.15, 119.95]]
+            },
+            { 
+                id: "tpkm3", 
+                name: "TPKM3", 
+                color: "#00FF88", 
+                type: "domestic",
+                description: "台灣-澎湖-金門-馬祖 3號",
+                coords: [[25.12, 121.40], [24.5, 120.4], [23.57, 119.57], [24.44, 118.32], [26.15, 119.95]]
+            },
+            
+            // === 兩岸電纜 ===
+            { 
+                id: "tse1", 
+                name: "TSE-1", 
+                color: "#FFD700", 
+                type: "cross-strait",
+                description: "台灣海峽快線1號 (淡水-福州)",
+                // 淡水 → 福州
+                coords: [[25.17, 121.44], [25.5, 120.5], [26.0, 119.5], [26.07, 119.30]]
+            },
+            { 
+                id: "cscn", 
+                name: "CSCN", 
+                color: "#FF3366", 
+                type: "cross-strait",
+                description: "兩岸電纜網路 (淡水-廈門)",
+                // 淡水 → 廈門
+                coords: [[25.17, 121.44], [25.0, 120.5], [24.5, 119.5], [24.48, 118.08]]
+            },
+            
+            // === 國際電纜 ===
+            { 
+                id: "tpe", 
+                name: "TPE", 
+                color: "#9B59B6", 
+                type: "international",
+                description: "跨太平洋快線 (台灣-日本-美國)",
+                // 淡水 → 日本千倉 → 美國
+                coords: [[25.17, 121.44], [25.5, 123.0], [27.0, 128.0], [30.0, 135.0], [35.0, 140.0]]
+            },
+            { 
+                id: "eac-c2c", 
+                name: "EAC-C2C", 
+                color: "#3498DB", 
+                type: "international",
+                description: "東亞交叉 (台灣-香港-新加坡)",
+                // 頭城 → 枋山 → 香港
+                coords: [[24.85, 121.82], [22.5, 121.0], [22.23, 120.65], [21.5, 118.0], [22.28, 114.15]]
+            },
+            { 
+                id: "sjc2", 
+                name: "SJC2", 
+                color: "#E74C3C", 
+                type: "international",
+                description: "東南亞-日本2號",
+                // 淡水 → 日本
+                coords: [[25.17, 121.44], [26.0, 123.0], [28.0, 128.0], [32.0, 133.0], [34.98, 139.85]]
+            },
+            { 
+                id: "apcn2", 
+                name: "APCN-2", 
+                color: "#1ABC9C", 
+                type: "international",
+                description: "亞太電纜網路2 (淡水-汕頭-香港)",
+                // 淡水 → 汕頭 → 香港 (環狀網路的一部分)
+                coords: [[25.17, 121.44], [24.0, 119.5], [23.35, 116.68], [22.28, 114.15]]
+            },
+            { 
+                id: "apg", 
+                name: "APG", 
+                color: "#F39C12", 
+                type: "international",
+                description: "亞太門戶 (頭城-香港-越南-新加坡)",
+                // 頭城 → 向南走台灣東岸 → 香港 → 越南
+                coords: [[24.85, 121.82], [23.0, 120.5], [22.0, 119.0], [22.28, 114.15], [16.0, 108.2], [10.5, 107.0]]
+            }
         ];
         
-        const zonePolygons = {};
-        Object.entries(DRILL_ZONES).forEach(([key, zone]) => {
-            const polygon = L.polygon(zone.coords, {
-                color: zone.color,
-                weight: 2,
-                opacity: 0.8,
-                fillColor: zone.color,
-                fillOpacity: 0.12,
-                dashArray: '8, 4'
+        // 登陸點
+        const LANDING_POINTS = [
+            { name: "淡水", coords: [25.17, 121.44], cables: ["APCN-2", "SJC2", "TPE", "TSE-1", "CSCN", "TPKM2", "Matsu4"] },
+            { name: "八里", coords: [25.12, 121.40], cables: ["TPKM3"] },
+            { name: "頭城", coords: [24.85, 121.82], cables: ["APG", "EAC-C2C", "NCP", "PLCN"] },
+            { name: "枋山", coords: [22.23, 120.65], cables: ["EAC-C2C"] },
+            { name: "澎湖", coords: [23.57, 119.57], cables: ["TPKM2", "TPKM3"] },
+            { name: "金門", coords: [24.44, 118.32], cables: ["TPKM2", "TPKM3"] },
+            { name: "馬祖", coords: [26.15, 119.95], cables: ["Matsu4", "TPKM2", "TPKM3"] }
+        ];
+        
+        const VESSEL_COLORS = { 
+            fishing: '#00ff88', 
+            cargo: '#00f5ff', 
+            tanker: '#ff6b35', 
+            other: '#ff3366',
+            unknown: '#888888'
+        };
+        
+        // =============================================
+        // 初始化
+        // =============================================
+        
+        function initMap() {
+            map = L.map('map', { 
+                center: [24.0, 121.0], 
+                zoom: 7, 
+                zoomControl: true, 
+                attributionControl: false 
+            });
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
+                maxZoom: 18, 
+                opacity: 0.9 
             }).addTo(map);
-            polygon.bindTooltip(zone.name + ' 軍演區', { permanent: false, direction: 'center' });
-            zonePolygons[key] = polygon;
-        });
-        
-        FISHING_HOTSPOTS.forEach(hotspot => {
-            L.polygon(hotspot.coords, {
-                color: '#00ff88',
-                weight: 1,
-                opacity: 0.4,
-                fillColor: '#00ff88',
-                fillOpacity: 0.05,
-                dashArray: '4, 8'
-            }).addTo(map).bindTooltip(hotspot.name + ' 漁場', { permanent: false });
-        });
-        
-        const taiwanOutline = [
-            [25.3, 121.0], [25.0, 121.5], [24.5, 121.8], [24.0, 121.5],
-            [23.5, 121.3], [23.0, 121.0], [22.5, 120.8], [22.0, 120.7],
-            [21.9, 120.8], [22.0, 120.4], [22.5, 120.2], [23.0, 120.1],
-            [23.5, 120.0], [24.0, 120.2], [24.5, 120.5], [25.0, 121.0], [25.3, 121.0]
-        ];
-        L.polyline(taiwanOutline, { color: '#4a90d9', weight: 2, opacity: 0.5 }).addTo(map);
-        
-        const vesselMarkers = L.layerGroup().addTo(map);
-        
-        function generateMockVessels() {
-            const vessels = [];
             
-            for (let i = 0; i < 12; i++) {
-                const zone = Object.values(DRILL_ZONES)[Math.floor(Math.random() * 4)];
-                const lat = zone.coords[0][0] + Math.random() * (zone.coords[2][0] - zone.coords[0][0]);
-                const lon = zone.coords[0][1] + Math.random() * (zone.coords[2][1] - zone.coords[0][1]);
-                vessels.push({
-                    id: `DARK-${i + 1}`,
-                    type: 'dark',
-                    lat: lat,
-                    lon: lon,
-                    heading: Math.random() * 360,
-                    speed: Math.random() * 4
-                });
-            }
+            // 建立圖層
+            layers.cables = L.layerGroup().addTo(map);
+            layers.landing = L.layerGroup().addTo(map);
+            layers.drillZones = L.layerGroup().addTo(map);
+            layers.vessels = L.layerGroup().addTo(map);
             
-            for (let i = 0; i < 18; i++) {
-                vessels.push({
-                    id: `SUS-${i + 1}`,
-                    type: 'suspicious',
-                    lat: 22 + Math.random() * 4.5,
-                    lon: 119 + Math.random() * 5.5,
-                    heading: Math.random() * 360,
-                    speed: Math.random() * 6,
-                    drillZoneTime: 0.3 + Math.random() * 0.35,
-                    hotspotTime: Math.random() * 0.08
-                });
-            }
+            // 繪製台灣本島輪廓
+            const taiwanOutline = [
+                [25.3, 121.0], [25.13, 121.5], [24.85, 121.82], [24.5, 121.8], 
+                [24.0, 121.5], [23.5, 121.3], [23.0, 121.0], [22.5, 120.85],
+                [22.0, 120.75], [21.9, 120.85], [22.0, 120.45], [22.3, 120.25],
+                [22.6, 120.3], [23.0, 120.1], [23.5, 120.05], [24.0, 120.2],
+                [24.5, 120.5], [25.0, 121.0], [25.3, 121.0]
+            ];
+            L.polygon(taiwanOutline, { 
+                color: '#4a90d9', 
+                weight: 2, 
+                opacity: 0.5, 
+                fillColor: '#1a3a5c',
+                fillOpacity: 0.3
+            }).addTo(map);
             
-            for (let i = 0; i < 25; i++) {
-                vessels.push({
-                    id: `AIS-${1000 + i}`,
-                    type: 'normal',
-                    lat: 21.5 + Math.random() * 5,
-                    lon: 118.5 + Math.random() * 6,
-                    heading: Math.random() * 360,
-                    speed: 5 + Math.random() * 10
-                });
-            }
+            // 繪製各圖層
+            drawCables();
+            drawLandingPoints();
+            drawDrillZones();
+            updateCableList();
+            updateZoneList();
             
-            return vessels;
+            // 載入資料
+            loadData();
         }
         
-        function createVesselMarker(vessel) {
-            let color, radius;
-            
-            switch (vessel.type) {
-                case 'dark':
-                    color = '#ff3366';
-                    radius = 7;
-                    break;
-                case 'suspicious':
-                    color = '#ff6b35';
-                    radius = 5;
-                    break;
-                default:
-                    color = '#00f5ff';
-                    radius = 3;
-            }
-            
-            const marker = L.circleMarker([vessel.lat, vessel.lon], {
-                radius: radius,
-                fillColor: color,
-                color: color,
-                weight: vessel.type === 'dark' ? 3 : 2,
-                opacity: 0.9,
-                fillOpacity: vessel.type === 'dark' ? 0.8 : 0.6
-            });
-            
-            let popupContent = `<div class="vessel-popup">`;
-            popupContent += `<h4>${vessel.type === 'dark' ? '🔴 暗船' : vessel.type === 'suspicious' ? '🟠 可疑' : '🔵 一般'}</h4>`;
-            popupContent += `<div class="info-row"><span class="label">ID:</span><span>${vessel.id}</span></div>`;
-            popupContent += `<div class="info-row"><span class="label">位置:</span><span>${vessel.lat.toFixed(2)}°N, ${vessel.lon.toFixed(2)}°E</span></div>`;
-            popupContent += `<div class="info-row"><span class="label">航速:</span><span>${vessel.speed.toFixed(1)} kn</span></div>`;
-            
-            if (vessel.type === 'suspicious') {
-                popupContent += `<div class="info-row"><span class="label">軍演區:</span><span style="color:#ff6b35">${(vessel.drillZoneTime * 100).toFixed(0)}%</span></div>`;
-                popupContent += `<div class="info-row"><span class="label">漁場:</span><span style="color:#00ff88">${(vessel.hotspotTime * 100).toFixed(0)}%</span></div>`;
-            }
-            
-            if (vessel.type === 'dark') {
-                popupContent += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);color:#ff3366;font-size:10px;">⚠️ 無AIS - SAR衛星偵測</div>`;
-            }
-            
-            popupContent += `</div>`;
-            marker.bindPopup(popupContent);
-            
-            return marker;
-        }
+        // =============================================
+        // 繪製圖層
+        // =============================================
         
-        function updateVessels(vessels) {
-            vesselMarkers.clearLayers();
-            vessels.forEach(v => vesselMarkers.addLayer(createVesselMarker(v)));
+        function drawCables() {
+            layers.cables.clearLayers();
             
-            document.getElementById('todayDark').textContent = vessels.filter(v => v.type === 'dark').length;
-            document.getElementById('suspiciousCount').textContent = vessels.filter(v => v.type === 'suspicious').length;
-        }
-        
-        let trendChart = null;
-        
-        function updateTrendChart(daily) {
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            if (trendChart) trendChart.destroy();
-            
-            trendChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: daily.map(d => d.date),
-                    datasets: [{
-                        data: daily.map(d => d.dark_vessels),
-                        borderColor: '#00f5ff',
-                        backgroundColor: 'rgba(0, 245, 255, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 0,
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { display: false },
-                        y: {
-                            grid: { color: 'rgba(0, 245, 255, 0.1)' },
-                            ticks: { color: '#8aa4c8', font: { size: 9 } }
-                        }
-                    }
-                }
+            CABLES.forEach(cable => {
+                const line = L.polyline(cable.coords, { 
+                    color: cable.color, 
+                    weight: cable.type === 'domestic' ? 3 : 2.5, 
+                    opacity: 0.85,
+                    dashArray: cable.type === 'cross-strait' ? '8, 4' : null
+                }).addTo(layers.cables);
+                
+                line.bindPopup(`
+                    <b style="color:${cable.color}">${cable.name}</b><br>
+                    <span style="color:var(--text-secondary)">${cable.description}</span><br>
+                    <span style="color:#888">類型: ${getTypeLabel(cable.type)}</span>
+                `);
+                
+                // Hover 效果
+                line.on('mouseover', function() { this.setStyle({ weight: 5, opacity: 1 }); });
+                line.on('mouseout', function() { this.setStyle({ weight: cable.type === 'domestic' ? 3 : 2.5, opacity: 0.85 }); });
             });
         }
+        
+        function drawLandingPoints() {
+            layers.landing.clearLayers();
+            
+            LANDING_POINTS.forEach(point => {
+                const isMainland = ['淡水', '八里', '頭城', '枋山'].includes(point.name);
+                const marker = L.circleMarker(point.coords, {
+                    radius: isMainland ? 6 : 5,
+                    fillColor: isMainland ? '#00f5ff' : '#ffd700',
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                }).addTo(layers.landing);
+                
+                marker.bindPopup(`
+                    <b>${point.name}</b><br>
+                    <span style="color:#888">電纜登陸站</span><br>
+                    <span style="font-size:8px;color:var(--text-secondary)">${point.cables.join(', ')}</span>
+                `);
+                
+                marker.bindTooltip(point.name, { permanent: false, direction: 'top', offset: [0, -5] });
+            });
+        }
+        
+        function drawDrillZones() {
+            layers.drillZones.clearLayers();
+            
+            Object.entries(DRILL_ZONES).forEach(([key, zone]) => {
+                const polygon = L.polygon(zone.coords, {
+                    color: zone.color,
+                    weight: 2,
+                    opacity: 0.6,
+                    fillColor: zone.color,
+                    fillOpacity: 0.08,
+                    dashArray: '6, 4'
+                }).addTo(layers.drillZones);
+                
+                polygon.bindTooltip(zone.name, { permanent: false, direction: 'center' });
+                polygon.on('click', () => map.flyToBounds(zone.coords, { padding: [30, 30] }));
+            });
+        }
+        
+        function getTypeLabel(type) {
+            const labels = { domestic: '國內', 'cross-strait': '兩岸', international: '國際' };
+            return labels[type] || type;
+        }
+        
+        // =============================================
+        // 側邊欄更新
+        // =============================================
+        
+        function updateCableList() {
+            const list = document.getElementById('cableList');
+            list.innerHTML = CABLES.map(cable => `
+                <div class="cable-item" onclick="focusCable('${cable.id}')">
+                    <div class="cable-dot" style="background:${cable.color}"></div>
+                    <span class="cable-name">${cable.name}</span>
+                    <span class="cable-type">${getTypeLabel(cable.type)}</span>
+                </div>
+            `).join('');
+        }
+        
+        function updateZoneList() {
+            const list = document.getElementById('zoneList');
+            list.innerHTML = Object.entries(DRILL_ZONES).map(([key, zone]) => `
+                <div class="zone-item" onclick="focusZone('${key}')" style="border-left: 3px solid ${zone.color}">
+                    <span>${zone.name}</span>
+                    <span class="zone-count" id="zone-${key}" style="color:${zone.color}">0</span>
+                </div>
+            `).join('');
+        }
+        
+        function updateVesselList() {
+            const list = document.getElementById('vesselList');
+            const recent = Array.from(vessels.values()).slice(0, 12);
+            
+            list.innerHTML = recent.map(v => `
+                <div class="vessel-item" onclick="focusVessel('${v.mmsi}')">
+                    <span style="color:${VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other}">${(v.name || 'Unknown').substring(0, 14)}</span>
+                    <span style="font-size:7px;color:var(--text-secondary)">${v.type_name || '未知'}</span>
+                </div>
+            `).join('');
+        }
+        
+        // =============================================
+        // 焦點功能
+        // =============================================
+        
+        function focusCable(id) {
+            const cable = CABLES.find(c => c.id === id);
+            if (cable) {
+                map.flyToBounds(cable.coords, { padding: [50, 50], maxZoom: 8 });
+            }
+        }
+        
+        function focusZone(key) {
+            const zone = DRILL_ZONES[key];
+            if (zone) {
+                map.flyToBounds(zone.coords, { padding: [30, 30] });
+            }
+        }
+        
+        function focusVessel(mmsi) {
+            const v = vessels.get(mmsi);
+            if (v && vesselMarkers[mmsi]) {
+                map.flyTo([v.lat, v.lon], 10);
+                vesselMarkers[mmsi].openPopup();
+            }
+        }
+        
+        function toggleLayer(name) {
+            const checkbox = document.getElementById('show' + name.charAt(0).toUpperCase() + name.slice(1));
+            if (checkbox.checked) {
+                map.addLayer(layers[name]);
+            } else {
+                map.removeLayer(layers[name]);
+            }
+        }
+        
+        // =============================================
+        // 資料載入
+        // =============================================
         
         async function loadData() {
             try {
-                const response = await fetch('data.json?' + Date.now());
-                const data = await response.json();
-                updateDashboard(data);
+                const res = await fetch('data.json?' + Date.now());
+                const data = await res.json();
+                
+                if (data.ais_snapshot && data.ais_snapshot.vessels) {
+                    displayVessels(data.ais_snapshot.vessels);
+                    const updateTime = new Date(data.updated_at).toLocaleString('zh-TW');
+                    document.getElementById('updateInfo').textContent = '更新: ' + updateTime;
+                    document.getElementById('dataStatus').textContent = '✅ AIS 資料已載入';
+                    document.getElementById('dataStatus').classList.add('live');
+                } else {
+                    generateMockVessels();
+                    document.getElementById('dataStatus').textContent = '📊 展示資料';
+                }
             } catch (e) {
-                updateDashboard(generateMockData());
+                console.log('載入 data.json 失敗，使用模擬資料');
+                generateMockVessels();
+                document.getElementById('dataStatus').textContent = '📊 展示資料';
             }
         }
         
-        function generateMockData() {
-            const daily = [];
-            const now = new Date();
-            for (let i = 29; i >= 0; i--) {
-                const date = new Date(now);
-                date.setDate(date.getDate() - i);
-                daily.push({
-                    date: date.toISOString().split('T')[0],
-                    dark_vessels: Math.floor(300 + Math.random() * 500),
-                    total_detections: Math.floor(400 + Math.random() * 600)
+        function generateMockVessels() {
+            const mockVessels = [];
+            const types = ['fishing', 'cargo', 'tanker', 'other'];
+            
+            for (let i = 0; i < 45; i++) {
+                const lat = 21.5 + Math.random() * 5.5;
+                const lon = 117.5 + Math.random() * 7;
+                
+                mockVessels.push({
+                    mmsi: '10000' + i.toString().padStart(4, '0'),
+                    name: 'VESSEL-' + i.toString().padStart(3, '0'),
+                    lat: lat,
+                    lon: lon,
+                    type_name: types[Math.floor(Math.random() * types.length)],
+                    speed: Math.random() * 15,
+                    near_cable: isNearAnyCable(lat, lon),
+                    in_drill_zone: getZoneForPosition(lat, lon)
                 });
             }
-            return {
-                updated_at: new Date().toISOString(),
-                vessel_monitoring: {
-                    daily: daily,
-                    summary: { avg_daily_dark_vessels: 450, recent_7d_avg: 480, trend_pct: 8.5 },
-                    alerts: []
-                }
-            };
+            
+            displayVessels(mockVessels);
+            document.getElementById('updateInfo').textContent = '模擬資料: ' + new Date().toLocaleString('zh-TW');
         }
         
-        function updateDashboard(data) {
-            const vessel = data.vessel_monitoring || {};
-            const daily = vessel.daily || [];
-            const summary = vessel.summary || {};
+        function displayVessels(vesselList) {
+            layers.vessels.clearLayers();
+            vessels.clear();
+            vesselMarkers = {};
             
-            document.getElementById('updateInfo').textContent = 
-                `最後更新: ${new Date(data.updated_at).toLocaleString('zh-TW')}`;
+            let stats = { total: 0, fishing: 0, cargo: 0, tanker: 0, nearCable: 0, inZone: 0 };
+            let zoneCounts = { north: 0, east: 0, south: 0, west: 0 };
             
-            document.getElementById('avg7d').textContent = Math.round(summary.recent_7d_avg || 0);
-            
-            const trend = summary.trend_pct || 0;
-            document.getElementById('trend').textContent = `${trend >= 0 ? '+' : ''}${trend.toFixed(1)}%`;
-            
-            const trendCard = document.getElementById('trendCard');
-            trendCard.classList.remove('trend-up', 'trend-down');
-            if (trend > 5) trendCard.classList.add('trend-up');
-            else if (trend < -5) trendCard.classList.add('trend-down');
-            
-            if (daily.length > 0) updateTrendChart(daily);
-            
-            updateVessels(generateMockVessels());
-        }
-        
-        document.querySelectorAll('.zone-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const zoneKey = item.dataset.zone;
-                const zone = DRILL_ZONES[zoneKey];
+            vesselList.forEach(v => {
+                vessels.set(v.mmsi, v);
+                stats.total++;
                 
-                document.querySelectorAll('.zone-item').forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
+                const color = VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other;
+                const marker = L.circleMarker([v.lat, v.lon], {
+                    radius: 4,
+                    fillColor: color,
+                    color: color,
+                    weight: 1,
+                    opacity: 0.9,
+                    fillOpacity: 0.7
+                }).addTo(layers.vessels);
                 
+                marker.bindPopup(`
+                    <b>${v.name || 'Unknown'}</b><br>
+                    MMSI: ${v.mmsi}<br>
+                    類型: ${v.type_name || '未知'}<br>
+                    航速: ${(v.speed || 0).toFixed(1)} kn
+                `);
+                
+                vesselMarkers[v.mmsi] = marker;
+                
+                // 統計
+                if (v.type_name === 'fishing') stats.fishing++;
+                if (v.type_name === 'cargo') stats.cargo++;
+                if (v.type_name === 'tanker') stats.tanker++;
+                if (v.near_cable) stats.nearCable++;
+                
+                const zone = v.in_drill_zone || getZoneForPosition(v.lat, v.lon);
                 if (zone) {
-                    map.flyToBounds(L.latLngBounds(zone.coords), { padding: [50, 50], duration: 1 });
+                    stats.inZone++;
+                    zoneCounts[zone]++;
                 }
             });
-        });
+            
+            // 更新 UI
+            document.getElementById('vesselCount').textContent = stats.total;
+            document.getElementById('nearCableCount').textContent = stats.nearCable;
+            document.getElementById('drillZoneCount').textContent = stats.inZone;
+            document.getElementById('statTotal').textContent = stats.total;
+            document.getElementById('statFishing').textContent = stats.fishing;
+            document.getElementById('statCargo').textContent = stats.cargo;
+            document.getElementById('statTanker').textContent = stats.tanker;
+            
+            // 更新區域計數
+            Object.keys(zoneCounts).forEach(key => {
+                const el = document.getElementById('zone-' + key);
+                if (el) el.textContent = zoneCounts[key];
+            });
+            
+            updateVesselList();
+        }
         
-        loadData();
-        setInterval(loadData, 5 * 60 * 1000);
-        setInterval(() => updateVessels(generateMockVessels()), 30000);
+        function isNearAnyCable(lat, lon) {
+            for (const cable of CABLES) {
+                for (const coord of cable.coords) {
+                    const dist = Math.sqrt(Math.pow(lat - coord[0], 2) + Math.pow(lon - coord[1], 2));
+                    if (dist < 0.4) return true;
+                }
+            }
+            return false;
+        }
+        
+        function getZoneForPosition(lat, lon) {
+            for (const [key, zone] of Object.entries(DRILL_ZONES)) {
+                const [sw, , ne] = [zone.coords[0], zone.coords[1], zone.coords[2]];
+                const minLat = Math.min(sw[0], ne[0]);
+                const maxLat = Math.max(sw[0], ne[0]);
+                const minLon = Math.min(sw[1], ne[1]);
+                const maxLon = Math.max(sw[1], ne[1]);
+                
+                if (lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon) {
+                    return key;
+                }
+            }
+            return null;
+        }
+        
+        // 初始化
+        initMap();
     </script>
 </body>
 </html>

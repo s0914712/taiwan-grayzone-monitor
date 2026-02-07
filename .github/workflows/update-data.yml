@@ -2,8 +2,8 @@ name: Update Gray Zone Vessel Data
 
 on:
   schedule:
-    # 每天 UTC 00:00 和 12:00 執行（台灣時間 08:00 和 20:00）
-    - cron: '0 0,12 * * *'
+    # 每天 UTC 00:00, 06:00, 12:00, 18:00 執行（台灣時間 08:00, 14:00, 20:00, 02:00）
+    - cron: '0 0,6,12,18 * * *'
   workflow_dispatch:  # 允許手動觸發
 
 jobs:
@@ -21,13 +21,21 @@ jobs:
           
       - name: Install dependencies
         run: |
-          pip install requests pandas numpy
+          pip install requests pandas numpy websockets
+          
+      - name: Fetch AIS data from AISStream.io
+        env:
+          AISSTREAM_API_KEY: ${{ secrets.AISSTREAM_API_KEY }}
+        run: |
+          python src/fetch_ais_data.py
+        continue-on-error: true
           
       - name: Fetch GFW data and analyze
         env:
           GFW_API_TOKEN: ${{ secrets.GFW_API_TOKEN }}
         run: |
           python src/fetch_gfw_data.py
+        continue-on-error: true
           
       - name: Generate dashboard data
         run: |
