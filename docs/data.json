@@ -1,5 +1,5 @@
 {
-  "updated_at": "",
+  "updated_at": "2026-02-07T23:20:03.360719Z",
   "vessel_monitoring": {
     "updated_at": "2026-02-07T23:07:35.863967Z",
     "data_range": {
@@ -270,7 +270,1375 @@
     "alerts": [],
     "is_mock": true
   },
-  "suspicious_analysis": null,
+  "suspicious_analysis": {
+    "updated_at": "2026-02-07T23:20:03.320004+00:00",
+    "methodology": "CSIS Signals in the Swarm",
+    "thresholds": {
+      "behavioral": {
+        "drill_zone_ratio": 0.3,
+        "fishing_ratio": 0.1
+      },
+      "absolute": {
+        "drill_hours": 2.0,
+        "fishing_ratio": 0.05
+      }
+    },
+    "summary": {
+      "total_analyzed": 50,
+      "suspicious_count": 6,
+      "behavioral_triggered": 6,
+      "absolute_triggered": 6,
+      "ais_anomaly_detected": 29,
+      "risk_distribution": {
+        "critical": 6,
+        "high": 0,
+        "medium": 23,
+        "normal": 21
+      }
+    },
+    "suspicious_vessels": [
+      {
+        "mmsi": "100000025",
+        "names": [
+          "MOCK-025"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: tanker → fishing",
+            "types": [
+              "tanker",
+              "fishing"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: tanker → fishing"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 25.847279497219063,
+        "last_lon": 120.28502849751493,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000026",
+        "names": [
+          "MOCK-026"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → fishing",
+            "types": [
+              "cargo",
+              "fishing"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: cargo → fishing"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.667,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 12,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 24.48991109875931,
+        "last_lon": 119.71392280686105,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000027",
+        "names": [
+          "MOCK-027"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → cargo",
+            "types": [
+              "fishing",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: fishing → cargo"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.667,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 12,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 22.08317532602901,
+        "last_lon": 121.02385071391983,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000028",
+        "names": [
+          "MOCK-028"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → cargo",
+            "types": [
+              "fishing",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: fishing → cargo"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 24.72690777784662,
+        "last_lon": 122.8227390190529,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000035",
+        "names": [
+          "MOCK-035"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → cargo",
+            "types": [
+              "fishing",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: fishing → cargo"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 25.663912335518635,
+        "last_lon": 119.36612088716761,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000037",
+        "names": [
+          "MOCK-037"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → tanker → cargo",
+            "types": [
+              "fishing",
+              "tanker",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: fishing → tanker → cargo"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.667,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 12,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 22.716451896157302,
+        "last_lon": 119.63574598358807,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      }
+    ],
+    "all_classifications": [
+      {
+        "mmsi": "100000005",
+        "names": [
+          "MOCK-005"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → tanker → cargo",
+            "types": [
+              "fishing",
+              "tanker",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: fishing → tanker → cargo"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.0,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 0,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 25.97143449445007,
+        "last_lon": 122.52533406454174,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000006",
+        "names": [
+          "MOCK-006"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: tanker → cargo",
+            "types": [
+              "tanker",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: tanker → cargo"
+        ],
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 22.81979053903693,
+        "last_lon": 121.86264839588407,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000007",
+        "names": [
+          "MOCK-007"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → fishing",
+            "types": [
+              "cargo",
+              "fishing"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → fishing"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 25.640577001451287,
+        "last_lon": 120.8189512405989,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000008",
+        "names": [
+          "MOCK-008"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → tanker",
+            "types": [
+              "cargo",
+              "tanker"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → tanker"
+        ],
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 23.87494519918603,
+        "last_lon": 122.83036320255457,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000009",
+        "names": [
+          "MOCK-009"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → cargo",
+            "types": [
+              "fishing",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: fishing → cargo"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.0,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 0,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 23.28460097996266,
+        "last_lon": 122.43763612536226,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000010",
+        "names": [
+          "MOCK-010"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → fishing",
+            "types": [
+              "cargo",
+              "fishing"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → fishing"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.0,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 0,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 23.54546966843678,
+        "last_lon": 120.7403651967089,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000011",
+        "names": [
+          "MOCK-011"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → tanker",
+            "types": [
+              "cargo",
+              "tanker"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → tanker"
+        ],
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 24.260909893511865,
+        "last_lon": 118.07666548134293,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000014",
+        "names": [
+          "MOCK-014"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → fishing",
+            "types": [
+              "cargo",
+              "fishing"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → fishing"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.0,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 0,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 24.08986046875949,
+        "last_lon": 118.36807863763869,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000016",
+        "names": [
+          "MOCK-016"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → tanker",
+            "types": [
+              "fishing",
+              "tanker"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: fishing → tanker"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 23.782819943706613,
+        "last_lon": 121.57874136204056,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000017",
+        "names": [
+          "MOCK-017"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → tanker",
+            "types": [
+              "fishing",
+              "tanker"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: fishing → tanker"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.667,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 12,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 24.81462477894729,
+        "last_lon": 119.3082307037374,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000019",
+        "names": [
+          "MOCK-019"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → tanker",
+            "types": [
+              "cargo",
+              "tanker"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → tanker"
+        ],
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 22.11003064889647,
+        "last_lon": 118.37839043800587,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000020",
+        "names": [
+          "MOCK-020"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → fishing",
+            "types": [
+              "cargo",
+              "fishing"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → fishing"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.667,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 12,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 24.699049164790754,
+        "last_lon": 119.86432173314847,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000022",
+        "names": [
+          "MOCK-022"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → fishing → tanker",
+            "types": [
+              "cargo",
+              "fishing",
+              "tanker"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → fishing → tanker"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.0,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 0,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 22.731326303210626,
+        "last_lon": 122.46961004600472,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000023",
+        "names": [
+          "MOCK-023"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: tanker → cargo",
+            "types": [
+              "tanker",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: tanker → cargo"
+        ],
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 24.766561766200766,
+        "last_lon": 123.71525802852729,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000025",
+        "names": [
+          "MOCK-025"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: tanker → fishing",
+            "types": [
+              "tanker",
+              "fishing"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: tanker → fishing"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 25.847279497219063,
+        "last_lon": 120.28502849751493,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000026",
+        "names": [
+          "MOCK-026"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → fishing",
+            "types": [
+              "cargo",
+              "fishing"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: cargo → fishing"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.667,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 12,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 24.48991109875931,
+        "last_lon": 119.71392280686105,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000027",
+        "names": [
+          "MOCK-027"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → cargo",
+            "types": [
+              "fishing",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: fishing → cargo"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.667,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 12,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 22.08317532602901,
+        "last_lon": 121.02385071391983,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000028",
+        "names": [
+          "MOCK-028"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → cargo",
+            "types": [
+              "fishing",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: fishing → cargo"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 24.72690777784662,
+        "last_lon": 122.8227390190529,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000031",
+        "names": [
+          "MOCK-031"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → fishing",
+            "types": [
+              "cargo",
+              "fishing"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → fishing"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.0,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 0,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 24.598059161072097,
+        "last_lon": 120.60455645947488,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000032",
+        "names": [
+          "MOCK-032"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → tanker",
+            "types": [
+              "fishing",
+              "tanker"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: fishing → tanker"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 24.261525049770423,
+        "last_lon": 119.07459936974364,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000034",
+        "names": [
+          "MOCK-034"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → tanker",
+            "types": [
+              "fishing",
+              "tanker"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: fishing → tanker"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 24.10290055169421,
+        "last_lon": 119.48965937205263,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000035",
+        "names": [
+          "MOCK-035"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → cargo",
+            "types": [
+              "fishing",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: fishing → cargo"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 25.663912335518635,
+        "last_lon": 119.36612088716761,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000037",
+        "names": [
+          "MOCK-037"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": true,
+        "absolute_threshold": true,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → tanker → cargo",
+            "types": [
+              "fishing",
+              "tanker",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "critical",
+        "flags": [
+          "行為比例異常：掛漁船旗但不在漁場",
+          "長時間徘徊軍演區",
+          "船型變更: fishing → tanker → cargo"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.667,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 12,
+          "fishing_hotspot_ratio": 0.0,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 6,
+        "suspicious": true,
+        "last_lat": 22.716451896157302,
+        "last_lon": 119.63574598358807,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000040",
+        "names": [
+          "MOCK-040"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → fishing",
+            "types": [
+              "cargo",
+              "fishing"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → fishing"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.333,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 25.736818688603805,
+        "last_lon": 121.28077125289498,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000041",
+        "names": [
+          "MOCK-041"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: tanker → cargo",
+            "types": [
+              "tanker",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: tanker → cargo"
+        ],
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 25.827503924104757,
+        "last_lon": 119.49513057788872,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000042",
+        "names": [
+          "MOCK-042"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: tanker → cargo → fishing",
+            "types": [
+              "tanker",
+              "cargo",
+              "fishing"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: tanker → cargo → fishing"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.667,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 12,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 22.67652732501991,
+        "last_lon": 119.21452657759785,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000043",
+        "names": [
+          "MOCK-043"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → fishing → tanker",
+            "types": [
+              "cargo",
+              "fishing",
+              "tanker"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → fishing → tanker"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 25.460383891051595,
+        "last_lon": 122.96316379028593,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000045",
+        "names": [
+          "MOCK-045"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: cargo → tanker",
+            "types": [
+              "cargo",
+              "tanker"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: cargo → tanker"
+        ],
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 25.410149014792385,
+        "last_lon": 118.81542526298855,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      },
+      {
+        "mmsi": "100000048",
+        "names": [
+          "MOCK-048"
+        ],
+        "total_snapshots": 3,
+        "behavioral_threshold": false,
+        "absolute_threshold": false,
+        "ais_anomalies": [
+          {
+            "type": "type_change",
+            "description": "船型變更: fishing → cargo",
+            "types": [
+              "fishing",
+              "cargo"
+            ],
+            "severity": "medium"
+          }
+        ],
+        "risk_level": "medium",
+        "flags": [
+          "船型變更: fishing → cargo"
+        ],
+        "behavioral_details": {
+          "drill_zone_ratio": 0.333,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">30% drill + <10% fishing"
+        },
+        "absolute_details": {
+          "drill_zone_hours": 6,
+          "fishing_hotspot_ratio": 0.667,
+          "threshold": ">2.0hr drill + <5% fishing"
+        },
+        "risk_score": 1,
+        "suspicious": false,
+        "last_lat": 25.162315914457235,
+        "last_lon": 122.24543499269403,
+        "last_seen": "2026-02-07T23:07:35.741206+00:00"
+      }
+    ]
+  },
   "status": "operational",
-  "version": "2.0.0"
+  "version": "2.0.0",
+  "ais_snapshot": {
+    "updated_at": "2026-02-07T23:20:03.133676+00:00",
+    "ais_data": {
+      "vessel_count": 0,
+      "fishing_count": 0,
+      "in_drill_zone_count": 0,
+      "suspicious_count": 0,
+      "drill_zone_breakdown": {},
+      "type_breakdown": {},
+      "avg_speed": 0
+    },
+    "vessels": []
+  }
 }
