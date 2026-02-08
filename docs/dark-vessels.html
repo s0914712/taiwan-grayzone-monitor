@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暗船偵測 | Dark Vessel Detection</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0a0f1c;
+            --bg-secondary: #141e32;
+            --bg-card: rgba(25, 35, 60, 0.95);
+            --text-primary: #e8eef7;
+            --text-secondary: #8aa4c8;
+            --accent-cyan: #00f5ff;
+            --accent-orange: #ff6b35;
+            --accent-red: #ff3366;
+            --accent-green: #00ff88;
+            --accent-yellow: #ffd700;
+            --border-glow: rgba(0, 245, 255, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-glow);
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: var(--accent-cyan);
+            text-shadow: 0 0 15px rgba(0, 245, 255, 0.5);
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .header-nav a {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 4px 10px;
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .header-nav a:hover { color: var(--accent-cyan); border-color: var(--accent-cyan); }
+        .header-nav a.active { color: var(--accent-cyan); border-color: var(--accent-cyan); background: rgba(0,245,255,0.1); }
+
+        .data-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            border: 1px solid var(--border-glow);
+        }
+
+        /* 統計卡片 */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+            padding: 10px 16px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            padding: 10px 14px;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+        .stat-card .value.alert { color: var(--accent-red); }
+        .stat-card .label { font-size: 9px; color: var(--text-secondary); margin-top: 2px; }
+
+        /* 主內容 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 10px 16px;
+        }
+
+        @media (max-width: 900px) {
+            .main-content { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-title {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(0,245,255,0.1);
+            color: var(--text-primary);
+        }
+
+        .panel-body { padding: 8px; }
+
+        /* 地圖 */
+        .map-panel { grid-column: 1 / -1; }
+        #map { width: 100%; height: 400px; background: #0a1628; border-radius: 0 0 6px 6px; }
+
+        /* 圖表 */
+        .chart-panel { grid-column: 1 / -1; }
+        .chart-container { height: 250px; padding: 8px 12px; }
+
+        /* 區域比較表 */
+        .region-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+
+        .region-table th {
+            text-align: left;
+            padding: 6px 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            border-bottom: 1px solid rgba(0,245,255,0.15);
+            font-size: 9px;
+        }
+
+        .region-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(0,245,255,0.05);
+        }
+
+        .region-table tr:hover td { background: rgba(0,245,255,0.05); }
+
+        .ratio-bar {
+            display: inline-block;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--accent-red);
+            min-width: 2px;
+        }
+
+        .flag-list { font-size: 9px; }
+        .flag-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 8px;
+            border-bottom: 1px solid rgba(0,245,255,0.05);
+        }
+        .flag-item:hover { background: rgba(0,245,255,0.05); }
+
+        .update-info {
+            padding: 8px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .leaflet-popup-content-wrapper { background: var(--bg-card); color: var(--text-primary); border-radius: 5px; border: 1px solid var(--border-glow); }
+        .leaflet-popup-tip { background: var(--bg-card); }
+        .leaflet-popup-content { margin: 6px 8px; font-size: 9px; line-height: 1.4; }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🔦 暗船偵測 Dark Vessel Detection</h1>
+        <div class="header-nav">
+            <a href="index.html">灰色地帶監測</a>
+            <a href="dark-vessels.html" class="active">暗船偵測</a>
+            <span class="data-status" id="dataStatus">載入中...</span>
+        </div>
+    </header>
+
+    <!-- 統計卡片 -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="value" id="statTotal">--</div>
+            <div class="label">SAR 總偵測數</div>
+        </div>
+        <div class="stat-card">
+            <div class="value alert" id="statDark">--</div>
+            <div class="label">暗船數量</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statMatched">--</div>
+            <div class="label">有 AIS 匹配</div>
+        </div>
+        <div class="stat-card">
+            <div class="value alert" id="statRatio">--%</div>
+            <div class="label">暗船比例</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- 暗船地圖 -->
+        <div class="panel map-panel">
+            <div class="panel-title">📍 暗船位置分布（SAR 衛星偵測、無 AIS 匹配）</div>
+            <div id="map"></div>
+        </div>
+
+        <!-- 每日暗船數量圖表 -->
+        <div class="panel chart-panel">
+            <div class="panel-title">📊 每日暗船數量趨勢</div>
+            <div class="chart-container">
+                <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 區域比較表 -->
+        <div class="panel">
+            <div class="panel-title">🗺️ 各區域暗船比較</div>
+            <div class="panel-body">
+                <table class="region-table" id="regionTable">
+                    <thead>
+                        <tr>
+                            <th>區域</th>
+                            <th>總偵測</th>
+                            <th>暗船</th>
+                            <th>比例</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="regionTableBody">
+                        <tr><td colspan="5" class="empty-state">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 有 AIS 船隻國旗分布 -->
+        <div class="panel">
+            <div class="panel-title">🚩 有 AIS 船隻國旗分布（台灣海峽）</div>
+            <div class="panel-body">
+                <div class="flag-list" id="flagList">
+                    <div class="empty-state">載入中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="update-info" id="updateInfo">資料更新時間: --</div>
+
+    <script>
+        let map;
+        let darkChart;
+
+        // 區域顏色
+        const REGION_COLORS = {
+            taiwan_strait: '#00f5ff',
+            east_taiwan: '#ff6b35',
+            south_china_sea: '#00ff88',
+            east_china_sea: '#ffd700'
+        };
+
+        // 區域邊界（用於在地圖上繪製）
+        const REGION_BOUNDS = {
+            taiwan_strait: [[23.5, 118.0], [23.5, 122.0], [26.5, 122.0], [26.5, 118.0]],
+            east_taiwan: [[22.0, 121.5], [22.0, 124.0], [25.5, 124.0], [25.5, 121.5]],
+            south_china_sea: [[18.0, 110.0], [18.0, 118.0], [23.0, 118.0], [23.0, 110.0]],
+            east_china_sea: [[26.0, 122.0], [26.0, 128.0], [32.0, 128.0], [32.0, 122.0]]
+        };
+
+        function initMap() {
+            map = L.map('map', {
+                center: [24.0, 121.0],
+                zoom: 6,
+                zoomControl: true,
+                attributionControl: false
+            });
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 18,
+                opacity: 0.9
+            }).addTo(map);
+
+            // 繪製台灣輪廓
+            const taiwanOutline = [
+                [25.3, 121.0], [25.13, 121.5], [24.85, 121.82], [24.5, 121.8],
+                [24.0, 121.5], [23.5, 121.3], [23.0, 121.0], [22.5, 120.85],
+                [22.0, 120.75], [21.9, 120.85], [22.0, 120.45], [22.3, 120.25],
+                [22.6, 120.3], [23.0, 120.1], [23.5, 120.05], [24.0, 120.2],
+                [24.5, 120.5], [25.0, 121.0], [25.3, 121.0]
+            ];
+            L.polygon(taiwanOutline, {
+                color: '#4a90d9', weight: 2, opacity: 0.5,
+                fillColor: '#1a3a5c', fillOpacity: 0.3
+            }).addTo(map);
+
+            // 繪製監測區域邊界
+            Object.entries(REGION_BOUNDS).forEach(([key, coords]) => {
+                L.polygon(coords, {
+                    color: REGION_COLORS[key] || '#00f5ff',
+                    weight: 1.5,
+                    opacity: 0.5,
+                    fillOpacity: 0.03,
+                    dashArray: '6,4'
+                }).addTo(map);
+            });
+        }
+
+        function plotDarkVessels(regions) {
+            Object.entries(regions).forEach(([regionId, regionData]) => {
+                const color = REGION_COLORS[regionId] || '#ff3366';
+                const details = regionData.dark_details || [];
+
+                details.forEach(d => {
+                    if (d.lat && d.lon) {
+                        L.circleMarker([d.lat, d.lon], {
+                            radius: 4,
+                            fillColor: '#ff3366',
+                            color: color,
+                            weight: 1,
+                            opacity: 0.8,
+                            fillOpacity: 0.6
+                        }).addTo(map).bindPopup(`
+                            <b style="color:#ff3366">暗船偵測</b><br>
+                            區域: ${regionData.name || regionId}<br>
+                            日期: ${d.date}<br>
+                            位置: ${d.lat.toFixed(3)}, ${d.lon.toFixed(3)}
+                        `);
+                    }
+                });
+            });
+        }
+
+        function renderDailyChart(darkByDate) {
+            const ctx = document.getElementById('dailyChart').getContext('2d');
+            const dates = Object.keys(darkByDate).sort();
+            const counts = dates.map(d => darkByDate[d]);
+
+            if (darkChart) darkChart.destroy();
+
+            darkChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dates.map(d => d.slice(5)), // MM-DD
+                    datasets: [{
+                        label: '暗船數量',
+                        data: counts,
+                        backgroundColor: 'rgba(255, 51, 102, 0.6)',
+                        borderColor: '#ff3366',
+                        borderWidth: 1,
+                        borderRadius: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#8aa4c8', font: { size: 10 } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#8aa4c8', font: { size: 8 }, maxRotation: 45 },
+                            grid: { color: 'rgba(0,245,255,0.05)' }
+                        },
+                        y: {
+                            ticks: { color: '#8aa4c8', font: { size: 9 } },
+                            grid: { color: 'rgba(0,245,255,0.08)' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderRegionTable(regions) {
+            const tbody = document.getElementById('regionTableBody');
+            const rows = Object.entries(regions).map(([key, r]) => {
+                const barWidth = Math.max(2, Math.min(100, r.dark_ratio));
+                const color = REGION_COLORS[key] || '#ff3366';
+                return `
+                    <tr>
+                        <td style="color:${color};font-weight:500">${r.name || key}</td>
+                        <td>${r.total_detections}</td>
+                        <td style="color:var(--accent-red);font-weight:600">${r.dark_vessels}</td>
+                        <td>${r.dark_ratio}%</td>
+                        <td><span class="ratio-bar" style="width:${barWidth}px"></span></td>
+                    </tr>`;
+            });
+            tbody.innerHTML = rows.join('') || '<tr><td colspan="5" class="empty-state">無資料</td></tr>';
+        }
+
+        function renderFlagList(regions) {
+            const flagList = document.getElementById('flagList');
+            // 使用台灣海峽的國旗資料
+            const straitData = regions.taiwan_strait;
+            if (!straitData || !straitData.matched_by_flag) {
+                flagList.innerHTML = '<div class="empty-state">無資料</div>';
+                return;
+            }
+
+            const flags = Object.entries(straitData.matched_by_flag).slice(0, 15);
+            flagList.innerHTML = flags.map(([flag, count]) => `
+                <div class="flag-item">
+                    <span>${flag}</span>
+                    <span style="color:var(--accent-cyan);font-family:'JetBrains Mono',monospace">${count}</span>
+                </div>
+            `).join('') || '<div class="empty-state">無資料</div>';
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch('data.json?' + Date.now());
+                const data = await res.json();
+
+                const dv = data.dark_vessels;
+                if (!dv) {
+                    document.getElementById('dataStatus').textContent = '⚠️ 尚無暗船資料';
+                    return;
+                }
+
+                const overall = dv.overall || {};
+                const regions = dv.regions || {};
+
+                // 更新統計卡片
+                document.getElementById('statTotal').textContent = (overall.total_detections || 0).toLocaleString();
+                document.getElementById('statDark').textContent = (overall.dark_vessels || 0).toLocaleString();
+                document.getElementById('statMatched').textContent =
+                    ((overall.total_detections || 0) - (overall.dark_vessels || 0)).toLocaleString();
+                document.getElementById('statRatio').textContent = (overall.dark_ratio || 0) + '%';
+
+                // 繪製暗船位置
+                plotDarkVessels(regions);
+
+                // 每日圖表
+                if (overall.dark_by_date && Object.keys(overall.dark_by_date).length > 0) {
+                    renderDailyChart(overall.dark_by_date);
+                }
+
+                // 區域比較
+                renderRegionTable(regions);
+
+                // 國旗分布
+                renderFlagList(regions);
+
+                // 更新狀態
+                const range = dv.data_range || {};
+                document.getElementById('dataStatus').textContent =
+                    `✅ ${range.start || ''} ~ ${range.end || ''}`;
+                document.getElementById('updateInfo').textContent =
+                    '更新: ' + new Date(dv.updated_at).toLocaleString('zh-TW');
+
+            } catch (e) {
+                console.error('載入失敗:', e);
+                document.getElementById('dataStatus').textContent = '❌ 資料載入失敗';
+            }
+        }
+
+        // 初始化
+        initMap();
+        loadData();
+    </script>
+</body>
+</html>

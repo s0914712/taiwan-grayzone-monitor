@@ -7,6 +7,7 @@ Generate dashboard-ready data from vessel monitoring
 """
 
 import json
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -36,6 +37,19 @@ def main():
         print("⚠️ 找不到 suspicious_vessels.json，跳過")
         suspicious_data = None
 
+    # 讀取暗船偵測資料
+    dark_vessels_path = DATA_DIR / 'dark_vessels.json'
+    dark_vessels_data = None
+    if dark_vessels_path.exists():
+        with open(dark_vessels_path, 'r', encoding='utf-8') as f:
+            dark_vessels_data = json.load(f)
+        overall = dark_vessels_data.get('overall', {})
+        print(f"🔦 已載入暗船資料: {overall.get('dark_vessels', 0)} 艘暗船 / "
+              f"{overall.get('total_detections', 0)} 總偵測 "
+              f"({overall.get('dark_ratio', 0)}%)")
+    else:
+        print("⚠️ 找不到 dark_vessels.json，跳過")
+
     # 讀取現有 data.json（保留 AIS snapshot 資料）
     output_path = DOCS_DIR / 'data.json'
     existing_data = {}
@@ -51,8 +65,9 @@ def main():
         'updated_at': datetime.utcnow().isoformat() + 'Z',
         'vessel_monitoring': vessel_data,
         'suspicious_analysis': suspicious_data,
+        'dark_vessels': dark_vessels_data,
         'status': 'operational',
-        'version': '2.0.0'
+        'version': '3.0.0'
     }
 
     # 保留 AIS snapshot 資料（由 fetch_ais_data.py 寫入）
