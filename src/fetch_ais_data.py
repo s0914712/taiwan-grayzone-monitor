@@ -104,109 +104,161 @@ def get_fishing_hotspot(lat, lon):
 
 
 async def collect_ais_data():
-    """連接 AISStream 並收集資料"""
-    
+    """連接 AISStream 並收集資料
+    參考官方範例: https://github.com/aisstream/example/tree/main/python
+    """
+
     if not API_KEY:
         print("⚠️ 未設定 AISSTREAM_API_KEY，跳過 AIS 資料收集")
         return {}
-    
+
     vessels = {}
     message_count = 0
+    error_count = 0
     start_time = datetime.now(timezone.utc)
-    
+
     print(f"🔗 連接 AISStream.io...")
+    print(f"🔑 API Key: {API_KEY[:8]}...{API_KEY[-4:]}" if len(API_KEY) > 12 else f"🔑 API Key: (length={len(API_KEY)})")
     print(f"📍 監測區域: {TAIWAN_BBOX}")
     print(f"⏱️ 收集時間: {COLLECTION_TIME} 秒")
-    
+
+    def process_message(data):
+        """處理單一 AIS 訊息"""
+        meta = data.get('MetaData', {})
+        mmsi = str(meta.get('MMSI', ''))
+        lat = meta.get('latitude')
+        lon = meta.get('longitude')
+
+        if not mmsi or lat is None or lon is None:
+            return
+
+        # 更新船隻資料
+        if mmsi not in vessels:
+            vessels[mmsi] = {
+                'mmsi': mmsi,
+                'name': meta.get('ShipName', '').strip() or f'MMSI-{mmsi}',
+                'lat': lat,
+                'lon': lon,
+                'type': 0,
+                'type_name': 'unknown',
+                'speed': 0,
+                'heading': 0,
+                'in_drill_zone': None,
+                'in_fishing_hotspot': None,
+                'last_update': datetime.now(timezone.utc).isoformat()
+            }
+
+        vessel = vessels[mmsi]
+        vessel['lat'] = lat
+        vessel['lon'] = lon
+        vessel['last_update'] = datetime.now(timezone.utc).isoformat()
+
+        if meta.get('ShipName'):
+            vessel['name'] = meta['ShipName'].strip()
+
+        # 處理位置報告
+        if data.get('MessageType') == 'PositionReport':
+            pr = data.get('Message', {}).get('PositionReport', {})
+            vessel['speed'] = pr.get('Sog', 0)
+            vessel['heading'] = pr.get('TrueHeading') or pr.get('Cog', 0)
+
+        # 處理靜態資料
+        if data.get('MessageType') == 'ShipStaticData':
+            sd = data.get('Message', {}).get('ShipStaticData', {})
+            vessel['type'] = sd.get('Type', 0)
+            vessel['type_name'] = VESSEL_TYPE_MAP.get(vessel['type'], 'other')
+            vessel['destination'] = sd.get('Destination', '')
+
+        # 檢查是否在軍演區
+        for zone_id, zone in DRILL_ZONES.items():
+            if is_in_zone(lat, lon, zone['bounds']):
+                vessel['in_drill_zone'] = zone_id
+                break
+        else:
+            vessel['in_drill_zone'] = None
+
+        # 檢查是否在漁撈熱點
+        vessel['in_fishing_hotspot'] = get_fishing_hotspot(lat, lon)
+
     try:
-        async with websockets.connect('wss://stream.aisstream.io/v0/stream') as ws:
-            # 訂閱台灣周邊
+        # ping_interval=None 防止連線被自動斷開（社群建議）
+        async with websockets.connect(
+            'wss://stream.aisstream.io/v0/stream',
+            ping_interval=None
+        ) as ws:
+            # 訂閱台灣周邊（必須在連線 3 秒內送出）
+            # 格式參考官方: {"APIKey": "...", "BoundingBoxes": [[[lat,lon],[lat,lon]]]}
             subscribe_msg = {
-                'APIKey': API_KEY,
-                'BoundingBoxes': [TAIWAN_BBOX],
-                'FilterMessageTypes': ['PositionReport', 'ShipStaticData']
+                "APIKey": API_KEY,
+                "BoundingBoxes": [TAIWAN_BBOX]
             }
             await ws.send(json.dumps(subscribe_msg))
-            print("✅ 已訂閱台灣周邊 AIS 資料流")
-            
-            while (datetime.now(timezone.utc) - start_time).seconds < COLLECTION_TIME:
-                try:
-                    msg = await asyncio.wait_for(ws.recv(), timeout=5.0)
-                    data = json.loads(msg)
-                    message_count += 1
-                    
-                    meta = data.get('MetaData', {})
-                    mmsi = str(meta.get('MMSI', ''))
-                    lat = meta.get('latitude')
-                    lon = meta.get('longitude')
-                    
-                    if not mmsi or lat is None or lon is None:
+            print("✅ 已送出訂閱請求")
+            print(f"   訂閱格式: {json.dumps(subscribe_msg)[:200]}")
+
+            # 收集迴圈：使用 async for（官方推薦模式）
+            # 外層用 wait_for 設定總超時，防止完全無訊息時卡住
+            async def collect_loop():
+                nonlocal message_count, error_count
+                async for msg_raw in ws:
+                    elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
+                    if elapsed >= COLLECTION_TIME:
+                        break
+
+                    try:
+                        data = json.loads(msg_raw)
+                    except json.JSONDecodeError:
+                        error_count += 1
+                        if error_count <= 3:
+                            print(f"   ⚠️ JSON 解析失敗: {str(msg_raw)[:200]}")
                         continue
-                    
-                    # 更新船隻資料
-                    if mmsi not in vessels:
-                        vessels[mmsi] = {
-                            'mmsi': mmsi,
-                            'name': meta.get('ShipName', '').strip() or f'MMSI-{mmsi}',
-                            'lat': lat,
-                            'lon': lon,
-                            'type': 0,
-                            'type_name': 'unknown',
-                            'speed': 0,
-                            'heading': 0,
-                            'in_drill_zone': None,
-                            'in_fishing_hotspot': None,
-                            'last_update': datetime.now(timezone.utc).isoformat()
-                        }
 
-                    vessel = vessels[mmsi]
-                    vessel['lat'] = lat
-                    vessel['lon'] = lon
-                    vessel['last_update'] = datetime.now(timezone.utc).isoformat()
+                    message_count += 1
 
-                    if meta.get('ShipName'):
-                        vessel['name'] = meta['ShipName'].strip()
+                    # 診斷：印出前 3 則訊息的結構
+                    if message_count <= 3:
+                        msg_type = data.get('MessageType', 'unknown')
+                        has_meta = 'MetaData' in data
+                        print(f"   📨 訊息 #{message_count}: type={msg_type}, has_meta={has_meta}")
+                        if message_count == 1:
+                            print(f"      keys: {list(data.keys())}")
 
-                    # 處理位置報告
-                    if data.get('MessageType') == 'PositionReport':
-                        pr = data.get('Message', {}).get('PositionReport', {})
-                        vessel['speed'] = pr.get('Sog', 0)
-                        vessel['heading'] = pr.get('TrueHeading') or pr.get('Cog', 0)
+                    # 檢查是否為錯誤回應
+                    if 'error' in data or 'Error' in data:
+                        err_msg = data.get('error') or data.get('Error', '')
+                        print(f"   ❌ API 錯誤回應: {err_msg}")
+                        continue
 
-                    # 處理靜態資料
-                    if data.get('MessageType') == 'ShipStaticData':
-                        sd = data.get('Message', {}).get('ShipStaticData', {})
-                        vessel['type'] = sd.get('Type', 0)
-                        vessel['type_name'] = VESSEL_TYPE_MAP.get(vessel['type'], 'other')
-                        vessel['destination'] = sd.get('Destination', '')
+                    process_message(data)
 
-                    # 檢查是否在軍演區
-                    for zone_id, zone in DRILL_ZONES.items():
-                        if is_in_zone(lat, lon, zone['bounds']):
-                            vessel['in_drill_zone'] = zone_id
-                            break
-                    else:
-                        vessel['in_drill_zone'] = None
-
-                    # 檢查是否在漁撈熱點
-                    vessel['in_fishing_hotspot'] = get_fishing_hotspot(lat, lon)
-                    
                     # 進度顯示
                     if message_count % 100 == 0:
-                        elapsed = (datetime.now(timezone.utc) - start_time).seconds
-                        print(f"📥 已收集 {message_count} 訊息, {len(vessels)} 艘船隻 ({elapsed}s / {COLLECTION_TIME}s)")
-                
-                except asyncio.TimeoutError:
-                    continue
-                except json.JSONDecodeError:
-                    continue
-            
+                        print(f"📥 已收集 {message_count} 訊息, {len(vessels)} 艘船隻 ({elapsed:.0f}s / {COLLECTION_TIME}s)")
+
+            try:
+                await asyncio.wait_for(collect_loop(), timeout=COLLECTION_TIME + 30)
+            except asyncio.TimeoutError:
+                print("⏰ 收集超時（未收到足夠訊息）")
+
             print(f"\n✅ 收集完成!")
             print(f"   總訊息: {message_count}")
+            print(f"   解析錯誤: {error_count}")
             print(f"   船隻數: {len(vessels)}")
-    
+
+            if message_count == 0:
+                print("   ⚠️ 未收到任何訊息！可能原因：")
+                print("      1. API Key 無效或已過期")
+                print("      2. BoundingBoxes 格式不正確")
+                print("      3. 網路環境不支援 WebSocket")
+                print("      4. AISStream 服務暫時不可用")
+
+    except websockets.exceptions.InvalidStatusCode as e:
+        print(f"❌ WebSocket 連線被拒絕: HTTP {e.status_code}")
+        if e.status_code == 403:
+            print("   → API Key 可能無效，請至 aisstream.io 確認")
+        return {}
     except Exception as e:
-        print(f"❌ 連接錯誤: {e}")
+        print(f"❌ 連接錯誤: {type(e).__name__}: {e}")
         return {}
 
     return vessels
