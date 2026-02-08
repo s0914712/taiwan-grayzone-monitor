@@ -25,8 +25,8 @@ _InvalidStatus = getattr(
 
 # 配置
 API_KEY = os.environ.get('AISSTREAM_API_KEY', '').strip()
-TAIWAN_BBOX = [[20.0, 117.0], [28.0, 130.0]]
-COLLECTION_TIME = 1000  # 收集 3 分鐘的資料
+TAIWAN_BBOX = [[20, 112], [28, 130]]
+COLLECTION_TIME = 180  # 收集 3 分鐘的資料
 OUTPUT_FILE = 'data/ais_snapshot.json'
 
 # 軍演區域定義
@@ -202,54 +202,55 @@ async def collect_ais_data():
         ) as ws:
             print("   ✅ WebSocket 連線成功")
 
-            # 訂閱台灣周邊 - 與 Colab 成功版本格式一致
+            # 訂閱台灣周邊 - 與 Colab 成功版本格式完全一致
             subscribe_msg = {
                 "APIKey": API_KEY,
                 "BoundingBoxes": [TAIWAN_BBOX],
                 "FilterMessageTypes": ["PositionReport"]
             }
-            await ws.send(json.dumps(subscribe_msg))
+            subscribe_json = json.dumps(subscribe_msg)
+            print(f"   📤 訂閱訊息: {subscribe_json[:200]}")
+            await ws.send(subscribe_json)
             print("   ✅ 已送出訂閱請求")
 
-            # 收集迴圈：使用 async for（官方推薦模式）
-            async def collect_loop():
-                nonlocal message_count, error_count
-                async for msg_raw in ws:
-                    elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
-                    if elapsed >= COLLECTION_TIME:
-                        break
+            # 收集迴圈：使用 recv() + timeout，與 Colab 測試版本一致
+            while True:
+                elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
+                if elapsed >= COLLECTION_TIME:
+                    break
 
-                    try:
-                        data = json.loads(msg_raw)
-                    except json.JSONDecodeError:
-                        error_count += 1
-                        if error_count <= 3:
-                            print(f"   ⚠️ JSON 解析失敗: {str(msg_raw)[:200]}")
-                        continue
+                try:
+                    msg_raw = await asyncio.wait_for(ws.recv(), timeout=30.0)
+                except asyncio.TimeoutError:
+                    print(f"   ⚠️ 30 秒未收到訊息 ({elapsed:.0f}s elapsed)")
+                    continue
 
-                    message_count += 1
+                try:
+                    data = json.loads(msg_raw)
+                except json.JSONDecodeError:
+                    error_count += 1
+                    if error_count <= 3:
+                        print(f"   ⚠️ JSON 解析失敗: {str(msg_raw)[:200]}")
+                    continue
 
-                    # 診斷：印出前 3 則訊息
-                    if message_count <= 3:
-                        msg_type = data.get('MessageType', 'unknown')
-                        meta = data.get('MetaData', {})
-                        mmsi = meta.get('MMSI', '')
-                        print(f"   📨 #{message_count}: type={msg_type}, MMSI={mmsi}")
+                message_count += 1
 
-                    if 'error' in data or 'Error' in data:
-                        err_msg = data.get('error') or data.get('Error', '')
-                        print(f"   ❌ API 錯誤: {err_msg}")
-                        continue
+                # 診斷：印出前 5 則訊息
+                if message_count <= 5:
+                    msg_type = data.get('MessageType', 'unknown')
+                    meta = data.get('MetaData', {})
+                    mmsi = meta.get('MMSI', '')
+                    print(f"   📨 #{message_count}: type={msg_type}, MMSI={mmsi}")
 
-                    process_message(data)
+                if 'error' in data or 'Error' in data:
+                    err_msg = data.get('error') or data.get('Error', '')
+                    print(f"   ❌ API 錯誤: {err_msg}")
+                    break
 
-                    if message_count % 200 == 0:
-                        print(f"📥 {message_count} 訊息, {len(vessels)} 船隻 ({elapsed:.0f}s)")
+                process_message(data)
 
-            try:
-                await asyncio.wait_for(collect_loop(), timeout=COLLECTION_TIME + 30)
-            except asyncio.TimeoutError:
-                print("⏰ 收集超時")
+                if message_count % 200 == 0:
+                    print(f"📥 {message_count} 訊息, {len(vessels)} 船隻 ({elapsed:.0f}s)")
 
             print(f"\n✅ 收集完成!")
             print(f"   總訊息: {message_count}")
