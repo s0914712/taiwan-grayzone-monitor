@@ -25,8 +25,8 @@ _InvalidStatus = getattr(
 
 # 配置
 API_KEY = os.environ.get('AISSTREAM_API_KEY', '').strip()
-TAIWAN_BBOX = [[20.0, 117.0], [28.0, 130.0]]
-COLLECTION_TIME = 1000  # 收集 3 分鐘的資料
+TAIWAN_BBOX = [[20.0, 119.0], [28.0, 130.0]]
+COLLECTION_TIME = 240  # 收集 3 分鐘的資料
 OUTPUT_FILE = 'data/ais_snapshot.json'
 
 # 軍演區域定義
