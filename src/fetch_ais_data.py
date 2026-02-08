@@ -16,7 +16,7 @@ from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 
 # 配置
-API_KEY = os.environ.get('AISSTREAM_API_KEY', '')
+API_KEY = os.environ.get('AISSTREAM_API_KEY', '').strip()
 TAIWAN_BBOX = [[21.0, 117.0], [27.0, 126.0]]  # [緯度, 經度]
 COLLECTION_TIME = 180  # 收集 3 分鐘的資料
 OUTPUT_FILE = 'data/ais_snapshot.json'
