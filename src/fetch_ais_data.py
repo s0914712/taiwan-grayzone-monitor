@@ -11,6 +11,7 @@ AISStream.io 資料收集腳本
 import os
 import json
 import asyncio
+import ssl
 import websockets
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
@@ -180,86 +181,131 @@ async def collect_ais_data():
         # 檢查是否在漁撈熱點
         vessel['in_fishing_hotspot'] = get_fishing_hotspot(lat, lon)
 
-    try:
-        # ping_interval=None 防止連線被自動斷開（社群建議）
-        async with websockets.connect(
-            'wss://stream.aisstream.io/v0/stream',
-            ping_interval=None
-        ) as ws:
-            # 訂閱台灣周邊（必須在連線 3 秒內送出）
-            # 格式參考官方: {"APIKey": "...", "BoundingBoxes": [[[lat,lon],[lat,lon]]]}
-            subscribe_msg = {
-                "APIKey": API_KEY,
-                "BoundingBoxes": [TAIWAN_BBOX]
+    # SSL 設定（參考官方 main_ssl_disabled.py，GitHub Actions 環境可能有 SSL 驗證問題）
+    ssl_ctx = ssl.SSLContext()
+    ssl_ctx.check_hostname = False
+    ssl_ctx.verify_mode = ssl.CERT_NONE
+
+    # 嘗試兩種連線方式：先用 SSL 禁用模式，失敗再用預設模式
+    for attempt, use_ssl_ctx in enumerate([(ssl_ctx, "SSL-relaxed"), (None, "SSL-default")], 1):
+        ssl_opt, ssl_label = use_ssl_ctx
+        try:
+            print(f"\n🔗 連線嘗試 #{attempt} ({ssl_label})...")
+            ws_kwargs = {
+                'ping_interval': 20,
+                'ping_timeout': 20,
+                'close_timeout': 10,
             }
-            await ws.send(json.dumps(subscribe_msg))
-            print("✅ 已送出訂閱請求")
-            print(f"   訂閱格式: {json.dumps(subscribe_msg)[:200]}")
+            if ssl_opt:
+                ws_kwargs['ssl'] = ssl_opt
 
-            # 收集迴圈：使用 async for（官方推薦模式）
-            # 外層用 wait_for 設定總超時，防止完全無訊息時卡住
-            async def collect_loop():
-                nonlocal message_count, error_count
-                async for msg_raw in ws:
-                    elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
-                    if elapsed >= COLLECTION_TIME:
-                        break
+            async with websockets.connect(
+                'wss://stream.aisstream.io/v0/stream',
+                **ws_kwargs
+            ) as ws:
+                print(f"   ✅ WebSocket 連線成功 ({ssl_label})")
 
-                    try:
-                        data = json.loads(msg_raw)
-                    except json.JSONDecodeError:
-                        error_count += 1
-                        if error_count <= 3:
-                            print(f"   ⚠️ JSON 解析失敗: {str(msg_raw)[:200]}")
-                        continue
+                # 訂閱台灣周邊（必須在連線 3 秒內送出）
+                subscribe_msg = {
+                    "APIKey": API_KEY,
+                    "BoundingBoxes": [TAIWAN_BBOX]
+                }
+                await ws.send(json.dumps(subscribe_msg))
+                print("   ✅ 已送出訂閱請求")
 
+                # 嘗試接收第一則訊息確認連線有效
+                try:
+                    first_msg = await asyncio.wait_for(ws.recv(), timeout=15)
+                    first_data = json.loads(first_msg)
                     message_count += 1
 
-                    # 診斷：印出前 3 則訊息的結構
-                    if message_count <= 3:
-                        msg_type = data.get('MessageType', 'unknown')
-                        has_meta = 'MetaData' in data
-                        print(f"   📨 訊息 #{message_count}: type={msg_type}, has_meta={has_meta}")
-                        if message_count == 1:
-                            print(f"      keys: {list(data.keys())}")
+                    msg_type = first_data.get('MessageType', 'unknown')
+                    print(f"   📨 首則訊息: type={msg_type}, keys={list(first_data.keys())}")
 
-                    # 檢查是否為錯誤回應
-                    if 'error' in data or 'Error' in data:
-                        err_msg = data.get('error') or data.get('Error', '')
+                    if 'error' in first_data or 'Error' in first_data:
+                        err_msg = first_data.get('error') or first_data.get('Error', '')
                         print(f"   ❌ API 錯誤回應: {err_msg}")
-                        continue
+                        return {}
 
-                    process_message(data)
+                    process_message(first_data)
+                except asyncio.TimeoutError:
+                    print("   ⚠️ 15 秒內未收到任何訊息，連線可能有問題")
+                    # 仍然繼續等待
 
-                    # 進度顯示
-                    if message_count % 100 == 0:
-                        print(f"📥 已收集 {message_count} 訊息, {len(vessels)} 艘船隻 ({elapsed:.0f}s / {COLLECTION_TIME}s)")
+                # 收集迴圈
+                async def collect_loop():
+                    nonlocal message_count, error_count
+                    async for msg_raw in ws:
+                        elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
+                        if elapsed >= COLLECTION_TIME:
+                            break
 
-            try:
-                await asyncio.wait_for(collect_loop(), timeout=COLLECTION_TIME + 30)
-            except asyncio.TimeoutError:
-                print("⏰ 收集超時（未收到足夠訊息）")
+                        try:
+                            data = json.loads(msg_raw)
+                        except json.JSONDecodeError:
+                            error_count += 1
+                            if error_count <= 3:
+                                print(f"   ⚠️ JSON 解析失敗: {str(msg_raw)[:200]}")
+                            continue
 
-            print(f"\n✅ 收集完成!")
-            print(f"   總訊息: {message_count}")
-            print(f"   解析錯誤: {error_count}")
-            print(f"   船隻數: {len(vessels)}")
+                        message_count += 1
 
-            if message_count == 0:
-                print("   ⚠️ 未收到任何訊息！可能原因：")
-                print("      1. API Key 無效或已過期")
-                print("      2. BoundingBoxes 格式不正確")
-                print("      3. 網路環境不支援 WebSocket")
-                print("      4. AISStream 服務暫時不可用")
+                        if message_count <= 3:
+                            msg_type = data.get('MessageType', 'unknown')
+                            print(f"   📨 訊息 #{message_count}: type={msg_type}")
 
-    except websockets.exceptions.InvalidStatusCode as e:
-        print(f"❌ WebSocket 連線被拒絕: HTTP {e.status_code}")
-        if e.status_code == 403:
-            print("   → API Key 可能無效，請至 aisstream.io 確認")
-        return {}
-    except Exception as e:
-        print(f"❌ 連接錯誤: {type(e).__name__}: {e}")
-        return {}
+                        if 'error' in data or 'Error' in data:
+                            err_msg = data.get('error') or data.get('Error', '')
+                            print(f"   ❌ API 錯誤: {err_msg}")
+                            continue
+
+                        process_message(data)
+
+                        if message_count % 100 == 0:
+                            print(f"📥 已收集 {message_count} 訊息, {len(vessels)} 艘船隻 ({elapsed:.0f}s)")
+
+                try:
+                    await asyncio.wait_for(collect_loop(), timeout=COLLECTION_TIME + 30)
+                except asyncio.TimeoutError:
+                    print("⏰ 收集超時")
+
+                print(f"\n✅ 收集完成!")
+                print(f"   總訊息: {message_count}")
+                print(f"   解析錯誤: {error_count}")
+                print(f"   船隻數: {len(vessels)}")
+
+                if message_count == 0:
+                    print("   ⚠️ 未收到任何訊息！可能原因：")
+                    print("      1. API Key 無效或已過期")
+                    print("      2. AISStream 服務暫時不可用")
+                    print("      3. 請至 https://aisstream.io 確認 API Key 狀態")
+
+                # 連線成功，不需要嘗試第二種方式
+                break
+
+        except websockets.exceptions.InvalidStatusCode as e:
+            print(f"   ❌ WebSocket 被拒絕: HTTP {e.status_code}")
+            if e.status_code == 403:
+                print("   → API Key 無效，請至 aisstream.io 確認")
+                return {}
+            if attempt < 2:
+                print("   → 嘗試下一種連線方式...")
+                continue
+            return {}
+        except websockets.exceptions.ConnectionClosedError as e:
+            print(f"   ❌ 連線被關閉: {e}")
+            if attempt < 2:
+                print("   → 嘗試下一種連線方式...")
+                continue
+            print("   → 兩種連線方式都失敗")
+            print("   → 請確認 API Key 是否有效: https://aisstream.io")
+            return {}
+        except Exception as e:
+            print(f"   ❌ 連接錯誤: {type(e).__name__}: {e}")
+            if attempt < 2:
+                print("   → 嘗試下一種連線方式...")
+                continue
+            return {}
 
     return vessels
 
