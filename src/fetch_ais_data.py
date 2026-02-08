@@ -13,12 +13,19 @@ import json
 import asyncio
 import ssl
 import websockets
+import websockets.exceptions
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 
+# websockets >= 14 renamed InvalidStatusCode to InvalidStatus
+_InvalidStatus = getattr(
+    websockets.exceptions, 'InvalidStatus',
+    websockets.exceptions.InvalidStatusCode
+)
+
 # 配置
 API_KEY = os.environ.get('AISSTREAM_API_KEY', '').strip()
-TAIWAN_BBOX = [[112.0, 20.0], [130.0, 28.0]]
+TAIWAN_BBOX = [[20.0, 112.0], [28.0, 130.0]]
 COLLECTION_TIME = 180  # 收集 3 分鐘的資料
 OUTPUT_FILE = 'data/ais_snapshot.json'
 
@@ -253,9 +260,10 @@ async def collect_ais_data():
                 print("   ⚠️ 未收到任何訊息！")
                 print("   → 請確認 API Key: https://aisstream.io")
 
-    except websockets.exceptions.InvalidStatusCode as e:
-        print(f"❌ WebSocket 被拒絕: HTTP {e.status_code}")
-        if e.status_code == 403:
+    except _InvalidStatus as e:
+        status = getattr(e, 'status_code', None) or getattr(getattr(e, 'response', None), 'status_code', None)
+        print(f"❌ WebSocket 被拒絕: HTTP {status}")
+        if status == 403:
             print("   → API Key 無效，請至 aisstream.io 確認")
         return {}
     except websockets.exceptions.ConnectionClosedError as e:
