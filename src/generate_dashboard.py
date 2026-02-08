@@ -68,6 +68,20 @@ def main():
     else:
         print("⚠️ 找不到 ais_snapshot.json，跳過")
 
+    # 讀取軍演預測分析結果
+    prediction_path = DATA_DIR / 'exercise_prediction.json'
+    prediction_data = None
+    if prediction_path.exists():
+        try:
+            with open(prediction_path, 'r', encoding='utf-8') as f:
+                prediction_data = json.load(f)
+            status = prediction_data.get('status', 'unknown')
+            print(f"📈 已載入軍演預測分析: status={status}")
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"⚠️ 讀取 exercise_prediction.json 失敗: {e}")
+    else:
+        print("⚠️ 找不到 exercise_prediction.json，跳過")
+
     output_path = DOCS_DIR / 'data.json'
 
     # 合併所有資料
@@ -76,9 +90,10 @@ def main():
         'vessel_monitoring': vessel_data,
         'suspicious_analysis': suspicious_data,
         'dark_vessels': dark_vessels_data,
+        'exercise_prediction': prediction_data,
         'ais_snapshot': ais_snapshot or {'updated_at': '', 'ais_data': {}, 'vessels': []},
         'status': 'operational',
-        'version': '3.0.0'
+        'version': '3.1.0'
     }
 
     # 儲存至 docs 目錄（供 GitHub Pages 使用）

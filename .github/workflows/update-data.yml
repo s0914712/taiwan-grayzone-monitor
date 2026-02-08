@@ -23,7 +23,7 @@ jobs:
           
       - name: Install dependencies
         run: |
-          pip install requests pandas numpy websockets
+          pip install requests pandas numpy websockets scipy statsmodels
           
       - name: Fetch AIS data from AISStream.io
         env:
@@ -42,6 +42,11 @@ jobs:
       - name: Analyze suspicious vessels (CSIS methodology)
         run: |
           python src/analyze_suspicious.py
+        continue-on-error: true
+
+      - name: Exercise prediction analysis
+        run: |
+          python src/exercise_prediction.py
         continue-on-error: true
 
       - name: Generate dashboard data
