@@ -44,6 +44,11 @@ jobs:
           python src/analyze_suspicious.py
         continue-on-error: true
 
+      - name: Analyze exercise prediction (dark vessel correlation)
+        run: |
+          python src/analyze_exercise_prediction.py
+        continue-on-error: true
+
       - name: Generate dashboard data
         run: |
           python src/generate_dashboard.py

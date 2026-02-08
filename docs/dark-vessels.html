@@ -279,6 +279,50 @@
                 </div>
             </div>
         </div>
+
+        <!-- 軍演事件比對 -->
+        <div class="panel" style="grid-column: 1 / -1;">
+            <div class="panel-title">🎯 軍演事件 vs 暗船數量比對</div>
+            <div class="panel-body">
+                <table class="region-table" id="exerciseTable">
+                    <thead>
+                        <tr>
+                            <th>軍演名稱</th>
+                            <th>日期</th>
+                            <th>觸發事件</th>
+                            <th>前14天均值</th>
+                            <th>軍演期間均值</th>
+                            <th>變化</th>
+                            <th>資料</th>
+                        </tr>
+                    </thead>
+                    <tbody id="exerciseTableBody">
+                        <tr><td colspan="7" class="empty-state">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 異常日偵測 -->
+        <div class="panel" style="grid-column: 1 / -1;">
+            <div class="panel-title">⚠️ 暗船異常日偵測</div>
+            <div class="panel-body">
+                <div id="anomalyInfo" style="font-size:9px;color:var(--text-secondary);padding:4px 8px;margin-bottom:6px;"></div>
+                <table class="region-table" id="anomalyTable">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>暗船數</th>
+                            <th>倍數(vs平均)</th>
+                            <th>接近軍演</th>
+                        </tr>
+                    </thead>
+                    <tbody id="anomalyTableBody">
+                        <tr><td colspan="4" class="empty-state">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <div class="update-info" id="updateInfo">資料更新時間: --</div>
@@ -444,6 +488,119 @@
             `).join('') || '<div class="empty-state">無資料</div>';
         }
 
+        function renderExerciseTable(exercisePrediction) {
+            const tbody = document.getElementById('exerciseTableBody');
+            if (!exercisePrediction || !exercisePrediction.analysis) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">尚無軍演分析資料</td></tr>';
+                return;
+            }
+
+            const rows = exercisePrediction.analysis.map(ex => {
+                const overall = ex.overall || {};
+                const before = overall.before;
+                const during = overall.during;
+                const change = overall.change_pct;
+
+                const beforeStr = before ? before.mean.toLocaleString() : '--';
+                const duringStr = during ? during.mean.toLocaleString() : '--';
+                let changeStr = '--';
+                let changeColor = 'var(--text-secondary)';
+                if (change !== null && change !== undefined) {
+                    changeStr = (change > 0 ? '+' : '') + change + '%';
+                    changeColor = change > 0 ? 'var(--accent-red)' : 'var(--accent-green)';
+                }
+                const dataStatus = ex.has_data
+                    ? '<span style="color:var(--accent-green)">有資料</span>'
+                    : '<span style="color:var(--text-secondary)">範圍外</span>';
+
+                return `<tr>
+                    <td style="font-weight:500">${ex.name_zh || ex.name}</td>
+                    <td>${ex.start} ~ ${ex.end}</td>
+                    <td>${ex.trigger}</td>
+                    <td>${beforeStr}</td>
+                    <td>${duringStr}</td>
+                    <td style="color:${changeColor};font-weight:600">${changeStr}</td>
+                    <td>${dataStatus}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = rows.join('') || '<tr><td colspan="7" class="empty-state">無資料</td></tr>';
+        }
+
+        function renderAnomalyTable(exercisePrediction) {
+            const tbody = document.getElementById('anomalyTableBody');
+            const info = document.getElementById('anomalyInfo');
+            if (!exercisePrediction || !exercisePrediction.data_available) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">尚無異常分析資料</td></tr>';
+                info.textContent = '';
+                return;
+            }
+
+            const baseline = exercisePrediction.baseline || {};
+            info.textContent = `基準線: 平均 ${baseline.mean || 0} 暗船/天, 異常門檻: >${baseline.anomaly_threshold || 0} (×${exercisePrediction.parameters?.anomaly_threshold_multiplier || 1.5})`;
+
+            const anomalies = exercisePrediction.anomalies || [];
+            if (anomalies.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">目前資料範圍內無異常日</td></tr>';
+                return;
+            }
+
+            const rows = anomalies.map(a => {
+                let nearStr = '--';
+                if (a.near_exercise) {
+                    const ne = a.near_exercise;
+                    if (ne.relation === 'before') {
+                        nearStr = `<span style="color:var(--accent-yellow)">${ne.name} 前 ${ne.days_before} 天</span>`;
+                    } else if (ne.relation === 'during') {
+                        nearStr = `<span style="color:var(--accent-red)">${ne.name} 期間</span>`;
+                    } else if (ne.relation === 'after') {
+                        nearStr = `<span style="color:var(--accent-orange)">${ne.name} 後 ${ne.days_after} 天</span>`;
+                    }
+                }
+                return `<tr>
+                    <td>${a.date}</td>
+                    <td style="color:var(--accent-red);font-weight:600">${a.dark_vessels.toLocaleString()}</td>
+                    <td>×${a.ratio_to_mean}</td>
+                    <td>${nearStr}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = rows.join('');
+        }
+
+        function addExerciseMarkersToChart(chart, exercisePrediction) {
+            if (!chart || !exercisePrediction || !exercisePrediction.exercises) return;
+
+            const labels = chart.data.labels || [];
+            const exercises = exercisePrediction.exercises;
+
+            // Add vertical line annotations for exercise dates
+            exercises.forEach(ex => {
+                const startMM_DD = ex.start.slice(5); // MM-DD format
+                const idx = labels.indexOf(startMM_DD);
+                if (idx >= 0) {
+                    // Add a point marker on the chart
+                    if (!chart.data.datasets.find(d => d.label === '軍演日')) {
+                        chart.data.datasets.push({
+                            label: '軍演日',
+                            data: new Array(labels.length).fill(null),
+                            pointBackgroundColor: '#ffd700',
+                            pointBorderColor: '#ffd700',
+                            pointRadius: 8,
+                            pointStyle: 'triangle',
+                            showLine: false,
+                            type: 'scatter',
+                        });
+                    }
+                    const markerDS = chart.data.datasets.find(d => d.label === '軍演日');
+                    if (markerDS) {
+                        // Find the dark vessel count at this date for y-position
+                        const yVal = chart.data.datasets[0].data[idx] || 0;
+                        markerDS.data[idx] = yVal;
+                    }
+                }
+            });
+            chart.update();
+        }
+
         async function loadData() {
             try {
                 const res = await fetch('data.json?' + Date.now());
@@ -478,6 +635,14 @@
 
                 // 國旗分布
                 renderFlagList(regions);
+
+                // 軍演預測分析
+                const ep = data.exercise_prediction;
+                renderExerciseTable(ep);
+                renderAnomalyTable(ep);
+                if (darkChart && ep) {
+                    addExerciseMarkersToChart(darkChart, ep);
+                }
 
                 // 更新狀態
                 const range = dv.data_range || {};

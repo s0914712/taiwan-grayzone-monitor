@@ -50,6 +50,18 @@ def main():
     else:
         print("⚠️ 找不到 dark_vessels.json，跳過")
 
+    # 讀取軍演預測分析結果
+    exercise_path = DATA_DIR / 'exercise_prediction.json'
+    exercise_data = None
+    if exercise_path.exists():
+        with open(exercise_path, 'r', encoding='utf-8') as f:
+            exercise_data = json.load(f)
+        anomaly_count = len(exercise_data.get('anomalies', []))
+        exercise_count = len(exercise_data.get('exercises', []))
+        print(f"🎯 已載入軍演預測分析: {exercise_count} 場軍演, {anomaly_count} 異常日")
+    else:
+        print("⚠️ 找不到 exercise_prediction.json，跳過")
+
     # 讀取 AIS 快照資料（由 fetch_ais_data.py 產生）
     ais_path = DATA_DIR / 'ais_snapshot.json'
     ais_snapshot = None
@@ -76,9 +88,10 @@ def main():
         'vessel_monitoring': vessel_data,
         'suspicious_analysis': suspicious_data,
         'dark_vessels': dark_vessels_data,
+        'exercise_prediction': exercise_data,
         'ais_snapshot': ais_snapshot or {'updated_at': '', 'ais_data': {}, 'vessels': []},
         'status': 'operational',
-        'version': '3.0.0'
+        'version': '3.1.0'
     }
 
     # 儲存至 docs 目錄（供 GitHub Pages 使用）
