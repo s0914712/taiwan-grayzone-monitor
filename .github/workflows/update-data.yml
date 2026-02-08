@@ -54,7 +54,12 @@ jobs:
           git config --local user.name "GitHub Action"
           git add data/ docs/
           git diff --staged --quiet || git commit -m "🛰️ Update vessel data $(date +'%Y-%m-%d %H:%M') UTC"
-          git pull --rebase origin main
+          # 拉取遠端最新，自動產生的 data 檔衝突時以本地為主
+          git pull --rebase -X theirs origin main || {
+            echo "⚠️ Rebase 失敗，改用 merge 策略"
+            git rebase --abort
+            git pull -X ours origin main
+          }
           git push
           
   deploy:
