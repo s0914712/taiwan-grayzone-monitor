@@ -307,6 +307,10 @@
                     <div class="legend-item"><div class="legend-dot" style="background:#ff3366;box-shadow:0 0 6px #ff3366"></div> 可疑</div>
                 </div>
                 <div class="legend-section">
+                    <div class="legend-title">衛星偵測</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:rgba(255,51,102,0.6);border:1px solid #ff3366"></div> SAR 暗船</div>
+                </div>
+                <div class="legend-section">
                     <div class="legend-title">區域</div>
                     <div class="legend-item"><div class="legend-line" style="background:rgba(0,255,136,0.4)"></div> 漁撈熱點</div>
                 </div>
@@ -314,8 +318,8 @@
         </div>
         
         <aside class="sidebar">
-            <div class="sidebar-section">
-                <div class="section-title">📊 統計數據</div>
+            <div class="sidebar-section" id="aisStatsSection">
+                <div class="section-title">📊 AIS 即時統計</div>
                 <div class="stats-grid">
                     <div class="stat-box">
                         <div class="value" id="statTotal">0</div>
@@ -579,9 +583,17 @@
                 const res = await fetch('data.json?' + Date.now());
                 const data = await res.json();
 
-                // 載入 GFW 衛星監測資料
+                const updateTime = new Date(data.updated_at).toLocaleString('zh-TW');
+                document.getElementById('updateInfo').textContent = '更新: ' + updateTime;
+
+                // 載入 GFW 衛星監測資料（側欄 + 暗船標記）
                 if (data.vessel_monitoring) {
                     displayGfwData(data.vessel_monitoring);
+                }
+
+                // 繪製暗船偵測點到地圖上
+                if (data.dark_vessels && data.dark_vessels.regions) {
+                    displayDarkVessels(data.dark_vessels);
                 }
 
                 // 載入 CSIS 可疑船隻分析結果
@@ -590,32 +602,47 @@
                     updateSuspiciousList();
                 }
 
-                const updateTime = new Date(data.updated_at).toLocaleString('zh-TW');
-                document.getElementById('updateInfo').textContent = '更新: ' + updateTime;
-
-                if (data.ais_snapshot && data.ais_snapshot.vessels && data.ais_snapshot.vessels.length > 0) {
+                // 載入 AIS 即時船隻
+                const hasAis = data.ais_snapshot && data.ais_snapshot.vessels && data.ais_snapshot.vessels.length > 0;
+                if (hasAis) {
                     displayVessels(data.ais_snapshot.vessels);
-                    document.getElementById('dataStatus').textContent = '✅ AIS 資料已載入';
+                    document.getElementById('dataStatus').textContent = '✅ AIS + 衛星資料已載入';
                     document.getElementById('dataStatus').classList.add('live');
                 } else if (data.vessel_monitoring) {
+                    // 無 AIS 時隱藏空的 AIS 統計區塊
+                    document.getElementById('aisStatsSection').style.display = 'none';
                     document.getElementById('dataStatus').textContent = '🛰️ 衛星資料已載入';
                     document.getElementById('dataStatus').classList.add('live');
-                    // Use GFW summary for overlay cards when AIS is empty
-                    const s = data.vessel_monitoring.summary;
-                    document.getElementById('vesselCount').textContent = Math.round(s.avg_daily_detections);
-                    document.getElementById('drillZoneCount').textContent = formatCompact(s.chn_drill_zone_records);
-                    document.getElementById('suspiciousCount').textContent = Math.round(s.avg_daily_dark_vessels);
-                    // Update overlay labels
-                    document.getElementById('vesselCount').parentElement.querySelector('.label').textContent = '日均偵測';
-                    document.getElementById('drillZoneCount').parentElement.querySelector('.label').textContent = '軍演區記錄';
-                    document.getElementById('suspiciousCount').parentElement.querySelector('.label').textContent = '日均暗船';
                 } else {
                     document.getElementById('dataStatus').textContent = '⚠️ 尚無資料';
                 }
+
+                // 更新覆蓋卡片
+                updateOverlayCards(data, hasAis);
             } catch (e) {
                 console.log('載入 data.json 失敗:', e);
                 document.getElementById('dataStatus').textContent = '❌ 資料載入失敗';
                 document.getElementById('updateInfo').textContent = '請確認 data.json 是否存在';
+            }
+        }
+
+        function updateOverlayCards(data, hasAis) {
+            if (hasAis) return; // displayVessels() already handles this
+            const vm = data.vessel_monitoring;
+            const dv = data.dark_vessels;
+            if (!vm) return;
+
+            const s = vm.summary;
+            // Card 1: Total SAR detections
+            document.getElementById('vesselCount').textContent = formatCompact(s.avg_daily_detections * s.total_days);
+            document.getElementById('vesselCount').parentElement.querySelector('.label').textContent = 'SAR 總偵測';
+            // Card 2: Drill zone hours
+            document.getElementById('drillZoneCount').textContent = formatCompact(s.chn_drill_zone_records);
+            document.getElementById('drillZoneCount').parentElement.querySelector('.label').textContent = '軍演區記錄';
+            // Card 3: Dark vessel total
+            if (dv && dv.overall) {
+                document.getElementById('suspiciousCount').textContent = formatCompact(dv.overall.dark_vessels);
+                document.getElementById('suspiciousCount').parentElement.querySelector('.label').textContent = '暗船總數';
             }
         }
         
@@ -784,6 +811,68 @@
 
         function focusSuspicious(lat, lon) {
             if (lat && lon) map.flyTo([lat, lon], 10);
+        }
+
+        // =============================================
+        // 暗船偵測點繪製
+        // =============================================
+
+        function displayDarkVessels(darkData) {
+            const regionColors = {
+                taiwan_strait: '#ff3366',
+                east_taiwan: '#ff6b35',
+                south_china_sea: '#ffd700',
+                east_china_sea: '#9b59b6'
+            };
+            const regionNames = {
+                taiwan_strait: '台灣海峽',
+                east_taiwan: '台灣東部',
+                south_china_sea: '南海北部',
+                east_china_sea: '東海'
+            };
+
+            let totalPlotted = 0;
+            Object.entries(darkData.regions).forEach(([regionKey, region]) => {
+                if (!region.dark_details) return;
+                const color = regionColors[regionKey] || '#ff3366';
+                const name = regionNames[regionKey] || regionKey;
+
+                region.dark_details.forEach(d => {
+                    if (!d.lat || !d.lon) return;
+                    const count = d.detections || 1;
+                    const radius = Math.min(3 + Math.log2(count) * 2, 8);
+
+                    L.circleMarker([d.lat, d.lon], {
+                        radius: radius,
+                        fillColor: color,
+                        color: color,
+                        weight: 1,
+                        opacity: 0.6,
+                        fillOpacity: 0.35
+                    }).addTo(layers.vessels).bindPopup(
+                        `<b style="color:${color}">SAR 暗船偵測</b><br>` +
+                        `區域: ${name}<br>` +
+                        `日期: ${d.date}<br>` +
+                        `偵測數: ${count}`
+                    );
+                    totalPlotted++;
+                });
+            });
+
+            // 更新軍演區暗船計數
+            const zoneMapping = {
+                north: 'east_china_sea',
+                east: 'east_taiwan',
+                south: 'south_china_sea',
+                west: 'taiwan_strait'
+            };
+            Object.entries(zoneMapping).forEach(([zoneKey, regionKey]) => {
+                const region = darkData.regions[regionKey];
+                if (region) {
+                    const el = document.getElementById('zone-' + zoneKey);
+                    if (el) el.textContent = formatCompact(region.dark_vessels);
+                }
+            });
         }
 
         // =============================================

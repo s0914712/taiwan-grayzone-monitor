@@ -155,27 +155,21 @@ def save_all(vessels, stats):
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         json.dump(full_output, f, ensure_ascii=False, indent=2)
 
-    # 2. 儲存 Dashboard 專用 (保持結構一致)
-    dashboard_output = {
-        'updated_at': now_str,
-        'ais_summary': {
-            'count': stats['total_vessels'],
-            'drill_zone_total': sum(stats['in_drill_zones'].values()),
-            'suspicious': stats['suspicious_count']
-        },
-        'vessels': list(vessels.values())[:100] # 限制數量優化前端載入
-    }
-    
-    # 讀取舊資料並合併 (例如與天氣或新聞資料合併)
+    # 2. 更新 Dashboard 的 ais_snapshot（與 generate_dashboard.py 格式一致）
     existing = {}
     if os.path.exists(DASHBOARD_FILE):
         try:
             with open(DASHBOARD_FILE, 'r', encoding='utf-8') as f:
                 existing = json.load(f)
         except: pass
-    
-    existing.update({'updated_at': now_str, 'ais_data': dashboard_output})
-    
+
+    existing['updated_at'] = now_str
+    existing['ais_snapshot'] = {
+        'updated_at': now_str,
+        'ais_data': stats,
+        'vessels': list(vessels.values())[:100]
+    }
+
     with open(DASHBOARD_FILE, 'w', encoding='utf-8') as f:
         json.dump(existing, f, ensure_ascii=False, indent=2)
 
