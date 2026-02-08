@@ -50,15 +50,25 @@ def main():
     else:
         print("⚠️ 找不到 dark_vessels.json，跳過")
 
-    # 讀取現有 data.json（保留 AIS snapshot 資料）
-    output_path = DOCS_DIR / 'data.json'
-    existing_data = {}
-    if output_path.exists():
+    # 讀取 AIS 快照資料（由 fetch_ais_data.py 產生）
+    ais_path = DATA_DIR / 'ais_snapshot.json'
+    ais_snapshot = None
+    if ais_path.exists():
         try:
-            with open(output_path, 'r', encoding='utf-8') as f:
-                existing_data = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            existing_data = {}
+            with open(ais_path, 'r', encoding='utf-8') as f:
+                ais_raw = json.load(f)
+            ais_snapshot = {
+                'updated_at': ais_raw.get('updated_at', ''),
+                'ais_data': ais_raw.get('statistics', {}),
+                'vessels': ais_raw.get('vessels', [])[:100]
+            }
+            print(f"📡 已載入 AIS 快照: {len(ais_snapshot['vessels'])} 艘船")
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"⚠️ 讀取 ais_snapshot.json 失敗: {e}")
+    else:
+        print("⚠️ 找不到 ais_snapshot.json，跳過")
+
+    output_path = DOCS_DIR / 'data.json'
 
     # 合併所有資料
     dashboard = {
@@ -66,13 +76,10 @@ def main():
         'vessel_monitoring': vessel_data,
         'suspicious_analysis': suspicious_data,
         'dark_vessels': dark_vessels_data,
+        'ais_snapshot': ais_snapshot or {'updated_at': '', 'ais_data': {}, 'vessels': []},
         'status': 'operational',
         'version': '3.0.0'
     }
-
-    # 保留 AIS snapshot 資料（由 fetch_ais_data.py 寫入）
-    if 'ais_snapshot' in existing_data:
-        dashboard['ais_snapshot'] = existing_data['ais_snapshot']
 
     # 儲存至 docs 目錄（供 GitHub Pages 使用）
     with open(output_path, 'w', encoding='utf-8') as f:
