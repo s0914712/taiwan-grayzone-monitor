@@ -1,16 +1,16 @@
 {
-  "updated_at": "2026-02-12T06:59:23.085414Z",
+  "updated_at": "2026-02-12T12:58:21.442637Z",
   "vessel_monitoring": {
-    "updated_at": "2026-02-12T06:59:09.931349Z",
+    "updated_at": "2026-02-12T12:58:01.361405Z",
     "data_range": {
       "start": "2026-01-13",
       "end": "2026-02-12"
     },
     "summary": {
-      "total_days": 9,
-      "avg_daily_detections": 506.8888888888889,
-      "avg_daily_dark_vessels": 506.8888888888889,
-      "recent_7d_avg": 392.42857142857144,
+      "total_days": 10,
+      "avg_daily_detections": 543.2,
+      "avg_daily_dark_vessels": 543.2,
+      "recent_7d_avg": 458.57142857142856,
       "trend_pct": 0.0,
       "chn_presence_records": 583021,
       "chn_presence_hours": 2446829,
@@ -62,6 +62,11 @@
         "date": "2026-02-04",
         "total_detections": 105,
         "dark_vessels": 105
+      },
+      {
+        "date": "2026-02-09",
+        "total_detections": 870,
+        "dark_vessels": 870
       }
     ],
     "chn_presence": {
@@ -214,7 +219,7 @@
         },
         {
           "date": "2026-01-14",
-          "fishing_hours": 71961.34055555522
+          "fishing_hours": 71961.3405555552
         },
         {
           "date": "2026-01-15",
@@ -222,11 +227,11 @@
         },
         {
           "date": "2026-01-16",
-          "fishing_hours": 71834.91972222255
+          "fishing_hours": 71834.91972222256
         },
         {
           "date": "2026-01-17",
-          "fishing_hours": 44571.64472222248
+          "fishing_hours": 44571.64472222247
         },
         {
           "date": "2026-01-18",
@@ -250,19 +255,19 @@
         },
         {
           "date": "2026-01-23",
-          "fishing_hours": 58725.13833333337
+          "fishing_hours": 58725.13833333339
         },
         {
           "date": "2026-01-24",
-          "fishing_hours": 59708.22277777774
+          "fishing_hours": 59708.22277777773
         },
         {
           "date": "2026-01-25",
-          "fishing_hours": 64157.004722222
+          "fishing_hours": 64157.00472222201
         },
         {
           "date": "2026-01-26",
-          "fishing_hours": 53761.212499999885
+          "fishing_hours": 53761.21249999989
         },
         {
           "date": "2026-01-27",
@@ -270,11 +275,11 @@
         },
         {
           "date": "2026-01-28",
-          "fishing_hours": 21842.07972222237
+          "fishing_hours": 21842.079722222366
         },
         {
           "date": "2026-01-29",
-          "fishing_hours": 25497.334999999995
+          "fishing_hours": 25497.334999999992
         },
         {
           "date": "2026-01-30",
@@ -282,7 +287,7 @@
         },
         {
           "date": "2026-01-31",
-          "fishing_hours": 12684.036666666689
+          "fishing_hours": 12684.036666666685
         },
         {
           "date": "2026-02-01",
@@ -294,7 +299,7 @@
         },
         {
           "date": "2026-02-03",
-          "fishing_hours": 31477.549166666708
+          "fishing_hours": 31477.549166666704
         },
         {
           "date": "2026-02-04",
@@ -302,7 +307,7 @@
         },
         {
           "date": "2026-02-05",
-          "fishing_hours": 57088.16777777779
+          "fishing_hours": 57088.16777777778
         },
         {
           "date": "2026-02-06",
@@ -423,6 +428,13 @@
     },
     "alerts": [
       {
+        "type": "high_dark_vessels",
+        "date": "2026-02-09",
+        "value": 870,
+        "threshold": 814.8000000000001,
+        "message": "暗船數量異常增加: 870 (平均 543)"
+      },
+      {
         "type": "chn_drill_zone_presence",
         "value": 148774,
         "message": "中國船隻在軍演區活動: 148774 筆記錄"
@@ -430,7 +442,7 @@
     ]
   },
   "suspicious_analysis": {
-    "updated_at": "2026-02-12T06:59:21.443085+00:00",
+    "updated_at": "2026-02-12T12:58:20.038494+00:00",
     "methodology": "CSIS Signals in the Swarm",
     "thresholds": {
       "behavioral": {
@@ -450,14 +462,14 @@
     "all_classifications": []
   },
   "dark_vessels": {
-    "updated_at": "2026-02-12T06:59:21.311842Z",
+    "updated_at": "2026-02-12T12:58:19.907498Z",
     "data_range": {
       "start": "2026-01-13",
       "end": "2026-02-12"
     },
     "overall": {
-      "total_detections": 15005,
-      "dark_vessels": 15005,
+      "total_detections": 15641,
+      "dark_vessels": 15641,
       "dark_ratio": 100.0,
       "dark_by_date": {
         "2026-01-16": 1039,
@@ -475,13 +487,14 @@
         "2026-02-02": 420,
         "2026-02-03": 166,
         "2026-02-04": 3455,
-        "2026-02-05": 861
+        "2026-02-05": 861,
+        "2026-02-09": 650
       }
     },
     "regions": {
       "taiwan_strait": {
-        "total_detections": 2740,
-        "dark_vessels": 2740,
+        "total_detections": 3288,
+        "dark_vessels": 3288,
         "matched_vessels": 0,
         "dark_ratio": 100.0,
         "dark_by_date": {
@@ -491,10 +504,17 @@
           "2026-01-26": 138,
           "2026-01-28": 456,
           "2026-01-30": 253,
-          "2026-02-02": 420
+          "2026-02-02": 420,
+          "2026-02-09": 560
         },
         "matched_by_flag": {},
         "dark_details": [
+          {
+            "lat": 23.98,
+            "lon": 120.12,
+            "date": "2026-02-09",
+            "detections": 1
+          },
           {
             "lat": 24.16,
             "lon": 118.2,
@@ -514,9 +534,21 @@
             "detections": 1
           },
           {
+            "lat": 26.34,
+            "lon": 120.68,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 23.83,
             "lon": 118.6,
             "date": "2026-01-21",
+            "detections": 1
+          },
+          {
+            "lat": 25.43,
+            "lon": 119.88,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -529,6 +561,12 @@
             "lat": 24.76,
             "lon": 119.56,
             "date": "2026-01-21",
+            "detections": 1
+          },
+          {
+            "lat": 24.17,
+            "lon": 120.03,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -562,6 +600,12 @@
             "detections": 1
           },
           {
+            "lat": 25.68,
+            "lon": 120.55,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 25.73,
             "lon": 120.04,
             "date": "2026-01-18",
@@ -571,6 +615,12 @@
             "lat": 25.23,
             "lon": 120.16,
             "date": "2026-01-18",
+            "detections": 1
+          },
+          {
+            "lat": 26.3,
+            "lon": 119.87,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -586,9 +636,27 @@
             "detections": 1
           },
           {
+            "lat": 26.35,
+            "lon": 120.78,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 25.82,
             "lon": 120.48,
             "date": "2026-01-16",
+            "detections": 1
+          },
+          {
+            "lat": 25.94,
+            "lon": 120.48,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
+            "lat": 26.32,
+            "lon": 120.69,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -628,6 +696,12 @@
             "detections": 1
           },
           {
+            "lat": 26.08,
+            "lon": 120.31,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 25.42,
             "lon": 120.56,
             "date": "2026-01-16",
@@ -637,6 +711,18 @@
             "lat": 24.26,
             "lon": 120.39,
             "date": "2026-01-30",
+            "detections": 1
+          },
+          {
+            "lat": 26.31,
+            "lon": 119.87,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
+            "lat": 26.13,
+            "lon": 120.29,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -655,6 +741,12 @@
             "lat": 26,
             "lon": 120.59,
             "date": "2026-01-16",
+            "detections": 1
+          },
+          {
+            "lat": 25.93,
+            "lon": 120.51,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -679,6 +771,12 @@
             "lat": 26.31,
             "lon": 120.94,
             "date": "2026-01-16",
+            "detections": 1
+          },
+          {
+            "lat": 26.13,
+            "lon": 120.57,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -715,6 +813,12 @@
             "lat": 24.5,
             "lon": 118.75,
             "date": "2026-02-02",
+            "detections": 1
+          },
+          {
+            "lat": 25.28,
+            "lon": 119.98,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -772,9 +876,9 @@
             "detections": 1
           },
           {
-            "lat": 24.33,
-            "lon": 118.53,
-            "date": "2026-02-02",
+            "lat": 25.59,
+            "lon": 119.67,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -784,15 +888,33 @@
             "detections": 1
           },
           {
+            "lat": 26.12,
+            "lon": 120.54,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 25.73,
             "lon": 120.37,
             "date": "2026-01-16",
             "detections": 1
           },
           {
+            "lat": 24.33,
+            "lon": 118.53,
+            "date": "2026-02-02",
+            "detections": 1
+          },
+          {
             "lat": 25.93,
             "lon": 120.77,
             "date": "2026-01-16",
+            "detections": 1
+          },
+          {
+            "lat": 25.59,
+            "lon": 121.53,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -820,6 +942,12 @@
             "detections": 1
           },
           {
+            "lat": 26.42,
+            "lon": 119.94,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 26.14,
             "lon": 120.63,
             "date": "2026-01-16",
@@ -835,6 +963,12 @@
             "lat": 25.43,
             "lon": 119.87,
             "date": "2026-01-18",
+            "detections": 1
+          },
+          {
+            "lat": 25.59,
+            "lon": 119.66,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -883,6 +1017,12 @@
             "lat": 25.35,
             "lon": 119.67,
             "date": "2026-02-02",
+            "detections": 1
+          },
+          {
+            "lat": 25.54,
+            "lon": 119.64,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -940,6 +1080,18 @@
             "detections": 1
           },
           {
+            "lat": 23.61,
+            "lon": 121.59,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
+            "lat": 26.41,
+            "lon": 119.94,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 24.87,
             "lon": 120.81,
             "date": "2026-01-30",
@@ -956,158 +1108,21 @@
             "lon": 120.76,
             "date": "2026-01-16",
             "detections": 2
-          },
-          {
-            "lat": 25.76,
-            "lon": 120.65,
-            "date": "2026-01-18",
-            "detections": 1
-          },
-          {
-            "lat": 25.55,
-            "lon": 120.59,
-            "date": "2026-01-30",
-            "detections": 1
-          },
-          {
-            "lat": 26.45,
-            "lon": 120.12,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 25.68,
-            "lon": 120,
-            "date": "2026-01-28",
-            "detections": 1
-          },
-          {
-            "lat": 24.56,
-            "lon": 118.18,
-            "date": "2026-01-21",
-            "detections": 1
-          },
-          {
-            "lat": 25.86,
-            "lon": 121.34,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 26.06,
-            "lon": 119.87,
-            "date": "2026-01-28",
-            "detections": 1
-          },
-          {
-            "lat": 25.59,
-            "lon": 120.34,
-            "date": "2026-01-30",
-            "detections": 1
-          },
-          {
-            "lat": 26.31,
-            "lon": 120.44,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 25.92,
-            "lon": 119.75,
-            "date": "2026-01-28",
-            "detections": 1
-          },
-          {
-            "lat": 26.15,
-            "lon": 119.72,
-            "date": "2026-02-02",
-            "detections": 1
-          },
-          {
-            "lat": 24.07,
-            "lon": 118.59,
-            "date": "2026-02-02",
-            "detections": 1
-          },
-          {
-            "lat": 25.02,
-            "lon": 120.73,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 25.86,
-            "lon": 119.77,
-            "date": "2026-02-02",
-            "detections": 1
-          },
-          {
-            "lat": 25.73,
-            "lon": 121.04,
-            "date": "2026-01-28",
-            "detections": 2
-          },
-          {
-            "lat": 25.71,
-            "lon": 119.65,
-            "date": "2026-02-02",
-            "detections": 1
-          },
-          {
-            "lat": 25.6,
-            "lon": 120.82,
-            "date": "2026-01-18",
-            "detections": 1
-          },
-          {
-            "lat": 24.72,
-            "lon": 118.88,
-            "date": "2026-01-21",
-            "detections": 1
-          },
-          {
-            "lat": 24.32,
-            "lon": 118.35,
-            "date": "2026-01-21",
-            "detections": 1
-          },
-          {
-            "lat": 24.48,
-            "lon": 122,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 26.15,
-            "lon": 121.64,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 24.99,
-            "lon": 119.13,
-            "date": "2026-02-02",
-            "detections": 1
-          },
-          {
-            "lat": 26.47,
-            "lon": 119.96,
-            "date": "2026-01-28",
-            "detections": 1
           }
         ],
         "name": "台灣海峽"
       },
       "east_taiwan": {
-        "total_detections": 315,
-        "dark_vessels": 315,
+        "total_detections": 403,
+        "dark_vessels": 403,
         "matched_vessels": 0,
         "dark_ratio": 100.0,
         "dark_by_date": {
           "2026-01-16": 119,
           "2026-01-18": 50,
           "2026-01-28": 83,
-          "2026-01-30": 73
+          "2026-01-30": 73,
+          "2026-02-09": 90
         },
         "matched_by_flag": {},
         "dark_details": [
@@ -1127,6 +1142,18 @@
             "lat": 24.68,
             "lon": 121.93,
             "date": "2026-01-18",
+            "detections": 1
+          },
+          {
+            "lat": 24.48,
+            "lon": 121.87,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
+            "lat": 23.35,
+            "lon": 121.81,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -1154,6 +1181,24 @@
             "detections": 1
           },
           {
+            "lat": 22.41,
+            "lon": 121.54,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
+            "lat": 24.77,
+            "lon": 122.05,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
+            "lat": 25.22,
+            "lon": 121.83,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 23.69,
             "lon": 122.02,
             "date": "2026-01-28",
@@ -1178,6 +1223,12 @@
             "detections": 1
           },
           {
+            "lat": 23.23,
+            "lon": 121.87,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 24.25,
             "lon": 122.13,
             "date": "2026-01-18",
@@ -1196,9 +1247,27 @@
             "detections": 1
           },
           {
+            "lat": 24.82,
+            "lon": 121.88,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 24.71,
             "lon": 122.08,
             "date": "2026-01-28",
+            "detections": 1
+          },
+          {
+            "lat": 23.14,
+            "lon": 121.81,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
+            "lat": 24.34,
+            "lon": 121.81,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -1211,6 +1280,12 @@
             "lat": 24.06,
             "lon": 121.87,
             "date": "2026-01-16",
+            "detections": 1
+          },
+          {
+            "lat": 22.83,
+            "lon": 121.75,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -1310,6 +1385,18 @@
             "detections": 1
           },
           {
+            "lat": 22.95,
+            "lon": 121.52,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
+            "lat": 25.31,
+            "lon": 121.78,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 25.47,
             "lon": 121.75,
             "date": "2026-01-16",
@@ -1355,6 +1442,12 @@
             "lat": 25.37,
             "lon": 121.66,
             "date": "2026-01-16",
+            "detections": 1
+          },
+          {
+            "lat": 24.21,
+            "lon": 122.11,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -1430,6 +1523,12 @@
             "detections": 1
           },
           {
+            "lat": 23.99,
+            "lon": 122.02,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 23,
             "lon": 122.61,
             "date": "2026-01-16",
@@ -1448,9 +1547,27 @@
             "detections": 1
           },
           {
+            "lat": 23.44,
+            "lon": 122.16,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 22.57,
             "lon": 122.49,
             "date": "2026-01-28",
+            "detections": 1
+          },
+          {
+            "lat": 23.23,
+            "lon": 121.86,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
+            "lat": 24.87,
+            "lon": 122.03,
+            "date": "2026-02-09",
             "detections": 1
           },
           {
@@ -1490,6 +1607,12 @@
             "detections": 1
           },
           {
+            "lat": 24.4,
+            "lon": 121.83,
+            "date": "2026-02-09",
+            "detections": 1
+          },
+          {
             "lat": 23.17,
             "lon": 121.79,
             "date": "2026-01-18",
@@ -1524,6 +1647,12 @@
             "lon": 121.75,
             "date": "2026-01-28",
             "detections": 1
+          },
+          {
+            "lat": 23.29,
+            "lon": 121.92,
+            "date": "2026-02-09",
+            "detections": 2
           },
           {
             "lat": 22.59,
@@ -1594,120 +1723,6 @@
           {
             "lat": 22.73,
             "lon": 121.88,
-            "date": "2026-01-28",
-            "detections": 1
-          },
-          {
-            "lat": 25.39,
-            "lon": 122.07,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 22.03,
-            "lon": 122.13,
-            "date": "2026-01-28",
-            "detections": 1
-          },
-          {
-            "lat": 22.02,
-            "lon": 122.26,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 22.38,
-            "lon": 122.3,
-            "date": "2026-01-28",
-            "detections": 1
-          },
-          {
-            "lat": 23.49,
-            "lon": 122.3,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 25.38,
-            "lon": 121.85,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 24.82,
-            "lon": 121.87,
-            "date": "2026-01-28",
-            "detections": 1
-          },
-          {
-            "lat": 25.24,
-            "lon": 121.69,
-            "date": "2026-01-18",
-            "detections": 1
-          },
-          {
-            "lat": 22.7,
-            "lon": 121.67,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 23.72,
-            "lon": 122.04,
-            "date": "2026-01-28",
-            "detections": 1
-          },
-          {
-            "lat": 25.26,
-            "lon": 121.85,
-            "date": "2026-01-30",
-            "detections": 1
-          },
-          {
-            "lat": 25.44,
-            "lon": 121.61,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 23.65,
-            "lon": 122.17,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 22.54,
-            "lon": 122.43,
-            "date": "2026-01-28",
-            "detections": 1
-          },
-          {
-            "lat": 25.32,
-            "lon": 122.05,
-            "date": "2026-01-30",
-            "detections": 1
-          },
-          {
-            "lat": 24.7,
-            "lon": 121.91,
-            "date": "2026-01-18",
-            "detections": 1
-          },
-          {
-            "lat": 22.85,
-            "lon": 121.78,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 25.47,
-            "lon": 121.62,
-            "date": "2026-01-16",
-            "detections": 1
-          },
-          {
-            "lat": 23.01,
-            "lon": 122.18,
             "date": "2026-01-28",
             "detections": 1
           }
@@ -2951,7 +2966,7 @@
     }
   },
   "exercise_prediction": {
-    "updated_at": "2026-02-12T06:59:22.948429Z",
+    "updated_at": "2026-02-12T12:58:21.306810Z",
     "status": "ok",
     "data_summary": {
       "merged_days": 16,
@@ -3295,19 +3310,19 @@
     ]
   },
   "ais_snapshot": {
-    "updated_at": "2026-02-12T06:58:46.739383+00:00",
+    "updated_at": "2026-02-12T12:57:31.921917+00:00",
     "ais_data": {
-      "total_vessels": 157,
+      "total_vessels": 127,
       "fishing_vessels": 0,
       "suspicious_count": 0,
-      "avg_speed": 3.69,
+      "avg_speed": 2.06,
       "by_type": {
-        "unknown": 132,
-        "cargo": 7,
-        "other": 14,
-        "tanker": 1,
-        "passenger": 1,
-        "tug": 2
+        "unknown": 102,
+        "other": 13,
+        "cargo": 6,
+        "tanker": 3,
+        "passenger": 2,
+        "tug": 1
       },
       "in_drill_zones": {
         "north": 0,
@@ -3318,80 +3333,10 @@
     },
     "vessels": [
       {
-        "mmsi": "994776019",
-        "name": "MMSI-994776019",
-        "lat": 22.285016666666667,
-        "lon": 114.16664999999999,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:45.908446+00:00"
-      },
-      {
-        "mmsi": "477997251",
-        "name": "XIN MING ZHU XIII",
-        "lat": 22.32312166666667,
-        "lon": 114.14885166666666,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 9.2,
-        "heading": 316,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:46.157541+00:00"
-      },
-      {
-        "mmsi": "994776020",
-        "name": "MMSI-994776020",
-        "lat": 22.28601666666667,
-        "lon": 114.16395000000001,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:46.581635+00:00"
-      },
-      {
-        "mmsi": "477996257",
-        "name": "WING ON TRAVEL",
-        "lat": 22.292965,
-        "lon": 114.17017333333334,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.2,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:47.097489+00:00"
-      },
-      {
-        "mmsi": "477995440",
-        "name": "SEA SHINE",
-        "lat": 22.288776666666667,
-        "lon": 114.15992833333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 6.5,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:47.615696+00:00"
-      },
-      {
-        "mmsi": "477996932",
-        "name": "MARINE 3",
-        "lat": 22.359045,
-        "lon": 114.11369833333333,
+        "mmsi": "477997080",
+        "name": "HU SHAN",
+        "lat": 22.337118333333333,
+        "lon": 114.11594333333333,
         "type": 0,
         "type_name": "unknown",
         "speed": 0,
@@ -3399,727 +3344,27 @@
         "in_drill_zone": null,
         "in_fishing_hotspot": null,
         "suspicious": false,
-        "last_update": "2026-02-12T06:55:48.853834+00:00"
+        "last_update": "2026-02-12T12:54:31.133340+00:00"
       },
       {
-        "mmsi": "477995028",
-        "name": "FIRST FERRY VI",
-        "lat": 22.32818166666667,
-        "lon": 114.14556166666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.2,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:49.148260+00:00"
-      },
-      {
-        "mmsi": "477997185",
-        "name": "HONGKONGWATERTAXI 28",
-        "lat": 22.28655666666667,
-        "lon": 114.16343,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.8,
-        "heading": 219,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:49.878788+00:00"
-      },
-      {
-        "mmsi": "477995464",
-        "name": "TSUI WAH 38",
-        "lat": 22.303723333333334,
-        "lon": 114.15734666666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.1,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:50.600300+00:00"
-      },
-      {
-        "mmsi": "477995179",
-        "name": "MD323",
-        "lat": 22.308515,
-        "lon": 114.15553666666666,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:50.778178+00:00"
-      },
-      {
-        "mmsi": "413465120",
-        "name": "HAIBANGDA33",
-        "lat": 22.35689,
-        "lon": 114.11472,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 352,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:51.198047+00:00"
-      },
-      {
-        "mmsi": "477056300",
-        "name": "UNIVERSAL MK2012",
-        "lat": 22.326933333333333,
-        "lon": 114.14417666666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.2,
-        "heading": 304,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:51.965286+00:00"
-      },
-      {
-        "mmsi": "413762718",
-        "name": "MMSI-413762718",
-        "lat": 22.358988333333333,
-        "lon": 114.11319833333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:52.161406+00:00"
-      },
-      {
-        "mmsi": "413496590",
-        "name": "ZHONG SHAN 6",
-        "lat": 22.308135,
-        "lon": 114.13178166666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 35.1,
-        "heading": 142,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:53.205099+00:00"
-      },
-      {
-        "mmsi": "413998084",
-        "name": "HAI YA 268",
-        "lat": 22.30534833333333,
-        "lon": 114.15558666666668,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 4.7,
-        "heading": 291,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:53.241641+00:00"
-      },
-      {
-        "mmsi": "352004093",
-        "name": "HAI KUN",
-        "lat": 22.289643333333334,
-        "lon": 114.17315333333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 2.8,
-        "heading": 21,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:53.944938+00:00"
-      },
-      {
-        "mmsi": "477995928",
-        "name": "WAH FU NO.68",
-        "lat": 22.326966666666667,
-        "lon": 114.12259,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 7.2,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:54.918872+00:00"
-      },
-      {
-        "mmsi": "412400040",
-        "name": "SHENG PING189",
-        "lat": 22.346785,
-        "lon": 114.11277166666667,
-        "type": 70,
-        "type_name": "cargo",
-        "speed": 0.1,
-        "heading": 338,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:54.918973+00:00"
-      },
-      {
-        "mmsi": "477995137",
-        "name": "GOLDEN DRAGON 238",
-        "lat": 22.325853333333335,
-        "lon": 114.127415,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:54.919050+00:00"
-      },
-      {
-        "mmsi": "477996363",
-        "name": "CHEC 6",
-        "lat": 22.355825,
-        "lon": 114.11413333333333,
-        "type": 37,
-        "type_name": "other",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:54.919124+00:00"
-      },
-      {
-        "mmsi": "636018068",
-        "name": "MSC AVNI",
-        "lat": 22.333093333333334,
-        "lon": 114.11726,
+        "mmsi": "563263100",
+        "name": "INTERASIA TACTIC",
+        "lat": 22.30797,
+        "lon": 114.09251333333333,
         "type": 71,
         "type_name": "other",
-        "speed": 0,
-        "heading": 342,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:54.919193+00:00"
-      },
-      {
-        "mmsi": "477991833",
-        "name": "NOEL CROUCHER II",
-        "lat": 22.288198333333334,
-        "lon": 114.17029333333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:56.398280+00:00"
-      },
-      {
-        "mmsi": "477995431",
-        "name": "NORTHERN STAR",
-        "lat": 22.29339666666667,
-        "lon": 114.16857,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.5,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:57.688472+00:00"
-      },
-      {
-        "mmsi": "477995725",
-        "name": "FIORD 18",
-        "lat": 22.287423333333333,
-        "lon": 114.17209333333334,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 13.8,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:57.852992+00:00"
-      },
-      {
-        "mmsi": "477997055",
-        "name": "HONGKONGWATERTAXI 18",
-        "lat": 22.296834999999998,
-        "lon": 114.18028,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 13.1,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:58.237290+00:00"
-      },
-      {
-        "mmsi": "477995432",
-        "name": "MORNING STAR",
-        "lat": 22.29384,
-        "lon": 114.16807999999999,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.2,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:58.563978+00:00"
-      },
-      {
-        "mmsi": "477996916",
-        "name": "HYDRO2",
-        "lat": 22.3239,
-        "lon": 114.14206166666666,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 327,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:58.676327+00:00"
-      },
-      {
-        "mmsi": "413622280",
-        "name": "GUANG  XING   958",
-        "lat": 22.332783333333335,
-        "lon": 114.11714666666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 162,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:58.922816+00:00"
-      },
-      {
-        "mmsi": "413883714",
-        "name": "YUEFULONG08",
-        "lat": 22.302038333333332,
-        "lon": 114.12446666666666,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.2,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:55:59.226892+00:00"
-      },
-      {
-        "mmsi": "477997254",
-        "name": "HAILIANJIUHAO",
-        "lat": 22.310365,
-        "lon": 114.15741333333334,
-        "type": 70,
-        "type_name": "cargo",
-        "speed": 6.9,
-        "heading": 51,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:01.197047+00:00"
-      },
-      {
-        "mmsi": "355474000",
-        "name": "CAIYUNHE",
-        "lat": 22.324920000000002,
-        "lon": 114.11499666666667,
-        "type": 71,
-        "type_name": "other",
-        "speed": 7.2,
-        "heading": 260,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:01.369444+00:00"
-      },
-      {
-        "mmsi": "413837926",
-        "name": "GAOLAN806",
-        "lat": 22.325805,
-        "lon": 114.12882666666665,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:01.675311+00:00"
-      },
-      {
-        "mmsi": "413866684",
-        "name": "YUEGUANGZHOUHUO9366",
-        "lat": 22.294230000000002,
-        "lon": 114.14742666666666,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 6.5,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:01.905734+00:00"
-      },
-      {
-        "mmsi": "477890600",
-        "name": "SCT SHEKOU",
-        "lat": 22.355128333333333,
-        "lon": 114.11292666666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 153,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:03.019261+00:00"
-      },
-      {
-        "mmsi": "477996519",
-        "name": "HOI LAY NO.3",
-        "lat": 22.326221666666665,
-        "lon": 114.14765333333334,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:03.601887+00:00"
-      },
-      {
-        "mmsi": "477231400",
-        "name": "GUILIN",
-        "lat": 22.354916666666668,
-        "lon": 114.11314999999999,
-        "type": 90,
-        "type_name": "other",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:03.883747+00:00"
-      },
-      {
-        "mmsi": "477937600",
-        "name": "SHOPPES FOUR SEASONS",
-        "lat": 22.318293333333333,
-        "lon": 114.15057499999999,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 2,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:04.021865+00:00"
-      },
-      {
-        "mmsi": "416005019",
-        "name": "SHENG CING JI",
-        "lat": 22.323966666666667,
-        "lon": 114.15205333333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:04.441419+00:00"
-      },
-      {
-        "mmsi": "412353560",
-        "name": "SHENG PING 186",
-        "lat": 22.32942166666667,
-        "lon": 114.12077666666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 6.8,
-        "heading": 337,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:04.909523+00:00"
-      },
-      {
-        "mmsi": "413865413",
-        "name": "RUNLONG998",
-        "lat": 22.352831666666667,
-        "lon": 114.115855,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:04.909642+00:00"
-      },
-      {
-        "mmsi": "413907605",
-        "name": "MMSI-413907605",
-        "lat": 22.3484,
-        "lon": 114.11515,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:04.909731+00:00"
-      },
-      {
-        "mmsi": "477770800",
-        "name": "SHANGHAI",
-        "lat": 22.35530333333333,
-        "lon": 114.113225,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:04.921836+00:00"
-      },
-      {
-        "mmsi": "413900364",
-        "name": "BOSHIHANG8",
-        "lat": 22.35951,
-        "lon": 114.11355,
-        "type": 70,
-        "type_name": "cargo",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:04.921931+00:00"
-      },
-      {
-        "mmsi": "412360860",
-        "name": "SUTAI9",
-        "lat": 22.294746666666665,
-        "lon": 114.18302166666668,
-        "type": 70,
-        "type_name": "cargo",
-        "speed": 8.2,
-        "heading": 243,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:06.041890+00:00"
-      },
-      {
-        "mmsi": "477997120",
-        "name": "HOIE 168",
-        "lat": 22.3121,
-        "lon": 114.11364,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:06.283742+00:00"
-      },
-      {
-        "mmsi": "477947200",
-        "name": "YAM O",
-        "lat": 22.347941666666667,
-        "lon": 114.11878333333334,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.1,
-        "heading": 342,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:07.760171+00:00"
-      },
-      {
-        "mmsi": "477320700",
-        "name": "UNIVERSAL MK2017",
-        "lat": 22.328266666666664,
-        "lon": 114.14477666666667,
-        "type": 40,
-        "type_name": "other",
-        "speed": 0.1,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:07.977866+00:00"
-      },
-      {
-        "mmsi": "477997122",
-        "name": "SEA CLEANER 5",
-        "lat": 22.310906666666664,
-        "lon": 114.15874833333334,
-        "type": 99,
-        "type_name": "other",
-        "speed": 0,
-        "heading": 270,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:08.776795+00:00"
-      },
-      {
-        "mmsi": "477385000",
-        "name": "UNIVERSAL MK2005",
-        "lat": 22.288031666666665,
-        "lon": 114.15200833333333,
-        "type": 40,
-        "type_name": "other",
-        "speed": 0,
-        "heading": 104,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:11.132408+00:00"
-      },
-      {
-        "mmsi": "477997045",
-        "name": "TAP MUN",
-        "lat": 22.343486666666667,
-        "lon": 114.11368333333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.1,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:11.300288+00:00"
-      },
-      {
-        "mmsi": "413762734",
-        "name": "MMSI-413762734",
-        "lat": 22.346603333333334,
-        "lon": 114.11289833333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:11.544697+00:00"
-      },
-      {
-        "mmsi": "413495990",
-        "name": "ZHENYUAN393",
-        "lat": 22.345561666666665,
-        "lon": 114.12061,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 2.6,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:11.649488+00:00"
-      },
-      {
-        "mmsi": "477997212",
-        "name": "HKK 6",
-        "lat": 22.324435,
-        "lon": 114.148385,
-        "type": 40,
-        "type_name": "other",
-        "speed": 9.9,
+        "speed": 14.6,
         "heading": 150,
         "in_drill_zone": null,
         "in_fishing_hotspot": null,
         "suspicious": false,
-        "last_update": "2026-02-12T06:56:13.643124+00:00"
+        "last_update": "2026-02-12T12:54:32.766614+00:00"
       },
       {
-        "mmsi": "477997242",
-        "name": "NGON SHUEN II",
-        "lat": 22.298713333333335,
-        "lon": 114.12546666666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 79,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:13.972992+00:00"
-      },
-      {
-        "mmsi": "477997146",
-        "name": "XIN MING ZHU III",
-        "lat": 22.292331666666666,
-        "lon": 114.11699666666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 29.6,
-        "heading": 270,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:14.158314+00:00"
-      },
-      {
-        "mmsi": "412379470",
-        "name": "CHANG YI 10",
-        "lat": 22.294328333333333,
-        "lon": 114.15397833333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 7.8,
-        "heading": 295,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:15.600279+00:00"
-      },
-      {
-        "mmsi": "477608200",
-        "name": "HAI HOI",
-        "lat": 22.325633333333332,
-        "lon": 114.11378333333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 9.5,
-        "heading": 241,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:15.772892+00:00"
-      },
-      {
-        "mmsi": "477996494",
-        "name": "GOLDEN DRAGON 138",
-        "lat": 22.36718,
-        "lon": 114.104705,
+        "mmsi": "477997316",
+        "name": "WAH FU NO. 108",
+        "lat": 22.325699999999998,
+        "lon": 114.14716,
         "type": 0,
         "type_name": "unknown",
         "speed": 0,
@@ -4127,572 +3372,54 @@
         "in_drill_zone": null,
         "in_fishing_hotspot": null,
         "suspicious": false,
-        "last_update": "2026-02-12T06:56:18.107605+00:00"
-      },
-      {
-        "mmsi": "477996723",
-        "name": "TB10",
-        "lat": 22.310170000000003,
-        "lon": 114.14992166666666,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.3,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:18.846460+00:00"
-      },
-      {
-        "mmsi": "477997196",
-        "name": "HKK22",
-        "lat": 22.288143333333334,
-        "lon": 114.15686166666666,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 194,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:20.171112+00:00"
-      },
-      {
-        "mmsi": "477996018",
-        "name": "TB12",
-        "lat": 22.307731666666665,
-        "lon": 114.15581333333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:20.915646+00:00"
-      },
-      {
-        "mmsi": "477997121",
-        "name": "SEA CLEANER 4",
-        "lat": 22.310676666666666,
-        "lon": 114.15879,
-        "type": 54,
-        "type_name": "other",
-        "speed": 0,
-        "heading": 270,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:21.157319+00:00"
-      },
-      {
-        "mmsi": "477997042",
-        "name": "LAMMA",
-        "lat": 22.328275,
-        "lon": 114.144205,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 132,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:21.412835+00:00"
-      },
-      {
-        "mmsi": "477997047",
-        "name": "TSING YUK",
-        "lat": 22.366051666666667,
-        "lon": 114.10076000000001,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 9.2,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:22.040969+00:00"
-      },
-      {
-        "mmsi": "477195500",
-        "name": "SHENYANG",
-        "lat": 22.355195,
-        "lon": 114.11303,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 167,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:22.433890+00:00"
-      },
-      {
-        "mmsi": "477995428",
-        "name": "DAY STAR",
-        "lat": 22.287989999999997,
-        "lon": 114.16137333333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 6.7,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:22.686745+00:00"
-      },
-      {
-        "mmsi": "477995027",
-        "name": "FIRST FERRY V",
-        "lat": 22.28735,
-        "lon": 114.1605,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 200,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:23.712922+00:00"
-      },
-      {
-        "mmsi": "477197500",
-        "name": "DI MODA SQUARE",
-        "lat": 22.28841,
-        "lon": 114.15280333333334,
-        "type": 40,
-        "type_name": "other",
-        "speed": 0.2,
-        "heading": 104,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:23.961690+00:00"
-      },
-      {
-        "mmsi": "432545000",
-        "name": "ASUKA2",
-        "lat": 22.290615,
-        "lon": 114.17153499999999,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 4,
-        "heading": 271,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:24.054393+00:00"
-      },
-      {
-        "mmsi": "477996731",
-        "name": "SIU FAI 7",
-        "lat": 22.31584333333333,
-        "lon": 114.15927333333335,
-        "type": 90,
-        "type_name": "other",
-        "speed": 0.6,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:24.179188+00:00"
-      },
-      {
-        "mmsi": "538010946",
-        "name": "TS SURABAYA",
-        "lat": 22.333585000000003,
-        "lon": 114.12500666666666,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.1,
-        "heading": 343,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:26.100745+00:00"
-      },
-      {
-        "mmsi": "477997127",
-        "name": "HKK2",
-        "lat": 22.287815000000002,
-        "lon": 114.15864833333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 197,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:26.674248+00:00"
-      },
-      {
-        "mmsi": "477997043",
-        "name": "HUNG HOM",
-        "lat": 22.365078333333333,
-        "lon": 114.10299666666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 8.8,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:26.946022+00:00"
-      },
-      {
-        "mmsi": "477997154",
-        "name": "SUN HU",
-        "lat": 22.319458333333333,
-        "lon": 114.12468333333332,
-        "type": 80,
-        "type_name": "tanker",
-        "speed": 1.6,
-        "heading": 19,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:27.519981+00:00"
-      },
-      {
-        "mmsi": "477995381",
-        "name": "FEOSO PIONEER",
-        "lat": 22.368521666666666,
-        "lon": 114.10603833333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.1,
-        "heading": 268,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:27.570935+00:00"
-      },
-      {
-        "mmsi": "416011751",
-        "name": "SHENG YI FA168",
-        "lat": 22.29344166666667,
-        "lon": 114.22962666666668,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.1,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:27.726756+00:00"
-      },
-      {
-        "mmsi": "477478300",
-        "name": "SUZHOU",
-        "lat": 22.355095,
-        "lon": 114.113265,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.1,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:27.927809+00:00"
-      },
-      {
-        "mmsi": "994776001",
-        "name": "MMSI-994776001",
-        "lat": 22.429,
-        "lon": 113.88875,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:27.976368+00:00"
-      },
-      {
-        "mmsi": "413850325",
-        "name": "NANGANG21",
-        "lat": 22.334503333333334,
-        "lon": 114.11870333333333,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:29.588800+00:00"
-      },
-      {
-        "mmsi": "477046500",
-        "name": "HAI TONG",
-        "lat": 22.32616833333333,
-        "lon": 114.11546666666666,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 7.4,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:29.976620+00:00"
-      },
-      {
-        "mmsi": "9130351",
-        "name": "YAU KEE WATER BOAT",
-        "lat": 22.316860000000002,
-        "lon": 114.15864666666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:30.295536+00:00"
-      },
-      {
-        "mmsi": "219027748",
-        "name": "NAKSKOV MAERSK",
-        "lat": 22.335278333333335,
-        "lon": 114.11648166666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 343,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:31.300391+00:00"
-      },
-      {
-        "mmsi": "477996982",
-        "name": "SUN YUAN",
-        "lat": 22.319146666666665,
-        "lon": 114.14938666666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.1,
-        "heading": 133,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:31.467137+00:00"
-      },
-      {
-        "mmsi": "477937500",
-        "name": "THE PARISIAN",
-        "lat": 22.327749999999998,
-        "lon": 114.14337833333335,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:31.568703+00:00"
-      },
-      {
-        "mmsi": "413906927",
-        "name": "QIJI229",
-        "lat": 22.307039999999997,
-        "lon": 114.15985,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 44,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:31.815491+00:00"
-      },
-      {
-        "mmsi": "412469940",
-        "name": "MINGHANG136",
-        "lat": 22.29339,
-        "lon": 114.15816166666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 7.9,
-        "heading": 300,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:32.063198+00:00"
+        "last_update": "2026-02-12T12:54:33.838319+00:00"
       },
       {
         "mmsi": "477996955",
         "name": "GRAND 99",
-        "lat": 22.365498333333335,
-        "lon": 114.10875166666666,
+        "lat": 22.36536,
+        "lon": 114.10825833333334,
         "type": 0,
         "type_name": "unknown",
         "speed": 0.1,
-        "heading": 13,
+        "heading": 275,
         "in_drill_zone": null,
         "in_fishing_hotspot": null,
         "suspicious": false,
-        "last_update": "2026-02-12T06:56:32.956098+00:00"
+        "last_update": "2026-02-12T12:54:34.316067+00:00"
       },
       {
-        "mmsi": "477995337",
-        "name": "ANESUN",
-        "lat": 22.32678,
-        "lon": 114.13077166666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 73,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:33.664001+00:00"
-      },
-      {
-        "mmsi": "477997184",
-        "name": "JUB-1",
-        "lat": 22.308895,
-        "lon": 114.15642666666666,
-        "type": 0,
-        "type_name": "unknown",
+        "mmsi": "413900364",
+        "name": "BOSHIHANG8",
+        "lat": 22.359535,
+        "lon": 114.11355166666667,
+        "type": 70,
+        "type_name": "cargo",
         "speed": 0,
         "heading": 511,
         "in_drill_zone": null,
         "in_fishing_hotspot": null,
         "suspicious": false,
-        "last_update": "2026-02-12T06:56:33.866612+00:00"
+        "last_update": "2026-02-12T12:54:35.924892+00:00"
       },
       {
-        "mmsi": "413277130",
-        "name": "NAN  HONG993",
-        "lat": 22.345951666666668,
-        "lon": 114.11316000000001,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.7,
-        "heading": 293,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:35.315394+00:00"
-      },
-      {
-        "mmsi": "477995535",
-        "name": "KUN TUO",
-        "lat": 22.32758,
-        "lon": 114.14415833333334,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.1,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:36.334260+00:00"
-      },
-      {
-        "mmsi": "477997091",
-        "name": "HKK 1",
-        "lat": 22.303673333333332,
-        "lon": 114.15689166666667,
+        "mmsi": "538010946",
+        "name": "TS SURABAYA",
+        "lat": 22.333515,
+        "lon": 114.12483999999999,
         "type": 0,
         "type_name": "unknown",
         "speed": 0,
-        "heading": 196,
+        "heading": 342,
         "in_drill_zone": null,
         "in_fishing_hotspot": null,
         "suspicious": false,
-        "last_update": "2026-02-12T06:56:36.740811+00:00"
-      },
-      {
-        "mmsi": "413465130",
-        "name": "HUIWAN306",
-        "lat": 22.345058333333334,
-        "lon": 114.11322666666666,
-        "type": 79,
-        "type_name": "other",
-        "speed": 0,
-        "heading": 355,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:36.773184+00:00"
-      },
-      {
-        "mmsi": "477996019",
-        "name": "TB 18",
-        "lat": 22.30743,
-        "lon": 114.15558666666668,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:38.905293+00:00"
-      },
-      {
-        "mmsi": "413606950",
-        "name": "NANHANG938",
-        "lat": 22.339008333333332,
-        "lon": 114.11504,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 340,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:40.068020+00:00"
-      },
-      {
-        "mmsi": "477995357",
-        "name": "PACIFIC TRUST",
-        "lat": 22.365941666666668,
-        "lon": 114.10869,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 511,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:40.068116+00:00"
-      },
-      {
-        "mmsi": "413907175",
-        "name": "MMSI-413907175",
-        "lat": 22.354583333333334,
-        "lon": 114.11181666666667,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0.0,
-        "heading": 0.0,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:40.068729+00:00"
-      },
-      {
-        "mmsi": "477995827",
-        "name": "GUO SI",
-        "lat": 22.368401666666667,
-        "lon": 114.10095166666666,
-        "type": 0,
-        "type_name": "unknown",
-        "speed": 0,
-        "heading": 88,
-        "in_drill_zone": null,
-        "in_fishing_hotspot": null,
-        "suspicious": false,
-        "last_update": "2026-02-12T06:56:40.073292+00:00"
+        "last_update": "2026-02-12T12:54:35.928037+00:00"
       },
       {
         "mmsi": "412529197",
         "name": "ZHUDAN5351",
-        "lat": 22.357956666666666,
+        "lat": 22.357926666666668,
         "lon": 114.11299833333334,
         "type": 0,
         "type_name": "unknown",
@@ -4701,21 +3428,1309 @@
         "in_drill_zone": null,
         "in_fishing_hotspot": null,
         "suspicious": false,
-        "last_update": "2026-02-12T06:56:40.086206+00:00"
+        "last_update": "2026-02-12T12:54:35.928578+00:00"
+      },
+      {
+        "mmsi": "477995041",
+        "name": "DISCOVERY BAY 5",
+        "lat": 22.28814,
+        "lon": 114.15768333333334,
+        "type": 40,
+        "type_name": "other",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:36.090901+00:00"
+      },
+      {
+        "mmsi": "4773773",
+        "name": "MMSI-4773773",
+        "lat": 22.409445,
+        "lon": 114.124445,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.0,
+        "heading": 0.0,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:36.703570+00:00"
+      },
+      {
+        "mmsi": "477996455",
+        "name": "LAISSEZ FAIRE 12",
+        "lat": 22.304235000000002,
+        "lon": 114.15767666666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:37.297088+00:00"
+      },
+      {
+        "mmsi": "477996801",
+        "name": "KING  ZONE",
+        "lat": 22.299039999999998,
+        "lon": 114.16714666666667,
+        "type": 80,
+        "type_name": "tanker",
+        "speed": 0.2,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:38.046346+00:00"
+      },
+      {
+        "mmsi": "538007728",
+        "name": "TS KAOHSIUNG",
+        "lat": 22.33727,
+        "lon": 114.11578,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 344,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:38.513634+00:00"
+      },
+      {
+        "mmsi": "477997253",
+        "name": "OCEANIC STAR",
+        "lat": 22.306531666666668,
+        "lon": 114.15856000000001,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.3,
+        "heading": 284,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:38.918892+00:00"
+      },
+      {
+        "mmsi": "477995065",
+        "name": "MAN KIM",
+        "lat": 22.294668333333334,
+        "lon": 114.20340666666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:40.372411+00:00"
+      },
+      {
+        "mmsi": "477995062",
+        "name": "MAN LOK",
+        "lat": 22.28999333333333,
+        "lon": 114.16151833333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 5.3,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:41.293074+00:00"
+      },
+      {
+        "mmsi": "211882930",
+        "name": "UMM QARN",
+        "lat": 25.21435166666667,
+        "lon": 120.92458666666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 18.3,
+        "heading": 32,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:43.952355+00:00"
+      },
+      {
+        "mmsi": "477995027",
+        "name": "FIRST FERRY V",
+        "lat": 22.290616666666665,
+        "lon": 114.15956666666666,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 12.9,
+        "heading": 140,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:44.022264+00:00"
+      },
+      {
+        "mmsi": "477997192",
+        "name": "MM T5",
+        "lat": 22.352338333333332,
+        "lon": 114.11498666666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:45.251024+00:00"
+      },
+      {
+        "mmsi": "413472850",
+        "name": "YONGSHIFENG183",
+        "lat": 22.329658333333334,
+        "lon": 114.11664,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 53,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:45.251339+00:00"
+      },
+      {
+        "mmsi": "477911000",
+        "name": "WING DART",
+        "lat": 22.356873333333333,
+        "lon": 114.11460000000001,
+        "type": 75,
+        "type_name": "other",
+        "speed": 0,
+        "heading": 59,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:45.252740+00:00"
+      },
+      {
+        "mmsi": "413865413",
+        "name": "RUNLONG998",
+        "lat": 22.352845,
+        "lon": 114.11585666666666,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.0,
+        "heading": 0.0,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:45.254526+00:00"
+      },
+      {
+        "mmsi": "636016940",
+        "name": "MSC MANU",
+        "lat": 22.34808333333333,
+        "lon": 114.11840666666667,
+        "type": 75,
+        "type_name": "other",
+        "speed": 0,
+        "heading": 252,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:45.259193+00:00"
+      },
+      {
+        "mmsi": "477996941",
+        "name": "SEA SCORE",
+        "lat": 22.304375,
+        "lon": 114.15633333333334,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:45.796123+00:00"
+      },
+      {
+        "mmsi": "413865483",
+        "name": "BOYUN118",
+        "lat": 22.339655,
+        "lon": 114.1149,
+        "type": 70,
+        "type_name": "cargo",
+        "speed": 0,
+        "heading": 0,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:46.013065+00:00"
+      },
+      {
+        "mmsi": "477995406",
+        "name": "XIN GUANG",
+        "lat": 22.327726666666667,
+        "lon": 114.146365,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:47.617103+00:00"
+      },
+      {
+        "mmsi": "667001746",
+        "name": "HIN LEONG NO.1",
+        "lat": 25.172876666666664,
+        "lon": 121.32233333333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 2.8,
+        "heading": 166,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:48.278377+00:00"
+      },
+      {
+        "mmsi": "636025901",
+        "name": "GHT NINAS",
+        "lat": 22.301566666666666,
+        "lon": 114.08545833333332,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 2.1,
+        "heading": 116,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:49.225216+00:00"
+      },
+      {
+        "mmsi": "477997146",
+        "name": "XIN MING ZHU III",
+        "lat": 22.317856666666668,
+        "lon": 114.15252333333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 9.8,
+        "heading": 164,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:49.308218+00:00"
+      },
+      {
+        "mmsi": "477997055",
+        "name": "HONGKONGWATERTAXI 18",
+        "lat": 22.28662166666667,
+        "lon": 114.1742,
+        "type": 60,
+        "type_name": "passenger",
+        "speed": 8.1,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:49.515984+00:00"
+      },
+      {
+        "mmsi": "477996363",
+        "name": "CHEC 6",
+        "lat": 22.368973333333333,
+        "lon": 114.10204,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:49.574484+00:00"
+      },
+      {
+        "mmsi": "477995928",
+        "name": "WAH FU NO.68",
+        "lat": 22.32627666666667,
+        "lon": 114.14683166666667,
+        "type": 80,
+        "type_name": "tanker",
+        "speed": 0.1,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:49.683997+00:00"
+      },
+      {
+        "mmsi": "413496790",
+        "name": "ZHONG SHAN 20",
+        "lat": 22.313225,
+        "lon": 114.12777833333332,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 34.9,
+        "heading": 127,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:50.335443+00:00"
+      },
+      {
+        "mmsi": "477385000",
+        "name": "UNIVERSAL MK2005",
+        "lat": 22.310058333333334,
+        "lon": 114.15408166666666,
+        "type": 40,
+        "type_name": "other",
+        "speed": 0.1,
+        "heading": 88,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:50.505928+00:00"
+      },
+      {
+        "mmsi": "477997049",
+        "name": "KAU LUNG",
+        "lat": 22.337935,
+        "lon": 114.12409666666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.2,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:51.869372+00:00"
+      },
+      {
+        "mmsi": "413277130",
+        "name": "NAN  HONG993",
+        "lat": 22.302803333333333,
+        "lon": 114.12109333333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.2,
+        "heading": 144,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:54.010269+00:00"
+      },
+      {
+        "mmsi": "477519200",
+        "name": "GUANGZHOU",
+        "lat": 22.355083333333333,
+        "lon": 114.11331666666666,
+        "type": 90,
+        "type_name": "other",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:54.013057+00:00"
+      },
+      {
+        "mmsi": "477995028",
+        "name": "FIRST FERRY VI",
+        "lat": 22.328216666666666,
+        "lon": 114.145575,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:54:59.726877+00:00"
+      },
+      {
+        "mmsi": "477997045",
+        "name": "TAP MUN",
+        "lat": 22.343466666666664,
+        "lon": 114.113765,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:03.174895+00:00"
+      },
+      {
+        "mmsi": "477231400",
+        "name": "GUILIN",
+        "lat": 22.35495,
+        "lon": 114.11314999999999,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 337,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:03.175088+00:00"
+      },
+      {
+        "mmsi": "477095700",
+        "name": "TAI KOO",
+        "lat": 22.344673333333333,
+        "lon": 114.11960333333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.3,
+        "heading": 65,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:03.175164+00:00"
+      },
+      {
+        "mmsi": "477195500",
+        "name": "SHENYANG",
+        "lat": 22.355195,
+        "lon": 114.11302833333333,
+        "type": 0,
+        "type_name": "other",
+        "speed": 0,
+        "heading": 150,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:03.175233+00:00"
+      },
+      {
+        "mmsi": "413847486",
+        "name": "FULI888",
+        "lat": 22.346594999999997,
+        "lon": 114.11276,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 0,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:03.175361+00:00"
+      },
+      {
+        "mmsi": "413465120",
+        "name": "HAIBANGDA33",
+        "lat": 22.357821666666666,
+        "lon": 114.11412,
+        "type": 70,
+        "type_name": "cargo",
+        "speed": 0.1,
+        "heading": 353,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:03.175489+00:00"
+      },
+      {
+        "mmsi": "413907605",
+        "name": "SHUNFENG2018",
+        "lat": 22.3489,
+        "lon": 114.11439999999999,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.0,
+        "heading": 0.0,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:03.175554+00:00"
+      },
+      {
+        "mmsi": "477996333",
+        "name": "SEA SPARKLE",
+        "lat": 22.28997,
+        "lon": 114.158265,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 15,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:03.757428+00:00"
+      },
+      {
+        "mmsi": "477996723",
+        "name": "TB10",
+        "lat": 22.306748333333335,
+        "lon": 114.15571333333334,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:03.915301+00:00"
+      },
+      {
+        "mmsi": "477937600",
+        "name": "SHOPPES FOUR SEASONS",
+        "lat": 22.318348333333333,
+        "lon": 114.15057333333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 1,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:04.066691+00:00"
+      },
+      {
+        "mmsi": "563033000",
+        "name": "EVER LOVELY",
+        "lat": 22.29461,
+        "lon": 114.09604833333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 14.6,
+        "heading": 158,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:06.134566+00:00"
+      },
+      {
+        "mmsi": "416011751",
+        "name": "SHENG YI FA168",
+        "lat": 22.293413333333334,
+        "lon": 114.23016,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:07.577208+00:00"
+      },
+      {
+        "mmsi": "477997251",
+        "name": "XIN MING ZHU XIII",
+        "lat": 22.32782166666667,
+        "lon": 114.14600666666666,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 29,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:08.433678+00:00"
+      },
+      {
+        "mmsi": "477996370",
+        "name": "ORIENTAL PEARL",
+        "lat": 22.287346666666668,
+        "lon": 114.16183666666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 2,
+        "heading": 216,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:08.911117+00:00"
+      },
+      {
+        "mmsi": "477997031",
+        "name": "CHAI WAN",
+        "lat": 22.290671666666665,
+        "lon": 114.171605,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 6.3,
+        "heading": 273,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:11.303642+00:00"
+      },
+      {
+        "mmsi": "477996932",
+        "name": "MARINE 3",
+        "lat": 22.359028333333335,
+        "lon": 114.11371166666666,
+        "type": 90,
+        "type_name": "other",
+        "speed": 0.1,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:12.473538+00:00"
+      },
+      {
+        "mmsi": "413622280",
+        "name": "GUANG  XING   958",
+        "lat": 22.332783333333335,
+        "lon": 114.1172,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.1,
+        "heading": 162,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:12.475782+00:00"
+      },
+      {
+        "mmsi": "477890600",
+        "name": "SCT SHEKOU",
+        "lat": 22.355171666666667,
+        "lon": 114.11290333333334,
+        "type": 52,
+        "type_name": "tug",
+        "speed": 0.1,
+        "heading": 152,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:12.479491+00:00"
+      },
+      {
+        "mmsi": "477770800",
+        "name": "SHANGHAI",
+        "lat": 22.355393333333332,
+        "lon": 114.113235,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.0,
+        "heading": 0.0,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:12.496069+00:00"
+      },
+      {
+        "mmsi": "477995357",
+        "name": "PACIFIC TRUST",
+        "lat": 22.366733333333332,
+        "lon": 114.106025,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 3.6,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:13.247982+00:00"
+      },
+      {
+        "mmsi": "477937300",
+        "name": "THE COTAI STRIP EXPO",
+        "lat": 22.289206666666665,
+        "lon": 114.15233166666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.1,
+        "heading": 106,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:15.613225+00:00"
+      },
+      {
+        "mmsi": "477997054",
+        "name": "XIN MING ZHU VIII",
+        "lat": 22.28771,
+        "lon": 114.15965166666666,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.1,
+        "heading": 197,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:16.451523+00:00"
+      },
+      {
+        "mmsi": "477995427",
+        "name": "SILVER STAR",
+        "lat": 22.29261166666667,
+        "lon": 114.16857333333334,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 5.4,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:17.439202+00:00"
+      },
+      {
+        "mmsi": "477997091",
+        "name": "HKK 1",
+        "lat": 22.292966666666665,
+        "lon": 114.15830333333334,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 12.4,
+        "heading": 156,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:17.508991+00:00"
+      },
+      {
+        "mmsi": "477995716",
+        "name": "PILOT93",
+        "lat": 22.309675000000002,
+        "lon": 114.15863666666668,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.1,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:17.519409+00:00"
+      },
+      {
+        "mmsi": "477996019",
+        "name": "TB 18",
+        "lat": 22.307455,
+        "lon": 114.15554666666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:19.921774+00:00"
+      },
+      {
+        "mmsi": "413583990",
+        "name": "FU LI 98",
+        "lat": 22.33196,
+        "lon": 114.11745333333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 192,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:21.399362+00:00"
+      },
+      {
+        "mmsi": "477478300",
+        "name": "SUZHOU",
+        "lat": 22.35511,
+        "lon": 114.11322166666667,
+        "type": 90,
+        "type_name": "other",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:21.400042+00:00"
+      },
+      {
+        "mmsi": "235067931",
+        "name": "COSCO ROTTERDAM",
+        "lat": 22.28305,
+        "lon": 114.09978333333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 12.6,
+        "heading": 156,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:21.404616+00:00"
+      },
+      {
+        "mmsi": "477997154",
+        "name": "SUN HU",
+        "lat": 22.3073,
+        "lon": 114.11556999999999,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.1,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:21.404737+00:00"
+      },
+      {
+        "mmsi": "477995428",
+        "name": "DAY STAR",
+        "lat": 22.28715833333333,
+        "lon": 114.161435,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.1,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:22.487061+00:00"
+      },
+      {
+        "mmsi": "413762766",
+        "name": "JINLONG 689",
+        "lat": 22.347395,
+        "lon": 114.11945333333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 1.2,
+        "heading": 0,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:23.050889+00:00"
+      },
+      {
+        "mmsi": "563176800",
+        "name": "WAN HAI 356",
+        "lat": 22.336086666666667,
+        "lon": 114.12549333333332,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 73,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:25.000616+00:00"
+      },
+      {
+        "mmsi": "477997212",
+        "name": "HKK 6",
+        "lat": 22.287871666666668,
+        "lon": 114.15866833333332,
+        "type": 40,
+        "type_name": "other",
+        "speed": 0,
+        "heading": 200,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:26.429894+00:00"
+      },
+      {
+        "mmsi": "413865472",
+        "name": "ZHONGHANG923",
+        "lat": 22.346925,
+        "lon": 114.12010666666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 34,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:28.666326+00:00"
+      },
+      {
+        "mmsi": "477997127",
+        "name": "HKK2",
+        "lat": 22.304778333333335,
+        "lon": 114.15714833333332,
+        "type": 40,
+        "type_name": "other",
+        "speed": 0,
+        "heading": 265,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:29.631169+00:00"
+      },
+      {
+        "mmsi": "477847300",
+        "name": "WHAMPOA",
+        "lat": 22.366335,
+        "lon": 114.098115,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 275,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:29.878446+00:00"
+      },
+      {
+        "mmsi": "477937400",
+        "name": "LONDONER GRAND",
+        "lat": 22.318353333333334,
+        "lon": 114.150345,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 1,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:30.577056+00:00"
+      },
+      {
+        "mmsi": "413465130",
+        "name": "HUIWAN306",
+        "lat": 22.345075,
+        "lon": 114.11322666666666,
+        "type": 79,
+        "type_name": "other",
+        "speed": 0,
+        "heading": 355,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:31.193977+00:00"
+      },
+      {
+        "mmsi": "477996981",
+        "name": "LEE BO",
+        "lat": 22.35121666666667,
+        "lon": 114.11193499999999,
+        "type": 80,
+        "type_name": "tanker",
+        "speed": 5.6,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:31.194132+00:00"
+      },
+      {
+        "mmsi": "219027748",
+        "name": "NAKSKOV MAERSK",
+        "lat": 22.335263333333334,
+        "lon": 114.11645666666666,
+        "type": 72,
+        "type_name": "other",
+        "speed": 0,
+        "heading": 343,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:31.194184+00:00"
+      },
+      {
+        "mmsi": "413865572",
+        "name": "HUI HAI LONG 168",
+        "lat": 22.331385,
+        "lon": 114.11792,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 0,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:31.194234+00:00"
       },
       {
         "mmsi": "477995233",
         "name": "CARHING",
-        "lat": 22.367433333333334,
-        "lon": 114.10031666666667,
+        "lat": 22.367583333333336,
+        "lon": 114.1003,
         "type": 0,
         "type_name": "unknown",
-        "speed": 0,
-        "heading": 171,
+        "speed": 0.1,
+        "heading": 168,
         "in_drill_zone": null,
         "in_fishing_hotspot": null,
         "suspicious": false,
-        "last_update": "2026-02-12T06:56:40.086286+00:00"
+        "last_update": "2026-02-12T12:55:31.195247+00:00"
+      },
+      {
+        "mmsi": "477996519",
+        "name": "HOI LAY NO.3",
+        "lat": 22.326188333333334,
+        "lon": 114.14765333333334,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:33.260911+00:00"
+      },
+      {
+        "mmsi": "477384000",
+        "name": "UNIVERSAL MK2004",
+        "lat": 22.290521666666667,
+        "lon": 114.14784333333334,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 15,
+        "heading": 103,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:33.856154+00:00"
+      },
+      {
+        "mmsi": "477320700",
+        "name": "UNIVERSAL MK2017",
+        "lat": 22.32827,
+        "lon": 114.14478000000001,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:37.306546+00:00"
+      },
+      {
+        "mmsi": "477996450",
+        "name": "YUN TIM 328",
+        "lat": 22.336479999999998,
+        "lon": 114.12294666666666,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.5,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:37.674102+00:00"
+      },
+      {
+        "mmsi": "477995429",
+        "name": "TWINKLING STAR",
+        "lat": 22.29394166666667,
+        "lon": 114.16807,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.1,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:38.639378+00:00"
+      },
+      {
+        "mmsi": "477997247",
+        "name": "OCEAN POWER",
+        "lat": 22.36840833333333,
+        "lon": 114.10496333333334,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:39.463459+00:00"
+      },
+      {
+        "mmsi": "413271670",
+        "name": "RONGXIANG7",
+        "lat": 22.289778333333334,
+        "lon": 114.11221166666665,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 9.1,
+        "heading": 244,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:41.191433+00:00"
+      },
+      {
+        "mmsi": "413856502",
+        "name": "RONGJING883",
+        "lat": 22.306805,
+        "lon": 114.12174666666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 257,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:41.191530+00:00"
+      },
+      {
+        "mmsi": "413903622",
+        "name": "JIANTAI19",
+        "lat": 22.358536666666666,
+        "lon": 114.11397166666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.0,
+        "heading": 0.0,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:41.191615+00:00"
+      },
+      {
+        "mmsi": "412473510",
+        "name": "MINGHANG008",
+        "lat": 22.291468333333334,
+        "lon": 114.16824666666666,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 6.3,
+        "heading": 280,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:44.137419+00:00"
+      },
+      {
+        "mmsi": "477997120",
+        "name": "HOIE 168",
+        "lat": 22.312113333333333,
+        "lon": 114.11365333333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:45.361195+00:00"
+      },
+      {
+        "mmsi": "372604000",
+        "name": "KMTC OSAKA",
+        "lat": 22.338121666666666,
+        "lon": 114.12435666666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.3,
+        "heading": 74,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:47.432212+00:00"
+      },
+      {
+        "mmsi": "413762744",
+        "name": "CHENGXIANG32@H0P",
+        "lat": 22.33211,
+        "lon": 114.11741166666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 5,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:48.795876+00:00"
+      },
+      {
+        "mmsi": "477997043",
+        "name": "HUNG HOM",
+        "lat": 22.344179999999998,
+        "lon": 114.11328666666667,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.1,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:49.816685+00:00"
+      },
+      {
+        "mmsi": "413856971",
+        "name": "HUIXINHUI283",
+        "lat": 22.35410166666667,
+        "lon": 114.11234333333333,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.0,
+        "heading": 0.0,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:49.824598+00:00"
+      },
+      {
+        "mmsi": "413229070",
+        "name": "NAN HANG 727",
+        "lat": 22.33672,
+        "lon": 114.12796,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 92,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:49.826345+00:00"
+      },
+      {
+        "mmsi": "477996494",
+        "name": "GOLDEN DRAGON 138",
+        "lat": 22.36723,
+        "lon": 114.10472666666666,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0.1,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:49.829658+00:00"
+      },
+      {
+        "mmsi": "477997185",
+        "name": "HONGKONGWATERTAXI 28",
+        "lat": 22.286270000000002,
+        "lon": 114.162525,
+        "type": 60,
+        "type_name": "passenger",
+        "speed": 0.1,
+        "heading": 82,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:50.775028+00:00"
+      },
+      {
+        "mmsi": "477996816",
+        "name": "GIC 1",
+        "lat": 22.314676666666667,
+        "lon": 114.15568,
+        "type": 0,
+        "type_name": "unknown",
+        "speed": 0,
+        "heading": 511,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:51.004740+00:00"
+      },
+      {
+        "mmsi": "477997036",
+        "name": "LAI WAN",
+        "lat": 22.327583333333333,
+        "lon": 114.14126666666667,
+        "type": 70,
+        "type_name": "cargo",
+        "speed": 0,
+        "heading": 33,
+        "in_drill_zone": null,
+        "in_fishing_hotspot": null,
+        "suspicious": false,
+        "last_update": "2026-02-12T12:55:51.526948+00:00"
       }
     ]
   },
