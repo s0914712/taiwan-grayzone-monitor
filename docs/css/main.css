@@ -687,3 +687,98 @@ body {
     .mobile-bottom-nav { display: none; }
     .sidebar-overlay { display: none; }
 }
+
+/* =============================================================================
+   About Section
+   ============================================================================= */
+
+.about-section {
+    background: var(--bg-primary);
+    padding: var(--spacing-lg) var(--spacing-md);
+    border-top: 1px solid var(--border-glow);
+}
+
+.about-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.about-title {
+    font-family: 'Orbitron', 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--border-glow);
+}
+
+.about-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.about-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glow);
+    border-radius: 6px;
+    padding: var(--spacing-md);
+}
+
+.about-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    margin-bottom: var(--spacing-sm);
+}
+
+.about-card p {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.about-card p:last-child {
+    margin-bottom: 0;
+}
+
+.about-card ul {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    padding-left: 18px;
+    margin: 0;
+}
+
+.about-card ul li {
+    margin-bottom: 4px;
+}
+
+.about-card ul li strong {
+    color: var(--text-primary);
+}
+
+.about-card em {
+    color: var(--accent-cyan);
+    font-style: italic;
+}
+
+.about-card .reference-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.about-card .reference-list li {
+    padding-left: 16px;
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.about-card .reference-list li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent-cyan);
+}
