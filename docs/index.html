@@ -183,6 +183,78 @@
         </aside>
     </div>
 
+    <!-- About Section -->
+    <section class="about-section" id="aboutSection">
+        <div class="about-container">
+            <h2 class="about-title">📡 專案目的 Project Purpose</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>監測目標</h3>
+                    <p>
+                        本專案旨在透過多源衛星數據與 AI 分析技術，即時監測台灣周邊海域的「灰色地帶」活動。
+                        我們追蹤關閉 AIS 訊號的「暗船」(dark vessels)、軍演區域內的異常船舶行為，以及可能與軍事演習相關的海上活動模式，
+                        為海洋安全研究與政策制定提供開放、透明的數據基礎。
+                    </p>
+                </div>
+                <div class="about-card">
+                    <h3>為什麼關注暗船？</h3>
+                    <p>
+                        全球漁業觀察 (Global Fishing Watch) 的研究指出，許多船隻會關閉自動識別系統 (AIS) 訊號，
+                        使其從公共監測系統中消失。這些「暗船」往往涉及非法、未報告及未受規範的捕魚活動 (IUU fishing)，
+                        也可能與灰色地帶軍事行動有關。傳統的船舶追蹤系統僅能呈現「願意被看見」的船隻，
+                        遺漏了大量真實的海上活動。
+                    </p>
+                </div>
+            </div>
+
+            <h2 class="about-title" style="margin-top:24px">🔬 研究方法 Methodology</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>合成孔徑雷達 (SAR) 衛星偵測</h3>
+                    <p>
+                        本專案採用與 Global Fishing Watch 相同的核心技術——合成孔徑雷達 (Synthetic Aperture Radar, SAR) 衛星影像分析。
+                        SAR 技術不受日夜與天候影響，能穿透厚雲層偵測海面船隻。我們分析歐洲太空總署 Sentinel-1 衛星的 SAR 數據，
+                        透過機器學習辨識未公開廣播位置的船隻，揭示公共監測系統無法涵蓋的海上活動全貌。
+                    </p>
+                    <p>
+                        正如 GFW 在其研究中所述：「透過結合衛星雷達影像與科學分析方法，我們能夠催化研究並為政策制定者提供洞見，
+                        揭示過去未知的事物，更有效地打擊非法捕魚行為。」
+                    </p>
+                </div>
+                <div class="about-card">
+                    <h3>CSIS「蟲群信號」方法論</h3>
+                    <p>
+                        本系統參考美國戰略與國際研究中心 (CSIS) 的
+                        <em>Signals in the Swarm</em> 研究框架，建立多層次的可疑船隻識別機制：
+                    </p>
+                    <ul>
+                        <li><strong>行為閾值分析：</strong>偵測在軍演區域活動時間異常高、但在漁撈熱點極少出現的船隻</li>
+                        <li><strong>AIS 異常偵測：</strong>識別頻繁更改船名、長時間關閉 AIS（>18小時）、或變更船舶類型等異常行為</li>
+                        <li><strong>時間序列相關性：</strong>透過 Granger 因果檢定分析暗船活動與解放軍軍事出動之間的時序關聯</li>
+                    </ul>
+                </div>
+                <div class="about-card">
+                    <h3>多源數據整合</h3>
+                    <p>本系統整合以下數據來源，每 6 小時自動更新：</p>
+                    <ul>
+                        <li><strong>Global Fishing Watch API：</strong>SAR 衛星偵測、中國船隻活動、全球漁撈努力量數據</li>
+                        <li><strong>AISStream.io：</strong>即時 AIS 船舶自動識別系統資料</li>
+                        <li><strong>解放軍軍事出動記錄：</strong>日本防衛省公開的台海周邊軍事活動統計</li>
+                    </ul>
+                </div>
+                <div class="about-card">
+                    <h3>參考文獻</h3>
+                    <ul class="reference-list">
+                        <li>Global Fishing Watch, <em>"Satellite Radar Imagery Helps Reveal the True Scale of Hidden Fishing"</em> — SAR 衛星影像技術揭示暗船規模的核心方法論參考</li>
+                        <li>Global Fishing Watch, <em>"Illuminating Dark Fishing Fleets in North Korea"</em> (2020) — 多源數據結合偵測北韓海域約 900 艘中國籍非法漁船</li>
+                        <li>CSIS, <em>"Signals in the Swarm"</em> — 灰色地帶海上活動的可疑船隻行為識別框架</li>
+                        <li>European Space Agency, Sentinel-1 SAR Mission — 本專案使用之合成孔徑雷達衛星數據來源</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- JavaScript Modules -->
     <script src="js/map.js"></script>
     <script src="js/charts.js"></script>
