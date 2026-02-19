@@ -49,6 +49,13 @@ jobs:
           python src/exercise_prediction.py
         continue-on-error: true
 
+      - name: Fetch weekly dark vessel animation data
+        env:
+          GFW_API_TOKEN: ${{ secrets.GFW_API_TOKEN }}
+        run: |
+          python src/fetch_weekly_dark_vessels.py
+        continue-on-error: true
+
       - name: Generate dashboard data
         run: |
           python src/generate_dashboard.py

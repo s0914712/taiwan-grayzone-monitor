@@ -102,6 +102,12 @@ def main():
 
     print(f"✅ Dashboard 資料已儲存: {output_path}")
 
+    # 複製暗船動畫資料至 docs（獨立檔案，避免主 data.json 過大）
+    weekly_dark_path = DATA_DIR / 'weekly_dark_vessels.json'
+    if weekly_dark_path.exists():
+        shutil.copy2(weekly_dark_path, DOCS_DIR / 'weekly_dark_vessels.json')
+        print(f"🎬 已複製暗船動畫資料至 docs/weekly_dark_vessels.json")
+
 
 if __name__ == "__main__":
     main()
