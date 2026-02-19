@@ -83,6 +83,10 @@ const App = (function () {
                     <span class="nav-icon">📊</span>
                     <span>統計</span>
                 </a>
+                <a href="weekly-animation.html">
+                    <span class="nav-icon">🎬</span>
+                    <span>動畫</span>
+                </a>
             `;
             document.body.appendChild(bottomNav);
         }

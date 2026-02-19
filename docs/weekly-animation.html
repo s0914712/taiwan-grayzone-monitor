@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暗船動畫 | Dark Vessel Animation - Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="台灣周邊暗船偵測動畫播放，依實際 SAR 衛星偵測日逐日呈現暗船位置變化">
+    <meta name="keywords" content="暗船動畫,dark vessel animation,SAR,台灣海峽,Taiwan Strait,衛星偵測,maritime surveillance">
+    <meta name="author" content="Taiwan Gray Zone Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-animation.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="暗船動畫 | Dark Vessel Animation">
+    <meta property="og:description" content="台灣周邊暗船偵測動畫播放，依實際 SAR 衛星偵測日逐日呈現暗船位置變化">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-animation.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="暗船動畫 | Dark Vessel Animation">
+    <meta name="twitter:description" content="台灣周邊暗船偵測動畫播放，依實際 SAR 衛星偵測日逐日呈現暗船位置變化">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/main.css">
+
+    <style>
+        body {
+            overflow-y: auto;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 0 0 6px 6px;
+        }
+
+        /* Animation controls */
+        .anim-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            margin: 12px 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .anim-btn {
+            padding: 5px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        .anim-btn:hover,
+        .anim-btn.active {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            background: rgba(0, 245, 255, 0.1);
+        }
+
+        .anim-btn.play-btn {
+            font-size: 16px;
+            padding: 5px 16px;
+            min-width: 44px;
+            text-align: center;
+        }
+
+        .anim-btn.play-btn.playing {
+            color: var(--accent-red);
+            border-color: var(--accent-red);
+            background: rgba(255, 51, 102, 0.1);
+        }
+
+        .anim-separator {
+            width: 1px;
+            height: 20px;
+            background: var(--border-glow);
+        }
+
+        .anim-label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .day-indicator {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--accent-cyan);
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .day-indicator .date-text {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .day-indicator .frame-text {
+            font-size: 9px;
+            color: var(--text-secondary);
+        }
+
+        /* Timeline slider */
+        .timeline-panel {
+            padding: 8px 16px 12px;
+            margin: 0 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glow);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+        }
+
+        .day-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: var(--bg-card);
+            border-radius: 3px;
+            outline: none;
+            margin: 6px 0;
+            cursor: pointer;
+        }
+
+        .day-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
+        }
+
+        .day-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
+        }
+
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 7px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 12px 16px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .stat-card .value.alert {
+            color: var(--accent-red);
+        }
+
+        .stat-card .value.trend-up {
+            color: var(--accent-red);
+        }
+
+        .stat-card .value.trend-down {
+            color: var(--accent-green);
+        }
+
+        .stat-card .label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Main content */
+        .main-content {
+            padding: 0 16px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-title {
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--accent-cyan);
+            border-bottom: 1px solid var(--border-glow);
+        }
+
+        .panel-body {
+            padding: 10px 12px;
+        }
+
+        .chart-container {
+            padding: 10px;
+            height: 200px;
+        }
+
+        /* Region table */
+        .region-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+
+        .region-table th {
+            text-align: left;
+            padding: 6px 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 9px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-glow);
+        }
+
+        .region-table td {
+            padding: 6px 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+        }
+
+        .region-table tr:hover {
+            background: rgba(0, 245, 255, 0.03);
+        }
+
+        /* Map legend (inline) */
+        .map-legend-inline {
+            display: flex;
+            gap: 14px;
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-glow);
+            flex-wrap: wrap;
+        }
+
+        .legend-chip {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+            color: var(--text-secondary);
+        }
+
+        .legend-chip .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .update-info {
+            text-align: center;
+            padding: 10px;
+            font-size: 9px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .anim-controls {
+                margin: 8px 8px 0;
+                gap: 6px;
+            }
+
+            .day-indicator {
+                margin-left: 0;
+                width: 100%;
+                text-align: center;
+                margin-top: 4px;
+            }
+
+            #map {
+                height: 350px;
+            }
+
+            .main-content {
+                padding: 0 8px 60px;
+            }
+
+            .timeline-panel {
+                margin: 0 8px;
+            }
+
+            .stats-row {
+                padding: 8px;
+            }
+        }
+
+        /* Footer */
+        .site-footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 9px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-glow);
+        }
+
+        .site-footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <header class="header">
+        <h1>🎬 暗船動畫 Dark Vessel Animation</h1>
+        <div class="header-nav">
+            <a href="index.html">灰色地帶監測</a>
+            <a href="dark-vessels.html">暗船偵測</a>
+            <a href="statistics.html">統計分析</a>
+            <a href="weekly-animation.html" class="active">暗船動畫</a>
+            <span class="data-status" id="dataStatus">載入中...</span>
+        </div>
+    </header>
+
+    <!-- Animation controls -->
+    <div class="anim-controls" id="animControls">
+        <span class="anim-label">範圍</span>
+        <button class="anim-btn" data-range="30" onclick="setRange(30)">30 天</button>
+        <button class="anim-btn active" data-range="60" onclick="setRange(60)">60 天</button>
+        <button class="anim-btn" data-range="90" onclick="setRange(90)">90 天</button>
+
+        <div class="anim-separator"></div>
+
+        <button class="anim-btn" onclick="stepBackward()" title="上一天">⏮</button>
+        <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" title="播放/暫停">▶</button>
+        <button class="anim-btn" onclick="stepForward()" title="下一天">⏭</button>
+
+        <div class="anim-separator"></div>
+
+        <span class="anim-label">速度</span>
+        <button class="anim-btn active" data-speed="1" onclick="setSpeed(1)">1x</button>
+        <button class="anim-btn" data-speed="2" onclick="setSpeed(2)">2x</button>
+        <button class="anim-btn" data-speed="4" onclick="setSpeed(4)">4x</button>
+
+        <div class="day-indicator" id="dayIndicator">
+            <div class="date-text">--</div>
+            <div class="frame-text">載入中...</div>
+        </div>
+    </div>
+
+    <!-- Timeline slider -->
+    <div class="timeline-panel">
+        <input type="range" class="day-slider" id="daySlider" min="0" max="0" value="0">
+        <div class="timeline-labels" id="timelineLabels"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="value alert" id="statDark">--</div>
+            <div class="label">暗船數量</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statTotal">--</div>
+            <div class="label">SAR 總偵測</div>
+        </div>
+        <div class="stat-card">
+            <div class="value alert" id="statRatio">--%</div>
+            <div class="label">暗船比例</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statChange">--</div>
+            <div class="label">較上次變化</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Map -->
+        <div class="panel map-panel">
+            <div class="panel-title">📍 暗船位置動畫（SAR 衛星偵測 / 每偵測日一幀）</div>
+            <div id="map"></div>
+            <div class="map-legend-inline">
+                <div class="legend-chip"><span class="dot" style="background:#ff3366"></span>台灣海峽</div>
+                <div class="legend-chip"><span class="dot" style="background:#ff6b35"></span>台灣東部</div>
+                <div class="legend-chip"><span class="dot" style="background:#ffd700"></span>南海北部</div>
+                <div class="legend-chip"><span class="dot" style="background:#9b59b6"></span>東海</div>
+            </div>
+        </div>
+
+        <!-- Daily trend chart -->
+        <div class="panel chart-panel">
+            <div class="panel-title">📊 各偵測日暗船數量</div>
+            <div class="chart-container">
+                <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Region breakdown -->
+        <div class="panel">
+            <div class="panel-title">🗺️ 本日各區域分布</div>
+            <div class="panel-body">
+                <table class="region-table">
+                    <thead>
+                        <tr>
+                            <th>區域</th>
+                            <th>總偵測</th>
+                            <th>暗船</th>
+                            <th>座標點</th>
+                        </tr>
+                    </thead>
+                    <tbody id="regionTableBody">
+                        <tr><td colspan="4" class="empty-state">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="update-info" id="updateInfo">資料更新時間: --</div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+
+    <script>
+    // =========================================================================
+    // Region colors (same as map.js MapModule)
+    // =========================================================================
+    const REGION_COLORS = {
+        taiwan_strait: '#ff3366',
+        east_taiwan: '#ff6b35',
+        south_china_sea: '#ffd700',
+        east_china_sea: '#9b59b6'
+    };
+
+    const REGION_BOUNDS = {
+        taiwan_strait: [[23.5, 118.0], [23.5, 122.0], [26.5, 122.0], [26.5, 118.0]],
+        east_taiwan:   [[22.0, 121.5], [22.0, 124.0], [25.5, 124.0], [25.5, 121.5]],
+        south_china_sea: [[18.0, 110.0], [18.0, 118.0], [23.0, 118.0], [23.0, 110.0]],
+        east_china_sea:  [[26.0, 122.0], [26.0, 130.5], [34.0, 130.5], [34.0, 122.0]]
+    };
+
+    // =========================================================================
+    // Animation state
+    // =========================================================================
+    const Anim = {
+        allDays: [],         // all days from JSON
+        filteredDays: [],    // days filtered by selected range
+        currentIdx: 0,
+        playing: false,
+        speed: 1,            // 1x=1500ms, 2x=750ms, 4x=375ms
+        intervalId: null,
+        selectedRange: 60,
+        markerLayer: null,
+        chart: null
+    };
+
+    let map;
+
+    // =========================================================================
+    // Map initialization
+    // =========================================================================
+    function initMap() {
+        map = L.map('map', {
+            center: [26.0, 123.0],
+            zoom: 5,
+            zoomControl: true,
+            attributionControl: false,
+            preferCanvas: true
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 18,
+            opacity: 0.9
+        }).addTo(map);
+
+        // Taiwan outline
+        const taiwanOutline = [
+            [25.3, 121.0], [25.13, 121.5], [24.85, 121.82], [24.5, 121.8],
+            [24.0, 121.5], [23.5, 121.3], [23.0, 121.0], [22.5, 120.85],
+            [22.0, 120.75], [21.9, 120.85], [22.0, 120.45], [22.3, 120.25],
+            [22.6, 120.3], [23.0, 120.1], [23.5, 120.05], [24.0, 120.2],
+            [24.5, 120.5], [25.0, 121.0], [25.3, 121.0]
+        ];
+        L.polygon(taiwanOutline, {
+            color: '#4a90d9', weight: 2, opacity: 0.5,
+            fillColor: '#1a3a5c', fillOpacity: 0.3
+        }).addTo(map);
+
+        // Region boundaries
+        Object.entries(REGION_BOUNDS).forEach(([key, coords]) => {
+            L.polygon(coords, {
+                color: REGION_COLORS[key] || '#00f5ff',
+                weight: 1.5,
+                opacity: 0.4,
+                fillOpacity: 0.02,
+                dashArray: '6,4'
+            }).addTo(map);
+        });
+
+        // Marker layer for animation
+        Anim.markerLayer = L.layerGroup().addTo(map);
+    }
+
+    // =========================================================================
+    // Data loading
+    // =========================================================================
+    async function loadData() {
+        try {
+            const res = await fetch('weekly_dark_vessels.json?' + Date.now());
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            Anim.allDays = data.days || [];
+
+            if (Anim.allDays.length === 0) {
+                document.getElementById('dataStatus').textContent = '⚠️ 尚無動畫資料';
+                document.getElementById('regionTableBody').innerHTML =
+                    '<tr><td colspan="4" class="empty-state">尚無資料，請等待下次資料更新</td></tr>';
+                return;
+            }
+
+            // Apply default range filter
+            applyRangeFilter(Anim.selectedRange);
+
+            // Update status
+            document.getElementById('dataStatus').textContent =
+                `✅ ${data.date_range.start} ~ ${data.date_range.end}`;
+            document.getElementById('updateInfo').textContent =
+                '更新: ' + new Date(data.updated_at).toLocaleString('zh-TW');
+
+        } catch (e) {
+            console.error('載入失敗:', e);
+            document.getElementById('dataStatus').textContent = '❌ 載入失敗';
+            document.getElementById('regionTableBody').innerHTML =
+                '<tr><td colspan="4" class="empty-state">資料載入失敗，請稍後再試</td></tr>';
+        }
+    }
+
+    // =========================================================================
+    // Range filtering
+    // =========================================================================
+    function applyRangeFilter(days) {
+        Anim.selectedRange = days;
+
+        // Filter to last N days
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+        Anim.filteredDays = Anim.allDays.filter(d => d.date >= cutoffStr);
+
+        if (Anim.filteredDays.length === 0) {
+            Anim.filteredDays = Anim.allDays; // fallback to all data
+        }
+
+        Anim.currentIdx = 0;
+        pause();
+
+        updateSlider();
+        updateChart();
+        renderFrame(0);
+    }
+
+    function setRange(days) {
+        // Update button styles
+        document.querySelectorAll('[data-range]').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.range) === days);
+        });
+        applyRangeFilter(days);
+    }
+
+    // =========================================================================
+    // Frame rendering
+    // =========================================================================
+    function renderFrame(idx) {
+        if (idx < 0 || idx >= Anim.filteredDays.length) return;
+        Anim.currentIdx = idx;
+
+        const day = Anim.filteredDays[idx];
+
+        // Clear markers
+        Anim.markerLayer.clearLayers();
+
+        // Plot dark vessel points
+        const regions = day.regions || {};
+        Object.entries(regions).forEach(([regionId, regionData]) => {
+            const color = REGION_COLORS[regionId] || '#ff3366';
+            const points = regionData.points || [];
+
+            points.forEach(pt => {
+                const radius = Math.min(3 + Math.log2(pt.detections || 1) * 2, 10);
+
+                L.circleMarker([pt.lat, pt.lon], {
+                    radius: radius,
+                    fillColor: color,
+                    color: color,
+                    weight: 1,
+                    opacity: 0.7,
+                    fillOpacity: 0.5
+                }).addTo(Anim.markerLayer).bindPopup(
+                    `<b style="color:${color}">暗船偵測</b><br>` +
+                    `區域: ${regionData.name || regionId}<br>` +
+                    `日期: ${day.date}<br>` +
+                    `偵測數: ${pt.detections || 1}<br>` +
+                    `位置: ${pt.lat}, ${pt.lon}`
+                );
+            });
+        });
+
+        // Update UI
+        updateDayIndicator(day, idx);
+        updateStatCards(day, idx);
+        updateRegionTable(day);
+        updateSliderPosition(idx);
+        highlightChartBar(idx);
+    }
+
+    // =========================================================================
+    // UI updates
+    // =========================================================================
+    function updateDayIndicator(day, idx) {
+        const indicator = document.getElementById('dayIndicator');
+        indicator.innerHTML = `
+            <div class="date-text">${day.date}</div>
+            <div class="frame-text">第 ${idx + 1} / ${Anim.filteredDays.length} 天</div>
+        `;
+    }
+
+    function updateStatCards(day, idx) {
+        const s = day.summary;
+        document.getElementById('statDark').textContent = (s.dark_vessels || 0).toLocaleString();
+        document.getElementById('statTotal').textContent = (s.total_detections || 0).toLocaleString();
+        document.getElementById('statRatio').textContent = (s.dark_ratio || 0) + '%';
+
+        // Change from previous day
+        const changeEl = document.getElementById('statChange');
+        if (idx > 0) {
+            const prevDark = Anim.filteredDays[idx - 1].summary.dark_vessels || 0;
+            const currDark = s.dark_vessels || 0;
+            const diff = currDark - prevDark;
+            const pct = prevDark > 0 ? ((diff / prevDark) * 100).toFixed(0) : '--';
+
+            changeEl.textContent = (diff >= 0 ? '+' : '') + pct + '%';
+            changeEl.className = 'value ' + (diff > 0 ? 'trend-up' : diff < 0 ? 'trend-down' : '');
+        } else {
+            changeEl.textContent = '--';
+            changeEl.className = 'value';
+        }
+    }
+
+    function updateRegionTable(day) {
+        const tbody = document.getElementById('regionTableBody');
+        const regions = day.regions || {};
+        const regionOrder = ['taiwan_strait', 'east_taiwan', 'south_china_sea', 'east_china_sea'];
+
+        const rows = regionOrder
+            .filter(key => regions[key])
+            .map(key => {
+                const r = regions[key];
+                const color = REGION_COLORS[key] || '#ff3366';
+                return `<tr>
+                    <td style="color:${color};font-weight:500">${r.name || key}</td>
+                    <td>${r.total_count || 0}</td>
+                    <td style="color:var(--accent-red);font-weight:600">${r.dark_count || 0}</td>
+                    <td>${(r.points || []).length} pts</td>
+                </tr>`;
+            });
+
+        tbody.innerHTML = rows.join('') || '<tr><td colspan="4" class="empty-state">本日無偵測資料</td></tr>';
+    }
+
+    // =========================================================================
+    // Slider
+    // =========================================================================
+    function updateSlider() {
+        const slider = document.getElementById('daySlider');
+        slider.min = 0;
+        slider.max = Math.max(0, Anim.filteredDays.length - 1);
+        slider.value = 0;
+
+        // Timeline labels
+        const labels = document.getElementById('timelineLabels');
+        const days = Anim.filteredDays;
+        if (days.length <= 1) {
+            labels.innerHTML = days.length === 1 ? `<span>${days[0].date.slice(5)}</span>` : '';
+            return;
+        }
+
+        // Show ~6 evenly spaced labels
+        const step = Math.max(1, Math.floor(days.length / 5));
+        const labelHtml = [];
+        for (let i = 0; i < days.length; i++) {
+            if (i === 0 || i === days.length - 1 || i % step === 0) {
+                labelHtml.push(`<span>${days[i].date.slice(5)}</span>`);
+            }
+        }
+        labels.innerHTML = labelHtml.join('');
+    }
+
+    function updateSliderPosition(idx) {
+        document.getElementById('daySlider').value = idx;
+    }
+
+    document.getElementById('daySlider').addEventListener('input', function () {
+        pause();
+        renderFrame(parseInt(this.value));
+    });
+
+    // =========================================================================
+    // Chart
+    // =========================================================================
+    function updateChart() {
+        const ctx = document.getElementById('dailyChart').getContext('2d');
+
+        if (Anim.chart) {
+            Anim.chart.destroy();
+        }
+
+        const labels = Anim.filteredDays.map(d => d.date.slice(5));
+        const data = Anim.filteredDays.map(d => d.summary.dark_vessels || 0);
+
+        Anim.chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '暗船數量',
+                    data: data,
+                    backgroundColor: data.map((_, i) =>
+                        i === Anim.currentIdx ? 'rgba(0, 245, 255, 0.8)' : 'rgba(255, 51, 102, 0.5)'
+                    ),
+                    borderColor: data.map((_, i) =>
+                        i === Anim.currentIdx ? '#00f5ff' : '#ff3366'
+                    ),
+                    borderWidth: 1,
+                    borderRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#8aa4c8', font: { size: 8, family: 'JetBrains Mono' }, maxRotation: 45 },
+                        grid: { color: 'rgba(0,245,255,0.05)' }
+                    },
+                    y: {
+                        ticks: { color: '#8aa4c8', font: { size: 9, family: 'JetBrains Mono' } },
+                        grid: { color: 'rgba(0,245,255,0.05)' }
+                    }
+                }
+            }
+        });
+    }
+
+    function highlightChartBar(idx) {
+        if (!Anim.chart) return;
+        const dataset = Anim.chart.data.datasets[0];
+        dataset.backgroundColor = dataset.data.map((_, i) =>
+            i === idx ? 'rgba(0, 245, 255, 0.8)' : 'rgba(255, 51, 102, 0.5)'
+        );
+        dataset.borderColor = dataset.data.map((_, i) =>
+            i === idx ? '#00f5ff' : '#ff3366'
+        );
+        Anim.chart.update('none');
+    }
+
+    // =========================================================================
+    // Playback controls
+    // =========================================================================
+    function play() {
+        if (Anim.playing) return;
+        if (Anim.filteredDays.length === 0) return;
+
+        // If at the end, restart from beginning
+        if (Anim.currentIdx >= Anim.filteredDays.length - 1) {
+            Anim.currentIdx = -1;
+        }
+
+        Anim.playing = true;
+        const btn = document.getElementById('playBtn');
+        btn.classList.add('playing');
+        btn.textContent = '⏸';
+
+        const baseInterval = 1500;
+        const interval = baseInterval / Anim.speed;
+
+        Anim.intervalId = setInterval(() => {
+            const nextIdx = Anim.currentIdx + 1;
+            if (nextIdx >= Anim.filteredDays.length) {
+                pause();
+                return;
+            }
+            renderFrame(nextIdx);
+        }, interval);
+    }
+
+    function pause() {
+        Anim.playing = false;
+        clearInterval(Anim.intervalId);
+        const btn = document.getElementById('playBtn');
+        btn.classList.remove('playing');
+        btn.textContent = '▶';
+    }
+
+    function togglePlay() {
+        if (Anim.playing) {
+            pause();
+        } else {
+            play();
+        }
+    }
+
+    function stepForward() {
+        pause();
+        const nextIdx = Math.min(Anim.currentIdx + 1, Anim.filteredDays.length - 1);
+        renderFrame(nextIdx);
+    }
+
+    function stepBackward() {
+        pause();
+        const prevIdx = Math.max(Anim.currentIdx - 1, 0);
+        renderFrame(prevIdx);
+    }
+
+    function setSpeed(speed) {
+        Anim.speed = speed;
+        document.querySelectorAll('[data-speed]').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.speed) === speed);
+        });
+        if (Anim.playing) {
+            pause();
+            play();
+        }
+    }
+
+    // =========================================================================
+    // Keyboard shortcuts
+    // =========================================================================
+    document.addEventListener('keydown', function (e) {
+        if (e.target.tagName === 'INPUT') return;
+        switch (e.key) {
+            case ' ':
+                e.preventDefault();
+                togglePlay();
+                break;
+            case 'ArrowRight':
+                stepForward();
+                break;
+            case 'ArrowLeft':
+                stepBackward();
+                break;
+        }
+    });
+
+    // =========================================================================
+    // Mobile bottom nav
+    // =========================================================================
+    function setupMobileNav() {
+        if (document.querySelector('.mobile-bottom-nav')) return;
+        const nav = document.createElement('nav');
+        nav.className = 'mobile-bottom-nav';
+        nav.innerHTML = `
+            <a href="index.html">
+                <span class="nav-icon">🛰️</span>
+                <span>監測</span>
+            </a>
+            <a href="dark-vessels.html">
+                <span class="nav-icon">🔦</span>
+                <span>暗船</span>
+            </a>
+            <a href="statistics.html">
+                <span class="nav-icon">📊</span>
+                <span>統計</span>
+            </a>
+            <a href="weekly-animation.html" class="active">
+                <span class="nav-icon">🎬</span>
+                <span>動畫</span>
+            </a>
+        `;
+        document.body.appendChild(nav);
+    }
+
+    // =========================================================================
+    // Initialize
+    // =========================================================================
+    initMap();
+    setupMobileNav();
+    loadData();
+    </script>
+</body>
+
+</html>
