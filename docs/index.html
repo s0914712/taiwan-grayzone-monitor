@@ -78,17 +78,18 @@
 
     <div class="app-container">
         <header class="header">
-            <h1>🛰️ 台灣灰色地帶監測</h1>
+            <h1 data-i18n="title.index">🛰️ 台灣灰色地帶監測</h1>
             <div class="header-info">
                 <a href="index.html"
-                    style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)">灰色地帶</a>
+                    style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.grayzone">灰色地帶</a>
                 <a href="dark-vessels.html"
-                    style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px">暗船偵測</a>
+                    style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.dark_vessels">暗船偵測</a>
                 <a href="statistics.html"
-                    style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px">統計分析</a>
+                    style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.statistics">統計分析</a>
                 <a href="weekly-animation.html"
-                    style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px">暗船動畫</a>
-                <div class="data-status" id="dataStatus">⏳ 載入中...</div>
+                    style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.animation">暗船動畫</a>
+                <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+                <div class="data-status" id="dataStatus" data-i18n="common.loading">⏳ 載入中...</div>
             </div>
         </header>
 
@@ -97,55 +98,55 @@
 
             <div class="map-overlay">
                 <div class="overlay-card">
-                    <div class="label">船隻數</div>
+                    <div class="label" data-i18n="idx.vessel_count">船隻數</div>
                     <div class="value" id="vesselCount">0</div>
                 </div>
                 <div class="overlay-card">
-                    <div class="label">軍演區</div>
+                    <div class="label" data-i18n="idx.drill_zones">軍演區</div>
                     <div class="value" id="drillZoneCount">0</div>
                 </div>
                 <div class="overlay-card alert">
-                    <div class="label">可疑船隻</div>
+                    <div class="label" data-i18n="idx.suspicious">可疑船隻</div>
                     <div class="value" id="suspiciousCount">0</div>
                 </div>
             </div>
 
             <div class="layer-toggles">
-                <label class="layer-toggle"><input type="checkbox" id="showDrillZones" checked> 軍演區域</label>
-                <label class="layer-toggle"><input type="checkbox" id="showFishingHotspots" checked> 漁撈熱點</label>
-                <label class="layer-toggle"><input type="checkbox" id="showVessels" checked> 船隻</label>
+                <label class="layer-toggle"><input type="checkbox" id="showDrillZones" checked> <span data-i18n="idx.layer_drills">軍演區域</span></label>
+                <label class="layer-toggle"><input type="checkbox" id="showFishingHotspots" checked> <span data-i18n="idx.layer_fishing">漁撈熱點</span></label>
+                <label class="layer-toggle"><input type="checkbox" id="showVessels" checked> <span data-i18n="idx.layer_vessels">船隻</span></label>
             </div>
 
             <div class="map-legend">
                 <div class="legend-section">
-                    <div class="legend-title">船隻類型</div>
+                    <div class="legend-title" data-i18n="idx.legend_type">船隻類型</div>
                     <div class="legend-item">
-                        <div class="legend-dot" style="background:#00ff88"></div> 漁船
+                        <div class="legend-dot" style="background:#00ff88"></div> <span data-i18n="vessel.fishing">漁船</span>
                     </div>
                     <div class="legend-item">
-                        <div class="legend-dot" style="background:#00f5ff"></div> 貨船
+                        <div class="legend-dot" style="background:#00f5ff"></div> <span data-i18n="vessel.cargo">貨船</span>
                     </div>
                     <div class="legend-item">
-                        <div class="legend-dot" style="background:#ff6b35"></div> 油輪
+                        <div class="legend-dot" style="background:#ff6b35"></div> <span data-i18n="vessel.tanker">油輪</span>
                     </div>
                     <div class="legend-item">
-                        <div class="legend-dot" style="background:#ff3366"></div> 其他
+                        <div class="legend-dot" style="background:#ff3366"></div> <span data-i18n="vessel.other">其他</span>
                     </div>
                     <div class="legend-item">
-                        <div class="legend-dot" style="background:#ff3366;box-shadow:0 0 6px #ff3366"></div> 可疑
+                        <div class="legend-dot" style="background:#ff3366;box-shadow:0 0 6px #ff3366"></div> <span data-i18n="vessel.suspicious">可疑</span>
                     </div>
                 </div>
                 <div class="legend-section">
-                    <div class="legend-title">衛星偵測</div>
+                    <div class="legend-title" data-i18n="idx.legend_sat">衛星偵測</div>
                     <div class="legend-item">
                         <div class="legend-dot" style="background:rgba(255,51,102,0.6);border:1px solid #ff3366"></div>
-                        SAR 暗船
+                        <span data-i18n="idx.legend_sar">SAR 暗船</span>
                     </div>
                 </div>
                 <div class="legend-section">
-                    <div class="legend-title">區域</div>
+                    <div class="legend-title" data-i18n="idx.legend_region">區域</div>
                     <div class="legend-item">
-                        <div class="legend-line" style="background:rgba(0,255,136,0.4)"></div> 漁撈熱點
+                        <div class="legend-line" style="background:rgba(0,255,136,0.4)"></div> <span data-i18n="idx.legend_hotspot">漁撈熱點</span>
                     </div>
                 </div>
             </div>
@@ -153,129 +154,108 @@
 
         <aside class="sidebar">
             <div class="sidebar-section" id="aisStatsSection">
-                <div class="section-title">📊 AIS 即時統計</div>
+                <div class="section-title" data-i18n="idx.ais_title">📊 AIS 即時統計</div>
                 <div class="stats-grid">
                     <div class="stat-box">
                         <div class="value" id="statTotal">0</div>
-                        <div class="label">總船隻</div>
+                        <div class="label" data-i18n="idx.total_vessels">總船隻</div>
                     </div>
                     <div class="stat-box">
                         <div class="value" id="statFishing">0</div>
-                        <div class="label">漁船</div>
+                        <div class="label" data-i18n="vessel.fishing">漁船</div>
                     </div>
                     <div class="stat-box">
                         <div class="value" id="statCargo">0</div>
-                        <div class="label">貨船</div>
+                        <div class="label" data-i18n="vessel.cargo">貨船</div>
                     </div>
                     <div class="stat-box">
                         <div class="value" id="statTanker">0</div>
-                        <div class="label">油輪</div>
+                        <div class="label" data-i18n="vessel.tanker">油輪</div>
                     </div>
                 </div>
             </div>
 
             <div class="sidebar-section" id="gfwSection" style="display:none">
-                <div class="section-title">🛰️ GFW 衛星監測 (30天)</div>
+                <div class="section-title" data-i18n="idx.gfw_title">🛰️ GFW 衛星監測 (30天)</div>
                 <div class="gfw-stats-grid">
                     <div class="gfw-stat-box">
                         <div class="value" id="gfwDarkVessels">--</div>
-                        <div class="label">日均暗船數</div>
+                        <div class="label" data-i18n="idx.avg_dark">日均暗船數</div>
                     </div>
                     <div class="gfw-stat-box">
                         <div class="value" id="gfwTrend">--</div>
-                        <div class="label">7日趨勢</div>
+                        <div class="label" data-i18n="idx.trend_7d">7日趨勢</div>
                     </div>
                     <div class="gfw-stat-box warn">
                         <div class="value" id="gfwChnHours">--</div>
-                        <div class="label">中國船時(萬)</div>
+                        <div class="label" data-i18n="idx.chn_hours">中國船時(萬)</div>
                     </div>
                     <div class="gfw-stat-box warn">
                         <div class="value" id="gfwDrillRecords">--</div>
-                        <div class="label">軍演區記錄</div>
+                        <div class="label" data-i18n="idx.drill_records">軍演區記錄</div>
                     </div>
                     <div class="gfw-stat-box">
                         <div class="value" id="gfwFishingHours">--</div>
-                        <div class="label">漁撈時數(萬)</div>
+                        <div class="label" data-i18n="idx.fishing_hours">漁撈時數(萬)</div>
                     </div>
                     <div class="gfw-stat-box">
                         <div class="value" id="gfwDataDays">--</div>
-                        <div class="label">資料天數</div>
+                        <div class="label" data-i18n="idx.data_days">資料天數</div>
                     </div>
                 </div>
                 <div class="sparkline-container">
-                    <div class="sparkline-label">每日 SAR 偵測量</div>
+                    <div class="sparkline-label" data-i18n="idx.sparkline">每日 SAR 偵測量</div>
                     <div class="sparkline-bar-row" id="gfwSparkline"></div>
                 </div>
                 <div id="gfwAlerts" style="margin-top:5px"></div>
             </div>
 
             <div class="sidebar-section">
-                <div class="section-title">🔍 可疑船隻 (CSIS 方法論)</div>
+                <div class="section-title" data-i18n="idx.suspicious_title">🔍 可疑船隻 (CSIS 方法論)</div>
                 <div class="suspicious-list" id="suspiciousList">
-                    <div style="font-size:8px;color:var(--text-secondary);padding:4px">累積觀測資料中...</div>
+                    <div style="font-size:8px;color:var(--text-secondary);padding:4px" data-i18n="idx.suspicious_wait">累積觀測資料中...</div>
                 </div>
             </div>
 
             <div class="sidebar-section">
-                <div class="section-title">⚠️ 軍演監測區</div>
+                <div class="section-title" data-i18n="idx.drill_title">⚠️ 軍演監測區</div>
                 <div class="zone-list" id="zoneList"></div>
             </div>
 
             <div class="sidebar-section">
-                <div class="section-title">🚢 近期船隻</div>
+                <div class="section-title" data-i18n="idx.recent_title">🚢 近期船隻</div>
                 <div class="vessel-list" id="vesselList"></div>
             </div>
 
-            <div class="update-info" id="updateInfo">
+            <div class="update-info" id="updateInfo" data-i18n="common.update_time">
                 資料更新時間: --
             </div>
         </aside>
     </div>
 
-    <!-- About Section -->
-    <section class="about-section" id="aboutSection">
+    <!-- About Section (Chinese) -->
+    <section class="about-section lang-zh-only" id="aboutSection">
         <div class="about-container">
             <h2 class="about-title">📡 專案目的 Project Purpose</h2>
             <div class="about-grid">
                 <div class="about-card">
                     <h3>監測目標</h3>
-                    <p>
-                        本專案旨在透過多源衛星數據與 AI 分析技術，即時監測台灣周邊海域的「灰色地帶」活動。
-                        我們追蹤關閉 AIS 訊號的「暗船」(dark vessels)、軍演區域內的異常船舶行為，以及可能與軍事演習相關的海上活動模式，
-                        為海洋安全研究與政策制定提供開放、透明的數據基礎。
-                    </p>
+                    <p>本專案旨在透過多源衛星數據與 AI 分析技術，即時監測台灣周邊海域的「灰色地帶」活動。我們追蹤關閉 AIS 訊號的「暗船」(dark vessels)、軍演區域內的異常船舶行為，以及可能與軍事演習相關的海上活動模式，為海洋安全研究與政策制定提供開放、透明的數據基礎。</p>
                 </div>
                 <div class="about-card">
                     <h3>為什麼關注暗船？</h3>
-                    <p>
-                        全球漁業觀察 (Global Fishing Watch) 的研究指出，許多船隻會關閉自動識別系統 (AIS) 訊號，
-                        使其從公共監測系統中消失。這些「暗船」往往涉及非法、未報告及未受規範的捕魚活動 (IUU fishing)，
-                        也可能與灰色地帶軍事行動有關。傳統的船舶追蹤系統僅能呈現「願意被看見」的船隻，
-                        遺漏了大量真實的海上活動。
-                    </p>
+                    <p>全球漁業觀察 (Global Fishing Watch) 的研究指出，許多船隻會關閉自動識別系統 (AIS) 訊號，使其從公共監測系統中消失。這些「暗船」往往涉及非法、未報告及未受規範的捕魚活動 (IUU fishing)，也可能與灰色地帶軍事行動有關。</p>
                 </div>
             </div>
-
             <h2 class="about-title" style="margin-top:24px">🔬 研究方法 Methodology</h2>
             <div class="about-grid">
                 <div class="about-card">
                     <h3>合成孔徑雷達 (SAR) 衛星偵測</h3>
-                    <p>
-                        本專案採用與 Global Fishing Watch 相同的核心技術——合成孔徑雷達 (Synthetic Aperture Radar, SAR) 衛星影像分析。
-                        SAR 技術不受日夜與天候影響，能穿透厚雲層偵測海面船隻。我們分析歐洲太空總署 Sentinel-1 衛星的 SAR 數據，
-                        透過機器學習辨識未公開廣播位置的船隻，揭示公共監測系統無法涵蓋的海上活動全貌。
-                    </p>
-                    <p>
-                        正如 GFW 在其研究中所述：「透過結合衛星雷達影像與科學分析方法，我們能夠催化研究並為政策制定者提供洞見，
-                        揭示過去未知的事物，更有效地打擊非法捕魚行為。」
-                    </p>
+                    <p>本專案採用與 Global Fishing Watch 相同的核心技術——合成孔徑雷達 (Synthetic Aperture Radar, SAR) 衛星影像分析。SAR 技術不受日夜與天候影響，能穿透厚雲層偵測海面船隻。</p>
                 </div>
                 <div class="about-card">
                     <h3>CSIS「蟲群信號」方法論</h3>
-                    <p>
-                        本系統參考美國戰略與國際研究中心 (CSIS) 的
-                        <em>Signals in the Swarm</em> 研究框架，建立多層次的可疑船隻識別機制：
-                    </p>
+                    <p>本系統參考美國戰略與國際研究中心 (CSIS) 的 <em>Signals in the Swarm</em> 研究框架，建立多層次的可疑船隻識別機制：</p>
                     <ul>
                         <li><strong>行為閾值分析：</strong>偵測在軍演區域活動時間異常高、但在漁撈熱點極少出現的船隻</li>
                         <li><strong>AIS 異常偵測：</strong>識別頻繁更改船名、長時間關閉 AIS（>18小時）、或變更船舶類型等異常行為</li>
@@ -294,10 +274,61 @@
                 <div class="about-card">
                     <h3>參考文獻</h3>
                     <ul class="reference-list">
-                        <li>Global Fishing Watch, <em>"Satellite Radar Imagery Helps Reveal the True Scale of Hidden Fishing"</em> — SAR 衛星影像技術揭示暗船規模的核心方法論參考</li>
-                        <li>Global Fishing Watch, <em>"Illuminating Dark Fishing Fleets in North Korea"</em> (2020) — 多源數據結合偵測北韓海域約 900 艘中國籍非法漁船</li>
-                        <li>CSIS, <em>"Signals in the Swarm"</em> — 灰色地帶海上活動的可疑船隻行為識別框架</li>
-                        <li>European Space Agency, Sentinel-1 SAR Mission — 本專案使用之合成孔徑雷達衛星數據來源</li>
+                        <li>Global Fishing Watch, <em>"Satellite Radar Imagery Helps Reveal the True Scale of Hidden Fishing"</em></li>
+                        <li>Global Fishing Watch, <em>"Illuminating Dark Fishing Fleets in North Korea"</em> (2020)</li>
+                        <li>CSIS, <em>"Signals in the Swarm"</em></li>
+                        <li>European Space Agency, Sentinel-1 SAR Mission</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section (English) -->
+    <section class="about-section lang-en-only" id="aboutSectionEn">
+        <div class="about-container">
+            <h2 class="about-title">📡 Project Purpose</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>Monitoring Objective</h3>
+                    <p>This project uses multi-source satellite data and AI analysis to monitor "gray zone" activities in waters around Taiwan in real time. We track "dark vessels" (ships with AIS turned off), anomalous vessel behavior in military exercise zones, and maritime activity patterns potentially linked to military exercises — providing an open, transparent data foundation for maritime security research and policy.</p>
+                </div>
+                <div class="about-card">
+                    <h3>Why Focus on Dark Vessels?</h3>
+                    <p>Research by Global Fishing Watch shows that many vessels disable their Automatic Identification System (AIS), disappearing from public monitoring systems. These "dark vessels" are often involved in illegal, unreported, and unregulated fishing (IUU fishing) and may also be linked to gray zone military operations.</p>
+                </div>
+            </div>
+            <h2 class="about-title" style="margin-top:24px">🔬 Research Methodology</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>Synthetic Aperture Radar (SAR) Detection</h3>
+                    <p>This project uses the same core technology as Global Fishing Watch — Synthetic Aperture Radar (SAR) satellite imagery analysis. SAR works day and night, in any weather, penetrating cloud cover to detect vessels at sea.</p>
+                </div>
+                <div class="about-card">
+                    <h3>CSIS "Signals in the Swarm" Methodology</h3>
+                    <p>The system references the CSIS <em>Signals in the Swarm</em> research framework, establishing multi-layered suspicious vessel identification:</p>
+                    <ul>
+                        <li><strong>Behavioral Threshold:</strong> Detecting vessels with abnormally high dwell time in drill zones but rarely present in fishing hotspots</li>
+                        <li><strong>AIS Anomaly Detection:</strong> Identifying frequent name changes, prolonged AIS silence (&gt;18 hours), or vessel type changes</li>
+                        <li><strong>Time-Series Correlation:</strong> Granger causality analysis between dark vessel activity and PLA military sorties</li>
+                    </ul>
+                </div>
+                <div class="about-card">
+                    <h3>Multi-Source Data Integration</h3>
+                    <p>The system integrates data from the following sources, updated every 6 hours:</p>
+                    <ul>
+                        <li><strong>Global Fishing Watch API:</strong> SAR dark vessel detection, fishing effort data</li>
+                        <li><strong>AISStream.io:</strong> Real-time AIS vessel tracking</li>
+                        <li><strong>PLA Military Sortie Records:</strong> Publicly available defense reports on military activity near Taiwan</li>
+                    </ul>
+                </div>
+                <div class="about-card">
+                    <h3>References</h3>
+                    <ul class="reference-list">
+                        <li>Global Fishing Watch, <em>"Satellite Radar Imagery Helps Reveal the True Scale of Hidden Fishing"</em></li>
+                        <li>Global Fishing Watch, <em>"Illuminating Dark Fishing Fleets in North Korea"</em> (2020)</li>
+                        <li>CSIS, <em>"Signals in the Swarm"</em></li>
+                        <li>European Space Agency, Sentinel-1 SAR Mission</li>
                     </ul>
                 </div>
             </div>
@@ -307,6 +338,14 @@
     <footer class="site-footer">
         <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
     </footer>
+
+    <!-- i18n (must load before other modules) -->
+    <script src="js/i18n.js"></script>
+    <style>
+        body.lang-en .lang-zh-only { display: none !important; }
+        body.lang-zh .lang-en-only { display: none !important; }
+        body:not(.lang-en):not(.lang-zh) .lang-en-only { display: none !important; }
+    </style>
 
     <!-- JavaScript Modules -->
     <script src="js/map.js"></script>

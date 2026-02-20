@@ -68,92 +68,89 @@
     <!-- End Google Tag Manager (noscript) -->
 
     <header class="header">
-        <h1>🔦 暗船偵測 Dark Vessel Detection</h1>
+        <h1 data-i18n="title.dark">🔦 暗船偵測 Dark Vessel Detection</h1>
         <div class="header-nav">
-            <a href="index.html">灰色地帶監測</a>
-            <a href="dark-vessels.html" class="active">暗船偵測</a>
-            <a href="statistics.html">統計分析</a>
-            <a href="weekly-animation.html">暗船動畫</a>
-            <span class="data-status" id="dataStatus">載入中...</span>
+            <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="dark-vessels.html" class="active" data-i18n="nav.dark_vessels">暗船偵測</a>
+            <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
+            <a href="weekly-animation.html" data-i18n="nav.animation">暗船動畫</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
         </div>
     </header>
 
-    <!-- 統計卡片 -->
     <div class="stats-row">
         <div class="stat-card">
             <div class="value" id="statTotal">--</div>
-            <div class="label">SAR 總偵測數</div>
+            <div class="label" data-i18n="dark.total_detect">SAR 總偵測數</div>
         </div>
         <div class="stat-card">
             <div class="value alert" id="statDark">--</div>
-            <div class="label">暗船數量</div>
+            <div class="label" data-i18n="dark.count">暗船數量</div>
         </div>
         <div class="stat-card">
             <div class="value" id="statMatched">--</div>
-            <div class="label">有 AIS 匹配</div>
+            <div class="label" data-i18n="dark.ais_match">有 AIS 匹配</div>
         </div>
         <div class="stat-card">
             <div class="value alert" id="statRatio">--%</div>
-            <div class="label">暗船比例</div>
+            <div class="label" data-i18n="dark.ratio">暗船比例</div>
         </div>
     </div>
 
     <div class="main-content">
-        <!-- 暗船地圖 -->
         <div class="panel map-panel">
-            <div class="panel-title">📍 暗船位置分布（SAR 衛星偵測、無 AIS 匹配）</div>
+            <div class="panel-title" data-i18n="dv.map_title">📍 暗船位置分布（SAR 衛星偵測、無 AIS 匹配）</div>
             <div id="map"></div>
         </div>
 
-        <!-- 每日暗船數量圖表 -->
         <div class="panel chart-panel">
-            <div class="panel-title">📊 每日暗船數量趨勢</div>
+            <div class="panel-title" data-i18n="dv.daily_title">📊 每日暗船數量趨勢</div>
             <div class="chart-container">
                 <canvas id="dailyChart"></canvas>
             </div>
         </div>
 
-        <!-- 區域比較表 -->
         <div class="panel">
-            <div class="panel-title">🗺️ 各區域暗船比較</div>
+            <div class="panel-title" data-i18n="dv.region_title">🗺️ 各區域暗船比較</div>
             <div class="panel-body">
                 <table class="region-table" id="regionTable">
                     <thead>
                         <tr>
-                            <th>區域</th>
-                            <th>總偵測</th>
-                            <th>暗船</th>
-                            <th>比例</th>
+                            <th data-i18n="th.region">區域</th>
+                            <th data-i18n="th.total">總偵測</th>
+                            <th data-i18n="th.dark">暗船</th>
+                            <th data-i18n="th.ratio">比例</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody id="regionTableBody">
                         <tr>
-                            <td colspan="5" class="empty-state">載入中...</td>
+                            <td colspan="5" class="empty-state" data-i18n="common.loading">載入中...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- 有 AIS 船隻國旗分布 -->
         <div class="panel">
-            <div class="panel-title">🚩 有 AIS 船隻國旗分布（台灣海峽）</div>
+            <div class="panel-title" data-i18n="dv.flag_title">🚩 有 AIS 船隻國旗分布（台灣海峽）</div>
             <div class="panel-body">
                 <div class="flag-list" id="flagList">
-                    <div class="empty-state">載入中...</div>
+                    <div class="empty-state" data-i18n="common.loading">載入中...</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="update-info" id="updateInfo">資料更新時間: --</div>
+    <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>
 
     <footer class="site-footer">
         <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
     </footer>
 
     <!-- JavaScript -->
+    <script src="js/i18n.js"></script>
     <script src="js/map.js"></script>
     <script src="js/charts.js"></script>
     <script>
@@ -220,10 +217,10 @@
                             opacity: 0.8,
                             fillOpacity: 0.6
                         }).addTo(map).bindPopup(`
-                            <b style="color:#ff3366">暗船偵測</b><br>
-                            區域: ${regionData.name || regionId}<br>
-                            日期: ${d.date}<br>
-                            位置: ${d.lat.toFixed(3)}, ${d.lon.toFixed(3)}
+                            <b style="color:#ff3366">${i18n.t('dv.popup_title')}</b><br>
+                            ${i18n.t('dv.popup_region')} ${regionData.name || regionId}<br>
+                            ${i18n.t('dv.popup_date')} ${d.date}<br>
+                            ${i18n.t('dv.popup_pos')} ${d.lat.toFixed(3)}, ${d.lon.toFixed(3)}
                         `);
                     }
                 });
@@ -244,14 +241,14 @@
                         <td><span class="ratio-bar" style="width:${barWidth}px"></span></td>
                     </tr>`;
             });
-            tbody.innerHTML = rows.join('') || '<tr><td colspan="5" class="empty-state">無資料</td></tr>';
+            tbody.innerHTML = rows.join('') || `<tr><td colspan="5" class="empty-state">${i18n.t('common.no_data')}</td></tr>`;
         }
 
         function renderFlagList(regions) {
             const flagList = document.getElementById('flagList');
             const straitData = regions.taiwan_strait;
             if (!straitData || !straitData.matched_by_flag) {
-                flagList.innerHTML = '<div class="empty-state">無資料</div>';
+                flagList.innerHTML = `<div class="empty-state">${i18n.t('common.no_data')}</div>`;
                 return;
             }
 
@@ -261,7 +258,7 @@
                     <span>${flag}</span>
                     <span style="color:var(--accent-cyan);font-family:'JetBrains Mono',monospace">${count}</span>
                 </div>
-            `).join('') || '<div class="empty-state">無資料</div>';
+            `).join('') || `<div class="empty-state">${i18n.t('common.no_data')}</div>`;
         }
 
         async function loadData() {
@@ -271,7 +268,7 @@
 
                 const dv = data.dark_vessels;
                 if (!dv) {
-                    document.getElementById('dataStatus').textContent = '⚠️ 尚無暗船資料';
+                    document.getElementById('dataStatus').textContent = i18n.t('dv.no_dark_data');
                     return;
                 }
 
@@ -304,11 +301,11 @@
                 document.getElementById('dataStatus').textContent =
                     `✅ ${range.start || ''} ~ ${range.end || ''}`;
                 document.getElementById('updateInfo').textContent =
-                    '更新: ' + new Date(dv.updated_at).toLocaleString('zh-TW');
+                    i18n.t('common.updated') + ' ' + new Date(dv.updated_at).toLocaleString();
 
             } catch (e) {
-                console.error('載入失敗:', e);
-                document.getElementById('dataStatus').textContent = '❌ 資料載入失敗';
+                console.error('Load failed:', e);
+                document.getElementById('dataStatus').textContent = i18n.t('common.error_load');
             }
         }
 

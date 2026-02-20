@@ -216,15 +216,16 @@ const MapModule = (function() {
                 fillOpacity: isSuspicious ? 1 : 0.7
             }).addTo(layers.vessels);
 
+            const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
             const suspiciousInfo = isSuspicious
-                ? '<br><b style="color:#ff3366">CSIS 可疑：漁船在軍演區但不在漁場</b>'
+                ? `<br><b style="color:#ff3366">${t('app.csis_suspicious')}</b>`
                 : '';
 
             marker.bindPopup(`
                 <b>${v.name || 'Unknown'}</b><br>
-                MMSI: ${v.mmsi}<br>
-                類型: ${v.type_name || '未知'}<br>
-                航速: ${(v.speed || 0).toFixed(1)} kn${suspiciousInfo}
+                ${t('app.mmsi')} ${v.mmsi}<br>
+                ${t('app.type')} ${v.type_name || t('common.unknown')}<br>
+                ${t('app.speed')} ${(v.speed || 0).toFixed(1)} kn${suspiciousInfo}
             `);
 
             vesselMarkers[v.mmsi] = marker;
@@ -261,6 +262,7 @@ const MapModule = (function() {
                 const count = d.detections || 1;
                 const radius = Math.min(3 + Math.log2(count) * 2, 8);
 
+                const t2 = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
                 L.circleMarker([d.lat, d.lon], {
                     radius: radius,
                     fillColor: color,
@@ -269,10 +271,10 @@ const MapModule = (function() {
                     opacity: 0.6,
                     fillOpacity: 0.35
                 }).addTo(layers.vessels).bindPopup(
-                    `<b style="color:${color}">SAR 暗船偵測</b><br>` +
-                    `區域: ${name}<br>` +
-                    `日期: ${d.date}<br>` +
-                    `偵測數: ${count}`
+                    `<b style="color:${color}">${t2('map.sar_dark')}</b><br>` +
+                    `${t2('dv.popup_region')} ${name}<br>` +
+                    `${t2('dv.popup_date')} ${d.date}<br>` +
+                    `${t2('dv.popup_det')} ${count}`
                 );
                 totalPlotted++;
             });
@@ -298,12 +300,13 @@ const MapModule = (function() {
                     weight: 2,
                     opacity: 0.9,
                     fillOpacity: 0.9
-                }).addTo(layers.vessels).bindPopup(`
-                    <b style="color:${riskColors[sv.risk_level] || '#ff3366'}">${(sv.names && sv.names[0]) || sv.mmsi}</b><br>
-                    MMSI: ${sv.mmsi}<br>
-                    <b>風險: ${sv.risk_level.toUpperCase()}</b> (分數: ${sv.risk_score})<br>
-                    ${(sv.flags || []).map(f => '- ' + f).join('<br>')}
-                `);
+                }).addTo(layers.vessels).bindPopup(() => {
+                    const t3 = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+                    return `<b style="color:${riskColors[sv.risk_level] || '#ff3366'}">${(sv.names && sv.names[0]) || sv.mmsi}</b><br>
+                    ${t3('app.mmsi')} ${sv.mmsi}<br>
+                    <b>${t3('app.risk')} ${sv.risk_level.toUpperCase()}</b> (${t3('app.score')} ${sv.risk_score})<br>
+                    ${(sv.flags || []).map(f => '- ' + f).join('<br>')}`;
+                });
             }
         });
     }

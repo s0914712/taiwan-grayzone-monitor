@@ -384,39 +384,40 @@
     <!-- End Google Tag Manager (noscript) -->
 
     <header class="header">
-        <h1>🎬 暗船動畫 Dark Vessel Animation</h1>
+        <h1 data-i18n="title.anim">🎬 暗船動畫 Dark Vessel Animation</h1>
         <div class="header-nav">
-            <a href="index.html">灰色地帶監測</a>
-            <a href="dark-vessels.html">暗船偵測</a>
-            <a href="statistics.html">統計分析</a>
-            <a href="weekly-animation.html" class="active">暗船動畫</a>
-            <span class="data-status" id="dataStatus">載入中...</span>
+            <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
+            <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
+            <a href="weekly-animation.html" class="active" data-i18n="nav.animation">暗船動畫</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
         </div>
     </header>
 
     <!-- Animation controls -->
     <div class="anim-controls" id="animControls">
-        <span class="anim-label">範圍</span>
-        <button class="anim-btn" data-range="30" onclick="setRange(30)">30 天</button>
-        <button class="anim-btn active" data-range="60" onclick="setRange(60)">60 天</button>
-        <button class="anim-btn" data-range="90" onclick="setRange(90)">90 天</button>
+        <span class="anim-label" data-i18n="anim.range">範圍</span>
+        <button class="anim-btn" data-range="30" onclick="setRange(30)" data-i18n="anim.days_30">30 天</button>
+        <button class="anim-btn active" data-range="60" onclick="setRange(60)" data-i18n="anim.days_60">60 天</button>
+        <button class="anim-btn" data-range="90" onclick="setRange(90)" data-i18n="anim.days_90">90 天</button>
 
         <div class="anim-separator"></div>
 
-        <button class="anim-btn" onclick="stepBackward()" title="上一天">⏮</button>
-        <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" title="播放/暫停">▶</button>
-        <button class="anim-btn" onclick="stepForward()" title="下一天">⏭</button>
+        <button class="anim-btn" onclick="stepBackward()" data-i18n-title="anim.prev" title="上一天">⏮</button>
+        <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" data-i18n-title="anim.play" title="播放/暫停">▶</button>
+        <button class="anim-btn" onclick="stepForward()" data-i18n-title="anim.next" title="下一天">⏭</button>
 
         <div class="anim-separator"></div>
 
-        <span class="anim-label">速度</span>
+        <span class="anim-label" data-i18n="anim.speed">速度</span>
         <button class="anim-btn active" data-speed="1" onclick="setSpeed(1)">1x</button>
         <button class="anim-btn" data-speed="2" onclick="setSpeed(2)">2x</button>
         <button class="anim-btn" data-speed="4" onclick="setSpeed(4)">4x</button>
 
         <div class="day-indicator" id="dayIndicator">
             <div class="date-text">--</div>
-            <div class="frame-text">載入中...</div>
+            <div class="frame-text" data-i18n="common.loading">載入中...</div>
         </div>
     </div>
 
@@ -430,38 +431,38 @@
     <div class="stats-row">
         <div class="stat-card">
             <div class="value alert" id="statDark">--</div>
-            <div class="label">暗船數量</div>
+            <div class="label" data-i18n="dark.count">暗船數量</div>
         </div>
         <div class="stat-card">
             <div class="value" id="statTotal">--</div>
-            <div class="label">SAR 總偵測</div>
+            <div class="label" data-i18n="dark.total_detect_s">SAR 總偵測</div>
         </div>
         <div class="stat-card">
             <div class="value alert" id="statRatio">--%</div>
-            <div class="label">暗船比例</div>
+            <div class="label" data-i18n="dark.ratio">暗船比例</div>
         </div>
         <div class="stat-card">
             <div class="value" id="statChange">--</div>
-            <div class="label">較上次變化</div>
+            <div class="label" data-i18n="anim.change">較上次變化</div>
         </div>
     </div>
 
     <div class="main-content">
         <!-- Map -->
         <div class="panel map-panel">
-            <div class="panel-title">📍 暗船位置動畫（SAR 衛星偵測 / 每偵測日一幀）</div>
+            <div class="panel-title" data-i18n="anim.map_title">📍 暗船位置動畫（SAR 衛星偵測 / 每偵測日一幀）</div>
             <div id="map"></div>
             <div class="map-legend-inline">
-                <div class="legend-chip"><span class="dot" style="background:#ff3366"></span>台灣海峽</div>
-                <div class="legend-chip"><span class="dot" style="background:#ff6b35"></span>台灣東部</div>
-                <div class="legend-chip"><span class="dot" style="background:#ffd700"></span>南海北部</div>
-                <div class="legend-chip"><span class="dot" style="background:#9b59b6"></span>東海</div>
+                <div class="legend-chip"><span class="dot" style="background:#ff3366"></span><span data-i18n="region.taiwan_strait">台灣海峽</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ff6b35"></span><span data-i18n="region.east_taiwan_s">台灣東部</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ffd700"></span><span data-i18n="region.south_china_sea">南海北部</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#9b59b6"></span><span data-i18n="region.east_china_sea">東海</span></div>
             </div>
         </div>
 
         <!-- Daily trend chart -->
         <div class="panel chart-panel">
-            <div class="panel-title">📊 各偵測日暗船數量</div>
+            <div class="panel-title" data-i18n="anim.chart_title">📊 各偵測日暗船數量</div>
             <div class="chart-container">
                 <canvas id="dailyChart"></canvas>
             </div>
@@ -469,19 +470,19 @@
 
         <!-- Region breakdown -->
         <div class="panel">
-            <div class="panel-title">🗺️ 本日各區域分布</div>
+            <div class="panel-title" data-i18n="anim.region_title">🗺️ 本日各區域分布</div>
             <div class="panel-body">
                 <table class="region-table">
                     <thead>
                         <tr>
-                            <th>區域</th>
-                            <th>總偵測</th>
-                            <th>暗船</th>
-                            <th>座標點</th>
+                            <th data-i18n="th.region">區域</th>
+                            <th data-i18n="th.total">總偵測</th>
+                            <th data-i18n="th.dark">暗船</th>
+                            <th data-i18n="th.coords">座標點</th>
                         </tr>
                     </thead>
                     <tbody id="regionTableBody">
-                        <tr><td colspan="4" class="empty-state">載入中...</td></tr>
+                        <tr><td colspan="4" class="empty-state" data-i18n="common.loading">載入中...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -494,6 +495,7 @@
         <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
     </footer>
 
+    <script src="js/i18n.js"></script>
     <script>
     // =========================================================================
     // Region colors (same as map.js MapModule)
@@ -586,9 +588,9 @@
             Anim.allDays = data.days || [];
 
             if (Anim.allDays.length === 0) {
-                document.getElementById('dataStatus').textContent = '⚠️ 尚無動畫資料';
+                document.getElementById('dataStatus').textContent = i18n.t('anim.no_data');
                 document.getElementById('regionTableBody').innerHTML =
-                    '<tr><td colspan="4" class="empty-state">尚無資料，請等待下次資料更新</td></tr>';
+                    `<tr><td colspan="4" class="empty-state">${i18n.t('anim.no_data_msg')}</td></tr>`;
                 return;
             }
 
@@ -599,13 +601,13 @@
             document.getElementById('dataStatus').textContent =
                 `✅ ${data.date_range.start} ~ ${data.date_range.end}`;
             document.getElementById('updateInfo').textContent =
-                '更新: ' + new Date(data.updated_at).toLocaleString('zh-TW');
+                i18n.t('common.updated') + ' ' + new Date(data.updated_at).toLocaleString();
 
         } catch (e) {
             console.error('載入失敗:', e);
-            document.getElementById('dataStatus').textContent = '❌ 載入失敗';
+            document.getElementById('dataStatus').textContent = i18n.t('anim.load_fail');
             document.getElementById('regionTableBody').innerHTML =
-                '<tr><td colspan="4" class="empty-state">資料載入失敗，請稍後再試</td></tr>';
+                `<tr><td colspan="4" class="empty-state">${i18n.t('anim.load_fail_msg')}</td></tr>`;
         }
     }
 
@@ -671,11 +673,11 @@
                     opacity: 0.7,
                     fillOpacity: 0.5
                 }).addTo(Anim.markerLayer).bindPopup(
-                    `<b style="color:${color}">暗船偵測</b><br>` +
-                    `區域: ${regionData.name || regionId}<br>` +
-                    `日期: ${day.date}<br>` +
-                    `偵測數: ${pt.detections || 1}<br>` +
-                    `位置: ${pt.lat}, ${pt.lon}`
+                    `<b style="color:${color}">${i18n.t('dv.popup_title')}</b><br>` +
+                    `${i18n.t('dv.popup_region')} ${regionData.name || regionId}<br>` +
+                    `${i18n.t('dv.popup_date')} ${day.date}<br>` +
+                    `${i18n.t('dv.popup_det')} ${pt.detections || 1}<br>` +
+                    `${i18n.t('dv.popup_pos')} ${pt.lat}, ${pt.lon}`
                 );
             });
         });
@@ -695,7 +697,7 @@
         const indicator = document.getElementById('dayIndicator');
         indicator.innerHTML = `
             <div class="date-text">${day.date}</div>
-            <div class="frame-text">第 ${idx + 1} / ${Anim.filteredDays.length} 天</div>
+            <div class="frame-text">${i18n.t('anim.frame', idx + 1, Anim.filteredDays.length)}</div>
         `;
     }
 
@@ -739,7 +741,7 @@
                 </tr>`;
             });
 
-        tbody.innerHTML = rows.join('') || '<tr><td colspan="4" class="empty-state">本日無偵測資料</td></tr>';
+        tbody.innerHTML = rows.join('') || `<tr><td colspan="4" class="empty-state">${i18n.t('anim.no_detect')}</td></tr>`;
     }
 
     // =========================================================================
@@ -797,7 +799,7 @@
             data: {
                 labels: labels,
                 datasets: [{
-                    label: '暗船數量',
+                    label: i18n.t('dark.count'),
                     data: data,
                     backgroundColor: data.map((_, i) =>
                         i === Anim.currentIdx ? 'rgba(0, 245, 255, 0.8)' : 'rgba(255, 51, 102, 0.5)'
@@ -939,21 +941,22 @@
         nav.innerHTML = `
             <a href="index.html">
                 <span class="nav-icon">🛰️</span>
-                <span>監測</span>
+                <span data-i18n="nav.mob_monitor">監測</span>
             </a>
             <a href="dark-vessels.html">
                 <span class="nav-icon">🔦</span>
-                <span>暗船</span>
+                <span data-i18n="nav.mob_dark">暗船</span>
             </a>
             <a href="statistics.html">
                 <span class="nav-icon">📊</span>
-                <span>統計</span>
+                <span data-i18n="nav.mob_stats">統計</span>
             </a>
             <a href="weekly-animation.html" class="active">
                 <span class="nav-icon">🎬</span>
-                <span>動畫</span>
+                <span data-i18n="nav.mob_anim">動畫</span>
             </a>
         `;
+        i18n.applyAll(); // Apply translations to newly created elements
         document.body.appendChild(nav);
     }
 

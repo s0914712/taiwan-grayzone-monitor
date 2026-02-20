@@ -13,7 +13,7 @@ const ChartsModule = (function () {
      */
     function formatCompact(num) {
         if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-        if (num >= 10000) return (num / 10000).toFixed(1) + '萬';
+        if (num >= 10000) return (num / 10000).toFixed(1) + (typeof i18n !== 'undefined' ? i18n.t('chart.unit_wan') : '萬');
         if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
         return String(num);
     }
@@ -32,7 +32,9 @@ const ChartsModule = (function () {
             const darkRatio = d.dark_vessels / Math.max(1, d.total_detections);
             const color = darkRatio > 0.8 ? 'var(--accent-red)' :
                 darkRatio > 0.5 ? 'var(--accent-orange)' : 'var(--accent-cyan)';
-            return `<div class="sparkline-bar" style="height:${h}px;background:${color}" title="${d.date}: ${d.total_detections} 偵測, ${d.dark_vessels} 暗船"></div>`;
+            const lDet = typeof i18n !== 'undefined' ? i18n.t('chart.detect') : '偵測';
+            const lDark = typeof i18n !== 'undefined' ? i18n.t('chart.dark') : '暗船';
+            return `<div class="sparkline-bar" style="height:${h}px;background:${color}" title="${d.date}: ${d.total_detections} ${lDet}, ${d.dark_vessels} ${lDark}"></div>`;
         }).join('');
     }
 
@@ -56,7 +58,7 @@ const ChartsModule = (function () {
             data: {
                 labels: dates.map(d => d.slice(5)), // MM-DD format
                 datasets: [{
-                    label: '暗船數量',
+                    label: typeof i18n !== 'undefined' ? i18n.t('dark.count') : '暗船數量',
                     data: counts,
                     backgroundColor: 'rgba(255, 51, 102, 0.6)',
                     borderColor: '#ff3366',
@@ -264,7 +266,7 @@ const ChartsModule = (function () {
         if (vesselCountEl) {
             vesselCountEl.textContent = formatCompact(s.avg_daily_detections * s.total_days);
             const label = vesselCountEl.parentElement.querySelector('.label');
-            if (label) label.textContent = 'SAR 總偵測';
+            if (label) label.textContent = typeof i18n !== 'undefined' ? i18n.t('dark.total_detect_s') : 'SAR 總偵測';
         }
 
         // Drill zone card
@@ -272,7 +274,7 @@ const ChartsModule = (function () {
         if (drillEl) {
             drillEl.textContent = formatCompact(s.chn_drill_zone_records);
             const label = drillEl.parentElement.querySelector('.label');
-            if (label) label.textContent = '軍演區記錄';
+            if (label) label.textContent = typeof i18n !== 'undefined' ? i18n.t('idx.drill_records') : '軍演區記錄';
         }
 
         // Dark vessel card
@@ -281,7 +283,7 @@ const ChartsModule = (function () {
             if (suspEl) {
                 suspEl.textContent = formatCompact(dv.overall.dark_vessels);
                 const label = suspEl.parentElement.querySelector('.label');
-                if (label) label.textContent = '暗船總數';
+                if (label) label.textContent = typeof i18n !== 'undefined' ? i18n.t('dark.dark_total') : '暗船總數';
             }
         }
     }
