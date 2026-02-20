@@ -73,22 +73,23 @@ const App = (function () {
             bottomNav.innerHTML = `
                 <a href="index.html" class="active">
                     <span class="nav-icon">🛰️</span>
-                    <span>監測</span>
+                    <span data-i18n="nav.mob_monitor">監測</span>
                 </a>
                 <a href="dark-vessels.html">
                     <span class="nav-icon">🔦</span>
-                    <span>暗船</span>
+                    <span data-i18n="nav.mob_dark">暗船</span>
                 </a>
                 <a href="statistics.html">
                     <span class="nav-icon">📊</span>
-                    <span>統計</span>
+                    <span data-i18n="nav.mob_stats">統計</span>
                 </a>
                 <a href="weekly-animation.html">
                     <span class="nav-icon">🎬</span>
-                    <span>動畫</span>
+                    <span data-i18n="nav.mob_anim">動畫</span>
                 </a>
             `;
             document.body.appendChild(bottomNav);
+            if (typeof i18n !== 'undefined') i18n.applyAll();
         }
     }
 
@@ -150,8 +151,10 @@ const App = (function () {
         if (!suspiciousData || !suspiciousData.suspicious_vessels || suspiciousData.suspicious_vessels.length === 0) {
             const summary = suspiciousData && suspiciousData.summary;
             if (summary && summary.total_analyzed > 0) {
-                list.innerHTML = `<div style="font-size:8px;color:var(--text-secondary);padding:4px">
-                    已分析 ${summary.total_analyzed} 艘，暫無達到門檻的可疑船隻</div>`;
+                const msg = typeof i18n !== 'undefined'
+                    ? i18n.t('app.analyzed', summary.total_analyzed)
+                    : `已分析 ${summary.total_analyzed} 艘，暫無達到門檻的可疑船隻`;
+                list.innerHTML = `<div style="font-size:8px;color:var(--text-secondary);padding:4px">${msg}</div>`;
             }
             return;
         }
@@ -181,9 +184,9 @@ const App = (function () {
             const res = await fetch('data.json?' + Date.now());
             const data = await res.json();
 
-            const updateTime = new Date(data.updated_at).toLocaleString('zh-TW');
+            const updateTime = new Date(data.updated_at).toLocaleString();
             const updateEl = document.getElementById('updateInfo');
-            if (updateEl) updateEl.textContent = '更新: ' + updateTime;
+            if (updateEl) updateEl.textContent = (typeof i18n !== 'undefined' ? i18n.t('common.updated') : '更新:') + ' ' + updateTime;
 
             // Load GFW satellite monitoring data
             if (data.vessel_monitoring) {
@@ -233,23 +236,22 @@ const App = (function () {
 
                 updateVesselList();
 
-                setDataStatus('✅ AIS + 衛星資料已載入', true);
+                setDataStatus(typeof i18n !== 'undefined' ? i18n.t('app.ais_sat_loaded') : '✅ AIS + 衛星資料已載入', true);
             } else if (data.vessel_monitoring) {
-                // Hide empty AIS stats section when no AIS data
                 const aisSection = document.getElementById('aisStatsSection');
                 if (aisSection) aisSection.style.display = 'none';
 
                 ChartsModule.updateOverlayCards(data, false);
-                setDataStatus('🛰️ 衛星資料已載入', true);
+                setDataStatus(typeof i18n !== 'undefined' ? i18n.t('app.sat_loaded') : '🛰️ 衛星資料已載入', true);
             } else {
-                setDataStatus('⚠️ 尚無資料', false);
+                setDataStatus(typeof i18n !== 'undefined' ? i18n.t('app.no_data') : '⚠️ 尚無資料', false);
             }
 
         } catch (e) {
-            console.error('載入 data.json 失敗:', e);
-            setDataStatus('❌ 資料載入失敗', false);
+            console.error('Load data.json failed:', e);
+            setDataStatus(typeof i18n !== 'undefined' ? i18n.t('common.error_load') : '❌ 資料載入失敗', false);
             const updateEl = document.getElementById('updateInfo');
-            if (updateEl) updateEl.textContent = '請確認 data.json 是否存在';
+            if (updateEl) updateEl.textContent = typeof i18n !== 'undefined' ? i18n.t('app.load_fail_msg') : '請確認 data.json 是否存在';
         }
     }
 
