@@ -1,116 +1,184 @@
 #!/usr/bin/env python3
 """
-AISStream.io 資料收集腳本 - 一致性強化版
-功能：收集台灣周邊 AIS 資料、分析軍演/漁撈熱區、維護歷史紀錄。
+航港局 AIS 資料收集腳本 - MPB 端點版
+功能：從航港局「臺灣海域船舶即時資訊系統」收集 AIS 資料、分析軍演/漁撈熱區、維護歷史紀錄。
+資料來源: https://mpbais.motcmpb.gov.tw/aismpb/tools/geojsonais.ashx
 """
 
 import os
 import json
-import asyncio
-import ssl
-import websockets
-import websockets.exceptions
-from datetime import datetime, timezone, timedelta
+import requests
+from datetime import datetime, timezone
 from collections import defaultdict
 
 # --- 配置區 ---
-API_KEY = os.environ.get('AISSTREAM_API_KEY', '').strip()
-TAIWAN_BBOX = [[20, 112], [28, 128]]
-COLLECTION_TIME = 180  # 收集 180 秒
 DATA_DIR = 'data'
 DOCS_DIR = 'docs'
 OUTPUT_FILE = os.path.join(DATA_DIR, 'ais_snapshot.json')
 HISTORY_FILE = os.path.join(DATA_DIR, 'vessel_history.json')
 DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
 
-# 區域定義 (保持不變)
+MPB_URL = "https://mpbais.motcmpb.gov.tw/aismpb/tools/geojsonais.ashx"
+MPB_HEADERS = {
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Language": "en-US,en;q=0.9,zh;q=0.8,zh-TW;q=0.7",
+    "Referer": "https://mpbais.motcmpb.gov.tw/aismpb/",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/145.0.0.0 Safari/537.36"
+    ),
+    "X-Requested-With": "XMLHttpRequest",
+}
+
+# 台灣周邊 bounding box (用於過濾非台灣海域資料)
+TAIWAN_BBOX = {'lat_min': 20, 'lat_max': 28, 'lon_min': 112, 'lon_max': 128}
+
+# 區域定義
 DRILL_ZONES = {
     'north': {'name': '北區', 'bounds': [[25.5, 121.0], [26.8, 122.5]]},
-    'east': {'name': '東區', 'bounds': [[23.0, 122.5], [25.5, 125.0]]},
+    'east':  {'name': '東區', 'bounds': [[23.0, 122.5], [25.5, 125.0]]},
     'south': {'name': '南區', 'bounds': [[21.5, 119.0], [23.0, 121.0]]},
-    'west': {'name': '西區', 'bounds': [[23.5, 118.5], [25.0, 120.0]]}
+    'west':  {'name': '西區', 'bounds': [[23.5, 118.5], [25.0, 120.0]]},
 }
 
 FISHING_HOTSPOTS = {
-    'taiwan_bank': {'name': '台灣灘漁場', 'bounds': [[22.0, 117.0], [23.5, 119.5]]},
-    'penghu': {'name': '澎湖漁場', 'bounds': [[23.0, 119.0], [24.0, 120.0]]},
+    'taiwan_bank':   {'name': '台灣灘漁場',   'bounds': [[22.0, 117.0], [23.5, 119.5]]},
+    'penghu':        {'name': '澎湖漁場',     'bounds': [[23.0, 119.0], [24.0, 120.0]]},
     'kuroshio_east': {'name': '東部黑潮漁場', 'bounds': [[22.5, 121.0], [24.5, 122.0]]},
-    'northeast': {'name': '東北漁場', 'bounds': [[24.8, 121.5], [25.8, 123.0]]},
-    'southwest': {'name': '西南沿岸漁場', 'bounds': [[22.0, 120.0], [23.0, 120.8]]},
+    'northeast':     {'name': '東北漁場',     'bounds': [[24.8, 121.5], [25.8, 123.0]]},
+    'southwest':     {'name': '西南沿岸漁場', 'bounds': [[22.0, 120.0], [23.0, 120.8]]},
 }
 
-VESSEL_TYPE_MAP = {30: 'fishing', 35: 'military', 52: 'tug', 60: 'passenger', 70: 'cargo', 80: 'tanker'} # 簡化範例
+# MPB Ship_and_Cargo_Type 對照表
+# AIS 標準: 30-39 漁船, 35 軍事, 50-59 特殊, 60-69 客船, 70-79 貨船, 80-89 油輪
+def classify_vessel_type(type_code):
+    """根據 AIS Ship_and_Cargo_Type 碼分類船舶"""
+    if type_code is None:
+        return 'unknown'
+    t = int(type_code)
+    if 30 <= t <= 39:
+        return 'fishing'
+    elif t == 35:
+        return 'military'
+    elif 40 <= t <= 49:
+        return 'high_speed'
+    elif 50 <= t <= 59:
+        return 'special'
+    elif 60 <= t <= 69:
+        return 'passenger'
+    elif 70 <= t <= 79:
+        return 'cargo'
+    elif 80 <= t <= 89:
+        return 'tanker'
+    elif t == 0:
+        return 'unknown'
+    else:
+        return 'other'
 
 # --- 工具函式 ---
 
 def is_in_zone(lat, lon, bounds):
-    return (bounds[0][0] <= lat <= bounds[1][0] and bounds[0][1] <= lon <= bounds[1][1])
+    return (bounds[0][0] <= lat <= bounds[1][0] and
+            bounds[0][1] <= lon <= bounds[1][1])
 
-def get_empty_vessel(mmsi):
-    """回傳一致的船隻資料結構"""
-    return {
-        'mmsi': mmsi, 'name': f'MMSI-{mmsi}', 'lat': 0.0, 'lon': 0.0,
-        'type': 0, 'type_name': 'unknown', 'speed': 0.0, 'heading': 0.0,
-        'in_drill_zone': None, 'in_fishing_hotspot': None, 'suspicious': False,
-        'last_update': datetime.now(timezone.utc).isoformat()
-    }
 
-async def collect_ais_data():
-    if not API_KEY:
-        print("⚠️ 無 API KEY")
-        return {}
+def is_in_taiwan_bbox(lat, lon):
+    b = TAIWAN_BBOX
+    return (b['lat_min'] <= lat <= b['lat_max'] and
+            b['lon_min'] <= lon <= b['lon_max'])
 
-    vessels = {}
-    start_time = datetime.now(timezone.utc)
-    ssl_context = ssl.create_default_context()
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl.CERT_NONE
+
+# --- 資料收集 ---
+
+def collect_ais_data():
+    """從航港局 MPB 端點取得即時 AIS GeoJSON 資料"""
+    print(f"🚀 正在從航港局擷取 AIS 資料...")
 
     try:
-        async with websockets.connect('wss://stream.aisstream.io/v0/stream', ssl=ssl_context) as ws:
-            subscribe_msg = {"APIKey": API_KEY, "BoundingBoxes": [TAIWAN_BBOX]}
-            await ws.send(json.dumps(subscribe_msg))
+        resp = requests.get(MPB_URL, headers=MPB_HEADERS, timeout=30)
+        resp.raise_for_status()
+        geojson = resp.json()
+    except requests.RequestException as e:
+        print(f"❌ 請求失敗: {e}")
+        return {}
 
-            while (datetime.now(timezone.utc) - start_time).total_seconds() < COLLECTION_TIME:
-                try:
-                    msg_raw = await asyncio.wait_for(ws.recv(), timeout=5.0)
-                    data = json.loads(msg_raw)
-                    
-                    meta = data.get('MetaData', {})
-                    mmsi = str(meta.get('MMSI', ''))
-                    if not mmsi: continue
+    features = geojson.get("features", [])
+    print(f"  HTTP {resp.status_code} | {len(resp.content):,} bytes | {len(features)} features")
 
-                    if mmsi not in vessels:
-                        vessels[mmsi] = get_empty_vessel(mmsi)
-                    
-                    v = vessels[mmsi]
-                    v['lat'] = meta.get('latitude', v['lat'])
-                    v['lon'] = meta.get('longitude', v['lon'])
-                    if meta.get('ShipName'): v['name'] = meta['ShipName'].strip()
+    vessels = {}
+    skipped = 0
 
-                    # 處理不同訊息類型
-                    msg_type = data.get('MessageType')
-                    msg_content = data.get('Message', {})
-                    
-                    if msg_type == 'PositionReport':
-                        pos = msg_content.get('PositionReport', {})
-                        v['speed'] = pos.get('Sog', 0.0)
-                        v['heading'] = pos.get('TrueHeading', 0.0)
-                    elif msg_type == 'ShipStaticData':
-                        static = msg_content.get('ShipStaticData', {})
-                        v['type'] = static.get('Type', 0)
-                        v['type_name'] = VESSEL_TYPE_MAP.get(v['type'], 'other')
+    for feat in features:
+        props = feat.get("properties", {})
+        coords = feat.get("geometry", {}).get("coordinates", [None, None])
 
-                    # 區域判定
-                    v['in_drill_zone'] = next((zid for zid, z in DRILL_ZONES.items() if is_in_zone(v['lat'], v['lon'], z['bounds'])), None)
-                    v['in_fishing_hotspot'] = next((hid for hid, h in FISHING_HOTSPOTS.items() if is_in_zone(v['lat'], v['lon'], h['bounds'])), None)
-                    
-                except asyncio.TimeoutError: continue
-                except Exception as e: print(f"Loop error: {e}"); break
-    except Exception as e:
-        print(f"Connection error: {e}")
-    
+        lon = coords[0] if coords and len(coords) > 0 else None
+        lat = coords[1] if coords and len(coords) > 1 else None
+
+        if lon is None or lat is None:
+            skipped += 1
+            continue
+
+        # 過濾超出台灣海域範圍的資料
+        if not is_in_taiwan_bbox(lat, lon):
+            skipped += 1
+            continue
+
+        mmsi = str(props.get("MMSI", "")).strip()
+        if not mmsi or mmsi == "0":
+            skipped += 1
+            continue
+
+        ship_name = str(props.get("ShipName", "")).strip()
+        type_code = props.get("Ship_and_Cargo_Type")
+        type_name = classify_vessel_type(type_code)
+        sog = props.get("SOG", 0.0) or 0.0
+        cog = props.get("COG", 0.0) or 0.0
+        record_time = props.get("Record_Time", "")
+
+        # 區域判定
+        drill_zone = next(
+            (zid for zid, z in DRILL_ZONES.items()
+             if is_in_zone(lat, lon, z['bounds'])),
+            None
+        )
+        fishing_hotspot = next(
+            (hid for hid, h in FISHING_HOTSPOTS.items()
+             if is_in_zone(lat, lon, h['bounds'])),
+            None
+        )
+
+        # 可疑判定：漁船在軍演區但不在漁場
+        suspicious = (type_name == 'fishing' and
+                      drill_zone is not None and
+                      fishing_hotspot is None)
+
+        vessels[mmsi] = {
+            'mmsi': mmsi,
+            'name': ship_name if ship_name else f'MMSI-{mmsi}',
+            'imo': str(props.get("IMO_Number", "")).strip(),
+            'call_sign': str(props.get("Call_Sign", "")).strip(),
+            'lat': lat,
+            'lon': lon,
+            'type': type_code,
+            'type_name': type_name,
+            'speed': float(sog),
+            'heading': float(cog),
+            'nav_status': str(props.get("Navigational_Status", "")),
+            'in_drill_zone': drill_zone,
+            'in_fishing_hotspot': fishing_hotspot,
+            'suspicious': suspicious,
+            'record_time': record_time,
+            'last_update': datetime.now(timezone.utc).isoformat(),
+        }
+
+    print(f"  ✅ 有效船舶: {len(vessels)} | 跳過: {skipped}")
     return vessels
+
+
+# --- 分析 ---
 
 def analyze_data(vessels):
     stats = {
@@ -119,26 +187,31 @@ def analyze_data(vessels):
         'suspicious_count': 0,
         'avg_speed': 0.0,
         'by_type': defaultdict(int),
-        'in_drill_zones': {k: 0 for k in DRILL_ZONES}, # 預設所有區域為 0，確保輸出一致
+        'in_drill_zones': {k: 0 for k in DRILL_ZONES},
+        'in_fishing_hotspots': {k: 0 for k in FISHING_HOTSPOTS},
     }
 
-    if not vessels: return stats
+    if not vessels:
+        stats['by_type'] = {}
+        return stats
 
     total_speed = 0
     for v in vessels.values():
         stats['by_type'][v['type_name']] += 1
-        if v['in_drill_zone']: stats['in_drill_zones'][v['in_drill_zone']] += 1
-        
-        # 邏輯：漁船在軍演區但不在漁場 -> 可疑
-        if v['type_name'] == 'fishing' and v['in_drill_zone'] and not v['in_fishing_hotspot']:
-            v['suspicious'] = True
+        if v['in_drill_zone']:
+            stats['in_drill_zones'][v['in_drill_zone']] += 1
+        if v['in_fishing_hotspot']:
+            stats['in_fishing_hotspots'][v['in_fishing_hotspot']] += 1
+        if v['suspicious']:
             stats['suspicious_count'] += 1
-        
         total_speed += v['speed']
 
     stats['avg_speed'] = round(total_speed / len(vessels), 2)
     stats['by_type'] = dict(stats['by_type'])
     return stats
+
+
+# --- 儲存 ---
 
 def save_all(vessels, stats):
     """統一儲存入口，確保輸出檔案格式一致"""
@@ -146,39 +219,85 @@ def save_all(vessels, stats):
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(DOCS_DIR, exist_ok=True)
 
+    vessel_list = list(vessels.values())
+
     # 1. 儲存快照
     full_output = {
         'updated_at': now_str,
+        'source': 'MPB_geojsonais',
         'statistics': stats,
-        'vessels': list(vessels.values())
+        'vessels': vessel_list,
     }
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         json.dump(full_output, f, ensure_ascii=False, indent=2)
+    print(f"  📄 快照已儲存: {OUTPUT_FILE} ({len(vessel_list)} 艘)")
 
-    # 2. 更新 Dashboard 的 ais_snapshot（與 generate_dashboard.py 格式一致）
+    # 2. 更新歷史紀錄 (追加每日摘要)
+    history = []
+    if os.path.exists(HISTORY_FILE):
+        try:
+            with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+                history = json.load(f)
+        except Exception:
+            history = []
+
+    history.append({
+        'timestamp': now_str,
+        'total_vessels': stats['total_vessels'],
+        'fishing_vessels': stats['fishing_vessels'],
+        'suspicious_count': stats['suspicious_count'],
+        'by_type': stats['by_type'],
+        'in_drill_zones': stats['in_drill_zones'],
+    })
+
+    # 保留最近 1000 筆歷史
+    history = history[-1000:]
+    with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
+
+    # 3. 更新 Dashboard 資料（與 generate_dashboard.py 格式一致）
     existing = {}
     if os.path.exists(DASHBOARD_FILE):
         try:
             with open(DASHBOARD_FILE, 'r', encoding='utf-8') as f:
                 existing = json.load(f)
-        except: pass
+        except Exception:
+            pass
 
     existing['updated_at'] = now_str
     existing['ais_snapshot'] = {
         'updated_at': now_str,
+        'source': 'MPB_geojsonais',
         'ais_data': stats,
-        'vessels': list(vessels.values())[:100]
+        'vessels': vessel_list[:100],  # Dashboard 只放前 100 艘
     }
 
     with open(DASHBOARD_FILE, 'w', encoding='utf-8') as f:
         json.dump(existing, f, ensure_ascii=False, indent=2)
+    print(f"  📊 Dashboard 已更新: {DASHBOARD_FILE}")
 
-async def main():
-    print(f"🚀 開始收集... (預計 {COLLECTION_TIME}s)")
-    vessels = await collect_ais_data()
+
+# --- 主程式 ---
+
+def main():
+    print(f"{'='*50}")
+    print(f"  航港局 AIS 船位收集 (MPB 端點)")
+    print(f"  {datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S} UTC")
+    print(f"{'='*50}\n")
+
+    vessels = collect_ais_data()
     stats = analyze_data(vessels)
     save_all(vessels, stats)
-    print(f"✅ 完成。找到 {len(vessels)} 艘船，可疑: {stats['suspicious_count']}")
+
+    print(f"\n{'='*50}")
+    print(f"  ✅ 完成")
+    print(f"  船舶總數: {stats['total_vessels']}")
+    print(f"  漁船: {stats['fishing_vessels']}")
+    print(f"  可疑: {stats['suspicious_count']}")
+    print(f"  平均航速: {stats['avg_speed']} kn")
+    print(f"  類型分布: {stats['by_type']}")
+    print(f"{'='*50}")
+
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
