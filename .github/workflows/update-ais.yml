@@ -1,0 +1,78 @@
+name: Update AIS & Identity Tracking (High-Freq)
+
+on:
+  schedule:
+    # 每 2 小時執行一次（台灣時間偶數整點）— 提高身分變更捕捉率
+    - cron: '0 */2 * * *'
+  workflow_dispatch:  # 允許手動觸發
+
+jobs:
+  update-ais:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch AIS data & track identity changes
+        run: python src/fetch_ais_data.py
+        continue-on-error: true
+
+      - name: Analyze suspicious vessels (CSIS methodology)
+        run: python src/analyze_suspicious.py
+        continue-on-error: true
+
+      - name: Generate dashboard data
+        run: python src/generate_dashboard.py
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add data/ docs/
+          git diff --staged --quiet || git commit -m "📡 AIS update $(date +'%Y-%m-%d %H:%M') UTC"
+          git pull --rebase -X theirs origin main || {
+            echo "⚠️ Rebase 失敗，改用 merge 策略"
+            git rebase --abort
+            git pull -X ours origin main
+          }
+          git push
+
+  deploy:
+    needs: update-ais
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
