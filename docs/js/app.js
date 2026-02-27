@@ -177,6 +177,93 @@ const App = (function () {
     }
 
     /**
+     * Format time-ago string
+     */
+    function timeAgo(isoStr) {
+        try {
+            const diff = Date.now() - new Date(isoStr).getTime();
+            const hours = Math.floor(diff / 3600000);
+            if (hours < 1) return typeof i18n !== 'undefined' ? i18n.t('idx.identity_just_now') : '剛才';
+            if (hours < 24) {
+                const tpl = typeof i18n !== 'undefined' ? i18n.t('idx.identity_ago_h') : '{0}小時前';
+                return tpl.replace('{0}', hours);
+            }
+            const days = Math.floor(hours / 24);
+            const tpl = typeof i18n !== 'undefined' ? i18n.t('idx.identity_ago_d') : '{0}天前';
+            return tpl.replace('{0}', days);
+        } catch (_) {
+            return '--';
+        }
+    }
+
+    /**
+     * Update identity change alerts section
+     */
+    function updateIdentitySection(data) {
+        const section = document.getElementById('identitySection');
+        const list = document.getElementById('identityList');
+        if (!section || !list) return;
+
+        const idData = data.identity_events;
+        if (!idData || !idData.summary) return;
+
+        const summary = idData.summary;
+        if (summary.count_7d === 0 && summary.count_24h === 0) return;
+
+        // Show section
+        section.style.display = '';
+
+        // Update counters
+        const el24h = document.getElementById('identity24h');
+        const el7d = document.getElementById('identity7d');
+        const elVessels = document.getElementById('identityVessels7d');
+        if (el24h) el24h.textContent = summary.count_24h || 0;
+        if (el7d) el7d.textContent = summary.count_7d || 0;
+        if (elVessels) elVessels.textContent = summary.vessels_7d || 0;
+
+        // Use 24h events if available, otherwise 7d
+        const events = (idData.events_24h && idData.events_24h.length > 0)
+            ? idData.events_24h
+            : (idData.events_7d || []);
+
+        if (events.length === 0) return;
+
+        list.innerHTML = events.slice(0, 10).map(ev => {
+            const changes = ev.changes || [];
+            const desc = changes.map(c => {
+                const oldShort = (c.old || '').substring(0, 10);
+                const newShort = (c.new || '').substring(0, 10);
+                return `${oldShort} → ${newShort}`;
+            }).join(', ');
+
+            const drillBadge = ev.in_drill_zone
+                ? `<span class="risk-badge risk-critical" style="font-size:7px;margin-left:3px">${typeof i18n !== 'undefined' ? i18n.t('idx.identity_in_drill') : '軍演區'}</span>`
+                : '';
+            const multiBadge = ev.multi_field
+                ? `<span class="risk-badge risk-high" style="font-size:7px;margin-left:3px">${typeof i18n !== 'undefined' ? i18n.t('idx.identity_multi') : '多欄位'}</span>`
+                : '';
+
+            const hasCoords = ev.lat != null && ev.lon != null;
+            const onclick = hasCoords ? `onclick="App.focusSuspicious(${ev.lat}, ${ev.lon})"` : '';
+
+            return `
+                <div class="vessel-item" ${onclick} style="cursor:${hasCoords ? 'pointer' : 'default'}">
+                    <div style="flex:1;overflow:hidden">
+                        <div style="font-size:8px;color:var(--accent-cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                            MMSI ${ev.mmsi}${drillBadge}${multiBadge}
+                        </div>
+                        <div style="font-size:7px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                            ${desc}
+                        </div>
+                    </div>
+                    <span style="font-size:7px;color:var(--text-secondary);white-space:nowrap;margin-left:4px">${timeAgo(ev.timestamp)}</span>
+                </div>`;
+        }).join('');
+
+        if (typeof i18n !== 'undefined') i18n.applyAll();
+    }
+
+    /**
      * Load data from JSON
      */
     async function loadData() {
@@ -220,6 +307,9 @@ const App = (function () {
                     suspEl.textContent = suspiciousData.summary.suspicious_count || 0;
                 }
             }
+
+            // Load identity change alerts
+            updateIdentitySection(data);
 
             // Load AIS real-time vessels
             const hasAis = data.ais_snapshot && data.ais_snapshot.vessels && data.ais_snapshot.vessels.length > 0;

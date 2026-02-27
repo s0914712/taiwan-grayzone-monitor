@@ -2,8 +2,8 @@ name: Update Gray Zone Vessel Data
 
 on:
   schedule:
-    # 每天 UTC 00:00, 06:00, 12:00, 18:00 執行（台灣時間 08:00, 14:00, 20:00, 02:00）
-    - cron: '0 0,6,12,18 * * *'
+    # 每天 UTC 00:00, 12:00 執行（台灣時間 08:00, 20:00）— GFW/軍演等低頻資料
+    - cron: '0 0,12 * * *'
   workflow_dispatch:  # 允許手動觸發
 
 jobs:

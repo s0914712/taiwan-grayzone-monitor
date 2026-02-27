@@ -29,6 +29,7 @@ from pathlib import Path
 DATA_DIR = Path("data")
 HISTORY_FILE = DATA_DIR / "vessel_history.json"
 OUTPUT_FILE = DATA_DIR / "suspicious_vessels.json"
+IDENTITY_EVENTS_FILE = DATA_DIR / "identity_events.json"
 
 # CSIS 門檻設定
 BEHAVIORAL_DRILL_ZONE_RATIO = 0.30   # >30% 時間在軍演區
@@ -48,6 +49,33 @@ def load_vessel_history():
 
     with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
         return json.load(f)
+
+
+def load_identity_events():
+    """載入身分變更事件紀錄，按 MMSI 分組，僅保留近 7 天"""
+    if not IDENTITY_EVENTS_FILE.exists():
+        return {}
+
+    try:
+        with open(IDENTITY_EVENTS_FILE, 'r', encoding='utf-8') as f:
+            events = json.load(f)
+    except Exception:
+        return {}
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+    by_mmsi = {}
+    for ev in events:
+        try:
+            ts = datetime.fromisoformat(ev['timestamp'].replace('Z', '+00:00'))
+            if ts < cutoff:
+                continue
+        except (ValueError, KeyError):
+            continue
+        mmsi = ev.get('mmsi', '')
+        if mmsi:
+            by_mmsi.setdefault(mmsi, []).append(ev)
+
+    return by_mmsi
 
 
 def analyze_behavioral_threshold(profile):
@@ -94,11 +122,12 @@ def analyze_absolute_threshold(profile):
     }
 
 
-def analyze_ais_anomalies(profile):
+def analyze_ais_anomalies(profile, identity_events=None):
     """
     AIS 異常偵測 (CSIS Criterion 3)
     - 多次變更船名
     - Going dark（AIS 訊號消失再出現）
+    - 身分變更事件（來自 identity tracking）
     """
     anomalies = []
 
@@ -145,13 +174,46 @@ def analyze_ais_anomalies(profile):
             'severity': 'medium'
         })
 
+    # 身分變更事件偵測（來自 identity_events.json，近 7 天）
+    if identity_events:
+        event_count = len(identity_events)
+        has_multi = any(ev.get('multi_field') for ev in identity_events)
+        in_drill = [ev for ev in identity_events if ev.get('in_drill_zone')]
+
+        if event_count > 0:
+            severity = 'high' if event_count >= 3 or has_multi else 'medium'
+            # 收集所有欄位變更摘要
+            field_changes = []
+            for ev in identity_events:
+                for ch in ev.get('changes', []):
+                    field_changes.append(f"{ch['field']}: {ch['old']} → {ch['new']}")
+            anomalies.append({
+                'type': 'identity_change',
+                'description': f'7 天內 {event_count} 次身分變更',
+                'count': event_count,
+                'multi_field': has_multi,
+                'details': field_changes[:10],
+                'severity': severity,
+            })
+
+        # 軍演區內身分變更（高價值訊號）
+        if in_drill:
+            zones = list(set(ev['in_drill_zone'] for ev in in_drill))
+            anomalies.append({
+                'type': 'drill_zone_identity_change',
+                'description': f'軍演區內身分變更 {len(in_drill)} 次',
+                'count': len(in_drill),
+                'zones': zones,
+                'severity': 'high',
+            })
+
     return anomalies
 
 
-def classify_vessel(profile):
+def classify_vessel(profile, identity_events=None):
     """
     綜合分類單一船隻的可疑程度
-    回傳: (suspicious: bool, classification: dict)
+    回傳: classification dict
     """
     classification = {
         'mmsi': profile['mmsi'],
@@ -182,8 +244,8 @@ def classify_vessel(profile):
         if triggered:
             classification['flags'].append('長時間徘徊軍演區')
 
-    # Criterion 3: AIS 異常（對所有船型適用）
-    anomalies = analyze_ais_anomalies(profile)
+    # Criterion 3: AIS 異常（對所有船型適用，含身分變更事件）
+    anomalies = analyze_ais_anomalies(profile, identity_events)
     classification['ais_anomalies'] = anomalies
     if anomalies:
         classification['flags'].extend([a['description'] for a in anomalies])
@@ -195,7 +257,12 @@ def classify_vessel(profile):
     if classification['absolute_threshold']:
         score += 2
     for a in anomalies:
-        score += 2 if a['severity'] == 'high' else 1
+        if a['type'] == 'drill_zone_identity_change':
+            score += 3  # 軍演區內身分變更：最高權重
+        elif a['severity'] == 'high':
+            score += 2
+        else:
+            score += 1
 
     if score >= 5:
         classification['risk_level'] = 'critical'
@@ -223,6 +290,11 @@ def main():
     print("🔍 CSIS 方法論 - 可疑船隻行為分析")
     print("=" * 60)
     print(f"執行時間: {datetime.now(timezone.utc).isoformat()}")
+
+    # 載入身分變更事件（按 MMSI 分組，近 7 天）
+    id_events_by_mmsi = load_identity_events()
+    id_event_count = sum(len(v) for v in id_events_by_mmsi.values())
+    print(f"🔄 已載入身分變更事件: {id_event_count} 筆 ({len(id_events_by_mmsi)} 艘船)")
 
     history = load_vessel_history()
     if not history:
@@ -254,7 +326,7 @@ def main():
     suspicious_vessels = []
 
     for mmsi, profile in history.items():
-        result = classify_vessel(profile)
+        result = classify_vessel(profile, id_events_by_mmsi.get(mmsi))
         classifications.append(result)
         if result['suspicious']:
             suspicious_vessels.append(result)

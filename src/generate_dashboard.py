@@ -8,7 +8,7 @@ Generate dashboard-ready data from vessel monitoring
 
 import json
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 DATA_DIR = Path("data")
@@ -82,18 +82,62 @@ def main():
     else:
         print("⚠️ 找不到 exercise_prediction.json，跳過")
 
+    # 讀取身分變更事件（由 fetch_ais_data.py 產生）
+    identity_path = DATA_DIR / 'identity_events.json'
+    identity_events_data = None
+    if identity_path.exists():
+        try:
+            with open(identity_path, 'r', encoding='utf-8') as f:
+                all_events = json.load(f)
+
+            now = datetime.now(timezone.utc)
+            cutoff_24h = now - timedelta(hours=24)
+            cutoff_7d = now - timedelta(days=7)
+
+            events_24h = []
+            events_7d = []
+            for ev in all_events:
+                try:
+                    ts = datetime.fromisoformat(ev['timestamp'].replace('Z', '+00:00'))
+                except (ValueError, KeyError):
+                    continue
+                if ts >= cutoff_7d:
+                    events_7d.append(ev)
+                    if ts >= cutoff_24h:
+                        events_24h.append(ev)
+
+            mmsi_24h = set(ev['mmsi'] for ev in events_24h)
+            mmsi_7d = set(ev['mmsi'] for ev in events_7d)
+
+            identity_events_data = {
+                'events_24h': events_24h[:50],
+                'events_7d': events_7d[:100],
+                'summary': {
+                    'count_24h': len(events_24h),
+                    'count_7d': len(events_7d),
+                    'vessels_24h': len(mmsi_24h),
+                    'vessels_7d': len(mmsi_7d),
+                },
+            }
+            print(f"🔄 已載入身分變更事件: 24h={len(events_24h)}, 7d={len(events_7d)}")
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"⚠️ 讀取 identity_events.json 失敗: {e}")
+    else:
+        print("⚠️ 找不到 identity_events.json，跳過")
+
     output_path = DOCS_DIR / 'data.json'
 
     # 合併所有資料
     dashboard = {
-        'updated_at': datetime.utcnow().isoformat() + 'Z',
+        'updated_at': datetime.now(timezone.utc).isoformat() + 'Z',
         'vessel_monitoring': vessel_data,
         'suspicious_analysis': suspicious_data,
         'dark_vessels': dark_vessels_data,
         'exercise_prediction': prediction_data,
         'ais_snapshot': ais_snapshot or {'updated_at': '', 'ais_data': {}, 'vessels': []},
+        'identity_events': identity_events_data,
         'status': 'operational',
-        'version': '3.1.0'
+        'version': '3.2.0'
     }
 
     # 儲存至 docs 目錄（供 GitHub Pages 使用）
