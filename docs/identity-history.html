@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIS 身分追蹤 | Identity Tracking - Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="追蹤台灣周邊海域船隻 AIS 身分變更（船名、呼號、IMO），識別頻繁變更身分的可疑船隻">
+    <meta name="keywords" content="AIS,身分變更,船名變更,呼號,IMO,台灣海峽,identity change,vessel tracking,maritime surveillance">
+    <meta name="author" content="Taiwan Gray Zone Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/identity-history.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="AIS 身分追蹤 | Identity Tracking">
+    <meta property="og:description" content="追蹤台灣周邊海域船隻 AIS 身分變更，識別頻繁變更身分的可疑船隻">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/identity-history.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="AIS 身分追蹤 | Identity Tracking">
+    <meta name="twitter:description" content="追蹤台灣周邊海域船隻 AIS 身分變更，識別頻繁變更身分的可疑船隻">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/main.css">
+
+    <style>
+        body { overflow-y: auto; }
+        #map { height: 350px; border-radius: 0 0 6px 6px; }
+        .freq-table, .timeline-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .freq-table th, .timeline-table th {
+            text-align: left;
+            padding: 6px 8px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid rgba(0,245,255,0.1);
+            font-weight: 500;
+            font-size: 8px;
+        }
+        .freq-table td, .timeline-table td {
+            padding: 5px 8px;
+            border-bottom: 1px solid rgba(0,245,255,0.03);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+        }
+        .freq-table tr:hover, .timeline-table tr:hover {
+            background: rgba(0,245,255,0.03);
+        }
+        .freq-table tr { cursor: pointer; }
+        .change-arrow { color: var(--accent-cyan); margin: 0 2px; }
+        .field-badge {
+            font-size: 7px;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        .field-name { background: rgba(0,245,255,0.15); color: var(--accent-cyan); }
+        .field-call_sign { background: rgba(255,107,53,0.15); color: var(--accent-orange); }
+        .field-imo { background: rgba(155,89,182,0.15); color: #9b59b6; }
+        .timeline-scroll {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .empty-msg {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 24px;
+            font-size: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <header class="header">
+        <h1 data-i18n="title.identity">🔄 AIS 身分變更追蹤</h1>
+        <div class="header-nav">
+            <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
+            <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
+            <a href="weekly-animation.html" data-i18n="nav.animation">暗船動畫</a>
+            <a href="identity-history.html" class="active" data-i18n="nav.identity">身分追蹤</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
+        </div>
+    </header>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="value" id="statTotal">--</div>
+            <div class="label" data-i18n="id.total_events">總事件數</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statVessels">--</div>
+            <div class="label" data-i18n="id.unique_vessels">涉及船隻</div>
+        </div>
+        <div class="stat-card">
+            <div class="value alert" id="stat7d">--</div>
+            <div class="label" data-i18n="id.events_7d">7 天事件</div>
+        </div>
+        <div class="stat-card">
+            <div class="value alert" id="stat24h">--</div>
+            <div class="label" data-i18n="id.events_24h">24h 事件</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="panel map-panel">
+            <div class="panel-title" data-i18n="id.map_title">📍 身分變更發生位置</div>
+            <div id="map"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title" data-i18n="id.freq_title">🏴 頻繁變更船隻排行</div>
+            <div class="panel-body">
+                <table class="freq-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="id.th_mmsi">MMSI</th>
+                            <th data-i18n="id.th_name">目前船名</th>
+                            <th data-i18n="id.th_changes">變更次數</th>
+                            <th data-i18n="id.th_last_change">最近變更</th>
+                            <th data-i18n="id.th_drill_events">軍演區事件</th>
+                        </tr>
+                    </thead>
+                    <tbody id="freqTableBody">
+                        <tr><td colspan="5" class="empty-msg" data-i18n="common.loading">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title" data-i18n="id.timeline_title">📋 變更事件時間軸</div>
+            <div class="panel-body">
+                <div class="timeline-scroll">
+                    <table class="timeline-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="id.th_time">時間</th>
+                                <th data-i18n="id.th_mmsi">MMSI</th>
+                                <th data-i18n="id.th_field">欄位</th>
+                                <th data-i18n="id.th_old">變更前</th>
+                                <th data-i18n="id.th_new">變更後</th>
+                                <th data-i18n="id.th_location">位置</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timelineBody">
+                            <tr><td colspan="6" class="empty-msg" data-i18n="common.loading">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="js/i18n.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/charts.js"></script>
+    <script>
+        let map;
+
+        function initMap() {
+            map = L.map('map', {
+                center: [24.0, 121.0],
+                zoom: 6,
+                zoomControl: true,
+                attributionControl: false
+            });
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 18,
+                opacity: 0.9
+            }).addTo(map);
+
+            // Taiwan outline
+            const taiwanOutline = [
+                [25.3, 121.0], [25.13, 121.5], [24.85, 121.82], [24.5, 121.8],
+                [24.0, 121.5], [23.5, 121.3], [23.0, 121.0], [22.5, 120.85],
+                [22.0, 120.75], [21.9, 120.85], [22.0, 120.45], [22.3, 120.25],
+                [22.6, 120.3], [23.0, 120.1], [23.5, 120.05], [24.0, 120.2],
+                [24.5, 120.5], [25.0, 121.0], [25.3, 121.0]
+            ];
+            L.polygon(taiwanOutline, {
+                color: '#4a90d9', weight: 2, opacity: 0.5,
+                fillColor: '#1a3a5c', fillOpacity: 0.3
+            }).addTo(map);
+        }
+
+        function timeAgo(isoStr) {
+            try {
+                const diff = Date.now() - new Date(isoStr).getTime();
+                const hours = Math.floor(diff / 3600000);
+                if (hours < 1) return i18n.t('idx.identity_just_now');
+                if (hours < 24) return i18n.t('idx.identity_ago_h').replace('{0}', hours);
+                const days = Math.floor(hours / 24);
+                return i18n.t('idx.identity_ago_d').replace('{0}', days);
+            } catch (_) { return '--'; }
+        }
+
+        function fieldBadge(field) {
+            const labels = { name: i18n.t('idx.identity_name'), call_sign: i18n.t('idx.identity_callsign'), imo: i18n.t('idx.identity_imo') };
+            return `<span class="field-badge field-${field}">${labels[field] || field}</span>`;
+        }
+
+        function plotEventsOnMap(events) {
+            events.forEach(ev => {
+                if (ev.lat == null || ev.lon == null) return;
+
+                let color = '#00f5ff';  // default cyan
+                if (ev.in_drill_zone) color = '#ff3366';  // red for drill zone
+                else if (ev.multi_field) color = '#ff6b35';  // orange for multi-field
+
+                const changes = (ev.changes || []).map(c =>
+                    `${fieldBadge(c.field)} ${c.old} → ${c.new}`
+                ).join('<br>');
+
+                const drillBadge = ev.in_drill_zone
+                    ? `<span class="risk-badge risk-critical" style="font-size:8px">${i18n.t('idx.identity_in_drill')}</span> `
+                    : '';
+
+                L.circleMarker([ev.lat, ev.lon], {
+                    radius: 5,
+                    fillColor: color,
+                    color: color,
+                    weight: 1,
+                    opacity: 0.8,
+                    fillOpacity: 0.6
+                }).addTo(map).bindPopup(
+                    `<b style="color:${color}">MMSI ${ev.mmsi}</b> ${drillBadge}<br>` +
+                    `<span style="font-size:10px;color:#888">${new Date(ev.timestamp).toLocaleString()}</span><br>` +
+                    changes
+                );
+            });
+        }
+
+        function renderFreqTable(ranked, identityState) {
+            const tbody = document.getElementById('freqTableBody');
+            if (ranked.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">${i18n.t('id.no_events')}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = ranked.slice(0, 50).map(r => {
+                const state = identityState[r.mmsi] || {};
+                const name = state.name || r.lastName || r.mmsi;
+                const drillCell = r.drillCount > 0
+                    ? `<span class="risk-badge risk-critical" style="font-size:8px">${r.drillCount}</span>`
+                    : '0';
+                const countColor = r.count >= 5 ? 'var(--accent-red)' : r.count >= 3 ? 'var(--accent-orange)' : 'var(--accent-cyan)';
+
+                return `
+                    <tr onclick="map.setView([${r.lastLat || 24}, ${r.lastLon || 121}], 8)">
+                        <td style="color:var(--accent-cyan)">${r.mmsi}</td>
+                        <td>${(name || '').substring(0, 16)}</td>
+                        <td style="color:${countColor};font-weight:700">${r.count}</td>
+                        <td>${timeAgo(r.lastTime)}</td>
+                        <td>${drillCell}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        function renderTimeline(events) {
+            const tbody = document.getElementById('timelineBody');
+            if (events.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-msg">${i18n.t('id.no_events')}</td></tr>`;
+                return;
+            }
+
+            // Flatten: one row per field change
+            const rows = [];
+            const sorted = [...events].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+            sorted.forEach(ev => {
+                (ev.changes || []).forEach(ch => {
+                    rows.push({ ...ev, field: ch.field, old: ch.old, new: ch.new });
+                });
+            });
+
+            tbody.innerHTML = rows.slice(0, 200).map(r => {
+                const drillBadge = r.in_drill_zone
+                    ? `<span class="risk-badge risk-critical" style="font-size:7px">${i18n.t('idx.identity_in_drill')}</span>`
+                    : '';
+                const loc = (r.lat != null && r.lon != null)
+                    ? `${r.lat.toFixed(2)}, ${r.lon.toFixed(2)} ${drillBadge}`
+                    : '--';
+
+                return `
+                    <tr>
+                        <td>${timeAgo(r.timestamp)}</td>
+                        <td style="color:var(--accent-cyan)">${r.mmsi}</td>
+                        <td>${fieldBadge(r.field)}</td>
+                        <td style="color:var(--text-secondary)">${(r.old || '').substring(0, 16)}</td>
+                        <td style="color:var(--accent-green)">${(r.new || '').substring(0, 16)}</td>
+                        <td>${loc}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        async function loadData() {
+            try {
+                // Load full identity events
+                let events = [];
+                try {
+                    const evRes = await fetch('identity_events.json?' + Date.now());
+                    if (evRes.ok) events = await evRes.json();
+                } catch (_) { /* no events file yet */ }
+
+                // Load dashboard data for identity state
+                let identityState = {};
+                try {
+                    const stateRes = await fetch('data.json?' + Date.now());
+                    if (stateRes.ok) {
+                        const data = await stateRes.json();
+                        // Use summary from dashboard
+                        const idData = data.identity_events || {};
+                        const summary = idData.summary || {};
+                        document.getElementById('stat7d').textContent = summary.count_7d || 0;
+                        document.getElementById('stat24h').textContent = summary.count_24h || 0;
+                        document.getElementById('updateInfo').textContent =
+                            i18n.t('common.updated') + ' ' + new Date(data.updated_at).toLocaleString();
+                    }
+                } catch (_) {}
+
+                // Overall stats
+                document.getElementById('statTotal').textContent = events.length;
+                const uniqueMmsi = new Set(events.map(e => e.mmsi));
+                document.getElementById('statVessels').textContent = uniqueMmsi.size;
+
+                if (events.length === 0) {
+                    document.getElementById('freqTableBody').innerHTML =
+                        `<tr><td colspan="5" class="empty-msg">${i18n.t('id.no_events')}</td></tr>`;
+                    document.getElementById('timelineBody').innerHTML =
+                        `<tr><td colspan="6" class="empty-msg">${i18n.t('id.no_events')}</td></tr>`;
+                    document.getElementById('dataStatus').textContent = i18n.t('id.no_events').substring(0, 30);
+                    return;
+                }
+
+                // Aggregate per vessel
+                const byMmsi = {};
+                events.forEach(ev => {
+                    if (!byMmsi[ev.mmsi]) {
+                        byMmsi[ev.mmsi] = { events: [], drillCount: 0, lastTime: '', lastLat: null, lastLon: null, lastName: '' };
+                    }
+                    const entry = byMmsi[ev.mmsi];
+                    entry.events.push(ev);
+                    if (ev.in_drill_zone) entry.drillCount++;
+                    if (!entry.lastTime || ev.timestamp > entry.lastTime) {
+                        entry.lastTime = ev.timestamp;
+                        entry.lastLat = ev.lat;
+                        entry.lastLon = ev.lon;
+                        // Get latest name from changes
+                        const nameChange = (ev.changes || []).find(c => c.field === 'name');
+                        if (nameChange) entry.lastName = nameChange.new;
+                    }
+                });
+
+                const ranked = Object.entries(byMmsi)
+                    .map(([mmsi, d]) => ({
+                        mmsi,
+                        count: d.events.length,
+                        drillCount: d.drillCount,
+                        lastTime: d.lastTime,
+                        lastLat: d.lastLat,
+                        lastLon: d.lastLon,
+                        lastName: d.lastName,
+                    }))
+                    .sort((a, b) => b.count - a.count);
+
+                // Render
+                plotEventsOnMap(events);
+                renderFreqTable(ranked, {});
+                renderTimeline(events);
+
+                document.getElementById('dataStatus').textContent =
+                    `✅ ${events.length} ${i18n.t('id.total_events').toLowerCase()}`;
+
+            } catch (e) {
+                console.error('Load failed:', e);
+                document.getElementById('dataStatus').textContent = i18n.t('common.error_load');
+            }
+        }
+
+        // Initialize
+        initMap();
+        loadData();
+    </script>
+</body>
+
+</html>

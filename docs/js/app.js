@@ -87,6 +87,10 @@ const App = (function () {
                     <span class="nav-icon">🎬</span>
                     <span data-i18n="nav.mob_anim">動畫</span>
                 </a>
+                <a href="identity-history.html">
+                    <span class="nav-icon">🔄</span>
+                    <span data-i18n="nav.mob_identity">身分</span>
+                </a>
             `;
             document.body.appendChild(bottomNav);
             if (typeof i18n !== 'undefined') i18n.applyAll();
