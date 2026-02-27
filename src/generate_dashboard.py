@@ -152,6 +152,11 @@ def main():
         shutil.copy2(weekly_dark_path, DOCS_DIR / 'weekly_dark_vessels.json')
         print(f"🎬 已複製暗船動畫資料至 docs/weekly_dark_vessels.json")
 
+    # 複製身分變更事件至 docs（供身分追蹤頁面使用）
+    if identity_path.exists():
+        shutil.copy2(identity_path, DOCS_DIR / 'identity_events.json')
+        print(f"🔄 已複製身分變更事件至 docs/identity_events.json")
+
 
 if __name__ == "__main__":
     main()

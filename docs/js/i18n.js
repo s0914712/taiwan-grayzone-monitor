@@ -28,6 +28,8 @@ const i18n = (function () {
         'nav.mob_dark':          { zh: '暗船', en: 'Dark' },
         'nav.mob_stats':         { zh: '統計', en: 'Stats' },
         'nav.mob_anim':          { zh: '動畫', en: 'Anim' },
+        'nav.identity':          { zh: '身分追蹤', en: 'Identity' },
+        'nav.mob_identity':      { zh: '身分', en: 'ID' },
 
         // ── 通用 Common ──
         'common.loading':        { zh: '載入中...', en: 'Loading...' },
@@ -42,6 +44,7 @@ const i18n = (function () {
         'title.dark':            { zh: '🔦 暗船偵測 Dark Vessel Detection', en: '🔦 Dark Vessel Detection' },
         'title.stats':           { zh: '📊 統計分析 Statistics', en: '📊 Statistical Analysis' },
         'title.anim':            { zh: '🎬 暗船動畫 Dark Vessel Animation', en: '🎬 Dark Vessel Animation' },
+        'title.identity':        { zh: '🔄 AIS 身分變更追蹤', en: '🔄 AIS Identity Tracking' },
 
         // ── 區域名稱 Region Names ──
         'region.taiwan_strait':  { zh: '台灣海峽', en: 'Taiwan Strait' },
@@ -106,6 +109,27 @@ const i18n = (function () {
         'idx.identity_ago_h':    { zh: '{0}小時前', en: '{0}h ago' },
         'idx.identity_ago_d':    { zh: '{0}天前', en: '{0}d ago' },
         'idx.identity_just_now': { zh: '剛才', en: 'Just now' },
+
+        // ── Identity History 頁面 ──
+        'id.total_events':       { zh: '總事件數', en: 'Total Events' },
+        'id.unique_vessels':     { zh: '涉及船隻', en: 'Unique Vessels' },
+        'id.events_7d':          { zh: '7 天事件', en: '7-day Events' },
+        'id.events_24h':         { zh: '24h 事件', en: '24h Events' },
+        'id.map_title':          { zh: '📍 身分變更發生位置', en: '📍 Identity Change Locations' },
+        'id.freq_title':         { zh: '🏴 頻繁變更船隻排行', en: '🏴 Frequent Identity Changers' },
+        'id.timeline_title':     { zh: '📋 變更事件時間軸', en: '📋 Event Timeline' },
+        'id.th_mmsi':            { zh: 'MMSI', en: 'MMSI' },
+        'id.th_name':            { zh: '目前船名', en: 'Current Name' },
+        'id.th_changes':         { zh: '變更次數', en: 'Changes' },
+        'id.th_last_change':     { zh: '最近變更', en: 'Last Change' },
+        'id.th_drill_events':    { zh: '軍演區事件', en: 'Drill Zone' },
+        'id.th_time':            { zh: '時間', en: 'Time' },
+        'id.th_field':           { zh: '欄位', en: 'Field' },
+        'id.th_old':             { zh: '變更前', en: 'Before' },
+        'id.th_new':             { zh: '變更後', en: 'After' },
+        'id.th_location':        { zh: '位置', en: 'Location' },
+        'id.no_events':          { zh: '尚無身分變更事件紀錄。資料會在 AIS 排程執行後自動累積。', en: 'No identity change events yet. Data will accumulate after AIS scheduled runs.' },
+
         'idx.drill_title':       { zh: '⚠️ 軍演監測區', en: '⚠️ Drill Monitoring Zones' },
         'idx.recent_title':      { zh: '🚢 近期船隻', en: '🚢 Recent Vessels' },
 
