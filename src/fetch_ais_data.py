@@ -225,6 +225,12 @@ def save_all(vessels, stats):
 
     vessel_list = list(vessels.values())
 
+    # API 回傳 0 艘時保留舊快照，避免清空有效資料
+    # （常見於 GitHub Actions：MPB API 封鎖境外 IP）
+    if not vessel_list:
+        print(f"  ⚠️ 本次取得 0 艘船，保留既有快照，跳過覆寫")
+        return
+
     # 1. 儲存快照
     full_output = {
         'updated_at': now_str,
@@ -241,7 +247,8 @@ def save_all(vessels, stats):
     if os.path.exists(HISTORY_FILE):
         try:
             with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
-                history = json.load(f)
+                loaded = json.load(f)
+            history = loaded if isinstance(loaded, list) else []
         except Exception:
             history = []
 
@@ -273,7 +280,7 @@ def save_all(vessels, stats):
         'updated_at': now_str,
         'source': 'MPB_geojsonais',
         'ais_data': stats,
-        'vessels': vessel_list[:100],  # Dashboard 只放前 100 艘
+        'vessels': vessel_list,
     }
 
     with open(DASHBOARD_FILE, 'w', encoding='utf-8') as f:

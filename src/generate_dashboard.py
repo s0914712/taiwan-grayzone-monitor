@@ -60,7 +60,7 @@ def main():
             ais_snapshot = {
                 'updated_at': ais_raw.get('updated_at', ''),
                 'ais_data': ais_raw.get('statistics', {}),
-                'vessels': ais_raw.get('vessels', [])[:100]
+                'vessels': ais_raw.get('vessels', [])
             }
             print(f"📡 已載入 AIS 快照: {len(ais_snapshot['vessels'])} 艘船")
         except (json.JSONDecodeError, IOError) as e:
