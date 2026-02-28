@@ -8,8 +8,12 @@
 import os
 import json
 import requests
+import urllib3
 from datetime import datetime, timezone
 from collections import defaultdict
+
+# 航港局 SSL 憑證缺少 Subject Key Identifier，停用驗證
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- 配置區 ---
 DATA_DIR = 'data'
@@ -17,13 +21,6 @@ DOCS_DIR = 'docs'
 OUTPUT_FILE = os.path.join(DATA_DIR, 'ais_snapshot.json')
 HISTORY_FILE = os.path.join(DATA_DIR, 'vessel_history.json')
 DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
-IDENTITY_STATE_FILE = os.path.join(DATA_DIR, 'identity_state.json')
-IDENTITY_EVENTS_FILE = os.path.join(DATA_DIR, 'identity_events.json')
-
-# 身分比對設定
-IDENTITY_FIELDS = ['name', 'call_sign', 'imo']
-JITTER_VALUES = {'', '0', 'UNKNOWN', 'N/A', 'NONE', 'NIL'}
-MAX_IDENTITY_EVENTS = 2000
 
 MPB_URL = "https://mpbais.motcmpb.gov.tw/aismpb/tools/geojsonais.ashx"
 MPB_HEADERS = {
@@ -104,7 +101,7 @@ def collect_ais_data():
     print(f"🚀 正在從航港局擷取 AIS 資料...")
 
     try:
-        resp = requests.get(MPB_URL, headers=MPB_HEADERS, timeout=30)
+        resp = requests.get(MPB_URL, headers=MPB_HEADERS, timeout=30, verify=False)
         resp.raise_for_status()
         geojson = resp.json()
     except requests.RequestException as e:
@@ -218,105 +215,6 @@ def analyze_data(vessels):
     return stats
 
 
-# --- 身分變更追蹤 ---
-
-def _is_jitter(val):
-    """判斷是否為無效/噪音值，不應觸發身分變更事件"""
-    if not val:
-        return True
-    v = str(val).strip().upper()
-    return v in JITTER_VALUES or v.startswith('MMSI-')
-
-
-def track_identity_changes(vessels):
-    """比對船舶身分欄位（name/call_sign/imo），偵測變更並記錄事件"""
-    # 載入上次身分快照
-    state = {}
-    if os.path.exists(IDENTITY_STATE_FILE):
-        try:
-            with open(IDENTITY_STATE_FILE, 'r', encoding='utf-8') as f:
-                state = json.load(f)
-        except Exception:
-            state = {}
-
-    # 載入既有事件紀錄
-    events = []
-    if os.path.exists(IDENTITY_EVENTS_FILE):
-        try:
-            with open(IDENTITY_EVENTS_FILE, 'r', encoding='utf-8') as f:
-                events = json.load(f)
-        except Exception:
-            events = []
-
-    now_str = datetime.now(timezone.utc).isoformat()
-    new_events = []
-
-    for mmsi, vessel in vessels.items():
-        current = {
-            'name': vessel.get('name', ''),
-            'call_sign': vessel.get('call_sign', ''),
-            'imo': vessel.get('imo', ''),
-        }
-
-        # 只對已見過的船做差異比對（首次出現不算變更）
-        if mmsi in state:
-            prev = state[mmsi]
-            changes = []
-
-            for field in IDENTITY_FIELDS:
-                old_val = prev.get(field, '')
-                new_val = current.get(field, '')
-
-                # 跳過噪音值（空白、UNKNOWN 等）
-                if _is_jitter(old_val) or _is_jitter(new_val):
-                    continue
-
-                # 跳過僅大小寫/空白差異
-                if old_val.strip().upper() == new_val.strip().upper():
-                    continue
-
-                if old_val != new_val:
-                    changes.append({
-                        'field': field,
-                        'old': old_val,
-                        'new': new_val,
-                    })
-
-            if changes:
-                new_events.append({
-                    'mmsi': mmsi,
-                    'timestamp': now_str,
-                    'changes': changes,
-                    'lat': vessel.get('lat'),
-                    'lon': vessel.get('lon'),
-                    'in_drill_zone': vessel.get('in_drill_zone'),
-                    'in_fishing_hotspot': vessel.get('in_fishing_hotspot'),
-                    'multi_field': len(changes) >= 2,
-                })
-
-        # 更新身分狀態（包含首次出現的船）
-        state[mmsi] = {
-            'name': current['name'],
-            'call_sign': current['call_sign'],
-            'imo': current['imo'],
-            'last_seen': now_str,
-        }
-
-    # 儲存身分狀態
-    with open(IDENTITY_STATE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
-
-    # 追加事件並修剪
-    events.extend(new_events)
-    events = events[-MAX_IDENTITY_EVENTS:]
-    with open(IDENTITY_EVENTS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(events, f, ensure_ascii=False, indent=2)
-
-    unique_mmsi = len(set(e['mmsi'] for e in new_events))
-    print(f"  🔄 身分變更: {len(new_events)} 事件 ({unique_mmsi} 艘船)")
-    return new_events
-
-
 # --- 儲存 ---
 
 def save_all(vessels, stats):
@@ -393,8 +291,6 @@ def main():
 
     vessels = collect_ais_data()
     stats = analyze_data(vessels)
-    if vessels:
-        track_identity_changes(vessels)
     save_all(vessels, stats)
 
     print(f"\n{'='*50}")
