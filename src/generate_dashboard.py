@@ -157,6 +157,12 @@ def main():
         shutil.copy2(identity_path, DOCS_DIR / 'identity_events.json')
         print(f"🔄 已複製身分變更事件至 docs/identity_events.json")
 
+    # 複製 AIS 歷史快照至 docs（供前端趨勢圖使用）
+    ais_history_path = DATA_DIR / 'ais_history.json'
+    if ais_history_path.exists():
+        shutil.copy2(ais_history_path, DOCS_DIR / 'ais_history.json')
+        print(f"📅 已複製 AIS 歷史快照至 docs/ais_history.json")
+
 
 if __name__ == "__main__":
     main()

@@ -20,6 +20,7 @@ DATA_DIR = 'data'
 DOCS_DIR = 'docs'
 OUTPUT_FILE = os.path.join(DATA_DIR, 'ais_snapshot.json')
 HISTORY_FILE = os.path.join(DATA_DIR, 'vessel_history.json')
+AIS_HISTORY_FILE = os.path.join(DATA_DIR, 'ais_history.json')
 DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
 
 MPB_URL = "https://mpbais.motcmpb.gov.tw/aismpb/tools/geojsonais.ashx"
@@ -265,6 +266,55 @@ def save_all(vessels, stats):
     history = history[-1000:]
     with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
+
+    # 2b. 每日 AIS 歷史快照（統計摘要 + 可疑船舶，供前端趨勢圖使用）
+    today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    suspicious_vessels = [
+        {
+            'mmsi': v['mmsi'],
+            'name': v['name'],
+            'lat': v['lat'],
+            'lon': v['lon'],
+            'type_name': v['type_name'],
+            'speed': v['speed'],
+            'in_drill_zone': v['in_drill_zone'],
+        }
+        for v in vessel_list if v.get('suspicious')
+    ]
+
+    daily_snapshot = {
+        'date': today_str,
+        'stats': {
+            'total_vessels': stats['total_vessels'],
+            'fishing_vessels': stats['fishing_vessels'],
+            'suspicious_count': stats['suspicious_count'],
+            'avg_speed': stats['avg_speed'],
+            'by_type': stats['by_type'],
+            'in_drill_zones': stats['in_drill_zones'],
+            'in_fishing_hotspots': stats.get('in_fishing_hotspots', {}),
+        },
+        'suspicious_vessels': suspicious_vessels,
+    }
+
+    ais_history = []
+    if os.path.exists(AIS_HISTORY_FILE):
+        try:
+            with open(AIS_HISTORY_FILE, 'r', encoding='utf-8') as f:
+                ais_history = json.load(f)
+            if not isinstance(ais_history, list):
+                ais_history = []
+        except Exception:
+            ais_history = []
+
+    # 同一天多次執行只保留最新一筆
+    ais_history = [s for s in ais_history if s.get('date') != today_str]
+    ais_history.append(daily_snapshot)
+
+    # 保留最近 90 天
+    ais_history = ais_history[-90:]
+    with open(AIS_HISTORY_FILE, 'w', encoding='utf-8') as f:
+        json.dump(ais_history, f, ensure_ascii=False, indent=2)
+    print(f"  📅 每日快照已更新: {AIS_HISTORY_FILE} ({len(ais_history)} 天)")
 
     # 3. 更新 Dashboard 資料（與 generate_dashboard.py 格式一致）
     existing = {}

@@ -278,6 +278,30 @@
         </div>
     </div>
 
+    <!-- AIS 歷史趨勢 -->
+    <div class="main-content" style="margin-top: 0;">
+        <div class="panel chart-panel" style="grid-column: 1 / -1;">
+            <div class="panel-title">📡 AIS 船舶歷史趨勢 (每日快照)</div>
+            <div class="chart-container" style="height: 280px;">
+                <canvas id="aisHistoryChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-title">🐟 可疑漁船數量趨勢</div>
+            <div class="chart-container" style="height: 200px;">
+                <canvas id="aisSuspiciousChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-title">🚢 船型分布趨勢</div>
+            <div class="chart-container" style="height: 200px;">
+                <canvas id="aisTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+
     <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>
 
     <footer class="site-footer">
@@ -475,6 +499,87 @@
                 renderDailyTable();
             });
         });
+
+        // AIS History charts
+        async function loadAisHistory() {
+            try {
+                const res = await fetch('ais_history.json?' + Date.now());
+                const history = await res.json();
+                if (!Array.isArray(history) || history.length === 0) return;
+
+                const labels = history.map(d => d.date.slice(5));
+
+                // Total vessels + fishing vessels trend
+                ChartsModule.renderTrendChart('aisHistoryChart', {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '船舶總數',
+                            data: history.map(d => d.stats.total_vessels),
+                            borderColor: '#00f5ff',
+                            backgroundColor: 'rgba(0, 245, 255, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: '漁船',
+                            data: history.map(d => d.stats.fishing_vessels),
+                            borderColor: '#ff6b35',
+                            backgroundColor: 'transparent',
+                            tension: 0.3
+                        }
+                    ]
+                });
+
+                // Suspicious vessel count trend
+                ChartsModule.renderTrendChart('aisSuspiciousChart', {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '可疑船舶',
+                            data: history.map(d => d.stats.suspicious_count),
+                            borderColor: '#ff3366',
+                            backgroundColor: 'rgba(255, 51, 102, 0.15)',
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                });
+
+                // Type distribution stacked area
+                const types = ['cargo', 'tanker', 'fishing', 'passenger', 'special'];
+                const typeColors = {
+                    cargo: '#00f5ff',
+                    tanker: '#ff6b35',
+                    fishing: '#00ff88',
+                    passenger: '#ffd700',
+                    special: '#9b59b6'
+                };
+                const typeLabels = {
+                    cargo: '貨船',
+                    tanker: '油輪',
+                    fishing: '漁船',
+                    passenger: '客船',
+                    special: '特殊'
+                };
+
+                ChartsModule.renderTrendChart('aisTypeChart', {
+                    labels: labels,
+                    datasets: types.map(t => ({
+                        label: typeLabels[t] || t,
+                        data: history.map(d => (d.stats.by_type || {})[t] || 0),
+                        borderColor: typeColors[t] || '#888',
+                        backgroundColor: 'transparent',
+                        tension: 0.3
+                    }))
+                });
+
+            } catch (e) {
+                console.log('AIS history not available:', e.message);
+            }
+        }
+
+        loadAisHistory();
 
         // Initialize
         loadData();
