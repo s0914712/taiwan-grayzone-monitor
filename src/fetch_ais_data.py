@@ -20,6 +20,7 @@ DATA_DIR = 'data'
 DOCS_DIR = 'docs'
 OUTPUT_FILE = os.path.join(DATA_DIR, 'ais_snapshot.json')
 HISTORY_FILE = os.path.join(DATA_DIR, 'vessel_history.json')
+VESSEL_PROFILES_FILE = os.path.join(DATA_DIR, 'vessel_profiles.json')
 AIS_HISTORY_FILE = os.path.join(DATA_DIR, 'ais_history.json')
 AIS_TRACK_FILE = os.path.join(DATA_DIR, 'ais_track_history.json')
 DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
@@ -272,6 +273,53 @@ def save_all(vessels, stats):
     history = history[-1000:]
     with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
+
+    # 2a. 更新船隻行為 profile（供 analyze_suspicious.py CSIS 分析使用）
+    profiles = {}
+    if os.path.exists(VESSEL_PROFILES_FILE):
+        try:
+            with open(VESSEL_PROFILES_FILE, 'r', encoding='utf-8') as f:
+                profiles = json.load(f)
+            if not isinstance(profiles, dict):
+                profiles = {}
+        except Exception:
+            profiles = {}
+
+    for v in vessel_list:
+        mmsi = v['mmsi']
+        if mmsi not in profiles:
+            profiles[mmsi] = {
+                'mmsi': mmsi,
+                'names_seen': [],
+                'types_seen': [],
+                'total_snapshots': 0,
+                'drill_zone_snapshots': 0,
+                'fishing_hotspot_snapshots': 0,
+                'last_seen_timestamps': [],
+            }
+
+        p = profiles[mmsi]
+        p['total_snapshots'] += 1
+
+        # 記錄不同船名
+        if v['name'] and v['name'] not in p['names_seen']:
+            p['names_seen'].append(v['name'])
+        # 記錄不同船型
+        if v['type_name'] and v['type_name'] not in p['types_seen']:
+            p['types_seen'].append(v['type_name'])
+        # 軍演區快照計數
+        if v.get('in_drill_zone'):
+            p['drill_zone_snapshots'] += 1
+        # 漁撈熱點快照計數
+        if v.get('in_fishing_hotspot'):
+            p['fishing_hotspot_snapshots'] += 1
+        # 最近出現時間（保留最近 50 筆，用於 going dark 偵測）
+        p['last_seen_timestamps'].append(now_str)
+        p['last_seen_timestamps'] = p['last_seen_timestamps'][-50:]
+
+    with open(VESSEL_PROFILES_FILE, 'w', encoding='utf-8') as f:
+        json.dump(profiles, f, ensure_ascii=False, indent=2)
+    print(f"  👤 船隻 profile 已更新: {VESSEL_PROFILES_FILE} ({len(profiles)} 艘)")
 
     # 2b. AIS 歷史快照（每天 4 筆，每 6 小時一筆，供前端趨勢圖使用）
     now = datetime.now(timezone.utc)
