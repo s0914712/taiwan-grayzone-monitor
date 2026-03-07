@@ -21,7 +21,13 @@ DOCS_DIR = 'docs'
 OUTPUT_FILE = os.path.join(DATA_DIR, 'ais_snapshot.json')
 HISTORY_FILE = os.path.join(DATA_DIR, 'vessel_history.json')
 AIS_HISTORY_FILE = os.path.join(DATA_DIR, 'ais_history.json')
+AIS_TRACK_FILE = os.path.join(DATA_DIR, 'ais_track_history.json')
 DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
+
+# AIS 歷史快照：每天保留 4 筆（每 6 小時一筆），共保留 90 天 = 360 筆
+AIS_HISTORY_MAX_ENTRIES = 360
+# AIS 軌跡歷史：保留 14 天，每 2 小時一筆 = 168 筆
+AIS_TRACK_MAX_ENTRIES = 168
 
 MPB_URL = "https://mpbais.motcmpb.gov.tw/aismpb/tools/geojsonais.ashx"
 MPB_HEADERS = {
@@ -267,8 +273,12 @@ def save_all(vessels, stats):
     with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
-    # 2b. 每日 AIS 歷史快照（統計摘要 + 可疑船舶，供前端趨勢圖使用）
-    today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    # 2b. AIS 歷史快照（每天 4 筆，每 6 小時一筆，供前端趨勢圖使用）
+    now = datetime.now(timezone.utc)
+    today_str = now.strftime('%Y-%m-%d')
+    period = (now.hour // 6) * 6  # 0, 6, 12, 18
+    period_key = f"{today_str}_{period:02d}"
+
     suspicious_vessels = [
         {
             'mmsi': v['mmsi'],
@@ -282,8 +292,11 @@ def save_all(vessels, stats):
         for v in vessel_list if v.get('suspicious')
     ]
 
-    daily_snapshot = {
+    period_snapshot = {
         'date': today_str,
+        'period': period,
+        'period_key': period_key,
+        'timestamp': now_str,
         'stats': {
             'total_vessels': stats['total_vessels'],
             'fishing_vessels': stats['fishing_vessels'],
@@ -306,15 +319,56 @@ def save_all(vessels, stats):
         except Exception:
             ais_history = []
 
-    # 同一天多次執行只保留最新一筆
-    ais_history = [s for s in ais_history if s.get('date') != today_str]
-    ais_history.append(daily_snapshot)
+    # 同一時段（date + period）多次執行只保留最新一筆
+    ais_history = [s for s in ais_history if s.get('period_key', s.get('date')) != period_key]
+    ais_history.append(period_snapshot)
 
-    # 保留最近 90 天
-    ais_history = ais_history[-90:]
+    # 保留最近 360 筆（90 天 × 4 筆/天）
+    ais_history = ais_history[-AIS_HISTORY_MAX_ENTRIES:]
     with open(AIS_HISTORY_FILE, 'w', encoding='utf-8') as f:
         json.dump(ais_history, f, ensure_ascii=False, indent=2)
-    print(f"  📅 每日快照已更新: {AIS_HISTORY_FILE} ({len(ais_history)} 天)")
+    print(f"  📅 歷史快照已更新: {AIS_HISTORY_FILE} ({len(ais_history)} 筆, period={period:02d}h)")
+
+    # 2c. AIS 軌跡歷史（記錄可疑船 + 軍演區船隻位置，供動畫播放）
+    track_vessels = [
+        {
+            'mmsi': v['mmsi'],
+            'name': v['name'],
+            'lat': v['lat'],
+            'lon': v['lon'],
+            'speed': v['speed'],
+            'heading': v['heading'],
+            'type_name': v['type_name'],
+            'in_drill_zone': v['in_drill_zone'],
+            'suspicious': v.get('suspicious', False),
+        }
+        for v in vessel_list
+        if v.get('suspicious') or v.get('in_drill_zone')
+    ]
+
+    track_entry = {
+        'timestamp': now_str,
+        'period_key': period_key,
+        'vessel_count': len(track_vessels),
+        'suspicious_count': sum(1 for v in track_vessels if v.get('suspicious')),
+        'vessels': track_vessels,
+    }
+
+    track_history = []
+    if os.path.exists(AIS_TRACK_FILE):
+        try:
+            with open(AIS_TRACK_FILE, 'r', encoding='utf-8') as f:
+                track_history = json.load(f)
+            if not isinstance(track_history, list):
+                track_history = []
+        except Exception:
+            track_history = []
+
+    track_history.append(track_entry)
+    track_history = track_history[-AIS_TRACK_MAX_ENTRIES:]
+    with open(AIS_TRACK_FILE, 'w', encoding='utf-8') as f:
+        json.dump(track_history, f, ensure_ascii=False, indent=2)
+    print(f"  🎬 軌跡歷史已更新: {AIS_TRACK_FILE} ({len(track_history)} 筆, {len(track_vessels)} 艘船)")
 
     # 3. 更新 Dashboard 資料（與 generate_dashboard.py 格式一致）
     existing = {}

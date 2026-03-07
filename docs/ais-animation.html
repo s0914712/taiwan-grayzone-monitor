@@ -4,25 +4,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>暗船動畫 | Dark Vessel Animation - Taiwan Gray Zone Monitor</title>
-    <meta name="description" content="台灣周邊暗船偵測動畫播放，依實際 SAR 衛星偵測日逐日呈現暗船位置變化">
-    <meta name="keywords" content="暗船動畫,dark vessel animation,SAR,台灣海峽,Taiwan Strait,衛星偵測,maritime surveillance">
+    <title>船位動畫 | AIS Track Animation - Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤軍演區內可疑漁船位置變化">
+    <meta name="keywords" content="AIS動畫,船位追蹤,可疑船隻,台灣海峽,Taiwan Strait,maritime surveillance">
     <meta name="author" content="Taiwan Gray Zone Monitor">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-animation.html">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/ais-animation.html">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="暗船動畫 | Dark Vessel Animation">
-    <meta property="og:description" content="台灣周邊暗船偵測動畫播放，依實際 SAR 衛星偵測日逐日呈現暗船位置變化">
-    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-animation.html">
+    <meta property="og:title" content="船位動畫 | AIS Track Animation">
+    <meta property="og:description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤軍演區內可疑漁船位置變化">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/ais-animation.html">
     <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
     <meta property="og:locale" content="zh_TW">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="暗船動畫 | Dark Vessel Animation">
-    <meta name="twitter:description" content="台灣周邊暗船偵測動畫播放，依實際 SAR 衛星偵測日逐日呈現暗船位置變化">
+    <meta name="twitter:title" content="船位動畫 | AIS Track Animation">
+    <meta name="twitter:description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤軍演區內可疑漁船位置變化">
 
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -213,14 +213,6 @@
             color: var(--accent-red);
         }
 
-        .stat-card .value.trend-up {
-            color: var(--accent-red);
-        }
-
-        .stat-card .value.trend-down {
-            color: var(--accent-green);
-        }
-
         .stat-card .label {
             font-size: 9px;
             color: var(--text-secondary);
@@ -259,14 +251,14 @@
             height: 200px;
         }
 
-        /* Region table */
-        .region-table {
+        /* Vessel table */
+        .vessel-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 10px;
         }
 
-        .region-table th {
+        .vessel-table th {
             text-align: left;
             padding: 6px 8px;
             color: var(--text-secondary);
@@ -276,17 +268,27 @@
             border-bottom: 1px solid var(--border-glow);
         }
 
-        .region-table td {
+        .vessel-table td {
             padding: 6px 8px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
         }
 
-        .region-table tr:hover {
+        .vessel-table tr:hover {
             background: rgba(0, 245, 255, 0.03);
         }
 
-        /* Map legend (inline) */
+        .vessel-table .suspicious-tag {
+            color: var(--accent-red);
+            font-weight: 600;
+        }
+
+        .vessel-table .zone-tag {
+            color: var(--accent-cyan);
+            font-size: 9px;
+        }
+
+        /* Map legend */
         .map-legend-inline {
             display: flex;
             gap: 14px;
@@ -318,12 +320,24 @@
             font-family: 'JetBrains Mono', monospace;
         }
 
-        /* Empty state */
         .empty-state {
             text-align: center;
             padding: 40px;
             color: var(--text-secondary);
             font-size: 12px;
+        }
+
+        /* Trail toggle */
+        .trail-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .trail-toggle input {
+            accent-color: var(--accent-cyan);
         }
 
         /* Responsive */
@@ -384,13 +398,13 @@
     <!-- End Google Tag Manager (noscript) -->
 
     <header class="header">
-        <h1 data-i18n="title.anim">🎬 暗船動畫 Dark Vessel Animation</h1>
+        <h1 data-i18n="title.ais_anim">🚢 可疑船位動畫 Suspicious Vessel Animation</h1>
         <div class="header-nav">
             <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
             <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
             <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
-            <a href="weekly-animation.html" class="active" data-i18n="nav.animation">暗船動畫</a>
-            <a href="ais-animation.html" data-i18n="nav.ais_anim">船位動畫</a>
+            <a href="weekly-animation.html" data-i18n="nav.animation">暗船動畫</a>
+            <a href="ais-animation.html" class="active" data-i18n="nav.ais_anim">船位動畫</a>
             <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
             <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
             <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
@@ -399,23 +413,29 @@
 
     <!-- Animation controls -->
     <div class="anim-controls" id="animControls">
-        <span class="anim-label" data-i18n="anim.range">範圍</span>
-        <button class="anim-btn" data-range="30" onclick="setRange(30)" data-i18n="anim.days_30">30 天</button>
-        <button class="anim-btn active" data-range="60" onclick="setRange(60)" data-i18n="anim.days_60">60 天</button>
-        <button class="anim-btn" data-range="90" onclick="setRange(90)" data-i18n="anim.days_90">90 天</button>
+        <span class="anim-label" data-i18n="ais_anim.range">範圍</span>
+        <button class="anim-btn" data-range="7" onclick="setRange(7)" data-i18n="ais_anim.days_7">7 天</button>
+        <button class="anim-btn active" data-range="14" onclick="setRange(14)" data-i18n="ais_anim.days_14">14 天</button>
 
         <div class="anim-separator"></div>
 
-        <button class="anim-btn" onclick="stepBackward()" data-i18n-title="anim.prev" title="上一天">⏮</button>
-        <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" data-i18n-title="anim.play" title="播放/暫停">▶</button>
-        <button class="anim-btn" onclick="stepForward()" data-i18n-title="anim.next" title="下一天">⏭</button>
+        <button class="anim-btn" onclick="stepBackward()" title="上一幀">⏮</button>
+        <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" title="播放/暫停">▶</button>
+        <button class="anim-btn" onclick="stepForward()" title="下一幀">⏭</button>
 
         <div class="anim-separator"></div>
 
-        <span class="anim-label" data-i18n="anim.speed">速度</span>
+        <span class="anim-label" data-i18n="ais_anim.speed">速度</span>
         <button class="anim-btn active" data-speed="1" onclick="setSpeed(1)">1x</button>
         <button class="anim-btn" data-speed="2" onclick="setSpeed(2)">2x</button>
         <button class="anim-btn" data-speed="4" onclick="setSpeed(4)">4x</button>
+
+        <div class="anim-separator"></div>
+
+        <label class="trail-toggle">
+            <input type="checkbox" id="showTrails" checked onchange="toggleTrails()">
+            <span data-i18n="ais_anim.show_trails">顯示軌跡</span>
+        </label>
 
         <div class="day-indicator" id="dayIndicator">
             <div class="date-text">--</div>
@@ -432,16 +452,16 @@
     <!-- Stats -->
     <div class="stats-row">
         <div class="stat-card">
-            <div class="value alert" id="statDark">--</div>
-            <div class="label" data-i18n="dark.count">暗船數量</div>
+            <div class="value alert" id="statSuspicious">--</div>
+            <div class="label" data-i18n="ais_anim.suspicious">可疑船</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statDrillZone">--</div>
+            <div class="label" data-i18n="ais_anim.drill_zone">軍演區船隻</div>
         </div>
         <div class="stat-card">
             <div class="value" id="statTotal">--</div>
-            <div class="label" data-i18n="dark.total_detect_s">SAR 總偵測</div>
-        </div>
-        <div class="stat-card">
-            <div class="value alert" id="statRatio">--%</div>
-            <div class="label" data-i18n="dark.ratio">暗船比例</div>
+            <div class="label" data-i18n="ais_anim.total_track">追蹤船隻</div>
         </div>
         <div class="stat-card">
             <div class="value" id="statChange">--</div>
@@ -452,39 +472,41 @@
     <div class="main-content">
         <!-- Map -->
         <div class="panel map-panel">
-            <div class="panel-title" data-i18n="anim.map_title">📍 暗船位置動畫（SAR 衛星偵測 / 每偵測日一幀）</div>
+            <div class="panel-title" data-i18n="ais_anim.map_title">📍 可疑船隻 AIS 軌跡動畫</div>
             <div id="map"></div>
             <div class="map-legend-inline">
-                <div class="legend-chip"><span class="dot" style="background:#ff3366"></span><span data-i18n="region.taiwan_strait">台灣海峽</span></div>
-                <div class="legend-chip"><span class="dot" style="background:#ff6b35"></span><span data-i18n="region.east_taiwan_s">台灣東部</span></div>
-                <div class="legend-chip"><span class="dot" style="background:#ffd700"></span><span data-i18n="region.south_china_sea">南海北部</span></div>
-                <div class="legend-chip"><span class="dot" style="background:#9b59b6"></span><span data-i18n="region.east_china_sea">東海</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ff3366;box-shadow:0 0 6px #ff3366"></span><span data-i18n="ais_anim.suspicious">可疑船</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#00f5ff"></span><span data-i18n="ais_anim.drill_zone">軍演區船隻</span></div>
+                <div class="legend-chip"><span class="dot" style="background:rgba(255,51,102,0.3)"></span><span>軍演區域</span></div>
+                <div class="legend-chip"><span class="dot" style="background:rgba(0,255,136,0.3)"></span><span>漁撈熱點</span></div>
             </div>
         </div>
 
         <!-- Daily trend chart -->
         <div class="panel chart-panel">
-            <div class="panel-title" data-i18n="anim.chart_title">📊 各偵測日暗船數量</div>
+            <div class="panel-title" data-i18n="ais_anim.chart_title">📊 各時段可疑船數量</div>
             <div class="chart-container">
                 <canvas id="dailyChart"></canvas>
             </div>
         </div>
 
-        <!-- Region breakdown -->
+        <!-- Vessel list -->
         <div class="panel">
-            <div class="panel-title" data-i18n="anim.region_title">🗺️ 本日各區域分布</div>
+            <div class="panel-title">🚢 本幀船隻列表</div>
             <div class="panel-body">
-                <table class="region-table">
+                <table class="vessel-table">
                     <thead>
                         <tr>
-                            <th data-i18n="th.region">區域</th>
-                            <th data-i18n="th.total">總偵測</th>
-                            <th data-i18n="th.dark">暗船</th>
-                            <th data-i18n="th.coords">座標點</th>
+                            <th>MMSI</th>
+                            <th data-i18n="ais_anim.popup_name">船名</th>
+                            <th data-i18n="ais_anim.popup_type">類型</th>
+                            <th data-i18n="ais_anim.popup_speed">航速</th>
+                            <th data-i18n="ais_anim.popup_zone">軍演區</th>
+                            <th>狀態</th>
                         </tr>
                     </thead>
-                    <tbody id="regionTableBody">
-                        <tr><td colspan="4" class="empty-state" data-i18n="common.loading">載入中...</td></tr>
+                    <tbody id="vesselTableBody">
+                        <tr><td colspan="6" class="empty-state" data-i18n="common.loading">載入中...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -500,35 +522,39 @@
     <script src="js/i18n.js"></script>
     <script>
     // =========================================================================
-    // Region colors (same as map.js MapModule)
+    // Drill zones & fishing hotspots (same as fetch_ais_data.py)
     // =========================================================================
-    const REGION_COLORS = {
-        taiwan_strait: '#ff3366',
-        east_taiwan: '#ff6b35',
-        south_china_sea: '#ffd700',
-        east_china_sea: '#9b59b6'
+    const DRILL_ZONES = {
+        north: { name: '北區', bounds: [[25.5, 121.0], [26.8, 122.5]], color: 'rgba(255,51,102,0.15)' },
+        east:  { name: '東區', bounds: [[23.0, 122.5], [25.5, 125.0]], color: 'rgba(255,107,53,0.15)' },
+        south: { name: '南區', bounds: [[21.5, 119.0], [23.0, 121.0]], color: 'rgba(255,215,0,0.15)' },
+        west:  { name: '西區', bounds: [[23.5, 118.5], [25.0, 120.0]], color: 'rgba(155,89,182,0.15)' }
     };
 
-    const REGION_BOUNDS = {
-        taiwan_strait: [[23.5, 118.0], [23.5, 122.0], [26.5, 122.0], [26.5, 118.0]],
-        east_taiwan:   [[22.0, 121.5], [22.0, 124.0], [25.5, 124.0], [25.5, 121.5]],
-        south_china_sea: [[18.0, 110.0], [18.0, 118.0], [23.0, 118.0], [23.0, 110.0]],
-        east_china_sea:  [[26.0, 122.0], [26.0, 130.5], [34.0, 130.5], [34.0, 122.0]]
+    const FISHING_HOTSPOTS = {
+        taiwan_bank:   { name: '台灣灘漁場',   bounds: [[22.0, 117.0], [23.5, 119.5]] },
+        penghu:        { name: '澎湖漁場',     bounds: [[23.0, 119.0], [24.0, 120.0]] },
+        kuroshio_east: { name: '東部黑潮漁場', bounds: [[22.5, 121.0], [24.5, 122.0]] },
+        northeast:     { name: '東北漁場',     bounds: [[24.8, 121.5], [25.8, 123.0]] },
+        southwest:     { name: '西南沿岸漁場', bounds: [[22.0, 120.0], [23.0, 120.8]] }
     };
 
     // =========================================================================
     // Animation state
     // =========================================================================
     const Anim = {
-        allDays: [],         // all days from JSON
-        filteredDays: [],    // days filtered by selected range
+        allFrames: [],
+        filteredFrames: [],
         currentIdx: 0,
         playing: false,
-        speed: 1,            // 1x=1500ms, 2x=750ms, 4x=375ms
+        speed: 1,
         intervalId: null,
-        selectedRange: 60,
+        selectedRange: 14,
         markerLayer: null,
-        chart: null
+        trailLayer: null,
+        showTrails: true,
+        chart: null,
+        vesselTrails: {}  // mmsi -> [{lat, lon, timestamp}, ...]
     };
 
     let map;
@@ -538,8 +564,8 @@
     // =========================================================================
     function initMap() {
         map = L.map('map', {
-            center: [26.0, 123.0],
-            zoom: 5,
+            center: [24.0, 121.0],
+            zoom: 7,
             zoomControl: true,
             attributionControl: false,
             preferCanvas: true
@@ -563,19 +589,28 @@
             fillColor: '#1a3a5c', fillOpacity: 0.3
         }).addTo(map);
 
-        // Region boundaries
-        Object.entries(REGION_BOUNDS).forEach(([key, coords]) => {
-            L.polygon(coords, {
-                color: REGION_COLORS[key] || '#00f5ff',
-                weight: 1.5,
-                opacity: 0.4,
-                fillOpacity: 0.02,
+        // Drill zones
+        Object.entries(DRILL_ZONES).forEach(([key, zone]) => {
+            const b = zone.bounds;
+            L.rectangle([b[0], b[1]], {
+                color: '#ff3366', weight: 1.5, opacity: 0.4,
+                fillColor: zone.color, fillOpacity: 0.1,
                 dashArray: '6,4'
-            }).addTo(map);
+            }).addTo(map).bindTooltip(zone.name, { permanent: false, direction: 'center', className: 'zone-label' });
         });
 
-        // Marker layer for animation
+        // Fishing hotspots
+        Object.entries(FISHING_HOTSPOTS).forEach(([key, spot]) => {
+            const b = spot.bounds;
+            L.rectangle([b[0], b[1]], {
+                color: '#00ff88', weight: 1, opacity: 0.3,
+                fillColor: 'rgba(0,255,136,0.05)', fillOpacity: 0.05,
+                dashArray: '4,4'
+            }).addTo(map).bindTooltip(spot.name, { permanent: false, direction: 'center' });
+        });
+
         Anim.markerLayer = L.layerGroup().addTo(map);
+        Anim.trailLayer = L.layerGroup().addTo(map);
     }
 
     // =========================================================================
@@ -583,33 +618,32 @@
     // =========================================================================
     async function loadData() {
         try {
-            const res = await fetch('weekly_dark_vessels.json?' + Date.now());
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const res = await fetch('ais_track_history.json?' + Date.now());
+            if (!res.ok) throw new Error('HTTP ' + res.status);
             const data = await res.json();
 
-            Anim.allDays = data.days || [];
-
-            if (Anim.allDays.length === 0) {
-                document.getElementById('dataStatus').textContent = i18n.t('anim.no_data');
-                document.getElementById('regionTableBody').innerHTML =
-                    `<tr><td colspan="4" class="empty-state">${i18n.t('anim.no_data_msg')}</td></tr>`;
+            if (!Array.isArray(data) || data.length === 0) {
+                document.getElementById('dataStatus').textContent = i18n.t('ais_anim.no_data');
+                document.getElementById('vesselTableBody').innerHTML =
+                    '<tr><td colspan="6" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
                 return;
             }
 
-            // Apply default range filter
+            Anim.allFrames = data;
             applyRangeFilter(Anim.selectedRange);
 
-            // Update status
+            const first = data[0].timestamp || '';
+            const last = data[data.length - 1].timestamp || '';
             document.getElementById('dataStatus').textContent =
-                `✅ ${data.date_range.start} ~ ${data.date_range.end}`;
+                '\u2705 ' + first.slice(0, 10) + ' ~ ' + last.slice(0, 10);
             document.getElementById('updateInfo').textContent =
-                i18n.t('common.updated') + ' ' + new Date(data.updated_at).toLocaleString();
+                i18n.t('common.updated') + ' ' + new Date(last).toLocaleString();
 
         } catch (e) {
             console.error('載入失敗:', e);
-            document.getElementById('dataStatus').textContent = i18n.t('anim.load_fail');
-            document.getElementById('regionTableBody').innerHTML =
-                `<tr><td colspan="4" class="empty-state">${i18n.t('anim.load_fail_msg')}</td></tr>`;
+            document.getElementById('dataStatus').textContent = i18n.t('ais_anim.load_fail');
+            document.getElementById('vesselTableBody').innerHTML =
+                '<tr><td colspan="6" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
         }
     }
 
@@ -618,28 +652,24 @@
     // =========================================================================
     function applyRangeFilter(days) {
         Anim.selectedRange = days;
-
-        // Filter to last N days
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - days);
-        const cutoffStr = cutoff.toISOString().slice(0, 10);
+        const cutoffStr = cutoff.toISOString();
 
-        Anim.filteredDays = Anim.allDays.filter(d => d.date >= cutoffStr);
-
-        if (Anim.filteredDays.length === 0) {
-            Anim.filteredDays = Anim.allDays; // fallback to all data
+        Anim.filteredFrames = Anim.allFrames.filter(f => f.timestamp >= cutoffStr);
+        if (Anim.filteredFrames.length === 0) {
+            Anim.filteredFrames = Anim.allFrames;
         }
 
         Anim.currentIdx = 0;
+        Anim.vesselTrails = {};
         pause();
-
         updateSlider();
         updateChart();
         renderFrame(0);
     }
 
     function setRange(days) {
-        // Update button styles
         document.querySelectorAll('[data-range]').forEach(btn => {
             btn.classList.toggle('active', parseInt(btn.dataset.range) === days);
         });
@@ -647,47 +677,94 @@
     }
 
     // =========================================================================
+    // Build vessel trails up to current frame
+    // =========================================================================
+    function buildTrails(upToIdx) {
+        Anim.vesselTrails = {};
+        for (let i = 0; i <= upToIdx; i++) {
+            const frame = Anim.filteredFrames[i];
+            if (!frame || !frame.vessels) continue;
+            frame.vessels.forEach(v => {
+                if (!Anim.vesselTrails[v.mmsi]) {
+                    Anim.vesselTrails[v.mmsi] = { points: [], suspicious: v.suspicious, name: v.name };
+                }
+                Anim.vesselTrails[v.mmsi].points.push([v.lat, v.lon]);
+                Anim.vesselTrails[v.mmsi].suspicious = v.suspicious;
+            });
+        }
+    }
+
+    // =========================================================================
     // Frame rendering
     // =========================================================================
     function renderFrame(idx) {
-        if (idx < 0 || idx >= Anim.filteredDays.length) return;
+        if (idx < 0 || idx >= Anim.filteredFrames.length) return;
         Anim.currentIdx = idx;
 
-        const day = Anim.filteredDays[idx];
+        const frame = Anim.filteredFrames[idx];
+        const vessels = frame.vessels || [];
 
-        // Clear markers
+        // Clear layers
         Anim.markerLayer.clearLayers();
+        Anim.trailLayer.clearLayers();
 
-        // Plot dark vessel points
-        const regions = day.regions || {};
-        Object.entries(regions).forEach(([regionId, regionData]) => {
-            const color = REGION_COLORS[regionId] || '#ff3366';
-            const points = regionData.points || [];
+        // Build and draw trails
+        if (Anim.showTrails) {
+            buildTrails(idx);
+            Object.entries(Anim.vesselTrails).forEach(([mmsi, trail]) => {
+                if (trail.points.length < 2) return;
+                const color = trail.suspicious ? '#ff3366' : '#00f5ff';
+                L.polyline(trail.points, {
+                    color: color,
+                    weight: 1.5,
+                    opacity: 0.4,
+                    dashArray: '3,3'
+                }).addTo(Anim.trailLayer);
+            });
+        }
 
-            points.forEach(pt => {
-                const radius = Math.min(3 + Math.log2(pt.detections || 1) * 2, 10);
+        // Plot vessel markers
+        vessels.forEach(v => {
+            const isSuspicious = v.suspicious;
+            const color = isSuspicious ? '#ff3366' : '#00f5ff';
+            const radius = isSuspicious ? 6 : 4;
 
-                L.circleMarker([pt.lat, pt.lon], {
-                    radius: radius,
+            const marker = L.circleMarker([v.lat, v.lon], {
+                radius: radius,
+                fillColor: color,
+                color: color,
+                weight: isSuspicious ? 2 : 1,
+                opacity: 0.9,
+                fillOpacity: isSuspicious ? 0.7 : 0.4
+            }).addTo(Anim.markerLayer);
+
+            // Glow effect for suspicious vessels
+            if (isSuspicious) {
+                L.circleMarker([v.lat, v.lon], {
+                    radius: radius + 4,
                     fillColor: color,
                     color: color,
-                    weight: 1,
-                    opacity: 0.7,
-                    fillOpacity: 0.5
-                }).addTo(Anim.markerLayer).bindPopup(
-                    `<b style="color:${color}">${i18n.t('dv.popup_title')}</b><br>` +
-                    `${i18n.t('dv.popup_region')} ${regionData.name || regionId}<br>` +
-                    `${i18n.t('dv.popup_date')} ${day.date}<br>` +
-                    `${i18n.t('dv.popup_det')} ${pt.detections || 1}<br>` +
-                    `${i18n.t('dv.popup_pos')} ${pt.lat}, ${pt.lon}`
-                );
-            });
+                    weight: 0,
+                    fillOpacity: 0.15
+                }).addTo(Anim.markerLayer);
+            }
+
+            marker.bindPopup(
+                '<div style="font-size:11px;line-height:1.6">' +
+                '<b style="color:' + color + '">' + (v.name || v.mmsi) + '</b><br>' +
+                'MMSI: ' + v.mmsi + '<br>' +
+                i18n.t('ais_anim.popup_type') + ': ' + v.type_name + '<br>' +
+                i18n.t('ais_anim.popup_speed') + ': ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
+                (v.in_drill_zone ? (i18n.t('ais_anim.popup_zone') + ': ' + v.in_drill_zone + '<br>') : '') +
+                (isSuspicious ? '<span style="color:#ff3366;font-weight:600">⚠ SUSPICIOUS</span>' : '') +
+                '</div>'
+            );
         });
 
         // Update UI
-        updateDayIndicator(day, idx);
-        updateStatCards(day, idx);
-        updateRegionTable(day);
+        updateDayIndicator(frame, idx);
+        updateStatCards(frame, idx);
+        updateVesselTable(vessels);
         updateSliderPosition(idx);
         highlightChartBar(idx);
     }
@@ -695,55 +772,64 @@
     // =========================================================================
     // UI updates
     // =========================================================================
-    function updateDayIndicator(day, idx) {
-        const indicator = document.getElementById('dayIndicator');
-        indicator.innerHTML = `
-            <div class="date-text">${day.date}</div>
-            <div class="frame-text">${i18n.t('anim.frame', idx + 1, Anim.filteredDays.length)}</div>
-        `;
+    function updateDayIndicator(frame, idx) {
+        const ts = frame.timestamp || '';
+        const dateStr = ts.slice(0, 16).replace('T', ' ');
+        document.getElementById('dayIndicator').innerHTML =
+            '<div class="date-text">' + dateStr + ' UTC</div>' +
+            '<div class="frame-text">' + i18n.t('ais_anim.frame', idx + 1, Anim.filteredFrames.length) + '</div>';
     }
 
-    function updateStatCards(day, idx) {
-        const s = day.summary;
-        document.getElementById('statDark').textContent = (s.dark_vessels || 0).toLocaleString();
-        document.getElementById('statTotal').textContent = (s.total_detections || 0).toLocaleString();
-        document.getElementById('statRatio').textContent = (s.dark_ratio || 0) + '%';
+    function updateStatCards(frame, idx) {
+        const suspicious = frame.suspicious_count || 0;
+        const total = frame.vessel_count || 0;
+        const drillZone = (frame.vessels || []).filter(v => v.in_drill_zone).length;
 
-        // Change from previous day
+        document.getElementById('statSuspicious').textContent = suspicious;
+        document.getElementById('statDrillZone').textContent = drillZone;
+        document.getElementById('statTotal').textContent = total;
+
         const changeEl = document.getElementById('statChange');
         if (idx > 0) {
-            const prevDark = Anim.filteredDays[idx - 1].summary.dark_vessels || 0;
-            const currDark = s.dark_vessels || 0;
-            const diff = currDark - prevDark;
-            const pct = prevDark > 0 ? ((diff / prevDark) * 100).toFixed(0) : '--';
-
-            changeEl.textContent = (diff >= 0 ? '+' : '') + pct + '%';
-            changeEl.className = 'value ' + (diff > 0 ? 'trend-up' : diff < 0 ? 'trend-down' : '');
+            const prev = Anim.filteredFrames[idx - 1].suspicious_count || 0;
+            const diff = suspicious - prev;
+            changeEl.textContent = (diff >= 0 ? '+' : '') + diff;
+            changeEl.className = 'value ' + (diff > 0 ? 'alert' : diff < 0 ? 'trend-down' : '');
         } else {
             changeEl.textContent = '--';
             changeEl.className = 'value';
         }
     }
 
-    function updateRegionTable(day) {
-        const tbody = document.getElementById('regionTableBody');
-        const regions = day.regions || {};
-        const regionOrder = ['taiwan_strait', 'east_taiwan', 'south_china_sea', 'east_china_sea'];
+    function updateVesselTable(vessels) {
+        const tbody = document.getElementById('vesselTableBody');
+        if (!vessels || vessels.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
+            return;
+        }
 
-        const rows = regionOrder
-            .filter(key => regions[key])
-            .map(key => {
-                const r = regions[key];
-                const color = REGION_COLORS[key] || '#ff3366';
-                return `<tr>
-                    <td style="color:${color};font-weight:500">${r.name || key}</td>
-                    <td>${r.total_count || 0}</td>
-                    <td style="color:var(--accent-red);font-weight:600">${r.dark_count || 0}</td>
-                    <td>${(r.points || []).length} pts</td>
-                </tr>`;
-            });
+        // Sort: suspicious first, then by speed descending
+        const sorted = [...vessels].sort((a, b) => {
+            if (a.suspicious !== b.suspicious) return b.suspicious ? 1 : -1;
+            return (b.speed || 0) - (a.speed || 0);
+        });
 
-        tbody.innerHTML = rows.join('') || `<tr><td colspan="4" class="empty-state">${i18n.t('anim.no_detect')}</td></tr>`;
+        const rows = sorted.slice(0, 30).map(v => {
+            const isSusp = v.suspicious;
+            return '<tr>' +
+                '<td>' + v.mmsi + '</td>' +
+                '<td>' + (v.name || '--') + '</td>' +
+                '<td>' + (v.type_name || '--') + '</td>' +
+                '<td>' + (v.speed || 0).toFixed(1) + ' kn</td>' +
+                '<td class="zone-tag">' + (v.in_drill_zone || '--') + '</td>' +
+                '<td>' + (isSusp ? '<span class="suspicious-tag">⚠ SUSPICIOUS</span>' : 'OK') + '</td>' +
+                '</tr>';
+        });
+
+        tbody.innerHTML = rows.join('');
+        if (sorted.length > 30) {
+            tbody.innerHTML += '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);font-size:9px">... ' + (sorted.length - 30) + ' more vessels</td></tr>';
+        }
     }
 
     // =========================================================================
@@ -752,23 +838,21 @@
     function updateSlider() {
         const slider = document.getElementById('daySlider');
         slider.min = 0;
-        slider.max = Math.max(0, Anim.filteredDays.length - 1);
+        slider.max = Math.max(0, Anim.filteredFrames.length - 1);
         slider.value = 0;
 
-        // Timeline labels
         const labels = document.getElementById('timelineLabels');
-        const days = Anim.filteredDays;
-        if (days.length <= 1) {
-            labels.innerHTML = days.length === 1 ? `<span>${days[0].date.slice(5)}</span>` : '';
+        const frames = Anim.filteredFrames;
+        if (frames.length <= 1) {
+            labels.innerHTML = frames.length === 1 ? '<span>' + (frames[0].timestamp || '').slice(5, 16) + '</span>' : '';
             return;
         }
 
-        // Show ~6 evenly spaced labels
-        const step = Math.max(1, Math.floor(days.length / 5));
+        const step = Math.max(1, Math.floor(frames.length / 6));
         const labelHtml = [];
-        for (let i = 0; i < days.length; i++) {
-            if (i === 0 || i === days.length - 1 || i % step === 0) {
-                labelHtml.push(`<span>${days[i].date.slice(5)}</span>`);
+        for (let i = 0; i < frames.length; i++) {
+            if (i === 0 || i === frames.length - 1 || i % step === 0) {
+                labelHtml.push('<span>' + (frames[i].timestamp || '').slice(5, 16).replace('T', ' ') + '</span>');
             }
         }
         labels.innerHTML = labelHtml.join('');
@@ -788,20 +872,17 @@
     // =========================================================================
     function updateChart() {
         const ctx = document.getElementById('dailyChart').getContext('2d');
+        if (Anim.chart) Anim.chart.destroy();
 
-        if (Anim.chart) {
-            Anim.chart.destroy();
-        }
-
-        const labels = Anim.filteredDays.map(d => d.date.slice(5));
-        const data = Anim.filteredDays.map(d => d.summary.dark_vessels || 0);
+        const labels = Anim.filteredFrames.map(f => (f.timestamp || '').slice(5, 16).replace('T', ' '));
+        const data = Anim.filteredFrames.map(f => f.suspicious_count || 0);
 
         Anim.chart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: i18n.t('dark.count'),
+                    label: i18n.t('ais_anim.suspicious'),
                     data: data,
                     backgroundColor: data.map((_, i) =>
                         i === Anim.currentIdx ? 'rgba(0, 245, 255, 0.8)' : 'rgba(255, 51, 102, 0.5)'
@@ -816,12 +897,10 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
                     x: {
-                        ticks: { color: '#8aa4c8', font: { size: 8, family: 'JetBrains Mono' }, maxRotation: 45 },
+                        ticks: { color: '#8aa4c8', font: { size: 7, family: 'JetBrains Mono' }, maxRotation: 45 },
                         grid: { color: 'rgba(0,245,255,0.05)' }
                     },
                     y: {
@@ -850,24 +929,22 @@
     // =========================================================================
     function play() {
         if (Anim.playing) return;
-        if (Anim.filteredDays.length === 0) return;
-
-        // If at the end, restart from beginning
-        if (Anim.currentIdx >= Anim.filteredDays.length - 1) {
+        if (Anim.filteredFrames.length === 0) return;
+        if (Anim.currentIdx >= Anim.filteredFrames.length - 1) {
             Anim.currentIdx = -1;
         }
 
         Anim.playing = true;
         const btn = document.getElementById('playBtn');
         btn.classList.add('playing');
-        btn.textContent = '⏸';
+        btn.textContent = '\u23F8';
 
         const baseInterval = 1500;
         const interval = baseInterval / Anim.speed;
 
         Anim.intervalId = setInterval(() => {
             const nextIdx = Anim.currentIdx + 1;
-            if (nextIdx >= Anim.filteredDays.length) {
+            if (nextIdx >= Anim.filteredFrames.length) {
                 pause();
                 return;
             }
@@ -880,27 +957,21 @@
         clearInterval(Anim.intervalId);
         const btn = document.getElementById('playBtn');
         btn.classList.remove('playing');
-        btn.textContent = '▶';
+        btn.textContent = '\u25B6';
     }
 
     function togglePlay() {
-        if (Anim.playing) {
-            pause();
-        } else {
-            play();
-        }
+        Anim.playing ? pause() : play();
     }
 
     function stepForward() {
         pause();
-        const nextIdx = Math.min(Anim.currentIdx + 1, Anim.filteredDays.length - 1);
-        renderFrame(nextIdx);
+        renderFrame(Math.min(Anim.currentIdx + 1, Anim.filteredFrames.length - 1));
     }
 
     function stepBackward() {
         pause();
-        const prevIdx = Math.max(Anim.currentIdx - 1, 0);
-        renderFrame(prevIdx);
+        renderFrame(Math.max(Anim.currentIdx - 1, 0));
     }
 
     function setSpeed(speed) {
@@ -912,6 +983,11 @@
             pause();
             play();
         }
+    }
+
+    function toggleTrails() {
+        Anim.showTrails = document.getElementById('showTrails').checked;
+        renderFrame(Anim.currentIdx);
     }
 
     // =========================================================================
@@ -949,16 +1025,16 @@
                 <span class="nav-icon">🔦</span>
                 <span data-i18n="nav.mob_dark">暗船</span>
             </a>
-            <a href="statistics.html">
-                <span class="nav-icon">📊</span>
-                <span data-i18n="nav.mob_stats">統計</span>
-            </a>
-            <a href="weekly-animation.html" class="active">
+            <a href="weekly-animation.html">
                 <span class="nav-icon">🎬</span>
                 <span data-i18n="nav.mob_anim">動畫</span>
             </a>
+            <a href="ais-animation.html" class="active">
+                <span class="nav-icon">🚢</span>
+                <span data-i18n="nav.mob_ais_anim">船位</span>
+            </a>
         `;
-        i18n.applyAll(); // Apply translations to newly created elements
+        i18n.applyAll();
         document.body.appendChild(nav);
     }
 
