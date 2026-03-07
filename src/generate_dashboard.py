@@ -163,6 +163,12 @@ def main():
         shutil.copy2(ais_history_path, DOCS_DIR / 'ais_history.json')
         print(f"📅 已複製 AIS 歷史快照至 docs/ais_history.json")
 
+    # 複製 AIS 軌跡歷史至 docs（供船位動畫使用）
+    ais_track_path = DATA_DIR / 'ais_track_history.json'
+    if ais_track_path.exists():
+        shutil.copy2(ais_track_path, DOCS_DIR / 'ais_track_history.json')
+        print(f"🎬 已複製 AIS 軌跡歷史至 docs/ais_track_history.json")
+
 
 if __name__ == "__main__":
     main()
