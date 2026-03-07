@@ -6,7 +6,9 @@
 """
 
 import os
+import sys
 import json
+import random
 import requests
 import urllib3
 from datetime import datetime, timezone
@@ -95,19 +97,84 @@ def is_in_taiwan_bbox(lat, lon):
             b['lon_min'] <= lon <= b['lon_max'])
 
 
+# --- SOCKS5 代理設定 ---
+# 透過環境變數設定 PingProxies SOCKS5 代理（GitHub Actions 透過 Secrets 傳入）
+# 格式: PROXY_LIST = "host:port:user:pass,host:port:user:pass,..."
+# 若未設定，則直接連線 MPB（適用本機台灣 IP）
+
+DEFAULT_PROXY_LIST = [
+    {"host": "residential.pingproxies.com", "port": 8405, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_HKU8VCOAGUXIQW1Z", "pass": "47yKTElrP2"},
+    {"host": "residential.pingproxies.com", "port": 8176, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_DIE6KKT8FM98LUQZ", "pass": "47yKTElrP2"},
+    {"host": "residential.pingproxies.com", "port": 8714, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_SO6OXABRJASSOD9F", "pass": "47yKTElrP2"},
+    {"host": "residential.pingproxies.com", "port": 8197, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_46MVSX73Q8S24EBL", "pass": "47yKTElrP2"},
+    {"host": "residential.pingproxies.com", "port": 8233, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_O3L0P2A3ANFWU9L8", "pass": "47yKTElrP2"},
+    {"host": "residential.pingproxies.com", "port": 8767, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_YNI7XFZAJK06VMWY", "pass": "47yKTElrP2"},
+    {"host": "residential.pingproxies.com", "port": 8075, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_MMBJLQNDO7IVE1JG", "pass": "47yKTElrP2"},
+    {"host": "residential.pingproxies.com", "port": 8244, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_WSQOZ7IG16FAQJ81", "pass": "47yKTElrP2"},
+    {"host": "residential.pingproxies.com", "port": 8838, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_NVKQHVJI3S1NG7ID", "pass": "47yKTElrP2"},
+    {"host": "residential.pingproxies.com", "port": 8419, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_ODOYW5ZMW6Z1UMVF", "pass": "47yKTElrP2"},
+]
+
+
+def get_proxy_list():
+    """從環境變數或預設清單取得 SOCKS5 代理列表"""
+    env_val = os.environ.get('PROXY_LIST', '').strip()
+    if env_val:
+        proxies = []
+        for entry in env_val.split(','):
+            parts = entry.strip().split(':')
+            if len(parts) == 4:
+                proxies.append({
+                    'host': parts[0], 'port': int(parts[1]),
+                    'user': parts[2], 'pass': parts[3],
+                })
+        if proxies:
+            return proxies
+    return DEFAULT_PROXY_LIST
+
+
 # --- 資料收集 ---
 
 def collect_ais_data():
-    """從航港局 MPB 端點取得即時 AIS GeoJSON 資料"""
-    print(f"🚀 正在從航港局擷取 AIS 資料...")
+    """從航港局 MPB 端點取得即時 AIS GeoJSON 資料（支援 SOCKS5 代理）"""
+    use_proxy = os.environ.get('USE_PROXY', '').lower() in ('1', 'true', 'yes')
 
-    try:
-        resp = requests.get(MPB_URL, headers=MPB_HEADERS, timeout=30, verify=False)
-        resp.raise_for_status()
-        geojson = resp.json()
-    except requests.RequestException as e:
-        print(f"❌ 請求失敗: {e}")
-        return {}
+    if use_proxy:
+        print(f"🚀 正在透過 SOCKS5 代理從航港局擷取 AIS 資料...")
+        proxy_list = get_proxy_list()
+        random.shuffle(proxy_list)
+        geojson = None
+        last_error = None
+
+        for attempt, p in enumerate(proxy_list[:5]):
+            proxy_url = f"socks5://{p['user']}:{p['pass']}@{p['host']}:{p['port']}"
+            proxies = {"http": proxy_url, "https": proxy_url}
+            try:
+                print(f"  🔄 嘗試代理 #{attempt+1} (port {p['port']})...")
+                resp = requests.get(MPB_URL, headers=MPB_HEADERS, proxies=proxies,
+                                    timeout=60, verify=False)
+                resp.raise_for_status()
+                geojson = resp.json()
+                print(f"  ✅ 代理連線成功 (port {p['port']})")
+                last_error = None
+                break
+            except requests.RequestException as e:
+                last_error = str(e)
+                print(f"  ❌ 代理 #{attempt+1} 失敗: {last_error}")
+                continue
+
+        if last_error or geojson is None:
+            print(f"❌ 所有代理皆失敗")
+            return {}
+    else:
+        print(f"🚀 正在直接從航港局擷取 AIS 資料（本機模式）...")
+        try:
+            resp = requests.get(MPB_URL, headers=MPB_HEADERS, timeout=30, verify=False)
+            resp.raise_for_status()
+            geojson = resp.json()
+        except requests.RequestException as e:
+            print(f"❌ 請求失敗: {e}")
+            return {}
 
     features = geojson.get("features", [])
     print(f"  HTTP {resp.status_code} | {len(resp.content):,} bytes | {len(features)} features")
@@ -362,3 +429,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
