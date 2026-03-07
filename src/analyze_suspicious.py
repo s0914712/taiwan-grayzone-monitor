@@ -27,7 +27,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 DATA_DIR = Path("data")
-HISTORY_FILE = DATA_DIR / "vessel_history.json"
+HISTORY_FILE = DATA_DIR / "vessel_profiles.json"
 OUTPUT_FILE = DATA_DIR / "suspicious_vessels.json"
 IDENTITY_EVENTS_FILE = DATA_DIR / "identity_events.json"
 
@@ -42,13 +42,20 @@ GOING_DARK_GAP_HOURS = 18            # 超過 18 小時未出現視為 going dar
 
 
 def load_vessel_history():
-    """載入累積的船隻歷史資料"""
+    """載入累積的船隻行為 profile（按 MMSI 分組的 dict）"""
     if not HISTORY_FILE.exists():
-        print("⚠️ 找不到 vessel_history.json，跳過分析")
+        print("⚠️ 找不到 vessel_profiles.json，跳過分析")
         return {}
 
     with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        data = json.load(f)
+
+    if isinstance(data, dict):
+        return data
+
+    # 向後相容：如果是舊的 list 格式則回傳空 dict
+    print("⚠️ vessel_profiles.json 格式不符（非 dict），跳過分析")
+    return {}
 
 
 def load_identity_events():
