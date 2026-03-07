@@ -45,7 +45,7 @@ MPB_HEADERS = {
 }
 
 # 台灣周邊 bounding box (用於過濾非台灣海域資料)
-TAIWAN_BBOX = {'lat_min': 20, 'lat_max': 28, 'lon_min': 112, 'lon_max': 128}
+TAIWAN_BBOX = {'lat_min': 19, 'lat_max': 30, 'lon_min': 116, 'lon_max': 130}
 
 # 區域定義
 DRILL_ZONES = {
