@@ -436,6 +436,28 @@
             color: var(--text-secondary);
         }
 
+        /* Vessel filter dropdown */
+        .vessel-filter-select {
+            background: var(--bg-card);
+            color: var(--accent-cyan);
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .vessel-filter-select:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        .vessel-filter-select option {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
         /* Triangle vessel icon - remove default leaflet div icon styling */
         .vessel-icon {
             background: none !important;
@@ -496,6 +518,16 @@
             <input type="checkbox" id="showTrails" checked onchange="toggleTrails()">
             <span data-i18n="ais_anim.show_trails">顯示軌跡</span>
         </label>
+
+        <div class="anim-separator"></div>
+
+        <span class="anim-label">篩選</span>
+        <select id="vesselFilter" onchange="setVesselFilter(this.value)" class="vessel-filter-select">
+            <option value="all">全部船隻</option>
+            <option value="cn_fishing">大陸漁船</option>
+            <option value="suspicious">可疑船</option>
+            <option value="drill_zone">軍演區船隻</option>
+        </select>
 
         <div class="day-indicator" id="dayIndicator">
             <div class="date-text">--</div>
@@ -613,6 +645,7 @@
         markerLayer: null,
         trailLayer: null,
         showTrails: true,
+        vesselFilter: 'all',  // 'all', 'cn_fishing', 'suspicious', 'drill_zone'
         chart: null,
         vesselTrails: {}  // mmsi -> [{lat, lon, timestamp}, ...]
     };
@@ -838,7 +871,8 @@
         Anim.currentIdx = idx;
 
         const frame = Anim.filteredFrames[idx];
-        const vessels = frame.vessels || [];
+        const allVessels = frame.vessels || [];
+        const vessels = filterVessels(allVessels);
 
         // Clear layers
         Anim.markerLayer.clearLayers();
@@ -916,9 +950,11 @@
     }
 
     function updateStatCards(frame, idx) {
-        const suspicious = frame.suspicious_count || 0;
-        const total = frame.vessel_count || 0;
-        const drillZone = (frame.vessels || []).filter(v => v.in_drill_zone).length;
+        const allVessels = frame.vessels || [];
+        const filtered = filterVessels(allVessels);
+        const suspicious = filtered.filter(v => v.suspicious).length;
+        const total = filtered.length;
+        const drillZone = filtered.filter(v => v.in_drill_zone).length;
 
         document.getElementById('statSuspicious').textContent = suspicious;
         document.getElementById('statDrillZone').textContent = drillZone;
@@ -1122,6 +1158,46 @@
 
     function toggleTrails() {
         Anim.showTrails = document.getElementById('showTrails').checked;
+        renderFrame(Anim.currentIdx);
+    }
+
+    // Chinese fishing vessel name patterns
+    const CN_FISHING_PATTERNS = [
+        /^MIN/i, /^闽/i, /^閩/i,           // 福建 (Fujian/Min)
+        /^XIANG/i, /^湘/i,                  // 湖南 (Hunan/Xiang)
+        /^LU\s?YU/i, /^鲁/i, /^魯/i,       // 山東 (Shandong/Lu)
+        /^ZHE/i, /^浙/i,                    // 浙江 (Zhejiang)
+        /^YUE/i, /^粤/i, /^粵/i,            // 廣東 (Guangdong/Yue)
+        /^SU\s?YU/i, /^苏/i, /^蘇/i,       // 江蘇 (Jiangsu/Su)
+        /^GUI/i, /^桂/i,                    // 廣西 (Guangxi/Gui)
+        /^QIONG/i, /^琼/i, /^瓊/i,         // 海南 (Hainan/Qiong)
+        /^JIN\s?YU/i, /^津/i,              // 天津 (Tianjin/Jin)
+        /^LIAO/i, /^辽/i, /^遼/i,          // 遼寧 (Liaoning)
+    ];
+
+    function isCnFishingVessel(v) {
+        const name = (v.name || '').toUpperCase();
+        if (CN_FISHING_PATTERNS.some(p => p.test(name))) return true;
+        // Also match names containing "YU" (漁) with number patterns like "MIN.HUI.YU.00582"
+        if (/YU[.\s]*\d/i.test(name)) return true;
+        return false;
+    }
+
+    function filterVessels(vessels) {
+        switch (Anim.vesselFilter) {
+            case 'cn_fishing':
+                return vessels.filter(v => isCnFishingVessel(v));
+            case 'suspicious':
+                return vessels.filter(v => v.suspicious);
+            case 'drill_zone':
+                return vessels.filter(v => v.in_drill_zone);
+            default:
+                return vessels;
+        }
+    }
+
+    function setVesselFilter(filter) {
+        Anim.vesselFilter = filter;
         renderFrame(Anim.currentIdx);
     }
 
