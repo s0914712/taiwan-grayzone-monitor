@@ -435,6 +435,12 @@
             font-size: 10px;
             color: var(--text-secondary);
         }
+
+        /* Triangle vessel icon - remove default leaflet div icon styling */
+        .vessel-icon {
+            background: none !important;
+            border: none !important;
+        }
     </style>
 </head>
 
@@ -529,8 +535,8 @@
             <div class="panel-title" data-i18n="ais_anim.map_title">📍 可疑船隻 AIS 軌跡動畫</div>
             <div id="map"></div>
             <div class="map-legend-inline">
-                <div class="legend-chip"><span class="dot" style="background:#ff3366;box-shadow:0 0 6px #ff3366"></span><span data-i18n="ais_anim.suspicious">可疑船</span></div>
-                <div class="legend-chip"><span class="dot" style="background:#00f5ff"></span><span data-i18n="ais_anim.drill_zone">軍演區船隻</span></div>
+                <div class="legend-chip"><svg width="10" height="10" style="flex-shrink:0"><polygon points="5,0 10,10 0,10" fill="#ff3366" opacity="0.85"/></svg><span data-i18n="ais_anim.suspicious">可疑船</span></div>
+                <div class="legend-chip"><svg width="10" height="10" style="flex-shrink:0"><polygon points="5,0 10,10 0,10" fill="#00f5ff" opacity="0.6"/></svg><span data-i18n="ais_anim.drill_zone">軍演區船隻</span></div>
                 <div class="legend-chip"><span class="dot" style="background:rgba(255,51,102,0.3)"></span><span>軍演區域</span></div>
                 <div class="legend-chip"><span class="dot" style="background:rgba(0,255,136,0.3)"></span><span>漁撈熱點</span></div>
             </div>
@@ -772,6 +778,58 @@
         }
     }
 
+    // Compute heading angle (degrees, 0=north, clockwise) from trail history
+    function computeHeading(mmsi, currentLat, currentLon) {
+        const trail = Anim.vesselTrails && Anim.vesselTrails[mmsi];
+        if (trail && trail.points.length >= 2) {
+            const pts = trail.points;
+            const prev = pts[pts.length - 2];
+            const curr = pts[pts.length - 1];
+            const dLon = curr[1] - prev[1];
+            const dLat = curr[0] - prev[0];
+            if (Math.abs(dLon) > 0.0001 || Math.abs(dLat) > 0.0001) {
+                const angle = Math.atan2(dLon, dLat) * (180 / Math.PI);
+                return (angle + 360) % 360;
+            }
+        }
+        return null; // unknown heading
+    }
+
+    // Create triangle SVG icon for vessel marker
+    function createVesselIcon(color, isSuspicious, heading) {
+        const size = isSuspicious ? 16 : 12;
+        const half = size / 2;
+        const rotation = heading !== null ? heading : 0;
+        const opacity = isSuspicious ? 0.85 : 0.6;
+
+        // If no heading data, show a diamond instead of triangle
+        let shape;
+        if (heading !== null) {
+            // Triangle pointing up (north=0°), rotated by heading
+            shape = '<polygon points="' + half + ',1 ' + (size - 1) + ',' + (size - 1) + ' 1,' + (size - 1) + '" ' +
+                    'fill="' + color + '" fill-opacity="' + opacity + '" ' +
+                    'stroke="' + color + '" stroke-width="' + (isSuspicious ? 1.5 : 0.8) + '" stroke-opacity="0.9"/>';
+        } else {
+            // Diamond for unknown heading
+            shape = '<polygon points="' + half + ',1 ' + (size - 1) + ',' + half + ' ' + half + ',' + (size - 1) + ' 1,' + half + '" ' +
+                    'fill="' + color + '" fill-opacity="' + opacity + '" ' +
+                    'stroke="' + color + '" stroke-width="' + (isSuspicious ? 1.5 : 0.8) + '" stroke-opacity="0.9"/>';
+        }
+
+        const svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" ' +
+                    'xmlns="http://www.w3.org/2000/svg" ' +
+                    'style="transform:rotate(' + rotation + 'deg)">' +
+                    shape + '</svg>';
+
+        return L.divIcon({
+            html: svg,
+            className: 'vessel-icon',
+            iconSize: [size, size],
+            iconAnchor: [half, half],
+            popupAnchor: [0, -half]
+        });
+    }
+
     // =========================================================================
     // Frame rendering
     // =========================================================================
@@ -786,9 +844,11 @@
         Anim.markerLayer.clearLayers();
         Anim.trailLayer.clearLayers();
 
-        // Build and draw trails
+        // Always build trails (needed for heading computation)
+        buildTrails(idx);
+
+        // Draw trail lines if enabled
         if (Anim.showTrails) {
-            buildTrails(idx);
             Object.entries(Anim.vesselTrails).forEach(([mmsi, trail]) => {
                 if (trail.points.length < 2) return;
                 const color = trail.suspicious ? '#ff3366' : '#00f5ff';
@@ -801,41 +861,37 @@
             });
         }
 
-        // Plot vessel markers
+        // Plot vessel markers (triangle = heading known, diamond = unknown)
         vessels.forEach(v => {
             const isSuspicious = v.suspicious;
             const color = isSuspicious ? '#ff3366' : '#00f5ff';
-            const radius = isSuspicious ? 6 : 4;
+            const heading = computeHeading(v.mmsi, v.lat, v.lon);
 
             // Glow effect FIRST (behind main marker)
             if (isSuspicious) {
                 L.circleMarker([v.lat, v.lon], {
-                    radius: radius + 4,
+                    radius: 10,
                     fillColor: color,
                     color: color,
                     weight: 0,
                     fillOpacity: 0.15,
-                    interactive: false  // 不攔截滑鼠事件
+                    interactive: false
                 }).addTo(Anim.markerLayer);
             }
 
-            const marker = L.circleMarker([v.lat, v.lon], {
-                radius: radius,
-                fillColor: color,
-                color: color,
-                weight: isSuspicious ? 2 : 1,
-                opacity: 0.9,
-                fillOpacity: isSuspicious ? 0.7 : 0.4
-            }).addTo(Anim.markerLayer);
+            const icon = createVesselIcon(color, isSuspicious, heading);
+            const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(Anim.markerLayer);
 
+            const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
             marker.bindPopup(
-                '<div style="font-size:11px;line-height:1.6">' +
-                '<b style="color:' + color + '">' + (v.name || v.mmsi) + '</b><br>' +
+                '<div style="font-size:14px;line-height:1.8;min-width:180px">' +
+                '<b style="color:' + color + ';font-size:15px">' + (v.name || v.mmsi) + '</b><br>' +
                 'MMSI: ' + v.mmsi + '<br>' +
                 i18n.t('ais_anim.popup_type') + ': ' + v.type_name + '<br>' +
                 i18n.t('ais_anim.popup_speed') + ': ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
+                '航向: ' + headingText + '<br>' +
                 (v.in_drill_zone ? (i18n.t('ais_anim.popup_zone') + ': ' + v.in_drill_zone + '<br>') : '') +
-                (isSuspicious ? '<span style="color:#ff3366;font-weight:600">⚠ SUSPICIOUS</span>' : '') +
+                (isSuspicious ? '<span style="color:#ff3366;font-weight:600;font-size:14px">⚠ SUSPICIOUS</span>' : '') +
                 '</div>'
             );
         });
