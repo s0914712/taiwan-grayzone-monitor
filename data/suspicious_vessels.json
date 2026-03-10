@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-03-10T10:40:36.767413+00:00",
+  "updated_at": "2026-03-10T12:31:57.513966+00:00",
   "methodology": "CSIS Signals in the Swarm",
   "thresholds": {
     "behavioral": {
@@ -12,16 +12,16 @@
     }
   },
   "summary": {
-    "total_analyzed": 16666,
-    "suspicious_count": 451,
-    "behavioral_triggered": 442,
-    "absolute_triggered": 485,
-    "ais_anomaly_detected": 4057,
+    "total_analyzed": 17081,
+    "suspicious_count": 479,
+    "behavioral_triggered": 469,
+    "absolute_triggered": 514,
+    "ais_anomaly_detected": 4265,
     "risk_distribution": {
-      "critical": 442,
-      "high": 9,
-      "medium": 4039,
-      "normal": 12176
+      "critical": 469,
+      "high": 10,
+      "medium": 4243,
+      "normal": 12359
     }
   },
   "suspicious_vessels": [
@@ -33,22 +33,24 @@
         "CTR-TT0833-95%",
         "CTR-TT0833-93%",
         "CTR-TT0833-92%",
-        "CTR-TT0833-91%"
+        "CTR-TT0833-91%",
+        "CTR-TT0833-90%"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 6 個不同船名",
+          "description": "使用 7 個不同船名",
           "names": [
             "CTR-TT0833-97%",
             "CTR-TT0833-96%",
             "CTR-TT0833-95%",
             "CTR-TT0833-93%",
             "CTR-TT0833-92%",
-            "CTR-TT0833-91%"
+            "CTR-TT0833-91%",
+            "CTR-TT0833-90%"
           ],
           "severity": "high"
         }
@@ -57,7 +59,7 @@
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
         "長時間徘徊軍演區",
-        "使用 6 個不同船名"
+        "使用 7 個不同船名"
       ],
       "behavioral_details": {
         "drill_zone_ratio": 1.0,
@@ -65,7 +67,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 162,
+        "drill_zone_hours": 168,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -77,7 +79,7 @@
       "names": [
         "ZHONGGUOYUZHENG35301"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -103,7 +105,46 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 162,
+        "drill_zone_hours": 168,
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": ">2.0hr drill + <5% fishing"
+      },
+      "risk_score": 6,
+      "suspicious": true
+    },
+    {
+      "mmsi": "412665788",
+      "names": [
+        "TIELONG65788-6-99%",
+        "TIELONG65788-6-95%"
+      ],
+      "total_snapshots": 11,
+      "behavioral_threshold": true,
+      "absolute_threshold": true,
+      "ais_anomalies": [
+        {
+          "type": "name_change",
+          "description": "使用 2 個不同船名",
+          "names": [
+            "TIELONG65788-6-99%",
+            "TIELONG65788-6-95%"
+          ],
+          "severity": "medium"
+        }
+      ],
+      "risk_level": "critical",
+      "flags": [
+        "行為比例異常：掛漁船旗但不在漁場",
+        "長時間徘徊軍演區",
+        "使用 2 個不同船名"
+      ],
+      "behavioral_details": {
+        "drill_zone_ratio": 1.0,
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": ">30% drill + <10% fishing"
+      },
+      "absolute_details": {
+        "drill_zone_hours": 66,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -143,6 +184,45 @@
       },
       "absolute_details": {
         "drill_zone_hours": 18,
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": ">2.0hr drill + <5% fishing"
+      },
+      "risk_score": 6,
+      "suspicious": true
+    },
+    {
+      "mmsi": "412765788",
+      "names": [
+        "TIELONG65788-7-99%",
+        "TIELONG65788-7-97%"
+      ],
+      "total_snapshots": 9,
+      "behavioral_threshold": true,
+      "absolute_threshold": true,
+      "ais_anomalies": [
+        {
+          "type": "name_change",
+          "description": "使用 2 個不同船名",
+          "names": [
+            "TIELONG65788-7-99%",
+            "TIELONG65788-7-97%"
+          ],
+          "severity": "medium"
+        }
+      ],
+      "risk_level": "critical",
+      "flags": [
+        "行為比例異常：掛漁船旗但不在漁場",
+        "長時間徘徊軍演區",
+        "使用 2 個不同船名"
+      ],
+      "behavioral_details": {
+        "drill_zone_ratio": 1.0,
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": ">30% drill + <10% fishing"
+      },
+      "absolute_details": {
+        "drill_zone_hours": 54,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -236,7 +316,7 @@
         "66555",
         "66555NYU66555"
       ],
-      "total_snapshots": 18,
+      "total_snapshots": 19,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -258,7 +338,7 @@
         "使用 3 個不同船名"
       ],
       "behavioral_details": {
-        "drill_zone_ratio": 0.389,
+        "drill_zone_ratio": 0.368,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">30% drill + <10% fishing"
       },
@@ -475,7 +555,7 @@
         "MINHUIYU01591",
         "01591"
       ],
-      "total_snapshots": 3,
+      "total_snapshots": 4,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -501,7 +581,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 18,
+        "drill_zone_hours": 24,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -514,7 +594,7 @@
         "MIN HUI YU 01385",
         "MIN HUI YU O1385"
       ],
-      "total_snapshots": 4,
+      "total_snapshots": 5,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -540,7 +620,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 24,
+        "drill_zone_hours": 30,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -592,7 +672,7 @@
         "MIN PU YU 21666",
         "MINPUYU21666"
       ],
-      "total_snapshots": 8,
+      "total_snapshots": 9,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -618,7 +698,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 48,
+        "drill_zone_hours": 54,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -632,7 +712,7 @@
         "MINLIANYU6153939",
         "MIN LIAN YU 61539"
       ],
-      "total_snapshots": 8,
+      "total_snapshots": 9,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -654,12 +734,12 @@
         "使用 3 個不同船名"
       ],
       "behavioral_details": {
-        "drill_zone_ratio": 0.875,
+        "drill_zone_ratio": 0.889,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 42,
+        "drill_zone_hours": 48,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -672,7 +752,7 @@
         "MINPUYU21268",
         "MIN PU YU 21268"
       ],
-      "total_snapshots": 6,
+      "total_snapshots": 7,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -698,7 +778,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 36,
+        "drill_zone_hours": 42,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -866,7 +946,7 @@
         "MINLIANYU61863",
         "41205"
       ],
-      "total_snapshots": 18,
+      "total_snapshots": 19,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -892,7 +972,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 108,
+        "drill_zone_hours": 114,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -904,7 +984,7 @@
       "names": [
         "LURONGYUANYUYUN168"
       ],
-      "total_snapshots": 3,
+      "total_snapshots": 4,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -925,7 +1005,7 @@
         "船型變更: fishing → cargo"
       ],
       "behavioral_details": {
-        "drill_zone_ratio": 1.0,
+        "drill_zone_ratio": 0.75,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">30% drill + <10% fishing"
       },
@@ -982,7 +1062,7 @@
         "MIN LIAN YU 67936",
         "MINLIANYU67936"
       ],
-      "total_snapshots": 10,
+      "total_snapshots": 11,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -1008,7 +1088,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 60,
+        "drill_zone_hours": 66,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -1064,7 +1144,7 @@
         "MINLIANYU61926",
         "MIN LIAN YU 61926"
       ],
-      "total_snapshots": 18,
+      "total_snapshots": 19,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -1085,12 +1165,12 @@
         "使用 2 個不同船名"
       ],
       "behavioral_details": {
-        "drill_zone_ratio": 0.611,
+        "drill_zone_ratio": 0.632,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 66,
+        "drill_zone_hours": 72,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -1103,7 +1183,7 @@
         "MIN PU YU 43666",
         "MIN PU YU 49699"
       ],
-      "total_snapshots": 10,
+      "total_snapshots": 11,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -1124,12 +1204,12 @@
         "使用 2 個不同船名"
       ],
       "behavioral_details": {
-        "drill_zone_ratio": 0.9,
+        "drill_zone_ratio": 0.909,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 54,
+        "drill_zone_hours": 60,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -1142,7 +1222,7 @@
         "MIN HUI YU 01965",
         "MINHUIYU01965"
       ],
-      "total_snapshots": 2,
+      "total_snapshots": 3,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -1168,7 +1248,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 12,
+        "drill_zone_hours": 18,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -1181,7 +1261,7 @@
         "61885",
         "61885NYU61885"
       ],
-      "total_snapshots": 10,
+      "total_snapshots": 11,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -1207,7 +1287,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 60,
+        "drill_zone_hours": 66,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -1380,7 +1460,7 @@
         "MIN PU YU 20568",
         "MINPUYU48588"
       ],
-      "total_snapshots": 6,
+      "total_snapshots": 7,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -1401,7 +1481,7 @@
         "使用 2 個不同船名"
       ],
       "behavioral_details": {
-        "drill_zone_ratio": 0.667,
+        "drill_zone_ratio": 0.571,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">30% drill + <10% fishing"
       },
@@ -1419,7 +1499,7 @@
         "MINPUYU47999",
         "MIN PU YU 47999"
       ],
-      "total_snapshots": 9,
+      "total_snapshots": 10,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -1445,7 +1525,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 54,
+        "drill_zone_hours": 60,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -1458,7 +1538,7 @@
         "MINQUANTAIYU06609",
         "MIN QUAN TAI YU06609"
       ],
-      "total_snapshots": 10,
+      "total_snapshots": 11,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -1484,7 +1564,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 60,
+        "drill_zone_hours": 66,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -1614,7 +1694,7 @@
         "MINHUIYUYUHUI4589",
         "MINHUIYUY"
       ],
-      "total_snapshots": 5,
+      "total_snapshots": 6,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -1640,7 +1720,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 30,
+        "drill_zone_hours": 36,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -1725,6 +1805,84 @@
       "suspicious": true
     },
     {
+      "mmsi": "412450642",
+      "names": [
+        "MINPUYU49689",
+        "MIN PU YU 49689"
+      ],
+      "total_snapshots": 2,
+      "behavioral_threshold": true,
+      "absolute_threshold": true,
+      "ais_anomalies": [
+        {
+          "type": "name_change",
+          "description": "使用 2 個不同船名",
+          "names": [
+            "MINPUYU49689",
+            "MIN PU YU 49689"
+          ],
+          "severity": "medium"
+        }
+      ],
+      "risk_level": "critical",
+      "flags": [
+        "行為比例異常：掛漁船旗但不在漁場",
+        "長時間徘徊軍演區",
+        "使用 2 個不同船名"
+      ],
+      "behavioral_details": {
+        "drill_zone_ratio": 0.5,
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": ">30% drill + <10% fishing"
+      },
+      "absolute_details": {
+        "drill_zone_hours": 6,
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": ">2.0hr drill + <5% fishing"
+      },
+      "risk_score": 6,
+      "suspicious": true
+    },
+    {
+      "mmsi": "412443636",
+      "names": [
+        "MINPINGYUYUN61938",
+        "MINPINGYU61938"
+      ],
+      "total_snapshots": 2,
+      "behavioral_threshold": true,
+      "absolute_threshold": true,
+      "ais_anomalies": [
+        {
+          "type": "name_change",
+          "description": "使用 2 個不同船名",
+          "names": [
+            "MINPINGYUYUN61938",
+            "MINPINGYU61938"
+          ],
+          "severity": "medium"
+        }
+      ],
+      "risk_level": "critical",
+      "flags": [
+        "行為比例異常：掛漁船旗但不在漁場",
+        "長時間徘徊軍演區",
+        "使用 2 個不同船名"
+      ],
+      "behavioral_details": {
+        "drill_zone_ratio": 0.5,
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": ">30% drill + <10% fishing"
+      },
+      "absolute_details": {
+        "drill_zone_hours": 6,
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": ">2.0hr drill + <5% fishing"
+      },
+      "risk_score": 6,
+      "suspicious": true
+    },
+    {
       "mmsi": "412451577",
       "names": [
         "MIN SHI YU 06779"
@@ -1756,7 +1914,7 @@
       "names": [
         "MINZHAOYU60258"
       ],
-      "total_snapshots": 4,
+      "total_snapshots": 5,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [],
@@ -1771,7 +1929,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 24,
+        "drill_zone_hours": 30,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -1804,114 +1962,6 @@
       },
       "risk_score": 5,
       "suspicious": true
-    },
-    {
-      "mmsi": "412452909",
-      "names": [
-        "MIN SHI YU 07231"
-      ],
-      "total_snapshots": 5,
-      "behavioral_threshold": true,
-      "absolute_threshold": true,
-      "ais_anomalies": [],
-      "risk_level": "critical",
-      "flags": [
-        "行為比例異常：掛漁船旗但不在漁場",
-        "長時間徘徊軍演區"
-      ],
-      "behavioral_details": {
-        "drill_zone_ratio": 1.0,
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": ">30% drill + <10% fishing"
-      },
-      "absolute_details": {
-        "drill_zone_hours": 30,
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": ">2.0hr drill + <5% fishing"
-      },
-      "risk_score": 5,
-      "suspicious": true
-    },
-    {
-      "mmsi": "412459987",
-      "names": [
-        "MINSHIYU07509"
-      ],
-      "total_snapshots": 10,
-      "behavioral_threshold": true,
-      "absolute_threshold": true,
-      "ais_anomalies": [],
-      "risk_level": "critical",
-      "flags": [
-        "行為比例異常：掛漁船旗但不在漁場",
-        "長時間徘徊軍演區"
-      ],
-      "behavioral_details": {
-        "drill_zone_ratio": 1.0,
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": ">30% drill + <10% fishing"
-      },
-      "absolute_details": {
-        "drill_zone_hours": 60,
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": ">2.0hr drill + <5% fishing"
-      },
-      "risk_score": 5,
-      "suspicious": true
-    },
-    {
-      "mmsi": "412442255",
-      "names": [
-        "MIN LIAN Y  61766"
-      ],
-      "total_snapshots": 5,
-      "behavioral_threshold": true,
-      "absolute_threshold": true,
-      "ais_anomalies": [],
-      "risk_level": "critical",
-      "flags": [
-        "行為比例異常：掛漁船旗但不在漁場",
-        "長時間徘徊軍演區"
-      ],
-      "behavioral_details": {
-        "drill_zone_ratio": 1.0,
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": ">30% drill + <10% fishing"
-      },
-      "absolute_details": {
-        "drill_zone_hours": 30,
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": ">2.0hr drill + <5% fishing"
-      },
-      "risk_score": 5,
-      "suspicious": true
-    },
-    {
-      "mmsi": "800000365",
-      "names": [
-        "08568"
-      ],
-      "total_snapshots": 20,
-      "behavioral_threshold": true,
-      "absolute_threshold": true,
-      "ais_anomalies": [],
-      "risk_level": "critical",
-      "flags": [
-        "行為比例異常：掛漁船旗但不在漁場",
-        "長時間徘徊軍演區"
-      ],
-      "behavioral_details": {
-        "drill_zone_ratio": 1.0,
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": ">30% drill + <10% fishing"
-      },
-      "absolute_details": {
-        "drill_zone_hours": 120,
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": ">2.0hr drill + <5% fishing"
-      },
-      "risk_score": 5,
-      "suspicious": true
     }
   ],
   "all_classifications": [
@@ -1922,7 +1972,7 @@
         "SHEN JIN MAN18    6",
         "SHEN JIN MAN18    5"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -1953,7 +2003,7 @@
         "69801-19-96%",
         "69801-19-95%"
       ],
-      "total_snapshots": 25,
+      "total_snapshots": 26,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -2061,29 +2111,31 @@
         "CT4-2104-98%",
         "CT4-2104-95%",
         "CT4-2104-94%",
-        "CT4-2104-93%"
+        "CT4-2104-93%",
+        "CT4-2104-89%"
       ],
-      "total_snapshots": 22,
+      "total_snapshots": 23,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 6 個不同船名",
+          "description": "使用 7 個不同船名",
           "names": [
             "CT4-2104-54%",
             "CT4-2104-99%",
             "CT4-2104-98%",
             "CT4-2104-95%",
             "CT4-2104-94%",
-            "CT4-2104-93%"
+            "CT4-2104-93%",
+            "CT4-2104-89%"
           ],
           "severity": "high"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 6 個不同船名"
+        "使用 7 個不同船名"
       ],
       "risk_score": 2,
       "suspicious": false
@@ -2103,7 +2155,7 @@
         "CT4-2104-89%",
         "CT4-2104-84%"
       ],
-      "total_snapshots": 22,
+      "total_snapshots": 23,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -2140,7 +2192,7 @@
         "CT4-2104-98%",
         "CT4-2104-89%"
       ],
-      "total_snapshots": 23,
+      "total_snapshots": 24,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -2200,7 +2252,7 @@
         "CT4-2104-94%",
         "CT4-2104-86%"
       ],
-      "total_snapshots": 23,
+      "total_snapshots": 24,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -2294,15 +2346,16 @@
         "36%",
         "35%",
         "34%",
-        "25%"
+        "25%",
+        "22%"
       ],
-      "total_snapshots": 24,
+      "total_snapshots": 25,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 15 個不同船名",
+          "description": "使用 16 個不同船名",
           "names": [
             "48%",
             "47%",
@@ -2318,14 +2371,15 @@
             "36%",
             "35%",
             "34%",
-            "25%"
+            "25%",
+            "22%"
           ],
           "severity": "high"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 15 個不同船名"
+        "使用 16 個不同船名"
       ],
       "risk_score": 2,
       "suspicious": false
@@ -2498,6 +2552,33 @@
       "suspicious": false
     },
     {
+      "mmsi": "412200078",
+      "names": [
+        "MINLIANYU60115-36%",
+        "MINLIANYU60115-87%"
+      ],
+      "total_snapshots": 2,
+      "behavioral_threshold": false,
+      "absolute_threshold": false,
+      "ais_anomalies": [
+        {
+          "type": "name_change",
+          "description": "使用 2 個不同船名",
+          "names": [
+            "MINLIANYU60115-36%",
+            "MINLIANYU60115-87%"
+          ],
+          "severity": "medium"
+        }
+      ],
+      "risk_level": "medium",
+      "flags": [
+        "使用 2 個不同船名"
+      ],
+      "risk_score": 1,
+      "suspicious": false
+    },
+    {
       "mmsi": "412451577",
       "names": [
         "MIN SHI YU 06779"
@@ -2530,7 +2611,7 @@
         "MINSHIYU07895",
         "MIN SHI YU 07895"
       ],
-      "total_snapshots": 15,
+      "total_snapshots": 16,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -2550,12 +2631,12 @@
       ],
       "behavioral_details": {
         "drill_zone_ratio": 0.0,
-        "fishing_hotspot_ratio": 0.2,
+        "fishing_hotspot_ratio": 0.25,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
         "drill_zone_hours": 0,
-        "fishing_hotspot_ratio": 0.2,
+        "fishing_hotspot_ratio": 0.25,
         "threshold": ">2.0hr drill + <5% fishing"
       },
       "risk_score": 1,
@@ -2567,7 +2648,7 @@
         "MIN SHI YU 07706",
         "MINSHIYU07706"
       ],
-      "total_snapshots": 22,
+      "total_snapshots": 23,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -2587,12 +2668,12 @@
       ],
       "behavioral_details": {
         "drill_zone_ratio": 0.0,
-        "fishing_hotspot_ratio": 0.636,
+        "fishing_hotspot_ratio": 0.609,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
         "drill_zone_hours": 0,
-        "fishing_hotspot_ratio": 0.636,
+        "fishing_hotspot_ratio": 0.609,
         "threshold": ">2.0hr drill + <5% fishing"
       },
       "risk_score": 1,
@@ -2603,7 +2684,7 @@
       "names": [
         "MINZHAOYU60258"
       ],
-      "total_snapshots": 4,
+      "total_snapshots": 5,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [],
@@ -2618,7 +2699,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 24,
+        "drill_zone_hours": 30,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -2631,7 +2712,7 @@
         "MINSHIYU06825",
         "MIN SHI YU 06825"
       ],
-      "total_snapshots": 24,
+      "total_snapshots": 25,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -2651,12 +2732,12 @@
       ],
       "behavioral_details": {
         "drill_zone_ratio": 0.0,
-        "fishing_hotspot_ratio": 0.875,
+        "fishing_hotspot_ratio": 0.88,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
         "drill_zone_hours": 0,
-        "fishing_hotspot_ratio": 0.875,
+        "fishing_hotspot_ratio": 0.88,
         "threshold": ">2.0hr drill + <5% fishing"
       },
       "risk_score": 1,
@@ -2695,7 +2776,7 @@
         "MINSHIYU06053",
         "MIN SHI YU 06053"
       ],
-      "total_snapshots": 23,
+      "total_snapshots": 24,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -2715,12 +2796,12 @@
       ],
       "behavioral_details": {
         "drill_zone_ratio": 0.0,
-        "fishing_hotspot_ratio": 0.174,
+        "fishing_hotspot_ratio": 0.208,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
         "drill_zone_hours": 0,
-        "fishing_hotspot_ratio": 0.174,
+        "fishing_hotspot_ratio": 0.208,
         "threshold": ">2.0hr drill + <5% fishing"
       },
       "risk_score": 1,
@@ -2787,7 +2868,7 @@
       "names": [
         "MINSHIYU07509"
       ],
-      "total_snapshots": 10,
+      "total_snapshots": 11,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [],
@@ -2802,7 +2883,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 60,
+        "drill_zone_hours": 66,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -2878,7 +2959,7 @@
       "names": [
         "08568"
       ],
-      "total_snapshots": 20,
+      "total_snapshots": 21,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [],
@@ -2893,7 +2974,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 120,
+        "drill_zone_hours": 126,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -2915,15 +2996,16 @@
         "YONGQUAN78-67%",
         "YONGQUAN78-66%",
         "YONGQUAN78-65%",
-        "YONGQUAN78-58%"
+        "YONGQUAN78-58%",
+        "YONGQUAN78-57%"
       ],
-      "total_snapshots": 25,
+      "total_snapshots": 26,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 13 個不同船名",
+          "description": "使用 14 個不同船名",
           "names": [
             "YONGQUAN78-52%",
             "YONGQUAN78-55%",
@@ -2937,14 +3019,15 @@
             "YONGQUAN78-67%",
             "YONGQUAN78-66%",
             "YONGQUAN78-65%",
-            "YONGQUAN78-58%"
+            "YONGQUAN78-58%",
+            "YONGQUAN78-57%"
           ],
           "severity": "high"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 13 個不同船名"
+        "使用 14 個不同船名"
       ],
       "risk_score": 2,
       "suspicious": false
@@ -3106,7 +3189,7 @@
         "11077-74-49%",
         "11077-74-45%"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3144,29 +3227,31 @@
         "B9087-99%",
         "B9087-98%",
         "B9087-97%",
-        "B9087-95%"
+        "B9087-95%",
+        "B9087-94%"
       ],
-      "total_snapshots": 25,
+      "total_snapshots": 26,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 4 個不同船名",
+          "description": "使用 5 個不同船名",
           "names": [
             "B9087-99%",
             "B9087-98%",
             "B9087-97%",
-            "B9087-95%"
+            "B9087-95%",
+            "B9087-94%"
           ],
-          "severity": "medium"
+          "severity": "high"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 4 個不同船名"
+        "使用 5 個不同船名"
       ],
-      "risk_score": 1,
+      "risk_score": 2,
       "suspicious": false
     },
     {
@@ -3180,7 +3265,7 @@
         "B9088-93%",
         "B9088-90%"
       ],
-      "total_snapshots": 24,
+      "total_snapshots": 25,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3211,26 +3296,28 @@
       "names": [
         "B9089-99%",
         "B9089-98%",
-        "B9089-96%"
+        "B9089-96%",
+        "B9089-95%"
       ],
-      "total_snapshots": 25,
+      "total_snapshots": 26,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 3 個不同船名",
+          "description": "使用 4 個不同船名",
           "names": [
             "B9089-99%",
             "B9089-98%",
-            "B9089-96%"
+            "B9089-96%",
+            "B9089-95%"
           ],
           "severity": "medium"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 3 個不同船名"
+        "使用 4 個不同船名"
       ],
       "risk_score": 1,
       "suspicious": false
@@ -3245,7 +3332,7 @@
         "B9090-94%",
         "B9090-91%"
       ],
-      "total_snapshots": 24,
+      "total_snapshots": 25,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3276,7 +3363,7 @@
         "994170001 100%",
         "994170001 99%"
       ],
-      "total_snapshots": 26,
+      "total_snapshots": 27,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3296,12 +3383,12 @@
       ],
       "behavioral_details": {
         "drill_zone_ratio": 0.0,
-        "fishing_hotspot_ratio": 0.385,
+        "fishing_hotspot_ratio": 0.37,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
         "drill_zone_hours": 0,
-        "fishing_hotspot_ratio": 0.385,
+        "fishing_hotspot_ratio": 0.37,
         "threshold": ">2.0hr drill + <5% fishing"
       },
       "risk_score": 1,
@@ -3324,7 +3411,7 @@
         "99417-02-87%",
         "99417-02-83%"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3374,7 +3461,7 @@
         "994170005 5%",
         "994170005 0%"
       ],
-      "total_snapshots": 26,
+      "total_snapshots": 27,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3406,12 +3493,12 @@
       ],
       "behavioral_details": {
         "drill_zone_ratio": 0.0,
-        "fishing_hotspot_ratio": 0.462,
+        "fishing_hotspot_ratio": 0.444,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
         "drill_zone_hours": 0,
-        "fishing_hotspot_ratio": 0.462,
+        "fishing_hotspot_ratio": 0.444,
         "threshold": ">2.0hr drill + <5% fishing"
       },
       "risk_score": 2,
@@ -3432,7 +3519,7 @@
         "994170006-82%",
         "994170006-80%"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3477,7 +3564,7 @@
         "994170007-65%",
         "994170007-99%"
       ],
-      "total_snapshots": 26,
+      "total_snapshots": 27,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3523,7 +3610,7 @@
         "994170008-99%",
         "994170008-94%"
       ],
-      "total_snapshots": 22,
+      "total_snapshots": 23,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3570,7 +3657,7 @@
         "994170009 3%",
         "994170009 0%"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3600,15 +3687,42 @@
       ],
       "behavioral_details": {
         "drill_zone_ratio": 0.0,
-        "fishing_hotspot_ratio": 0.407,
+        "fishing_hotspot_ratio": 0.393,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
         "drill_zone_hours": 0,
-        "fishing_hotspot_ratio": 0.407,
+        "fishing_hotspot_ratio": 0.393,
         "threshold": ">2.0hr drill + <5% fishing"
       },
       "risk_score": 2,
+      "suspicious": false
+    },
+    {
+      "mmsi": "994170010",
+      "names": [
+        "994170010         1V",
+        "994170010         7V"
+      ],
+      "total_snapshots": 23,
+      "behavioral_threshold": false,
+      "absolute_threshold": false,
+      "ais_anomalies": [
+        {
+          "type": "name_change",
+          "description": "使用 2 個不同船名",
+          "names": [
+            "994170010         1V",
+            "994170010         7V"
+          ],
+          "severity": "medium"
+        }
+      ],
+      "risk_level": "medium",
+      "flags": [
+        "使用 2 個不同船名"
+      ],
+      "risk_score": 1,
       "suspicious": false
     },
     {
@@ -3623,7 +3737,7 @@
         "994170012 0%",
         "994170012 100%"
       ],
-      "total_snapshots": 25,
+      "total_snapshots": 26,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3649,12 +3763,12 @@
       ],
       "behavioral_details": {
         "drill_zone_ratio": 0.0,
-        "fishing_hotspot_ratio": 0.4,
+        "fishing_hotspot_ratio": 0.385,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
         "drill_zone_hours": 0,
-        "fishing_hotspot_ratio": 0.4,
+        "fishing_hotspot_ratio": 0.385,
         "threshold": ">2.0hr drill + <5% fishing"
       },
       "risk_score": 2,
@@ -3778,28 +3892,30 @@
         "LIN21853--1-31%",
         "LIN21853--1-29%",
         "LIN21853--1-30%",
-        "LIN21853--1-28%"
+        "LIN21853--1-28%",
+        "LIN21853--1-25%"
       ],
-      "total_snapshots": 13,
+      "total_snapshots": 14,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 5 個不同船名",
+          "description": "使用 6 個不同船名",
           "names": [
             "LIN21853--1-32%",
             "LIN21853--1-31%",
             "LIN21853--1-29%",
             "LIN21853--1-30%",
-            "LIN21853--1-28%"
+            "LIN21853--1-28%",
+            "LIN21853--1-25%"
           ],
           "severity": "high"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 5 個不同船名"
+        "使用 6 個不同船名"
       ],
       "risk_score": 2,
       "suspicious": false
@@ -3837,7 +3953,7 @@
         "MINLIANYU61757",
         "MIN LIAN YU 61757"
       ],
-      "total_snapshots": 21,
+      "total_snapshots": 22,
       "behavioral_threshold": false,
       "absolute_threshold": true,
       "ais_anomalies": [
@@ -3857,7 +3973,7 @@
         "使用 2 個不同船名"
       ],
       "behavioral_details": {
-        "drill_zone_ratio": 0.286,
+        "drill_zone_ratio": 0.273,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">30% drill + <10% fishing"
       },
@@ -3903,7 +4019,7 @@
         "83033-8-63%",
         "83033-8-49%"
       ],
-      "total_snapshots": 4,
+      "total_snapshots": 5,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3964,7 +4080,7 @@
         "123",
         "46005"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -3996,13 +4112,13 @@
         "船型變更: fishing → passenger → cargo"
       ],
       "behavioral_details": {
-        "drill_zone_ratio": 0.222,
-        "fishing_hotspot_ratio": 0.259,
+        "drill_zone_ratio": 0.214,
+        "fishing_hotspot_ratio": 0.25,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
         "drill_zone_hours": 36,
-        "fishing_hotspot_ratio": 0.259,
+        "fishing_hotspot_ratio": 0.25,
         "threshold": ">2.0hr drill + <5% fishing"
       },
       "risk_score": 2,
@@ -4014,7 +4130,7 @@
         "SHUN ZHOU 99",
         "SHTHHJHOU 99"
       ],
-      "total_snapshots": 26,
+      "total_snapshots": 27,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -4097,7 +4213,7 @@
         "CT2-6191003       8V",
         "CT2-6191003       6V"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -4128,7 +4244,7 @@
         "CT2-6191004       3V",
         "CT2-6191004       2V"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -4159,7 +4275,7 @@
         "CT2-6191006       6V",
         "CT2-6191006       5V"
       ],
-      "total_snapshots": 25,
+      "total_snapshots": 26,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -4187,26 +4303,28 @@
       "names": [
         "CT2-6191009       7V",
         "CT2-6191009       6V",
-        "CT2-6191009       5V"
+        "CT2-6191009       5V",
+        "CT2-6191009       4V"
       ],
-      "total_snapshots": 24,
+      "total_snapshots": 25,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 3 個不同船名",
+          "description": "使用 4 個不同船名",
           "names": [
             "CT2-6191009       7V",
             "CT2-6191009       6V",
-            "CT2-6191009       5V"
+            "CT2-6191009       5V",
+            "CT2-6191009       4V"
           ],
           "severity": "medium"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 3 個不同船名"
+        "使用 4 個不同船名"
       ],
       "risk_score": 1,
       "suspicious": false
@@ -4218,7 +4336,7 @@
         "CT2-6191010       5V",
         "CT2-6191010       4V"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -4251,15 +4369,16 @@
         "T004-35%",
         "T004-34%",
         "T004-33%",
-        "T004-42%"
+        "T004-42%",
+        "T004-37%"
       ],
-      "total_snapshots": 18,
+      "total_snapshots": 19,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 9 個不同船名",
+          "description": "使用 10 個不同船名",
           "names": [
             "T004-41%",
             "T004-40%",
@@ -4269,14 +4388,15 @@
             "T004-35%",
             "T004-34%",
             "T004-33%",
-            "T004-42%"
+            "T004-42%",
+            "T004-37%"
           ],
           "severity": "high"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 9 個不同船名"
+        "使用 10 個不同船名"
       ],
       "risk_score": 2,
       "suspicious": false
@@ -4340,7 +4460,7 @@
       "names": [
         "MIN PU YU 16888"
       ],
-      "total_snapshots": 3,
+      "total_snapshots": 4,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [],
@@ -4350,12 +4470,12 @@
         "長時間徘徊軍演區"
       ],
       "behavioral_details": {
-        "drill_zone_ratio": 0.333,
+        "drill_zone_ratio": 0.5,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 6,
+        "drill_zone_hours": 12,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -4368,7 +4488,7 @@
         "MIN SHI YU 07186",
         "MINSHIYU07186"
       ],
-      "total_snapshots": 18,
+      "total_snapshots": 19,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -4388,12 +4508,12 @@
       ],
       "behavioral_details": {
         "drill_zone_ratio": 0.0,
-        "fishing_hotspot_ratio": 0.333,
+        "fishing_hotspot_ratio": 0.368,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
         "drill_zone_hours": 0,
-        "fishing_hotspot_ratio": 0.333,
+        "fishing_hotspot_ratio": 0.368,
         "threshold": ">2.0hr drill + <5% fishing"
       },
       "risk_score": 1,
@@ -4461,29 +4581,31 @@
         "MINLIANYU60546-2-81%",
         "MINLIANYU60546-2-80%",
         "MINLIANYU60546-2-79%",
-        "MINLIANYU60546-2-78%"
+        "MINLIANYU60546-2-78%",
+        "MINLIANYU60546-2-72%"
       ],
-      "total_snapshots": 19,
+      "total_snapshots": 20,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 6 個不同船名",
+          "description": "使用 7 個不同船名",
           "names": [
             "MINLIANYU60546-2-83%",
             "MINLIANYU60546-2-82%",
             "MINLIANYU60546-2-81%",
             "MINLIANYU60546-2-80%",
             "MINLIANYU60546-2-79%",
-            "MINLIANYU60546-2-78%"
+            "MINLIANYU60546-2-78%",
+            "MINLIANYU60546-2-72%"
           ],
           "severity": "high"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 6 個不同船名"
+        "使用 7 個不同船名"
       ],
       "risk_score": 2,
       "suspicious": false
@@ -4716,7 +4838,7 @@
         "JIN RUEI YI NO.66",
         "JIN ROEI YIH NO.66"
       ],
-      "total_snapshots": 25,
+      "total_snapshots": 26,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -4735,13 +4857,13 @@
         "使用 2 個不同船名"
       ],
       "behavioral_details": {
-        "drill_zone_ratio": 0.64,
-        "fishing_hotspot_ratio": 0.84,
+        "drill_zone_ratio": 0.654,
+        "fishing_hotspot_ratio": 0.846,
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 96,
-        "fishing_hotspot_ratio": 0.84,
+        "drill_zone_hours": 102,
+        "fishing_hotspot_ratio": 0.846,
         "threshold": ">2.0hr drill + <5% fishing"
       },
       "risk_score": 1,
@@ -4765,7 +4887,7 @@
         "XINQINGYI21-30%",
         "XINQINGYI21-99%"
       ],
-      "total_snapshots": 20,
+      "total_snapshots": 21,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -4812,15 +4934,16 @@
         "BUOY 959-390     77%",
         "BUOY 959-390     75%",
         "BUOY 959-390     74%",
-        "BUOY 959-390     68%"
+        "BUOY 959-390     68%",
+        "BUOY 959-390     90%"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 12 個不同船名",
+          "description": "使用 13 個不同船名",
           "names": [
             "BUOY 959-390     86%",
             "BUOY 959-390     85%",
@@ -4833,14 +4956,15 @@
             "BUOY 959-390     77%",
             "BUOY 959-390     75%",
             "BUOY 959-390     74%",
-            "BUOY 959-390     68%"
+            "BUOY 959-390     68%",
+            "BUOY 959-390     90%"
           ],
           "severity": "high"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 12 個不同船名"
+        "使用 13 個不同船名"
       ],
       "risk_score": 2,
       "suspicious": false
@@ -4914,7 +5038,7 @@
       "names": [
         "MINHUIYU05558"
       ],
-      "total_snapshots": 16,
+      "total_snapshots": 17,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [],
@@ -4929,7 +5053,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 96,
+        "drill_zone_hours": 102,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -4941,7 +5065,7 @@
       "names": [
         "MINHUIYU05527"
       ],
-      "total_snapshots": 16,
+      "total_snapshots": 17,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [],
@@ -4956,7 +5080,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 96,
+        "drill_zone_hours": 102,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -4987,7 +5111,7 @@
         "BUOY35793-12     56%",
         "BUOY35793-12     49%"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -5046,15 +5170,16 @@
         "BUOY35793-06     64%",
         "BUOY35793-06     63%",
         "BUOY35793-06     62%",
-        "BUOY35793-06     54%"
+        "BUOY35793-06     54%",
+        "BUOY35793-06     53%"
       ],
-      "total_snapshots": 25,
+      "total_snapshots": 26,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 18 個不同船名",
+          "description": "使用 19 個不同船名",
           "names": [
             "BUOY35793-06     84%",
             "BUOY35793-06     83%",
@@ -5073,14 +5198,15 @@
             "BUOY35793-06     64%",
             "BUOY35793-06     63%",
             "BUOY35793-06     62%",
-            "BUOY35793-06     54%"
+            "BUOY35793-06     54%",
+            "BUOY35793-06     53%"
           ],
           "severity": "high"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 18 個不同船名"
+        "使用 19 個不同船名"
       ],
       "risk_score": 2,
       "suspicious": false
@@ -5091,7 +5217,7 @@
         "1",
         "TEST"
       ],
-      "total_snapshots": 15,
+      "total_snapshots": 16,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -5217,7 +5343,7 @@
         "JYCP",
         "H R"
       ],
-      "total_snapshots": 22,
+      "total_snapshots": 23,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -5243,7 +5369,7 @@
       "names": [
         "90625"
       ],
-      "total_snapshots": 12,
+      "total_snapshots": 13,
       "behavioral_threshold": true,
       "absolute_threshold": true,
       "ais_anomalies": [],
@@ -5258,7 +5384,7 @@
         "threshold": ">30% drill + <10% fishing"
       },
       "absolute_details": {
-        "drill_zone_hours": 72,
+        "drill_zone_hours": 78,
         "fishing_hotspot_ratio": 0.0,
         "threshold": ">2.0hr drill + <5% fishing"
       },
@@ -5286,7 +5412,7 @@
         "WANGBIAO5556-56%",
         "WANGBIAO5556-53%"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -5329,7 +5455,7 @@
         "ZHELINYU29992",
         "ZHELINGYU29992"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": false,
       "absolute_threshold": false,
       "ais_anomalies": [
@@ -5412,70 +5538,6 @@
       "flags": [
         "使用 2 個不同船名"
       ],
-      "risk_score": 1,
-      "suspicious": false
-    },
-    {
-      "mmsi": "412019913",
-      "names": [
-        "YU60199--13 30%",
-        "YU60199--13 20%"
-      ],
-      "total_snapshots": 7,
-      "behavioral_threshold": false,
-      "absolute_threshold": false,
-      "ais_anomalies": [
-        {
-          "type": "name_change",
-          "description": "使用 2 個不同船名",
-          "names": [
-            "YU60199--13 30%",
-            "YU60199--13 20%"
-          ],
-          "severity": "medium"
-        }
-      ],
-      "risk_level": "medium",
-      "flags": [
-        "使用 2 個不同船名"
-      ],
-      "risk_score": 1,
-      "suspicious": false
-    },
-    {
-      "mmsi": "416000806",
-      "names": [
-        "06A8",
-        "06"
-      ],
-      "total_snapshots": 27,
-      "behavioral_threshold": false,
-      "absolute_threshold": false,
-      "ais_anomalies": [
-        {
-          "type": "name_change",
-          "description": "使用 2 個不同船名",
-          "names": [
-            "06A8",
-            "06"
-          ],
-          "severity": "medium"
-        }
-      ],
-      "risk_level": "medium",
-      "flags": [
-        "使用 2 個不同船名"
-      ],
-      "behavioral_details": {
-        "drill_zone_ratio": 0.0,
-        "fishing_hotspot_ratio": 0.37,
-        "threshold": ">30% drill + <10% fishing"
-      },
-      "absolute_details": {
-        "drill_zone_hours": 0,
-        "fishing_hotspot_ratio": 0.37,
-        "threshold": ">2.0hr drill + <5% fishing"
-      },
       "risk_score": 1,
       "suspicious": false
     }
