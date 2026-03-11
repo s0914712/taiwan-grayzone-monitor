@@ -42,6 +42,17 @@ const App = (function () {
                 });
             }
         });
+
+        // Submarine cable layer toggle (lazy-load on first enable)
+        const cableCheckbox = document.getElementById('showSubmarineCables');
+        if (cableCheckbox) {
+            cableCheckbox.addEventListener('change', async () => {
+                if (cableCheckbox.checked) {
+                    await MapModule.loadSubmarineCables();
+                }
+                MapModule.toggleLayer('submarineCables', cableCheckbox.checked);
+            });
+        }
     }
 
     /**
