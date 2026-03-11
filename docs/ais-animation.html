@@ -463,6 +463,56 @@
             background: none !important;
             border: none !important;
         }
+
+        /* Detection tags */
+        .detect-tag {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 8px;
+            font-weight: 600;
+            margin-right: 2px;
+        }
+        .detect-tag.loiter { background: rgba(255,165,0,0.25); color: #ffa500; }
+        .detect-tag.zigzag { background: rgba(255,0,255,0.25); color: #ff66ff; }
+        .detect-tag.cable  { background: rgba(255,215,0,0.25); color: #ffd700; }
+
+        /* Cable buffer slider */
+        .cable-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+        .cable-controls input[type="range"] {
+            width: 60px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-card);
+            border-radius: 2px;
+            outline: none;
+        }
+        .cable-controls input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+        }
+        .cable-controls input[type="range"]::-moz-range-thumb {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+            border: none;
+        }
+        .cable-buffer-val {
+            font-family: 'JetBrains Mono', monospace;
+            color: #ffd700;
+            min-width: 30px;
+        }
     </style>
 </head>
 
@@ -519,14 +569,28 @@
             <span data-i18n="ais_anim.show_trails">顯示軌跡</span>
         </label>
 
+        <label class="trail-toggle">
+            <input type="checkbox" id="showCables" onchange="toggleCableLayer()">
+            <span data-i18n="ais_anim.layer_cables">海底電纜</span>
+        </label>
+
+        <div class="cable-controls" id="cableControls" style="display:none">
+            <span data-i18n="ais_anim.cable_buffer">電纜緩衝區 (nm)</span>
+            <input type="range" id="cableBuffer" min="1" max="10" value="2" step="0.5" oninput="updateCableBuffer()">
+            <span class="cable-buffer-val" id="cableBufferVal">2</span>
+        </div>
+
         <div class="anim-separator"></div>
 
         <span class="anim-label">篩選</span>
         <select id="vesselFilter" onchange="setVesselFilter(this.value)" class="vessel-filter-select">
-            <option value="all">全部船隻</option>
-            <option value="cn_fishing">大陸漁船</option>
-            <option value="suspicious">可疑船</option>
-            <option value="drill_zone">軍演區船隻</option>
+            <option value="all" data-i18n="ais_anim.filter_all">全部船隻</option>
+            <option value="cn_fishing" data-i18n="ais_anim.filter_cn">大陸漁船</option>
+            <option value="suspicious" data-i18n="ais_anim.filter_suspicious">可疑船</option>
+            <option value="drill_zone" data-i18n="ais_anim.filter_drill">軍演區船隻</option>
+            <option value="loitering" data-i18n="ais_anim.filter_loiter">滯留偵測</option>
+            <option value="zigzag" data-i18n="ais_anim.filter_zigzag">Z字型航行</option>
+            <option value="near_cable" data-i18n="ais_anim.filter_near_cable">電纜周邊</option>
         </select>
 
         <div class="day-indicator" id="dayIndicator">
@@ -571,6 +635,9 @@
                 <div class="legend-chip"><svg width="10" height="10" style="flex-shrink:0"><polygon points="5,0 10,10 0,10" fill="#00f5ff" opacity="0.6"/></svg><span data-i18n="ais_anim.drill_zone">軍演區船隻</span></div>
                 <div class="legend-chip"><span class="dot" style="background:rgba(255,51,102,0.3)"></span><span>軍演區域</span></div>
                 <div class="legend-chip"><span class="dot" style="background:rgba(0,255,136,0.3)"></span><span>漁撈熱點</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ffa500"></span><span data-i18n="ais_anim.detect_loiter">滯留</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ff66ff"></span><span data-i18n="ais_anim.detect_zigzag">Z字型</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ffd700"></span><span data-i18n="ais_anim.detect_cable">近電纜</span></div>
             </div>
         </div>
 
@@ -651,6 +718,342 @@
     };
 
     let map;
+
+    // =========================================================================
+    // Cable & Detection state
+    // =========================================================================
+    const Cable = {
+        geoData: null,          // GeoJSON FeatureCollection
+        layer: null,            // Leaflet GeoJSON layer
+        bufferLayer: null,      // Leaflet layer for buffer zones
+        bufferNm: 2,            // buffer distance in nautical miles
+        visible: false,
+        lines: []               // pre-extracted [[lat,lon], ...] per segment
+    };
+
+    // Detection results per frame (cached)
+    const Detection = {
+        vesselIndex: null,      // Map<mmsi, [{lat, lon, speed, heading, frameIdx}, ...]>
+        loiteringSet: null,     // Set<mmsi> - vessels loitering >6hr
+        zigzagSet: null,        // Set<mmsi> - vessels with zigzag heading
+        nearCableSet: null,     // Set<mmsi> - vessels near cable at current frame
+        lastBuiltFrame: -1,
+        lastCableFrame: -1
+    };
+
+    // =========================================================================
+    // Cable data loading & rendering
+    // =========================================================================
+    async function loadCableData() {
+        if (Cable.geoData) return;
+        try {
+            const res = await fetch('taiwan_cables.json?' + Date.now());
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            Cable.geoData = await res.json();
+            // Pre-extract line segments as [lat, lon] arrays for distance calc
+            Cable.lines = [];
+            Cable.geoData.features.forEach(f => {
+                const coords = f.geometry.coordinates;
+                if (f.geometry.type === 'MultiLineString') {
+                    coords.forEach(line => {
+                        Cable.lines.push(line.map(c => [c[1], c[0]])); // [lat, lon]
+                    });
+                } else if (f.geometry.type === 'LineString') {
+                    Cable.lines.push(coords.map(c => [c[1], c[0]]));
+                }
+            });
+        } catch (e) {
+            console.error('Cable data load failed:', e);
+        }
+    }
+
+    function renderCableLayer() {
+        if (!Cable.geoData || !map) return;
+        if (Cable.layer) { map.removeLayer(Cable.layer); Cable.layer = null; }
+        if (Cable.bufferLayer) { map.removeLayer(Cable.bufferLayer); Cable.bufferLayer = null; }
+
+        if (!Cable.visible) return;
+
+        Cable.layer = L.geoJSON(Cable.geoData, {
+            style: f => ({
+                color: '#' + (f.properties.color || 'ffd700'),
+                weight: 2,
+                opacity: 0.7
+            }),
+            onEachFeature: (f, layer) => {
+                const name = (f.properties.slug || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                layer.bindTooltip(name, { sticky: true, className: 'cable-tooltip' });
+            }
+        }).addTo(map);
+
+        // Render buffer zones as semi-transparent corridors
+        renderCableBuffers();
+    }
+
+    function renderCableBuffers() {
+        if (Cable.bufferLayer) { map.removeLayer(Cable.bufferLayer); Cable.bufferLayer = null; }
+        if (!Cable.visible || Cable.bufferNm <= 0) return;
+
+        Cable.bufferLayer = L.layerGroup().addTo(map);
+        const bufferDeg = Cable.bufferNm / 60; // 1 nm ≈ 1/60 degree
+
+        Cable.lines.forEach(line => {
+            if (line.length < 2) return;
+            // Simple corridor: offset line on both sides
+            const left = [], right = [];
+            for (let i = 0; i < line.length; i++) {
+                const lat = line[i][0], lon = line[i][1];
+                // Compute perpendicular direction
+                let dx = 0, dy = 0;
+                if (i < line.length - 1) {
+                    dy = line[i + 1][0] - lat;
+                    dx = line[i + 1][1] - lon;
+                } else {
+                    dy = lat - line[i - 1][0];
+                    dx = lon - line[i - 1][1];
+                }
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const perpLat = -dx / len * bufferDeg;
+                const perpLon = dy / len * bufferDeg;
+                left.push([lat + perpLat, lon + perpLon]);
+                right.push([lat - perpLat, lon - perpLon]);
+            }
+            const polygon = left.concat(right.reverse());
+            L.polygon(polygon, {
+                color: '#ffd700', weight: 0.5, opacity: 0.3,
+                fillColor: '#ffd700', fillOpacity: 0.08,
+                interactive: false
+            }).addTo(Cable.bufferLayer);
+        });
+    }
+
+    async function toggleCableLayer() {
+        Cable.visible = document.getElementById('showCables').checked;
+        document.getElementById('cableControls').style.display = Cable.visible ? 'flex' : 'none';
+        if (Cable.visible && !Cable.geoData) {
+            await loadCableData();
+        }
+        renderCableLayer();
+        // Re-run near-cable detection if filter is active
+        if (Anim.vesselFilter === 'near_cable') {
+            Detection.lastCableFrame = -1;
+            renderFrame(Anim.currentIdx);
+        }
+    }
+
+    function updateCableBuffer() {
+        Cable.bufferNm = parseFloat(document.getElementById('cableBuffer').value);
+        document.getElementById('cableBufferVal').textContent = Cable.bufferNm;
+        renderCableBuffers();
+        // Re-run near-cable detection
+        Detection.lastCableFrame = -1;
+        if (Anim.vesselFilter === 'near_cable') {
+            renderFrame(Anim.currentIdx);
+        }
+    }
+
+    // =========================================================================
+    // Detection engine
+    // =========================================================================
+
+    /**
+     * Build vessel index: Map<mmsi, Array<{lat, lon, speed, heading, frameIdx}>>
+     * Called once when filteredFrames change.
+     */
+    function buildVesselIndex() {
+        if (Detection.vesselIndex) return; // already built
+        Detection.vesselIndex = new Map();
+        Anim.filteredFrames.forEach((frame, fi) => {
+            if (!frame.vessels) return;
+            frame.vessels.forEach(v => {
+                if (!Detection.vesselIndex.has(v.mmsi)) {
+                    Detection.vesselIndex.set(v.mmsi, []);
+                }
+                Detection.vesselIndex.get(v.mmsi).push({
+                    lat: v.lat, lon: v.lon,
+                    speed: v.speed || 0,
+                    heading: v.heading !== undefined ? v.heading : null,
+                    frameIdx: fi,
+                    name: v.name, type_name: v.type_name,
+                    suspicious: v.suspicious, in_drill_zone: v.in_drill_zone
+                });
+            });
+        });
+    }
+
+    /**
+     * Detect loitering: vessel appears in 3+ consecutive frames (≈6hr+)
+     * with speed < 1 kn and displacement < 0.01° (≈1km)
+     */
+    function detectLoitering() {
+        if (Detection.loiteringSet) return Detection.loiteringSet;
+        buildVesselIndex();
+        const result = new Set();
+
+        Detection.vesselIndex.forEach((records, mmsi) => {
+            if (records.length < 3) return;
+            // Sort by frameIdx
+            records.sort((a, b) => a.frameIdx - b.frameIdx);
+            let streak = 1;
+            for (let i = 1; i < records.length; i++) {
+                const prev = records[i - 1], curr = records[i];
+                const isConsecutive = (curr.frameIdx - prev.frameIdx) <= 2; // allow 1 gap
+                const lowSpeed = curr.speed < 1;
+                const smallDisp = Math.abs(curr.lat - prev.lat) < 0.01 &&
+                                  Math.abs(curr.lon - prev.lon) < 0.01;
+                if (isConsecutive && lowSpeed && smallDisp) {
+                    streak++;
+                    if (streak >= 3) result.add(mmsi);
+                } else {
+                    streak = 1;
+                }
+            }
+        });
+        Detection.loiteringSet = result;
+        return result;
+    }
+
+    /**
+     * Detect zigzag: heading change > 30° for 3+ consecutive observations
+     */
+    function detectZigzag() {
+        if (Detection.zigzagSet) return Detection.zigzagSet;
+        buildVesselIndex();
+        const result = new Set();
+
+        Detection.vesselIndex.forEach((records, mmsi) => {
+            if (records.length < 4) return;
+            records.sort((a, b) => a.frameIdx - b.frameIdx);
+            let zigCount = 0;
+            for (let i = 1; i < records.length; i++) {
+                const prev = records[i - 1], curr = records[i];
+                if (prev.heading === null || curr.heading === null) { zigCount = 0; continue; }
+                let diff = Math.abs(curr.heading - prev.heading);
+                if (diff > 180) diff = 360 - diff;
+                if (diff > 30) {
+                    zigCount++;
+                    if (zigCount >= 3) { result.add(mmsi); break; }
+                } else {
+                    zigCount = 0;
+                }
+            }
+        });
+        Detection.zigzagSet = result;
+        return result;
+    }
+
+    /**
+     * Detect vessels near submarine cables at current frame
+     * Uses point-to-segment distance
+     */
+    function detectNearCable(frameIdx) {
+        if (Detection.lastCableFrame === frameIdx && Detection.nearCableSet) {
+            return Detection.nearCableSet;
+        }
+        const result = new Set();
+        if (!Cable.lines || Cable.lines.length === 0) {
+            Detection.nearCableSet = result;
+            Detection.lastCableFrame = frameIdx;
+            return result;
+        }
+
+        const frame = Anim.filteredFrames[frameIdx];
+        if (!frame || !frame.vessels) {
+            Detection.nearCableSet = result;
+            Detection.lastCableFrame = frameIdx;
+            return result;
+        }
+
+        const bufferDeg = Cable.bufferNm / 60;
+        const bufferDegSq = bufferDeg * bufferDeg;
+
+        frame.vessels.forEach(v => {
+            for (const line of Cable.lines) {
+                if (isPointNearLine(v.lat, v.lon, line, bufferDegSq)) {
+                    result.add(v.mmsi);
+                    break;
+                }
+            }
+        });
+
+        Detection.nearCableSet = result;
+        Detection.lastCableFrame = frameIdx;
+        return result;
+    }
+
+    /**
+     * Check if point is within buffer distance of any segment in line
+     */
+    function isPointNearLine(plat, plon, line, bufferDegSq) {
+        for (let i = 0; i < line.length - 1; i++) {
+            const a = line[i], b = line[i + 1];
+            // Quick bounding box check
+            const minLat = Math.min(a[0], b[0]) - Math.sqrt(bufferDegSq);
+            const maxLat = Math.max(a[0], b[0]) + Math.sqrt(bufferDegSq);
+            const minLon = Math.min(a[1], b[1]) - Math.sqrt(bufferDegSq);
+            const maxLon = Math.max(a[1], b[1]) + Math.sqrt(bufferDegSq);
+            if (plat < minLat || plat > maxLat || plon < minLon || plon > maxLon) continue;
+
+            // Point-to-segment distance squared
+            const dx = b[1] - a[1], dy = b[0] - a[0];
+            const lenSq = dx * dx + dy * dy;
+            let t = lenSq > 0 ? ((plon - a[1]) * dx + (plat - a[0]) * dy) / lenSq : 0;
+            t = Math.max(0, Math.min(1, t));
+            const projLon = a[1] + t * dx;
+            const projLat = a[0] + t * dy;
+            const distSq = (plon - projLon) * (plon - projLon) + (plat - projLat) * (plat - projLat);
+            if (distSq <= bufferDegSq) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Reset detection caches (call when filteredFrames change)
+     */
+    function resetDetectionCache() {
+        Detection.vesselIndex = null;
+        Detection.loiteringSet = null;
+        Detection.zigzagSet = null;
+        Detection.nearCableSet = null;
+        Detection.lastBuiltFrame = -1;
+        Detection.lastCableFrame = -1;
+    }
+
+    /**
+     * Get detection tags for a vessel at current frame
+     * Returns array of {type, label, color}
+     */
+    function getDetectionTags(mmsi, frameIdx) {
+        const tags = [];
+        // Loitering
+        const loiterSet = detectLoitering();
+        if (loiterSet.has(mmsi)) {
+            // Count how many consecutive low-speed frames
+            const records = Detection.vesselIndex.get(mmsi) || [];
+            let maxStreak = 0, streak = 1;
+            for (let i = 1; i < records.length; i++) {
+                if (records[i].speed < 1 && records[i].frameIdx - records[i-1].frameIdx <= 2) {
+                    streak++;
+                    maxStreak = Math.max(maxStreak, streak);
+                } else { streak = 1; }
+            }
+            const hours = maxStreak * 2; // each frame ≈ 2hr
+            tags.push({ type: 'loiter', label: i18n.t('ais_anim.loiter_hours', hours), color: '#ffa500' });
+        }
+        // Zigzag
+        const zigzagSet = detectZigzag();
+        if (zigzagSet.has(mmsi)) {
+            tags.push({ type: 'zigzag', label: i18n.t('ais_anim.detect_zigzag'), color: '#ff66ff' });
+        }
+        // Near cable
+        if (Cable.lines.length > 0) {
+            const cableSet = detectNearCable(frameIdx);
+            if (cableSet.has(mmsi)) {
+                tags.push({ type: 'cable', label: i18n.t('ais_anim.detect_cable'), color: '#ffd700' });
+            }
+        }
+        return tags;
+    }
 
     // =========================================================================
     // Map initialization
@@ -780,6 +1183,7 @@
 
         Anim.currentIdx = 0;
         Anim.vesselTrails = {};
+        resetDetectionCache();
         pause();
         updateSlider();
         updateChart();
@@ -898,13 +1302,20 @@
         // Plot vessel markers (triangle = heading known, diamond = unknown)
         vessels.forEach(v => {
             const isSuspicious = v.suspicious;
-            const color = isSuspicious ? '#ff3366' : '#00f5ff';
+            const tags = getDetectionTags(v.mmsi, idx);
+            const hasDetection = tags.length > 0;
+
+            // Color priority: detection > suspicious > normal
+            let color = isSuspicious ? '#ff3366' : '#00f5ff';
+            if (hasDetection) {
+                color = tags[0].color; // use primary detection color
+            }
             const heading = computeHeading(v.mmsi, v.lat, v.lon);
 
             // Glow effect FIRST (behind main marker)
-            if (isSuspicious) {
+            if (isSuspicious || hasDetection) {
                 L.circleMarker([v.lat, v.lon], {
-                    radius: 10,
+                    radius: hasDetection ? 12 : 10,
                     fillColor: color,
                     color: color,
                     weight: 0,
@@ -913,10 +1324,13 @@
                 }).addTo(Anim.markerLayer);
             }
 
-            const icon = createVesselIcon(color, isSuspicious, heading);
+            const icon = createVesselIcon(color, isSuspicious || hasDetection, heading);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(Anim.markerLayer);
 
             const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
+            const tagHtml = tags.map(t =>
+                '<span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.1);color:' + t.color + ';margin-right:3px">' + t.label + '</span>'
+            ).join('');
             marker.bindPopup(
                 '<div style="font-size:14px;line-height:1.8;min-width:180px">' +
                 '<b style="color:' + color + ';font-size:15px">' + (v.name || v.mmsi) + '</b><br>' +
@@ -925,7 +1339,8 @@
                 i18n.t('ais_anim.popup_speed') + ': ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
                 '航向: ' + headingText + '<br>' +
                 (v.in_drill_zone ? (i18n.t('ais_anim.popup_zone') + ': ' + v.in_drill_zone + '<br>') : '') +
-                (isSuspicious ? '<span style="color:#ff3366;font-weight:600;font-size:14px">⚠ SUSPICIOUS</span>' : '') +
+                (isSuspicious ? '<span style="color:#ff3366;font-weight:600;font-size:14px">⚠ SUSPICIOUS</span><br>' : '') +
+                (tagHtml ? tagHtml : '') +
                 '</div>'
             );
         });
@@ -987,13 +1402,19 @@
 
         const rows = sorted.slice(0, 30).map(v => {
             const isSusp = v.suspicious;
+            const tags = getDetectionTags(v.mmsi, Anim.currentIdx);
+            const tagHtml = tags.map(t =>
+                '<span class="detect-tag ' + t.type + '">' + t.label + '</span>'
+            ).join('');
+            const combined = (isSusp ? '<span class="suspicious-tag">⚠ SUSPICIOUS</span> ' : '') + tagHtml;
+            const statusHtml = combined || 'OK';
             return '<tr>' +
                 '<td>' + v.mmsi + '</td>' +
                 '<td>' + (v.name || '--') + '</td>' +
                 '<td>' + (v.type_name || '--') + '</td>' +
                 '<td>' + (v.speed || 0).toFixed(1) + ' kn</td>' +
                 '<td class="zone-tag">' + (v.in_drill_zone || '--') + '</td>' +
-                '<td>' + (isSusp ? '<span class="suspicious-tag">⚠ SUSPICIOUS</span>' : 'OK') + '</td>' +
+                '<td>' + statusHtml + '</td>' +
                 '</tr>';
         });
 
@@ -1191,13 +1612,29 @@
                 return vessels.filter(v => v.suspicious);
             case 'drill_zone':
                 return vessels.filter(v => v.in_drill_zone);
+            case 'loitering':
+                { const set = detectLoitering(); return vessels.filter(v => set.has(v.mmsi)); }
+            case 'zigzag':
+                { const set = detectZigzag(); return vessels.filter(v => set.has(v.mmsi)); }
+            case 'near_cable':
+                { const set = detectNearCable(Anim.currentIdx); return vessels.filter(v => set.has(v.mmsi)); }
             default:
                 return vessels;
         }
     }
 
-    function setVesselFilter(filter) {
+    async function setVesselFilter(filter) {
         Anim.vesselFilter = filter;
+        // Auto-enable cable layer when selecting near_cable filter
+        if (filter === 'near_cable') {
+            if (!Cable.geoData) await loadCableData();
+            if (!Cable.visible) {
+                Cable.visible = true;
+                document.getElementById('showCables').checked = true;
+                document.getElementById('cableControls').style.display = 'flex';
+                renderCableLayer();
+            }
+        }
         renderFrame(Anim.currentIdx);
     }
 
