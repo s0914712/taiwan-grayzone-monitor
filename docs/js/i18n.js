@@ -239,6 +239,11 @@ const i18n = (function () {
         'ais_anim.popup_speed':  { zh: '航速', en: 'Speed' },
         'ais_anim.popup_zone':   { zh: '軍演區', en: 'Drill Zone' },
 
+        // ── 大陸漁船 CN Fishing ──
+        'nav.cn_fishing':        { zh: '大陸漁船', en: 'CN Fishing' },
+        'nav.mob_cn_fishing':    { zh: '大陸', en: 'CN' },
+        'title.cn_fishing':      { zh: '🇨🇳 大陸漁船動畫 CN Fishing Vessel Animation', en: '🇨🇳 CN Fishing Vessel Animation' },
+
         // ── 海纜與偵測 Cable & Detection ──
         'ais_anim.filter_all':       { zh: '全部船隻', en: 'All Vessels' },
         'ais_anim.filter_cn':        { zh: '大陸漁船', en: 'CN Fishing' },
