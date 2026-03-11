@@ -7,10 +7,11 @@ const MapModule = (function() {
     'use strict';
 
     let map;
-    let layers = { 
-        drillZones: null, 
-        fishingHotspots: null, 
-        vessels: null 
+    let layers = {
+        drillZones: null,
+        fishingHotspots: null,
+        vessels: null,
+        submarineCables: null
     };
     let vesselMarkers = {};
 
@@ -108,6 +109,7 @@ const MapModule = (function() {
         layers.drillZones = L.layerGroup().addTo(map);
         layers.fishingHotspots = L.layerGroup().addTo(map);
         layers.vessels = L.layerGroup().addTo(map);
+        layers.submarineCables = L.layerGroup();
 
         // Draw Taiwan outline
         drawTaiwanOutline();
@@ -370,6 +372,31 @@ const MapModule = (function() {
         }
     }
 
+    /**
+     * Load and display submarine cable layer
+     */
+    async function loadSubmarineCables() {
+        if (layers.submarineCables.getLayers().length > 0) return; // already loaded
+        try {
+            const res = await fetch('taiwan_cables.json?' + Date.now());
+            if (!res.ok) return;
+            const geoData = await res.json();
+            L.geoJSON(geoData, {
+                style: f => ({
+                    color: '#' + (f.properties.color || 'ffd700'),
+                    weight: 2,
+                    opacity: 0.7
+                }),
+                onEachFeature: (f, layer) => {
+                    const name = (f.properties.slug || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                    layer.bindTooltip(name, { sticky: true });
+                }
+            }).addTo(layers.submarineCables);
+        } catch (e) {
+            console.error('Cable data load failed:', e);
+        }
+    }
+
     // Public API
     return {
         init,
@@ -382,6 +409,7 @@ const MapModule = (function() {
         focusZone,
         focusVessel,
         focusPosition,
+        loadSubmarineCables,
         getZoneForPosition,
         DRILL_ZONES,
         FISHING_HOTSPOTS,
