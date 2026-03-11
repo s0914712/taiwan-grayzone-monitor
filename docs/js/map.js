@@ -180,6 +180,42 @@ const MapModule = (function() {
     }
 
     /**
+     * Create a MarineTraffic-style triangle SVG icon
+     */
+    function createVesselIcon(color, isSuspicious, heading) {
+        const size = isSuspicious ? 16 : 12;
+        const half = size / 2;
+        const rotation = heading !== null && heading !== undefined ? heading : 0;
+        const opacity = isSuspicious ? 0.85 : 0.6;
+
+        let shape;
+        if (heading !== null && heading !== undefined) {
+            // Triangle pointing up, rotated by heading
+            shape = '<polygon points="' + half + ',1 ' + (size - 1) + ',' + (size - 1) + ' 1,' + (size - 1) + '" ' +
+                    'fill="' + color + '" fill-opacity="' + opacity + '" ' +
+                    'stroke="' + color + '" stroke-width="' + (isSuspicious ? 1.5 : 0.8) + '" stroke-opacity="0.9"/>';
+        } else {
+            // Diamond for unknown heading
+            shape = '<polygon points="' + half + ',1 ' + (size - 1) + ',' + half + ' ' + half + ',' + (size - 1) + ' 1,' + half + '" ' +
+                    'fill="' + color + '" fill-opacity="' + opacity + '" ' +
+                    'stroke="' + color + '" stroke-width="' + (isSuspicious ? 1.5 : 0.8) + '" stroke-opacity="0.9"/>';
+        }
+
+        const svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" ' +
+                    'xmlns="http://www.w3.org/2000/svg" ' +
+                    'style="transform:rotate(' + rotation + 'deg)">' +
+                    shape + '</svg>';
+
+        return L.divIcon({
+            html: svg,
+            className: 'vessel-icon',
+            iconSize: [size, size],
+            iconAnchor: [half, half],
+            popupAnchor: [0, -half]
+        });
+    }
+
+    /**
      * Display vessels on the map
      */
     function displayVessels(vesselList, vessels = new Map()) {
@@ -209,16 +245,12 @@ const MapModule = (function() {
                 }).addTo(layers.vessels);
             }
 
-            const marker = L.circleMarker([v.lat, v.lon], {
-                radius: isSuspicious ? 6 : 4,
-                fillColor: color,
-                color: isSuspicious ? '#ffffff' : color,
-                weight: isSuspicious ? 2 : 1,
-                opacity: 0.9,
-                fillOpacity: isSuspicious ? 1 : 0.7
-            }).addTo(layers.vessels);
+            const heading = v.heading !== undefined && v.heading !== null ? v.heading : null;
+            const icon = createVesselIcon(color, isSuspicious, heading);
+            const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(layers.vessels);
 
             const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+            const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
             const suspiciousInfo = isSuspicious
                 ? `<br><b style="color:#ff3366">${t('app.csis_suspicious')}</b>`
                 : '';
@@ -227,7 +259,8 @@ const MapModule = (function() {
                 <b>${v.name || 'Unknown'}</b><br>
                 ${t('app.mmsi')} ${v.mmsi}<br>
                 ${t('app.type')} ${v.type_name || t('common.unknown')}<br>
-                ${t('app.speed')} ${(v.speed || 0).toFixed(1)} kn${suspiciousInfo}
+                ${t('app.speed')} ${(v.speed || 0).toFixed(1)} kn<br>
+                航向: ${headingText}${suspiciousInfo}
             `);
 
             vesselMarkers[v.mmsi] = marker;
