@@ -239,6 +239,21 @@ const i18n = (function () {
         'ais_anim.popup_speed':  { zh: '航速', en: 'Speed' },
         'ais_anim.popup_zone':   { zh: '軍演區', en: 'Drill Zone' },
 
+        // ── 海纜與偵測 Cable & Detection ──
+        'ais_anim.filter_all':       { zh: '全部船隻', en: 'All Vessels' },
+        'ais_anim.filter_cn':        { zh: '大陸漁船', en: 'CN Fishing' },
+        'ais_anim.filter_suspicious':{ zh: '可疑船', en: 'Suspicious' },
+        'ais_anim.filter_drill':     { zh: '軍演區船隻', en: 'Drill Zone' },
+        'ais_anim.filter_loiter':    { zh: '滯留偵測', en: 'Loitering' },
+        'ais_anim.filter_zigzag':    { zh: 'Z字型航行', en: 'Zigzag' },
+        'ais_anim.filter_near_cable':{ zh: '電纜周邊', en: 'Near Cable' },
+        'ais_anim.layer_cables':     { zh: '海底電纜', en: 'Submarine Cables' },
+        'ais_anim.cable_buffer':     { zh: '電纜緩衝區 (海浬)', en: 'Cable Buffer (nm)' },
+        'ais_anim.detect_loiter':    { zh: '滯留', en: 'Loiter' },
+        'ais_anim.detect_zigzag':    { zh: 'Z字型', en: 'Zigzag' },
+        'ais_anim.detect_cable':     { zh: '近電纜', en: 'Near Cable' },
+        'ais_anim.loiter_hours':     { zh: '滯留 {0}h', en: 'Loiter {0}h' },
+
         // ── Map 模組 ──
         'map.zone_north':        { zh: '北部海域', en: 'Northern Waters' },
         'map.zone_east':         { zh: '東部海域', en: 'Eastern Waters' },
