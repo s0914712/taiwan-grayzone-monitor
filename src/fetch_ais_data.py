@@ -105,39 +105,57 @@ def is_in_taiwan_bbox(lat, lon):
 
 
 # --- SOCKS5 代理設定 ---
-# 透過環境變數設定 PingProxies SOCKS5 代理（GitHub Actions 透過 Secrets 傳入）
-# 格式: PROXY_LIST = "host:port:user:pass,host:port:user:pass,..."
-# 若未設定，則直接連線 MPB（適用本機台灣 IP）
+# 優先從 Pool.txt 讀取代理清單（100 個 ASN 3462 HiNet 代理）
+# 也支援環境變數 PROXY_LIST 覆蓋（格式: host:port:user:pass,host:port:user:pass,...）
+# 若都無法讀取，使用內建備用清單
 
-DEFAULT_PROXY_LIST = [
-    {"host": "residential.pingproxies.com", "port": 8405, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_HKU8VCOAGUXIQW1Z", "pass": "47yKTElrP2"},
-    {"host": "residential.pingproxies.com", "port": 8176, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_DIE6KKT8FM98LUQZ", "pass": "47yKTElrP2"},
-    {"host": "residential.pingproxies.com", "port": 8714, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_SO6OXABRJASSOD9F", "pass": "47yKTElrP2"},
-    {"host": "residential.pingproxies.com", "port": 8197, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_46MVSX73Q8S24EBL", "pass": "47yKTElrP2"},
-    {"host": "residential.pingproxies.com", "port": 8233, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_O3L0P2A3ANFWU9L8", "pass": "47yKTElrP2"},
-    {"host": "residential.pingproxies.com", "port": 8767, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_YNI7XFZAJK06VMWY", "pass": "47yKTElrP2"},
-    {"host": "residential.pingproxies.com", "port": 8075, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_MMBJLQNDO7IVE1JG", "pass": "47yKTElrP2"},
-    {"host": "residential.pingproxies.com", "port": 8244, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_WSQOZ7IG16FAQJ81", "pass": "47yKTElrP2"},
-    {"host": "residential.pingproxies.com", "port": 8838, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_NVKQHVJI3S1NG7ID", "pass": "47yKTElrP2"},
-    {"host": "residential.pingproxies.com", "port": 8419, "user": "103521_YHYhJ_c_tw_city_taipei_asn_17421_s_ODOYW5ZMW6Z1UMVF", "pass": "47yKTElrP2"},
-]
+POOL_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Pool.txt')
+
+# 嘗試連線的代理數量上限
+MAX_PROXY_ATTEMPTS = 10
+
+
+def _parse_proxy_line(line):
+    """解析 host:port:user:pass 格式的代理行"""
+    parts = line.strip().split(':')
+    if len(parts) == 4:
+        return {'host': parts[0], 'port': int(parts[1]), 'user': parts[2], 'pass': parts[3]}
+    return None
 
 
 def get_proxy_list():
-    """從環境變數或預設清單取得 SOCKS5 代理列表"""
+    """從 Pool.txt / 環境變數 / 備用清單取得 SOCKS5 代理列表"""
+    # 1. 環境變數覆蓋（最高優先）
     env_val = os.environ.get('PROXY_LIST', '').strip()
     if env_val:
-        proxies = []
-        for entry in env_val.split(','):
-            parts = entry.strip().split(':')
-            if len(parts) == 4:
-                proxies.append({
-                    'host': parts[0], 'port': int(parts[1]),
-                    'user': parts[2], 'pass': parts[3],
-                })
+        proxies = [_parse_proxy_line(e) for e in env_val.split(',')]
+        proxies = [p for p in proxies if p]
         if proxies:
+            print(f"  📋 使用環境變數代理清單 ({len(proxies)} 個)")
             return proxies
-    return DEFAULT_PROXY_LIST
+
+    # 2. 從 Pool.txt 讀取
+    if os.path.exists(POOL_FILE):
+        try:
+            with open(POOL_FILE, 'r') as f:
+                lines = [l.strip() for l in f if l.strip() and not l.startswith('#')]
+            proxies = [_parse_proxy_line(l) for l in lines]
+            proxies = [p for p in proxies if p]
+            if proxies:
+                print(f"  📋 從 Pool.txt 載入代理清單 ({len(proxies)} 個)")
+                return proxies
+        except Exception as e:
+            print(f"  ⚠️ 讀取 Pool.txt 失敗: {e}")
+
+    # 3. 備用清單
+    print(f"  ⚠️ Pool.txt 不存在或為空，使用備用代理清單")
+    return [
+        {"host": "residential.pingproxies.com", "port": 8253, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_82K1Q977SLB9H76Q", "pass": "47yKTElrP2"},
+        {"host": "residential.pingproxies.com", "port": 8901, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_AZ1PX916DV90HJFS", "pass": "47yKTElrP2"},
+        {"host": "residential.pingproxies.com", "port": 8353, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_WZ0Q1FVPVDFZF9G8", "pass": "47yKTElrP2"},
+        {"host": "residential.pingproxies.com", "port": 8970, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_Y60AXR2HBJNRXGU9", "pass": "47yKTElrP2"},
+        {"host": "residential.pingproxies.com", "port": 8999, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_DGCW7X66DDUGQDZR", "pass": "47yKTElrP2"},
+    ]
 
 
 # --- 資料收集 ---
@@ -153,7 +171,7 @@ def collect_ais_data():
         geojson = None
         last_error = None
 
-        for attempt, p in enumerate(proxy_list[:5]):
+        for attempt, p in enumerate(proxy_list[:MAX_PROXY_ATTEMPTS]):
             proxy_url = f"socks5://{p['user']}:{p['pass']}@{p['host']}:{p['port']}"
             proxies = {"http": proxy_url, "https": proxy_url}
             try:
