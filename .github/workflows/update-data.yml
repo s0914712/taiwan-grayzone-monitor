@@ -23,11 +23,11 @@ jobs:
           
       - name: Install dependencies
         run: |
-          pip install requests pandas numpy websockets scipy statsmodels
+          pip install requests pandas numpy websockets scipy statsmodels pysocks
           
-      - name: Fetch AIS data from AISStream.io
+      - name: Fetch AIS data via SOCKS5 proxy
         env:
-          AISSTREAM_API_KEY: ${{ secrets.AISSTREAM_API_KEY }}
+          USE_PROXY: "true"
         run: |
           python src/fetch_ais_data.py
         continue-on-error: true

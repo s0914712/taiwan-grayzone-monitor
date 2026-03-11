@@ -22,10 +22,12 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install requests pysocks
 
-      - name: Fetch AIS data & track identity changes
+      - name: Fetch AIS data via SOCKS5 proxy
         run: python src/fetch_ais_data.py
+        env:
+          USE_PROXY: "true"
         continue-on-error: true
 
       - name: Analyze suspicious vessels (CSIS methodology)
