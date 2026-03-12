@@ -31,8 +31,8 @@ IDENTITY_EVENTS_FILE = os.path.join(DATA_DIR, 'identity_events.json')
 # 身分變更事件：保留最近 5000 筆
 IDENTITY_EVENTS_MAX = 5000
 
-# AIS 歷史快照：每天保留 4 筆（每 6 小時一筆），共保留 90 天 = 360 筆
-AIS_HISTORY_MAX_ENTRIES = 360
+# AIS 歷史快照：每天保留 12 筆（每 2 小時一筆），共保留 90 天 = 1080 筆
+AIS_HISTORY_MAX_ENTRIES = 1080
 # AIS 軌跡歷史：保留 14 天，每 2 小時一筆 = 168 筆
 AIS_TRACK_MAX_ENTRIES = 168
 
@@ -251,10 +251,8 @@ def collect_ais_data():
             None
         )
 
-        # 可疑判定：漁船在軍演區但不在漁場
-        suspicious = (type_name == 'fishing' and
-                      drill_zone is not None and
-                      fishing_hotspot is None)
+        # 可疑判定已停用（原 CSIS 方法論），改由 analyze_suspicious.py 綜合分析
+        suspicious = False
 
         vessels[mmsi] = {
             'mmsi': mmsi,
@@ -485,10 +483,10 @@ def save_all(vessels, stats):
         json.dump(profiles, f, ensure_ascii=False, indent=2)
     print(f"  👤 船隻 profile 已更新: {VESSEL_PROFILES_FILE} ({len(profiles)} 艘)")
 
-    # 2b. AIS 歷史快照（每天 4 筆，每 6 小時一筆，供前端趨勢圖使用）
+    # 2b. AIS 歷史快照（每天 12 筆，每 2 小時一筆，供前端趨勢圖使用）
     now = datetime.now(timezone.utc)
     today_str = now.strftime('%Y-%m-%d')
-    period = (now.hour // 6) * 6  # 0, 6, 12, 18
+    period = (now.hour // 2) * 2  # 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22
     period_key = f"{today_str}_{period:02d}"
 
     suspicious_vessels = [
