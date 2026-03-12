@@ -137,10 +137,24 @@
         </div>
 
         <div class="panel">
-            <div class="panel-title" data-i18n="dv.flag_title">🚩 有 AIS 船隻國旗分布（台灣海峽）</div>
-            <div class="panel-body">
-                <div class="flag-list" id="flagList">
-                    <div class="empty-state" data-i18n="common.loading">載入中...</div>
+            <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded')" data-i18n="dv.flag_title">🚩 有 AIS 船隻國旗分布（台灣海峽）</div>
+            <div class="panel-collapsible-body">
+                <div class="panel-body">
+                    <div class="flag-list" id="flagList">
+                        <div class="empty-state" data-i18n="common.loading">載入中...</div>
+                    </div>
+                </div>
+                <div class="panel-body" style="border-top:1px solid rgba(0,245,255,0.1);font-size:9px;color:var(--text-secondary)">
+                    <div style="padding:2px 0;font-weight:600;color:var(--text-primary)" data-i18n="dv.flag_ref_title">📋 全球主要船旗國參考</div>
+                    <div class="flag-item"><span>1. 🇱🇷 Liberia</span><span style="font-size:8px" data-i18n="dv.flag_ref_lr">連續蟬聯全球最大船旗註冊國</span></div>
+                    <div class="flag-item"><span>2. 🇵🇦 Panama</span><span style="font-size:8px" data-i18n="dv.flag_ref_pa">長期佔據榜首，目前位居第二</span></div>
+                    <div class="flag-item"><span>3. 🇲🇭 Marshall Islands</span><span style="font-size:8px" data-i18n="dv.flag_ref_mh">持續穩定增長，維持前三</span></div>
+                    <div class="flag-item"><span>4. 🇭🇰 Hong Kong</span><span style="font-size:8px" data-i18n="dv.flag_ref_hk">2025 年初被新加坡超越</span></div>
+                    <div class="flag-item"><span>5. 🇸🇬 Singapore</span><span style="font-size:8px" data-i18n="dv.flag_ref_sg">增長強勁，2024 年穩居前五</span></div>
+                    <div class="flag-item"><span>6. 🇲🇹 Malta</span><span style="font-size:8px" data-i18n="dv.flag_ref_mt">歐洲最大船旗國之一</span></div>
+                    <div class="flag-item"><span>7. 🇧🇸 Bahamas</span><span style="font-size:8px" data-i18n="dv.flag_ref_bs">傳統航運強國，郵輪註冊量大</span></div>
+                    <div class="flag-item"><span>8. 🇬🇷 Greece</span><span style="font-size:8px" data-i18n="dv.flag_ref_gr">傳統海運大國</span></div>
+                    <div class="flag-item"><span>9. 🇯🇵 Japan</span><span style="font-size:8px" data-i18n="dv.flag_ref_jp">2024 年表現穩定</span></div>
                 </div>
             </div>
         </div>
