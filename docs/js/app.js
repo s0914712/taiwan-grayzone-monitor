@@ -352,11 +352,60 @@ const App = (function () {
                 setDataStatus(typeof i18n !== 'undefined' ? i18n.t('app.no_data') : '⚠️ 尚無資料', false);
             }
 
+            // Load cable fault status
+            loadCableStatus();
+
         } catch (e) {
             console.error('Load data.json failed:', e);
             setDataStatus(typeof i18n !== 'undefined' ? i18n.t('common.error_load') : '❌ 資料載入失敗', false);
             const updateEl = document.getElementById('updateInfo');
             if (updateEl) updateEl.textContent = typeof i18n !== 'undefined' ? i18n.t('app.load_fail_msg') : '請確認 data.json 是否存在';
+        }
+    }
+
+    /**
+     * Load and display cable fault status card
+     */
+    async function loadCableStatus() {
+        const section = document.getElementById('cableStatusSection');
+        if (!section) return;
+        try {
+            const res = await fetch('cable_status.json?' + Date.now());
+            if (!res.ok) return;
+            const data = await res.json();
+            const faults = (data.faults || []).filter(f => f.status === 'fault');
+            const repaired = (data.faults || []).filter(f => f.status === 'repaired');
+
+            section.style.display = 'block';
+
+            const t = (typeof i18n !== 'undefined') ? i18n.t.bind(i18n) : (k, ...a) => k;
+            const summaryEl = document.getElementById('cableStatusSummary');
+            if (summaryEl) {
+                summaryEl.innerHTML =
+                    '<div style="display:flex;gap:12px;margin-bottom:8px">' +
+                    '<div style="text-align:center;flex:1;padding:6px;background:rgba(255,0,0,0.15);border-radius:6px">' +
+                    '<div style="font-size:20px;font-weight:700;color:#ff0000">' + faults.length + '</div>' +
+                    '<div style="font-size:11px;opacity:0.7" data-i18n="cable.fault">' + t('cable.fault') + '</div></div>' +
+                    '<div style="text-align:center;flex:1;padding:6px;background:rgba(0,255,136,0.1);border-radius:6px">' +
+                    '<div style="font-size:20px;font-weight:700;color:#00ff88">' + repaired.length + '</div>' +
+                    '<div style="font-size:11px;opacity:0.7" data-i18n="cable.repaired">' + t('cable.repaired') + '</div></div>' +
+                    '</div>';
+            }
+
+            const listEl = document.getElementById('cableFaultList');
+            if (listEl && faults.length > 0) {
+                listEl.innerHTML = faults.map(f =>
+                    '<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+                    '<span style="color:#ff0000;font-weight:600">⚠ ' + f.segment + '</span> ' +
+                    '<span style="opacity:0.7">' + (f.name_zh || '') + '</span><br>' +
+                    '<span style="font-size:11px;opacity:0.5">' + f.fault_date + ' | ' + (f.location_zh || '') + '</span>' +
+                    '</div>'
+                ).join('');
+            } else if (listEl) {
+                listEl.innerHTML = '<div style="color:#00ff88;padding:8px 0" data-i18n="cable.all_normal">所有海纜正常運作</div>';
+            }
+        } catch (e) {
+            // Cable status not available, hide section
         }
     }
 

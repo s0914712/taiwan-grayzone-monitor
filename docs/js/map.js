@@ -408,26 +408,75 @@ const MapModule = (function() {
     /**
      * Load and display submarine cable layer
      */
+    // Cable fault status cache
+    let cableFaults = null; // { faultedSlugs: Set, faultsBySlug: Map }
+
+    async function loadCableFaultStatus() {
+        if (cableFaults) return cableFaults;
+        try {
+            const res = await fetch('cable_status.json?' + Date.now());
+            if (!res.ok) return null;
+            const data = await res.json();
+            const faultedSlugs = new Set();
+            const faultsBySlug = {};
+            (data.faults || []).forEach(f => {
+                if (f.status === 'fault') {
+                    faultedSlugs.add(f.slug);
+                    if (!faultsBySlug[f.slug]) faultsBySlug[f.slug] = [];
+                    faultsBySlug[f.slug].push(f);
+                }
+            });
+            cableFaults = { faultedSlugs, faultsBySlug, raw: data };
+            return cableFaults;
+        } catch (e) {
+            console.error('Cable status load failed:', e);
+            return null;
+        }
+    }
+
     async function loadSubmarineCables() {
         if (layers.submarineCables.getLayers().length > 0) return; // already loaded
         try {
-            const res = await fetch('taiwan_cables.json?' + Date.now());
-            if (!res.ok) return;
-            const geoData = await res.json();
+            const [cableRes, faultStatus] = await Promise.all([
+                fetch('taiwan_cables.json?' + Date.now()),
+                loadCableFaultStatus()
+            ]);
+            if (!cableRes.ok) return;
+            const geoData = await cableRes.json();
+            const faulted = faultStatus ? faultStatus.faultedSlugs : new Set();
+            const faultDetails = faultStatus ? faultStatus.faultsBySlug : {};
+
             L.geoJSON(geoData, {
-                style: f => ({
-                    color: '#' + (f.properties.color || 'ffd700'),
-                    weight: 2,
-                    opacity: 0.7
-                }),
+                style: f => {
+                    const slug = f.properties.slug || '';
+                    const isFaulted = faulted.has(slug);
+                    return {
+                        color: isFaulted ? '#ff0000' : '#' + (f.properties.color || 'ffd700'),
+                        weight: isFaulted ? 3 : 2,
+                        opacity: isFaulted ? 0.9 : 0.7
+                    };
+                },
                 onEachFeature: (f, layer) => {
-                    const name = (f.properties.slug || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                    layer.bindTooltip(name, { sticky: true });
+                    const slug = f.properties.slug || '';
+                    const name = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                    const faults = faultDetails[slug];
+                    let tip = name;
+                    if (faults && faults.length > 0) {
+                        const details = faults.map(ft =>
+                            '\u26a0 ' + ft.segment + ': ' + (ft.description_zh || ft.description_en)
+                        ).join('<br>');
+                        tip = '<b style="color:#ff0000">' + name + '</b><br>' + details;
+                    }
+                    layer.bindTooltip(tip, { sticky: true });
                 }
             }).addTo(layers.submarineCables);
         } catch (e) {
             console.error('Cable data load failed:', e);
         }
+    }
+
+    function getCableFaultStatus() {
+        return cableFaults;
     }
 
     // Public API
@@ -443,6 +492,8 @@ const MapModule = (function() {
         focusVessel,
         focusPosition,
         loadSubmarineCables,
+        loadCableFaultStatus,
+        getCableFaultStatus,
         getZoneForPosition,
         DRILL_ZONES,
         FISHING_HOTSPOTS,

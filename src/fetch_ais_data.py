@@ -26,6 +26,10 @@ VESSEL_PROFILES_FILE = os.path.join(DATA_DIR, 'vessel_profiles.json')
 AIS_HISTORY_FILE = os.path.join(DATA_DIR, 'ais_history.json')
 AIS_TRACK_FILE = os.path.join(DATA_DIR, 'ais_track_history.json')
 DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
+IDENTITY_EVENTS_FILE = os.path.join(DATA_DIR, 'identity_events.json')
+
+# 身分變更事件：保留最近 5000 筆
+IDENTITY_EVENTS_MAX = 5000
 
 # AIS 歷史快照：每天保留 4 筆（每 6 小時一筆），共保留 90 天 = 360 筆
 AIS_HISTORY_MAX_ENTRIES = 360
@@ -308,6 +312,53 @@ def analyze_data(vessels):
     return stats
 
 
+# --- 身分變更偵測 ---
+
+def detect_identity_changes(vessels, profiles):
+    """比對當前船舶資料與歷史 profile，偵測船名/呼號/IMO 變更"""
+    events = []
+    now_str = datetime.now(timezone.utc).isoformat()
+
+    for v in vessels.values():
+        mmsi = v['mmsi']
+        if mmsi not in profiles:
+            continue
+        p = profiles[mmsi]
+        changes = []
+
+        # 比對船名
+        old_name = p.get('last_name', '')
+        new_name = v.get('name', '')
+        if old_name and new_name and old_name != new_name:
+            changes.append({'field': 'name', 'old': old_name, 'new': new_name})
+
+        # 比對呼號
+        old_cs = p.get('last_call_sign', '')
+        new_cs = v.get('call_sign', '')
+        if old_cs and new_cs and old_cs != new_cs:
+            changes.append({'field': 'call_sign', 'old': old_cs, 'new': new_cs})
+
+        # 比對 IMO
+        old_imo = p.get('last_imo', '')
+        new_imo = v.get('imo', '')
+        if old_imo and new_imo and old_imo != new_imo:
+            changes.append({'field': 'imo', 'old': old_imo, 'new': new_imo})
+
+        if changes:
+            events.append({
+                'mmsi': mmsi,
+                'timestamp': now_str,
+                'changes': changes,
+                'multi_field': len(changes) > 1,
+                'lat': v['lat'],
+                'lon': v['lon'],
+                'in_drill_zone': v.get('in_drill_zone'),
+                'in_fishing_hotspot': v.get('in_fishing_hotspot'),
+            })
+
+    return events
+
+
 # --- 儲存 ---
 
 def save_all(vessels, stats):
@@ -370,6 +421,26 @@ def save_all(vessels, stats):
         except Exception:
             profiles = {}
 
+    # 2a-1. 偵測身分變更（必須在更新 profile 之前）
+    new_events = detect_identity_changes(vessels, profiles)
+    if new_events:
+        # 載入既有事件，追加新事件，保留上限
+        id_events = []
+        if os.path.exists(IDENTITY_EVENTS_FILE):
+            try:
+                with open(IDENTITY_EVENTS_FILE, 'r', encoding='utf-8') as f:
+                    id_events = json.load(f)
+                if not isinstance(id_events, list):
+                    id_events = []
+            except Exception:
+                id_events = []
+        id_events.extend(new_events)
+        id_events = id_events[-IDENTITY_EVENTS_MAX:]
+        with open(IDENTITY_EVENTS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(id_events, f, ensure_ascii=False, indent=2)
+        print(f"  🔄 偵測到 {len(new_events)} 筆身分變更事件 (累計 {len(id_events)} 筆)")
+
+    # 2a-2. 更新 profile（含 last_* 追蹤欄位）
     for v in vessel_list:
         mmsi = v['mmsi']
         if mmsi not in profiles:
@@ -401,6 +472,14 @@ def save_all(vessels, stats):
         # 最近出現時間（保留最近 50 筆，用於 going dark 偵測）
         p['last_seen_timestamps'].append(now_str)
         p['last_seen_timestamps'] = p['last_seen_timestamps'][-50:]
+
+        # 更新 last_* 欄位（供下次身分變更比對）
+        if v.get('name'):
+            p['last_name'] = v['name']
+        if v.get('call_sign'):
+            p['last_call_sign'] = v['call_sign']
+        if v.get('imo'):
+            p['last_imo'] = v['imo']
 
     with open(VESSEL_PROFILES_FILE, 'w', encoding='utf-8') as f:
         json.dump(profiles, f, ensure_ascii=False, indent=2)

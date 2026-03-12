@@ -729,7 +729,8 @@
         bufferLayer: null,      // Leaflet layer for buffer zones
         bufferNm: 2,            // buffer distance in nautical miles
         visible: false,
-        lines: []               // pre-extracted [[lat,lon], ...] per segment
+        lines: [],              // pre-extracted [[lat,lon], ...] per segment
+        faultStatus: null       // { faultedSlugs: Set, faultsBySlug: {} }
     };
 
     // Detection results per frame (cached)
@@ -748,9 +749,30 @@
     async function loadCableData() {
         if (Cable.geoData) return;
         try {
-            const res = await fetch('taiwan_cables.json?' + Date.now());
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            Cable.geoData = await res.json();
+            const [cableRes, statusRes] = await Promise.all([
+                fetch('taiwan_cables.json?' + Date.now()),
+                fetch('cable_status.json?' + Date.now()).catch(() => null)
+            ]);
+            if (!cableRes.ok) throw new Error('HTTP ' + cableRes.status);
+            Cable.geoData = await cableRes.json();
+
+            // Load fault status
+            if (statusRes && statusRes.ok) {
+                try {
+                    const statusData = await statusRes.json();
+                    const faultedSlugs = new Set();
+                    const faultsBySlug = {};
+                    (statusData.faults || []).forEach(f => {
+                        if (f.status === 'fault') {
+                            faultedSlugs.add(f.slug);
+                            if (!faultsBySlug[f.slug]) faultsBySlug[f.slug] = [];
+                            faultsBySlug[f.slug].push(f);
+                        }
+                    });
+                    Cable.faultStatus = { faultedSlugs, faultsBySlug };
+                } catch (_) {}
+            }
+
             // Pre-extract line segments as [lat, lon] arrays for distance calc
             Cable.lines = [];
             Cable.geoData.features.forEach(f => {
@@ -775,15 +797,31 @@
 
         if (!Cable.visible) return;
 
+        const faulted = Cable.faultStatus ? Cable.faultStatus.faultedSlugs : new Set();
+        const faultDetails = Cable.faultStatus ? Cable.faultStatus.faultsBySlug : {};
+
         Cable.layer = L.geoJSON(Cable.geoData, {
-            style: f => ({
-                color: '#' + (f.properties.color || 'ffd700'),
-                weight: 2,
-                opacity: 0.7
-            }),
+            style: f => {
+                const slug = f.properties.slug || '';
+                const isFaulted = faulted.has(slug);
+                return {
+                    color: isFaulted ? '#ff0000' : '#' + (f.properties.color || 'ffd700'),
+                    weight: isFaulted ? 3 : 2,
+                    opacity: isFaulted ? 0.9 : 0.7
+                };
+            },
             onEachFeature: (f, layer) => {
-                const name = (f.properties.slug || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                layer.bindTooltip(name, { sticky: true, className: 'cable-tooltip' });
+                const slug = f.properties.slug || '';
+                const name = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                const faults = faultDetails[slug];
+                let tip = name;
+                if (faults && faults.length > 0) {
+                    const details = faults.map(ft =>
+                        '\u26a0 ' + ft.segment + ': ' + (ft.description_zh || ft.description_en)
+                    ).join('<br>');
+                    tip = '<b style="color:#ff0000">' + name + '</b><br>' + details;
+                }
+                layer.bindTooltip(tip, { sticky: true, className: 'cable-tooltip' });
             }
         }).addTo(map);
 
