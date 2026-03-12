@@ -259,6 +259,14 @@ const i18n = (function () {
         'ais_anim.detect_cable':     { zh: '近電纜', en: 'Near Cable' },
         'ais_anim.loiter_hours':     { zh: '滯留 {0}h', en: 'Loiter {0}h' },
 
+        // ── 海纜狀態 ──
+        'cable.status_title':        { zh: '🔌 海纜狀態', en: '🔌 Cable Status' },
+        'cable.fault':               { zh: '障礙中', en: 'Faulted' },
+        'cable.repaired':            { zh: '已修復', en: 'Repaired' },
+        'cable.normal':              { zh: '正常', en: 'Normal' },
+        'cable.all_normal':          { zh: '所有海纜正常運作', en: 'All cables operational' },
+        'cable.source_link':         { zh: '資料來源：數位發展部', en: 'Source: MODA' },
+
         // ── Map 模組 ──
         'map.zone_north':        { zh: '北部海域', en: 'Northern Waters' },
         'map.zone_east':         { zh: '東部海域', en: 'Eastern Waters' },
