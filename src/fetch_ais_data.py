@@ -251,10 +251,8 @@ def collect_ais_data():
             None
         )
 
-        # 可疑判定：漁船在軍演區但不在漁場
-        suspicious = (type_name == 'fishing' and
-                      drill_zone is not None and
-                      fishing_hotspot is None)
+        # 可疑判定已停用（原 CSIS 方法論），改由 analyze_suspicious.py 綜合分析
+        suspicious = False
 
         vessels[mmsi] = {
             'mmsi': mmsi,
