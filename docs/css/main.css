@@ -627,9 +627,17 @@ body {
     .app-container { grid-template-columns: 1fr; }
     .main-content { grid-template-columns: 1fr; }
 
-    /* Header */
-    .header-nav { display: none; }
+    /* Header - hide nav links but keep toggle & status visible */
+    .header-nav { display: flex; align-items: center; gap: 6px; }
+    .header-nav a { display: none; }
     .header h1 { font-size: 13px; }
+
+    /* Language toggle - mobile-friendly touch target */
+    #langToggle {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 12px !important;
+    }
     .data-status { font-size: 11px; }
 
     /* Sidebar - slide-in drawer */
