@@ -80,7 +80,7 @@ const App = (function () {
             const bottomNav = document.createElement('nav');
             bottomNav.className = 'mobile-bottom-nav';
             bottomNav.innerHTML = `
-                <a href="index.html" class="active">
+                <a href="index.html">
                     <span class="nav-icon">🛰️</span>
                     <span data-i18n="nav.mob_monitor">監測</span>
                 </a>
@@ -102,6 +102,14 @@ const App = (function () {
                 </a>
             `;
             document.body.appendChild(bottomNav);
+
+            // Detect current page and set active state
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            bottomNav.querySelectorAll('a').forEach(a => {
+                const href = a.getAttribute('href');
+                if (href === currentPage) a.classList.add('active');
+            });
+
             if (typeof i18n !== 'undefined') i18n.applyAll();
         }
     }
