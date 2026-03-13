@@ -91,6 +91,13 @@
             background: rgba(0, 245, 255, 0.1);
         }
 
+        .anim-btn:disabled,
+        .anim-btn[disabled] {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         .anim-btn.play-btn {
             font-size: 16px;
             padding: 5px 16px;
@@ -547,6 +554,8 @@
     <!-- Animation controls -->
     <div class="anim-controls" id="animControls">
         <span class="anim-label" data-i18n="ais_anim.range">範圍</span>
+        <button class="anim-btn" data-range="1" onclick="setRange(1)">1 天</button>
+        <button class="anim-btn" data-range="3" onclick="setRange(3)">3 天</button>
         <button class="anim-btn" data-range="7" onclick="setRange(7)" data-i18n="ais_anim.days_7">7 天</button>
         <button class="anim-btn active" data-range="14" onclick="setRange(14)" data-i18n="ais_anim.days_14">14 天</button>
 
@@ -1188,6 +1197,7 @@
 
             // 用 setTimeout 讓 UI 更新後再渲染（避免阻塞 loading 動畫）
             await new Promise(r => setTimeout(r, 50));
+            updateRangeButtons();
             applyRangeFilter(Anim.selectedRange);
 
             const first = data[0].timestamp || '';
@@ -1236,6 +1246,32 @@
             btn.classList.toggle('active', parseInt(btn.dataset.range) === days);
         });
         applyRangeFilter(days);
+    }
+
+    /** 資料載入後，檢查每個時間範圍按鈕是否有對應資料，無資料則 disabled */
+    function updateRangeButtons() {
+        if (!Anim.allFrames || Anim.allFrames.length === 0) return;
+        const now = new Date();
+        document.querySelectorAll('[data-range]').forEach(btn => {
+            const days = parseInt(btn.dataset.range);
+            const cutoff = new Date(now);
+            cutoff.setDate(cutoff.getDate() - days);
+            const cutoffStr = cutoff.toISOString();
+            const hasData = Anim.allFrames.some(f => f.timestamp >= cutoffStr);
+            btn.disabled = !hasData;
+            if (btn.disabled && btn.classList.contains('active')) {
+                btn.classList.remove('active');
+            }
+        });
+        const activeBtn = document.querySelector('[data-range].active:not([disabled])');
+        if (!activeBtn) {
+            const available = [...document.querySelectorAll('[data-range]:not([disabled])')];
+            if (available.length > 0) {
+                const largest = available.reduce((a, b) =>
+                    parseInt(a.dataset.range) > parseInt(b.dataset.range) ? a : b);
+                setRange(parseInt(largest.dataset.range));
+            }
+        }
     }
 
     // =========================================================================
