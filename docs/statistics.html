@@ -251,9 +251,11 @@
         </div>
 
         <div class="panel">
-            <div class="panel-title" data-i18n="st.flag_title">🚩 有 AIS 船隻國旗分布</div>
-            <div class="chart-container" style="height: 200px;">
-                <canvas id="flagChart"></canvas>
+            <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded');if(!window._flagChartRendered){window._flagChartRendered=true;renderFlagChart()}" data-i18n="st.flag_title">🚩 有 AIS 船隻國旗分布 ▸ 點擊展開</div>
+            <div class="panel-collapsible-body">
+                <div class="chart-container" style="height: 200px;">
+                    <canvas id="flagChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -400,7 +402,10 @@
                 ChartsModule.renderPieChart('regionChart', labels, values, colors);
             }
 
-            // Flag chart
+            // Flag chart deferred to panel expand (see renderFlagChart)
+        }
+
+        function renderFlagChart() {
             if (fullData.dark_vessels && fullData.dark_vessels.regions &&
                 fullData.dark_vessels.regions.taiwan_strait &&
                 fullData.dark_vessels.regions.taiwan_strait.matched_by_flag) {

@@ -6,6 +6,7 @@
 """
 
 import os
+import re
 import sys
 import json
 import random
@@ -106,6 +107,52 @@ def is_in_taiwan_bbox(lat, lon):
     b = TAIWAN_BBOX
     return (b['lat_min'] <= lat <= b['lat_max'] and
             b['lon_min'] <= lon <= b['lon_max'])
+
+
+# --- 大陸漁船識別 ---
+
+_CN_PROVINCE_PATTERNS = [
+    re.compile(r'^MIN', re.I),    # 福建 (閩)
+    re.compile(r'^闽', re.I),
+    re.compile(r'^閩', re.I),
+    re.compile(r'^ZHE', re.I),    # 浙江
+    re.compile(r'^浙', re.I),
+    re.compile(r'^YUE', re.I),    # 廣東 (粵)
+    re.compile(r'^粤', re.I),
+    re.compile(r'^粵', re.I),
+    re.compile(r'^LU\s?YU', re.I),  # 山東 (魯)
+    re.compile(r'^鲁', re.I),
+    re.compile(r'^魯', re.I),
+    re.compile(r'^QIONG', re.I),  # 海南 (瓊)
+    re.compile(r'^琼', re.I),
+    re.compile(r'^瓊', re.I),
+    re.compile(r'^SU\s?YU', re.I),  # 江蘇
+    re.compile(r'^苏', re.I),
+    re.compile(r'^蘇', re.I),
+    re.compile(r'^GUI', re.I),    # 廣西 (桂)
+    re.compile(r'^桂', re.I),
+    re.compile(r'^XIANG', re.I),  # 湖南 (湘)
+    re.compile(r'^湘', re.I),
+    re.compile(r'^JIN\s?YU', re.I),  # 天津 (津)
+    re.compile(r'^津', re.I),
+    re.compile(r'^LIAO', re.I),   # 遼寧
+    re.compile(r'^辽', re.I),
+    re.compile(r'^遼', re.I),
+]
+_CN_YU_PATTERN = re.compile(r'YU[.\s]*\d', re.I)
+
+
+def is_cn_fishing_vessel(name):
+    """判斷船名是否符合大陸漁船命名模式"""
+    if not name:
+        return False
+    n = name.upper()
+    for pat in _CN_PROVINCE_PATTERNS:
+        if pat.search(n):
+            return True
+    if _CN_YU_PATTERN.search(n):
+        return True
+    return False
 
 
 # --- SOCKS5 代理設定 ---
@@ -539,7 +586,7 @@ def save_all(vessels, stats):
         json.dump(ais_history, f, ensure_ascii=False, indent=2)
     print(f"  📅 歷史快照已更新: {AIS_HISTORY_FILE} ({len(ais_history)} 筆, period={period:02d}h)")
 
-    # 2c. AIS 軌跡歷史（記錄可疑船 + 軍演區船隻位置，供動畫播放）
+    # 2c. AIS 軌跡歷史（記錄大陸漁船 + 可疑船位置，供動畫播放）
     track_vessels = [
         {
             'mmsi': v['mmsi'],
@@ -553,7 +600,7 @@ def save_all(vessels, stats):
             'suspicious': v.get('suspicious', False),
         }
         for v in vessel_list
-        if v.get('suspicious') or v.get('in_drill_zone')
+        if is_cn_fishing_vessel(v.get('name')) or v.get('suspicious')
     ]
 
     track_entry = {

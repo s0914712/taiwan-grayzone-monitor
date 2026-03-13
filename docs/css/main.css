@@ -540,6 +540,33 @@ body {
    Flag List
    ============================================================================= */
 
+.panel-title.collapsible {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+}
+
+.panel-title.collapsible::after {
+    content: '▶';
+    font-size: 9px;
+    transition: transform 0.2s;
+    color: var(--accent-cyan);
+}
+
+.panel-title.collapsible.expanded::after {
+    transform: rotate(90deg);
+}
+
+.panel-collapsible-body {
+    display: none;
+}
+
+.panel-collapsible-body.expanded {
+    display: block;
+}
+
 .flag-list { font-size: 9px; }
 
 .flag-item {
