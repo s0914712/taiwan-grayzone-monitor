@@ -206,10 +206,6 @@ const ChartsModule = (function () {
         const chnEl = document.getElementById(elementIds.chnHours || 'gfwChnHours');
         if (chnEl) chnEl.textContent = (s.chn_presence_hours / 10000).toFixed(1);
 
-        // Drill zone records
-        const drillEl = document.getElementById(elementIds.drillRecords || 'gfwDrillRecords');
-        if (drillEl) drillEl.textContent = formatCompact(s.chn_drill_zone_records);
-
         // Fishing hours
         const fishEl = document.getElementById(elementIds.fishingHours || 'gfwFishingHours');
         if (fishEl) fishEl.textContent = (s.total_fishing_hours / 10000).toFixed(1);
@@ -267,14 +263,6 @@ const ChartsModule = (function () {
             vesselCountEl.textContent = formatCompact(s.avg_daily_detections * s.total_days);
             const label = vesselCountEl.parentElement.querySelector('.label');
             if (label) label.textContent = typeof i18n !== 'undefined' ? i18n.t('dark.total_detect_s') : 'SAR 總偵測';
-        }
-
-        // Drill zone card
-        const drillEl = document.getElementById('drillZoneCount');
-        if (drillEl) {
-            drillEl.textContent = formatCompact(s.chn_drill_zone_records);
-            const label = drillEl.parentElement.querySelector('.label');
-            if (label) label.textContent = typeof i18n !== 'undefined' ? i18n.t('idx.drill_records') : '軍演區記錄';
         }
 
         // Dark vessel card

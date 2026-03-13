@@ -154,11 +154,10 @@
                             <th data-i18n="id.th_name">目前船名</th>
                             <th data-i18n="id.th_changes">變更次數</th>
                             <th data-i18n="id.th_last_change">最近變更</th>
-                            <th data-i18n="id.th_drill_events">軍演區事件</th>
                         </tr>
                     </thead>
                     <tbody id="freqTableBody">
-                        <tr><td colspan="5" class="empty-msg" data-i18n="common.loading">載入中...</td></tr>
+                        <tr><td colspan="4" class="empty-msg" data-i18n="common.loading">載入中...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -249,16 +248,11 @@
                 if (ev.lat == null || ev.lon == null) return;
 
                 let color = '#00f5ff';  // default cyan
-                if (ev.in_drill_zone) color = '#ff3366';  // red for drill zone
-                else if (ev.multi_field) color = '#ff6b35';  // orange for multi-field
+                if (ev.multi_field) color = '#ff6b35';  // orange for multi-field
 
                 const changes = (ev.changes || []).map(c =>
                     `${fieldBadge(c.field)} ${c.old} → ${c.new}`
                 ).join('<br>');
-
-                const drillBadge = ev.in_drill_zone
-                    ? `<span class="risk-badge risk-critical" style="font-size:8px">${i18n.t('idx.identity_in_drill')}</span> `
-                    : '';
 
                 L.circleMarker([ev.lat, ev.lon], {
                     radius: 5,
@@ -268,7 +262,7 @@
                     opacity: 0.8,
                     fillOpacity: 0.6
                 }).addTo(map).bindPopup(
-                    `<b style="color:${color}">MMSI ${ev.mmsi}</b> ${drillBadge}<br>` +
+                    `<b style="color:${color}">MMSI ${ev.mmsi}</b><br>` +
                     `<span style="font-size:10px;color:#888">${new Date(ev.timestamp).toLocaleString()}</span><br>` +
                     changes
                 );
@@ -278,16 +272,13 @@
         function renderFreqTable(ranked, identityState) {
             const tbody = document.getElementById('freqTableBody');
             if (ranked.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">${i18n.t('id.no_events')}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">${i18n.t('id.no_events')}</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = ranked.slice(0, 50).map(r => {
                 const state = identityState[r.mmsi] || {};
                 const name = state.name || r.lastName || r.mmsi;
-                const drillCell = r.drillCount > 0
-                    ? `<span class="risk-badge risk-critical" style="font-size:8px">${r.drillCount}</span>`
-                    : '0';
                 const countColor = r.count >= 5 ? 'var(--accent-red)' : r.count >= 3 ? 'var(--accent-orange)' : 'var(--accent-cyan)';
 
                 return `
@@ -296,7 +287,6 @@
                         <td>${(name || '').substring(0, 16)}</td>
                         <td style="color:${countColor};font-weight:700">${r.count}</td>
                         <td>${timeAgo(r.lastTime)}</td>
-                        <td>${drillCell}</td>
                     </tr>`;
             }).join('');
         }
@@ -318,11 +308,8 @@
             });
 
             tbody.innerHTML = rows.slice(0, 200).map(r => {
-                const drillBadge = r.in_drill_zone
-                    ? `<span class="risk-badge risk-critical" style="font-size:7px">${i18n.t('idx.identity_in_drill')}</span>`
-                    : '';
                 const loc = (r.lat != null && r.lon != null)
-                    ? `${r.lat.toFixed(2)}, ${r.lon.toFixed(2)} ${drillBadge}`
+                    ? `${r.lat.toFixed(2)}, ${r.lon.toFixed(2)}`
                     : '--';
 
                 return `
@@ -369,7 +356,7 @@
 
                 if (events.length === 0) {
                     document.getElementById('freqTableBody').innerHTML =
-                        `<tr><td colspan="5" class="empty-msg">${i18n.t('id.no_events')}</td></tr>`;
+                        `<tr><td colspan="4" class="empty-msg">${i18n.t('id.no_events')}</td></tr>`;
                     document.getElementById('timelineBody').innerHTML =
                         `<tr><td colspan="6" class="empty-msg">${i18n.t('id.no_events')}</td></tr>`;
                     document.getElementById('dataStatus').textContent = i18n.t('id.no_events').substring(0, 30);
@@ -380,11 +367,10 @@
                 const byMmsi = {};
                 events.forEach(ev => {
                     if (!byMmsi[ev.mmsi]) {
-                        byMmsi[ev.mmsi] = { events: [], drillCount: 0, lastTime: '', lastLat: null, lastLon: null, lastName: '' };
+                        byMmsi[ev.mmsi] = { events: [], lastTime: '', lastLat: null, lastLon: null, lastName: '' };
                     }
                     const entry = byMmsi[ev.mmsi];
                     entry.events.push(ev);
-                    if (ev.in_drill_zone) entry.drillCount++;
                     if (!entry.lastTime || ev.timestamp > entry.lastTime) {
                         entry.lastTime = ev.timestamp;
                         entry.lastLat = ev.lat;
@@ -399,7 +385,6 @@
                     .map(([mmsi, d]) => ({
                         mmsi,
                         count: d.events.length,
-                        drillCount: d.drillCount,
                         lastTime: d.lastTime,
                         lastLat: d.lastLat,
                         lastLon: d.lastLon,

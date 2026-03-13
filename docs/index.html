@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>台灣灰色地帶監測 | Taiwan Gray Zone Monitor</title>
-    <meta name="description" content="基於 CSIS 方法論的台灣周邊海域可疑船隻監測系統，追蹤暗船與軍演區活動">
+    <meta name="description" content="基於 CSIS 方法論的台灣周邊海域可疑船隻監測系統，追蹤暗船與可疑船隻活動">
     <meta name="keywords" content="台灣,灰色地帶,暗船,dark vessel,SAR,AIS,Global Fishing Watch,CSIS,海洋監測,Taiwan Strait,gray zone,maritime surveillance">
     <meta name="author" content="Taiwan Gray Zone Monitor">
     <meta name="robots" content="index, follow">
@@ -25,7 +25,7 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="台灣灰色地帶監測 | Taiwan Gray Zone Monitor">
-    <meta property="og:description" content="基於 CSIS 方法論的台灣周邊海域可疑船隻監測系統，整合 SAR 衛星與 AIS 數據追蹤暗船與軍演區活動">
+    <meta property="og:description" content="基於 CSIS 方法論的台灣周邊海域可疑船隻監測系統，整合 SAR 衛星與 AIS 數據追蹤暗船與可疑船隻活動">
     <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/">
     <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
     <meta property="og:locale" content="zh_TW">
@@ -33,7 +33,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="台灣灰色地帶監測 | Taiwan Gray Zone Monitor">
-    <meta name="twitter:description" content="基於 CSIS 方法論的台灣周邊海域可疑船隻監測系統，整合 SAR 衛星與 AIS 數據追蹤暗船與軍演區活動">
+    <meta name="twitter:description" content="基於 CSIS 方法論的台灣周邊海域可疑船隻監測系統，整合 SAR 衛星與 AIS 數據追蹤暗船與可疑船隻活動">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,7 +57,7 @@
         "name": "台灣灰色地帶監測",
         "alternateName": "Taiwan Gray Zone Monitor",
         "url": "https://s0914712.github.io/taiwan-grayzone-monitor/",
-        "description": "基於 CSIS 方法論的台灣周邊海域可疑船隻監測系統，整合 SAR 衛星與 AIS 數據追蹤暗船與軍演區活動",
+        "description": "基於 CSIS 方法論的台灣周邊海域可疑船隻監測系統，整合 SAR 衛星與 AIS 數據追蹤暗船與可疑船隻活動",
         "inLanguage": "zh-TW"
     }
     </script>
@@ -107,10 +107,6 @@
                     <div class="label" data-i18n="idx.vessel_count">船隻數</div>
                     <div class="value" id="vesselCount">0</div>
                 </div>
-                <div class="overlay-card">
-                    <div class="label" data-i18n="idx.drill_zones">軍演區</div>
-                    <div class="value" id="drillZoneCount">0</div>
-                </div>
                 <div class="overlay-card alert">
                     <div class="label" data-i18n="idx.suspicious">可疑船隻</div>
                     <div class="value" id="suspiciousCount">0</div>
@@ -118,7 +114,6 @@
             </div>
 
             <div class="layer-toggles">
-                <label class="layer-toggle"><input type="checkbox" id="showDrillZones" checked> <span data-i18n="idx.layer_drills">軍演區域</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="showFishingHotspots" checked> <span data-i18n="idx.layer_fishing">漁撈熱點</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="showVessels" checked> <span data-i18n="idx.layer_vessels">船隻</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="showSubmarineCables"> <span data-i18n="ais_anim.layer_cables">海底電纜</span></label>
@@ -206,10 +201,6 @@
                         <div class="value" id="gfwChnHours">--</div>
                         <div class="label" data-i18n="idx.chn_hours">中國船時(萬)</div>
                     </div>
-                    <div class="gfw-stat-box warn">
-                        <div class="value" id="gfwDrillRecords">--</div>
-                        <div class="label" data-i18n="idx.drill_records">軍演區記錄</div>
-                    </div>
                     <div class="gfw-stat-box">
                         <div class="value" id="gfwFishingHours">--</div>
                         <div class="label" data-i18n="idx.fishing_hours">漁撈時數(萬)</div>
@@ -255,11 +246,6 @@
             </div>
 
             <div class="sidebar-section">
-                <div class="section-title" data-i18n="idx.drill_title">⚠️ 軍演監測區</div>
-                <div class="zone-list" id="zoneList"></div>
-            </div>
-
-            <div class="sidebar-section">
                 <div class="section-title" data-i18n="idx.recent_title">🚢 近期船隻</div>
                 <div class="vessel-list" id="vesselList"></div>
             </div>
@@ -277,7 +263,7 @@
             <div class="about-grid">
                 <div class="about-card">
                     <h3>監測目標</h3>
-                    <p>本專案旨在透過多源衛星數據與 AI 分析技術，即時監測台灣周邊海域的「灰色地帶」活動。我們追蹤關閉 AIS 訊號的「暗船」(dark vessels)、軍演區域內的異常船舶行為，以及可能與軍事演習相關的海上活動模式，為海洋安全研究與政策制定提供開放、透明的數據基礎。</p>
+                    <p>本專案旨在透過多源衛星數據與 AI 分析技術，即時監測台灣周邊海域的「灰色地帶」活動。我們追蹤關閉 AIS 訊號的「暗船」(dark vessels)、異常船舶行為，以及可能與軍事活動相關的海上活動模式，為海洋安全研究與政策制定提供開放、透明的數據基礎。</p>
                 </div>
                 <div class="about-card">
                     <h3>為什麼關注暗船？</h3>
@@ -294,7 +280,7 @@
                     <h3>CSIS「蟲群信號」方法論</h3>
                     <p>本系統參考美國戰略與國際研究中心 (CSIS) 的 <em>Signals in the Swarm</em> 研究框架，建立多層次的可疑船隻識別機制：</p>
                     <ul>
-                        <li><strong>行為閾值分析：</strong>偵測在軍演區域活動時間異常高、但在漁撈熱點極少出現的船隻</li>
+                        <li><strong>行為閾值分析：</strong>偵測活動時間異常高、但在漁撈熱點極少出現的船隻</li>
                         <li><strong>AIS 異常偵測：</strong>識別頻繁更改船名、長時間關閉 AIS（>18小時）、或變更船舶類型等異常行為</li>
                         <li><strong>時間序列相關性：</strong>透過 Granger 因果檢定分析暗船活動與解放軍軍事出動之間的時序關聯</li>
                     </ul>
@@ -345,7 +331,7 @@
                     <h3>CSIS "Signals in the Swarm" Methodology</h3>
                     <p>The system references the CSIS <em>Signals in the Swarm</em> research framework, establishing multi-layered suspicious vessel identification:</p>
                     <ul>
-                        <li><strong>Behavioral Threshold:</strong> Detecting vessels with abnormally high dwell time in drill zones but rarely present in fishing hotspots</li>
+                        <li><strong>Behavioral Threshold:</strong> Detecting vessels with abnormally high activity but rarely present in fishing hotspots</li>
                         <li><strong>AIS Anomaly Detection:</strong> Identifying frequent name changes, prolonged AIS silence (&gt;18 hours), or vessel type changes</li>
                         <li><strong>Time-Series Correlation:</strong> Granger causality analysis between dark vessel activity and PLA military sorties</li>
                     </ul>

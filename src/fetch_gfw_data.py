@@ -35,14 +35,6 @@ MPB_HEADERS = {
 # 台灣周邊 bounding box (用於過濾非台灣海域資料)
 TAIWAN_BBOX = {'lat_min': 20, 'lat_max': 28, 'lon_min': 112, 'lon_max': 128}
 
-# 區域定義
-DRILL_ZONES = {
-    'north': {'name': '北區', 'bounds': [[25.5, 121.0], [26.8, 122.5]]},
-    'east':  {'name': '東區', 'bounds': [[23.0, 122.5], [25.5, 125.0]]},
-    'south': {'name': '南區', 'bounds': [[21.5, 119.0], [23.0, 121.0]]},
-    'west':  {'name': '西區', 'bounds': [[23.5, 118.5], [25.0, 120.0]]},
-}
-
 FISHING_HOTSPOTS = {
     'taiwan_bank':   {'name': '台灣灘漁場',   'bounds': [[22.0, 117.0], [23.5, 119.5]]},
     'penghu':        {'name': '澎湖漁場',     'bounds': [[23.0, 119.0], [24.0, 120.0]]},
@@ -139,21 +131,14 @@ def collect_ais_data():
         record_time = props.get("Record_Time", "")
 
         # 區域判定
-        drill_zone = next(
-            (zid for zid, z in DRILL_ZONES.items()
-             if is_in_zone(lat, lon, z['bounds'])),
-            None
-        )
         fishing_hotspot = next(
             (hid for hid, h in FISHING_HOTSPOTS.items()
              if is_in_zone(lat, lon, h['bounds'])),
             None
         )
 
-        # 可疑判定：漁船在軍演區但不在漁場
-        suspicious = (type_name == 'fishing' and
-                      drill_zone is not None and
-                      fishing_hotspot is None)
+        # 可疑判定已停用，改由 analyze_suspicious.py 綜合分析
+        suspicious = False
 
         vessels[mmsi] = {
             'mmsi': mmsi,
@@ -167,7 +152,6 @@ def collect_ais_data():
             'speed': float(sog),
             'heading': float(cog),
             'nav_status': str(props.get("Navigational_Status", "")),
-            'in_drill_zone': drill_zone,
             'in_fishing_hotspot': fishing_hotspot,
             'suspicious': suspicious,
             'record_time': record_time,
@@ -187,7 +171,6 @@ def analyze_data(vessels):
         'suspicious_count': 0,
         'avg_speed': 0.0,
         'by_type': defaultdict(int),
-        'in_drill_zones': {k: 0 for k in DRILL_ZONES},
         'in_fishing_hotspots': {k: 0 for k in FISHING_HOTSPOTS},
     }
 
@@ -198,8 +181,6 @@ def analyze_data(vessels):
     total_speed = 0
     for v in vessels.values():
         stats['by_type'][v['type_name']] += 1
-        if v['in_drill_zone']:
-            stats['in_drill_zones'][v['in_drill_zone']] += 1
         if v['in_fishing_hotspot']:
             stats['in_fishing_hotspots'][v['in_fishing_hotspot']] += 1
         if v['suspicious']:
@@ -247,7 +228,6 @@ def save_all(vessels, stats):
         'fishing_vessels': stats['fishing_vessels'],
         'suspicious_count': stats['suspicious_count'],
         'by_type': stats['by_type'],
-        'in_drill_zones': stats['in_drill_zones'],
     })
 
     # 保留最近 1000 筆歷史

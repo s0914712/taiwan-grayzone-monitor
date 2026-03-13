@@ -11,10 +11,8 @@ Suspicious Vessel Analysis based on CSIS "Signals in the Swarm" Methodology
 
 偵測邏輯：
   1. 行為比例門檻 (Behavioral Proportion Threshold)
-     - 軍演區停留 >30% + 漁撈熱點 <10% → 可疑
-  2. 絕對時間門檻 (Absolute Time Threshold)
-     - 軍演區停留 >2小時 + 漁撈熱點 <5% → 可疑
-  3. AIS 異常偵測 (AIS Anomaly Detection)
+     - 漁撈熱點停留 <10% → 掛漁船旗但不在漁場
+  2. AIS 異常偵測 (AIS Anomaly Detection)
      - Going Dark：船隻消失後重新出現
      - 變更船名：同一 MMSI 使用多個船名
      - 變更類型：船型資訊前後不一致
@@ -32,10 +30,7 @@ OUTPUT_FILE = DATA_DIR / "suspicious_vessels.json"
 IDENTITY_EVENTS_FILE = DATA_DIR / "identity_events.json"
 
 # CSIS 門檻設定
-BEHAVIORAL_DRILL_ZONE_RATIO = 0.30   # >30% 時間在軍演區
 BEHAVIORAL_FISHING_RATIO = 0.10      # <10% 時間在漁撈熱點
-ABSOLUTE_DRILL_HOURS = 2.0           # >2 小時在軍演區
-ABSOLUTE_FISHING_RATIO = 0.05        # <5% 時間在漁撈熱點
 SNAPSHOT_INTERVAL_HOURS = 6          # 每 6 小時一次快照
 NAME_CHANGE_THRESHOLD = 2            # 船名變更次數 >= 2 為異常
 GOING_DARK_GAP_HOURS = 18            # 超過 18 小時未出現視為 going dark
@@ -88,50 +83,25 @@ def load_identity_events():
 def analyze_behavioral_threshold(profile):
     """
     行為比例門檻分析 (CSIS Criterion 1)
-    漁船花超過 30% 時間在軍演區、但不到 10% 時間在漁場
+    漁船不到 10% 時間在漁場 → 掛漁船旗但不在漁場，可疑
     """
     total = profile['total_snapshots']
     if total < 2:
         return False, {}
 
-    drill_ratio = profile['drill_zone_snapshots'] / total
-    fishing_ratio = profile['fishing_hotspot_snapshots'] / total
+    fishing_ratio = profile.get('fishing_hotspot_snapshots', 0) / total
 
-    triggered = (drill_ratio > BEHAVIORAL_DRILL_ZONE_RATIO and
-                 fishing_ratio < BEHAVIORAL_FISHING_RATIO)
+    triggered = fishing_ratio < BEHAVIORAL_FISHING_RATIO
 
     return triggered, {
-        'drill_zone_ratio': round(drill_ratio, 3),
         'fishing_hotspot_ratio': round(fishing_ratio, 3),
-        'threshold': f'>{BEHAVIORAL_DRILL_ZONE_RATIO:.0%} drill + <{BEHAVIORAL_FISHING_RATIO:.0%} fishing'
-    }
-
-
-def analyze_absolute_threshold(profile):
-    """
-    絕對時間門檻分析 (CSIS Criterion 2)
-    漁船在軍演區超過 2 小時、且不到 5% 時間在漁場
-    """
-    total = profile['total_snapshots']
-    if total < 2:
-        return False, {}
-
-    drill_hours = profile['drill_zone_snapshots'] * SNAPSHOT_INTERVAL_HOURS
-    fishing_ratio = profile['fishing_hotspot_snapshots'] / total
-
-    triggered = (drill_hours > ABSOLUTE_DRILL_HOURS and
-                 fishing_ratio < ABSOLUTE_FISHING_RATIO)
-
-    return triggered, {
-        'drill_zone_hours': round(drill_hours, 1),
-        'fishing_hotspot_ratio': round(fishing_ratio, 3),
-        'threshold': f'>{ABSOLUTE_DRILL_HOURS}hr drill + <{ABSOLUTE_FISHING_RATIO:.0%} fishing'
+        'threshold': f'<{BEHAVIORAL_FISHING_RATIO:.0%} fishing'
     }
 
 
 def analyze_ais_anomalies(profile, identity_events=None):
     """
-    AIS 異常偵測 (CSIS Criterion 3)
+    AIS 異常偵測 (CSIS Criterion 2)
     - 多次變更船名
     - Going dark（AIS 訊號消失再出現）
     - 身分變更事件（來自 identity tracking）
@@ -185,7 +155,6 @@ def analyze_ais_anomalies(profile, identity_events=None):
     if identity_events:
         event_count = len(identity_events)
         has_multi = any(ev.get('multi_field') for ev in identity_events)
-        in_drill = [ev for ev in identity_events if ev.get('in_drill_zone')]
 
         if event_count > 0:
             severity = 'high' if event_count >= 3 or has_multi else 'medium'
@@ -203,17 +172,6 @@ def analyze_ais_anomalies(profile, identity_events=None):
                 'severity': severity,
             })
 
-        # 軍演區內身分變更（高價值訊號）
-        if in_drill:
-            zones = list(set(ev['in_drill_zone'] for ev in in_drill))
-            anomalies.append({
-                'type': 'drill_zone_identity_change',
-                'description': f'軍演區內身分變更 {len(in_drill)} 次',
-                'count': len(in_drill),
-                'zones': zones,
-                'severity': 'high',
-            })
-
     return anomalies
 
 
@@ -227,7 +185,6 @@ def classify_vessel(profile, identity_events=None):
         'names': profile.get('names_seen', []),
         'total_snapshots': profile['total_snapshots'],
         'behavioral_threshold': False,
-        'absolute_threshold': False,
         'ais_anomalies': [],
         'risk_level': 'normal',
         'flags': [],
@@ -244,14 +201,7 @@ def classify_vessel(profile, identity_events=None):
         if triggered:
             classification['flags'].append('行為比例異常：掛漁船旗但不在漁場')
 
-        # Criterion 2: 絕對時間門檻
-        triggered, details = analyze_absolute_threshold(profile)
-        classification['absolute_threshold'] = triggered
-        classification['absolute_details'] = details
-        if triggered:
-            classification['flags'].append('長時間徘徊軍演區')
-
-    # Criterion 3: AIS 異常（對所有船型適用，含身分變更事件）
+    # Criterion 2: AIS 異常（對所有船型適用，含身分變更事件）
     anomalies = analyze_ais_anomalies(profile, identity_events)
     classification['ais_anomalies'] = anomalies
     if anomalies:
@@ -261,12 +211,8 @@ def classify_vessel(profile, identity_events=None):
     score = 0
     if classification['behavioral_threshold']:
         score += 3
-    if classification['absolute_threshold']:
-        score += 2
     for a in anomalies:
-        if a['type'] == 'drill_zone_identity_change':
-            score += 3  # 軍演區內身分變更：最高權重
-        elif a['severity'] == 'high':
+        if a['severity'] == 'high':
             score += 2
         else:
             score += 1
@@ -311,12 +257,7 @@ def main():
             'methodology': 'CSIS Signals in the Swarm',
             'thresholds': {
                 'behavioral': {
-                    'drill_zone_ratio': BEHAVIORAL_DRILL_ZONE_RATIO,
                     'fishing_ratio': BEHAVIORAL_FISHING_RATIO,
-                },
-                'absolute': {
-                    'drill_hours': ABSOLUTE_DRILL_HOURS,
-                    'fishing_ratio': ABSOLUTE_FISHING_RATIO,
                 },
             },
             'summary': {'total_analyzed': 0, 'suspicious_count': 0},
@@ -347,7 +288,6 @@ def main():
         risk_counts[c['risk_level']] += 1
 
     behavioral_count = sum(1 for c in classifications if c['behavioral_threshold'])
-    absolute_count = sum(1 for c in classifications if c['absolute_threshold'])
     anomaly_count = sum(1 for c in classifications if c['ais_anomalies'])
 
     output = {
@@ -355,19 +295,13 @@ def main():
         'methodology': 'CSIS Signals in the Swarm',
         'thresholds': {
             'behavioral': {
-                'drill_zone_ratio': BEHAVIORAL_DRILL_ZONE_RATIO,
                 'fishing_ratio': BEHAVIORAL_FISHING_RATIO,
-            },
-            'absolute': {
-                'drill_hours': ABSOLUTE_DRILL_HOURS,
-                'fishing_ratio': ABSOLUTE_FISHING_RATIO,
             },
         },
         'summary': {
             'total_analyzed': len(classifications),
             'suspicious_count': len(suspicious_vessels),
             'behavioral_triggered': behavioral_count,
-            'absolute_triggered': absolute_count,
             'ais_anomaly_detected': anomaly_count,
             'risk_distribution': risk_counts,
         },
@@ -379,14 +313,13 @@ def main():
         json.dump(output, f, ensure_ascii=False, indent=2)
 
     print(f"\n📋 分析結果:")
-    print(f"   總分析船隻: {len(classifications)}")
-    print(f"   可疑船隻數: {len(suspicious_vessels)}")
-    print(f"   行為比例觸發: {behavioral_count}")
-    print(f"   絕對時間觸發: {absolute_count}")
-    print(f"   AIS 異常偵測: {anomaly_count}")
+    print(f"   分析船隻數: {len(classifications)}")
+    print(f"   可疑船隻: {len(suspicious_vessels)}")
+    print(f"   行為門檻觸發: {behavioral_count}")
+    print(f"   AIS 異常: {anomaly_count}")
     print(f"   風險分布: {risk_counts}")
-    print(f"\n✅ 結果已儲存: {OUTPUT_FILE}")
+    print(f"\n📁 結果已輸出至: {OUTPUT_FILE}")
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

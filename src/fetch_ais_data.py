@@ -54,14 +54,6 @@ MPB_HEADERS = {
 # 台灣周邊 bounding box (用於過濾非台灣海域資料)
 TAIWAN_BBOX = {'lat_min': 19, 'lat_max': 30, 'lon_min': 116, 'lon_max': 130}
 
-# 區域定義
-DRILL_ZONES = {
-    'north': {'name': '北區', 'bounds': [[25.5, 121.0], [26.8, 122.5]]},
-    'east':  {'name': '東區', 'bounds': [[23.0, 122.5], [25.5, 125.0]]},
-    'south': {'name': '南區', 'bounds': [[21.5, 119.0], [23.0, 121.0]]},
-    'west':  {'name': '西區', 'bounds': [[23.5, 118.5], [25.0, 120.0]]},
-}
-
 FISHING_HOTSPOTS = {
     'taiwan_bank':   {'name': '台灣灘漁場',   'bounds': [[22.0, 117.0], [23.5, 119.5]]},
     'penghu':        {'name': '澎湖漁場',     'bounds': [[23.0, 119.0], [24.0, 120.0]]},
@@ -287,11 +279,6 @@ def collect_ais_data():
         record_time = props.get("Record_Time", "")
 
         # 區域判定
-        drill_zone = next(
-            (zid for zid, z in DRILL_ZONES.items()
-             if is_in_zone(lat, lon, z['bounds'])),
-            None
-        )
         fishing_hotspot = next(
             (hid for hid, h in FISHING_HOTSPOTS.items()
              if is_in_zone(lat, lon, h['bounds'])),
@@ -313,7 +300,6 @@ def collect_ais_data():
             'speed': float(sog),
             'heading': float(cog),
             'nav_status': str(props.get("Navigational_Status", "")),
-            'in_drill_zone': drill_zone,
             'in_fishing_hotspot': fishing_hotspot,
             'suspicious': suspicious,
             'record_time': record_time,
@@ -333,7 +319,6 @@ def analyze_data(vessels):
         'suspicious_count': 0,
         'avg_speed': 0.0,
         'by_type': defaultdict(int),
-        'in_drill_zones': {k: 0 for k in DRILL_ZONES},
         'in_fishing_hotspots': {k: 0 for k in FISHING_HOTSPOTS},
     }
 
@@ -344,8 +329,6 @@ def analyze_data(vessels):
     total_speed = 0
     for v in vessels.values():
         stats['by_type'][v['type_name']] += 1
-        if v['in_drill_zone']:
-            stats['in_drill_zones'][v['in_drill_zone']] += 1
         if v['in_fishing_hotspot']:
             stats['in_fishing_hotspots'][v['in_fishing_hotspot']] += 1
         if v['suspicious']:
@@ -397,7 +380,6 @@ def detect_identity_changes(vessels, profiles):
                 'multi_field': len(changes) > 1,
                 'lat': v['lat'],
                 'lon': v['lon'],
-                'in_drill_zone': v.get('in_drill_zone'),
                 'in_fishing_hotspot': v.get('in_fishing_hotspot'),
             })
 
@@ -447,7 +429,6 @@ def save_all(vessels, stats):
         'fishing_vessels': stats['fishing_vessels'],
         'suspicious_count': stats['suspicious_count'],
         'by_type': stats['by_type'],
-        'in_drill_zones': stats['in_drill_zones'],
     })
 
     # 保留最近 1000 筆歷史
@@ -494,7 +475,6 @@ def save_all(vessels, stats):
                 'names_seen': [],
                 'types_seen': [],
                 'total_snapshots': 0,
-                'drill_zone_snapshots': 0,
                 'fishing_hotspot_snapshots': 0,
                 'last_seen_timestamps': [],
             }
@@ -508,9 +488,6 @@ def save_all(vessels, stats):
         # 記錄不同船型
         if v['type_name'] and v['type_name'] not in p['types_seen']:
             p['types_seen'].append(v['type_name'])
-        # 軍演區快照計數
-        if v.get('in_drill_zone'):
-            p['drill_zone_snapshots'] += 1
         # 漁撈熱點快照計數
         if v.get('in_fishing_hotspot'):
             p['fishing_hotspot_snapshots'] += 1
@@ -544,7 +521,6 @@ def save_all(vessels, stats):
             'lon': v['lon'],
             'type_name': v['type_name'],
             'speed': v['speed'],
-            'in_drill_zone': v['in_drill_zone'],
         }
         for v in vessel_list if v.get('suspicious')
     ]
@@ -560,7 +536,6 @@ def save_all(vessels, stats):
             'suspicious_count': stats['suspicious_count'],
             'avg_speed': stats['avg_speed'],
             'by_type': stats['by_type'],
-            'in_drill_zones': stats['in_drill_zones'],
             'in_fishing_hotspots': stats.get('in_fishing_hotspots', {}),
         },
         'suspicious_vessels': suspicious_vessels,
@@ -596,7 +571,6 @@ def save_all(vessels, stats):
             'speed': v['speed'],
             'heading': v['heading'],
             'type_name': v['type_name'],
-            'in_drill_zone': v['in_drill_zone'],
             'suspicious': v.get('suspicious', False),
         }
         for v in vessel_list

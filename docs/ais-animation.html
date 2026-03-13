@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>船位動畫 | AIS Track Animation - Taiwan Gray Zone Monitor</title>
-    <meta name="description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤軍演區內可疑漁船位置變化">
+    <meta name="description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤可疑漁船位置變化">
     <meta name="keywords" content="AIS動畫,船位追蹤,可疑船隻,台灣海峽,Taiwan Strait,maritime surveillance">
     <meta name="author" content="Taiwan Gray Zone Monitor">
     <meta name="robots" content="index, follow">
@@ -14,7 +14,7 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="船位動畫 | AIS Track Animation">
-    <meta property="og:description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤軍演區內可疑漁船位置變化">
+    <meta property="og:description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤可疑漁船位置變化">
     <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/ais-animation.html">
     <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
     <meta property="og:locale" content="zh_TW">
@@ -22,7 +22,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="船位動畫 | AIS Track Animation">
-    <meta name="twitter:description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤軍演區內可疑漁船位置變化">
+    <meta name="twitter:description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤可疑漁船位置變化">
 
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -288,11 +288,6 @@
         .vessel-table .suspicious-tag {
             color: var(--accent-red);
             font-weight: 600;
-        }
-
-        .vessel-table .zone-tag {
-            color: var(--accent-cyan);
-            font-size: 9px;
         }
 
         /* Map legend */
@@ -597,7 +592,6 @@
             <option value="all" data-i18n="ais_anim.filter_all">全部船隻</option>
             <option value="cn_fishing" data-i18n="ais_anim.filter_cn">大陸漁船</option>
             <option value="suspicious" data-i18n="ais_anim.filter_suspicious">可疑船</option>
-            <option value="drill_zone" data-i18n="ais_anim.filter_drill">軍演區船隻</option>
             <option value="loitering" data-i18n="ais_anim.filter_loiter">滯留偵測</option>
             <option value="zigzag" data-i18n="ais_anim.filter_zigzag">Z字型航行</option>
             <option value="near_cable" data-i18n="ais_anim.filter_near_cable">電纜周邊</option>
@@ -622,10 +616,6 @@
             <div class="label" data-i18n="ais_anim.suspicious">可疑船</div>
         </div>
         <div class="stat-card">
-            <div class="value" id="statDrillZone">--</div>
-            <div class="label" data-i18n="ais_anim.drill_zone">軍演區船隻</div>
-        </div>
-        <div class="stat-card">
             <div class="value" id="statTotal">--</div>
             <div class="label" data-i18n="ais_anim.total_track">追蹤船隻</div>
         </div>
@@ -642,8 +632,7 @@
             <div id="map"></div>
             <div class="map-legend-inline">
                 <div class="legend-chip"><svg width="10" height="10" style="flex-shrink:0"><polygon points="5,0 10,10 0,10" fill="#ff3366" opacity="0.85"/></svg><span data-i18n="ais_anim.suspicious">可疑船</span></div>
-                <div class="legend-chip"><svg width="10" height="10" style="flex-shrink:0"><polygon points="5,0 10,10 0,10" fill="#00f5ff" opacity="0.6"/></svg><span data-i18n="ais_anim.drill_zone">軍演區船隻</span></div>
-                <div class="legend-chip"><span class="dot" style="background:rgba(255,51,102,0.3)"></span><span>軍演區域</span></div>
+                <div class="legend-chip"><svg width="10" height="10" style="flex-shrink:0"><polygon points="5,0 10,10 0,10" fill="#00f5ff" opacity="0.6"/></svg><span>一般船隻</span></div>
                 <div class="legend-chip"><span class="dot" style="background:rgba(0,255,136,0.3)"></span><span>漁撈熱點</span></div>
                 <div class="legend-chip"><span class="dot" style="background:#ffa500"></span><span data-i18n="ais_anim.detect_loiter">滯留</span></div>
                 <div class="legend-chip"><span class="dot" style="background:#ff66ff"></span><span data-i18n="ais_anim.detect_zigzag">Z字型</span></div>
@@ -670,12 +659,11 @@
                             <th data-i18n="ais_anim.popup_name">船名</th>
                             <th data-i18n="ais_anim.popup_type">類型</th>
                             <th data-i18n="ais_anim.popup_speed">航速</th>
-                            <th data-i18n="ais_anim.popup_zone">軍演區</th>
                             <th>狀態</th>
                         </tr>
                     </thead>
                     <tbody id="vesselTableBody">
-                        <tr><td colspan="6" class="empty-state" data-i18n="common.loading">載入中...</td></tr>
+                        <tr><td colspan="5" class="empty-state" data-i18n="common.loading">載入中...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -691,15 +679,8 @@
     <script src="js/i18n.js"></script>
     <script>
     // =========================================================================
-    // Drill zones & fishing hotspots (same as fetch_ais_data.py)
+    // Fishing hotspots (same as fetch_ais_data.py)
     // =========================================================================
-    const DRILL_ZONES = {
-        north: { name: '北區', bounds: [[25.5, 121.0], [26.8, 122.5]], color: 'rgba(255,51,102,0.15)' },
-        east:  { name: '東區', bounds: [[23.0, 122.5], [25.5, 125.0]], color: 'rgba(255,107,53,0.15)' },
-        south: { name: '南區', bounds: [[21.5, 119.0], [23.0, 121.0]], color: 'rgba(255,215,0,0.15)' },
-        west:  { name: '西區', bounds: [[23.5, 118.5], [25.0, 120.0]], color: 'rgba(155,89,182,0.15)' }
-    };
-
     const FISHING_HOTSPOTS = {
         taiwan_bank:   { name: '台灣灘漁場',   bounds: [[22.0, 117.0], [23.5, 119.5]] },
         penghu:        { name: '澎湖漁場',     bounds: [[23.0, 119.0], [24.0, 120.0]] },
@@ -722,7 +703,7 @@
         markerLayer: null,
         trailLayer: null,
         showTrails: true,
-        vesselFilter: 'all',  // 'all', 'cn_fishing', 'suspicious', 'drill_zone'
+        vesselFilter: 'all',  // 'all', 'cn_fishing', 'suspicious'
         chart: null,
         vesselTrails: {}  // mmsi -> [{lat, lon, timestamp}, ...]
     };
@@ -923,7 +904,7 @@
                     heading: v.heading !== undefined ? v.heading : null,
                     frameIdx: fi,
                     name: v.name, type_name: v.type_name,
-                    suspicious: v.suspicious, in_drill_zone: v.in_drill_zone
+                    suspicious: v.suspicious
                 });
             });
         });
@@ -1133,16 +1114,6 @@
             fillColor: '#1a3a5c', fillOpacity: 0.3
         }).addTo(map);
 
-        // Drill zones
-        Object.entries(DRILL_ZONES).forEach(([key, zone]) => {
-            const b = zone.bounds;
-            L.rectangle([b[0], b[1]], {
-                color: '#ff3366', weight: 1.5, opacity: 0.4,
-                fillColor: zone.color, fillOpacity: 0.1,
-                dashArray: '6,4'
-            }).addTo(map).bindTooltip(zone.name, { permanent: false, direction: 'center', className: 'zone-label' });
-        });
-
         // Fishing hotspots
         Object.entries(FISHING_HOTSPOTS).forEach(([key, spot]) => {
             const b = spot.bounds;
@@ -1184,7 +1155,7 @@
                 hideLoading();
                 document.getElementById('dataStatus').textContent = i18n.t('ais_anim.no_data');
                 document.getElementById('vesselTableBody').innerHTML =
-                    '<tr><td colspan="6" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
+                    '<tr><td colspan="5" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
                 return;
             }
 
@@ -1212,7 +1183,7 @@
             hideLoading();
             document.getElementById('dataStatus').textContent = i18n.t('ais_anim.load_fail');
             document.getElementById('vesselTableBody').innerHTML =
-                '<tr><td colspan="6" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
+                '<tr><td colspan="5" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
         }
     }
 
@@ -1414,7 +1385,6 @@
                 i18n.t('ais_anim.popup_type') + ': ' + v.type_name + '<br>' +
                 i18n.t('ais_anim.popup_speed') + ': ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
                 '航向: ' + headingText + '<br>' +
-                (v.in_drill_zone ? (i18n.t('ais_anim.popup_zone') + ': ' + v.in_drill_zone + '<br>') : '') +
                 (isSuspicious ? '<span style="color:#ff3366;font-weight:600;font-size:14px">⚠ SUSPICIOUS</span><br>' : '') +
                 (tagHtml ? tagHtml : '') +
                 '</div>'
@@ -1445,10 +1415,7 @@
         const filtered = filterVessels(allVessels);
         const suspicious = filtered.filter(v => v.suspicious).length;
         const total = filtered.length;
-        const drillZone = filtered.filter(v => v.in_drill_zone).length;
-
         document.getElementById('statSuspicious').textContent = suspicious;
-        document.getElementById('statDrillZone').textContent = drillZone;
         document.getElementById('statTotal').textContent = total;
 
         const changeEl = document.getElementById('statChange');
@@ -1466,7 +1433,7 @@
     function updateVesselTable(vessels) {
         const tbody = document.getElementById('vesselTableBody');
         if (!vessels || vessels.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
             return;
         }
 
@@ -1489,14 +1456,13 @@
                 '<td>' + (v.name || '--') + '</td>' +
                 '<td>' + (v.type_name || '--') + '</td>' +
                 '<td>' + (v.speed || 0).toFixed(1) + ' kn</td>' +
-                '<td class="zone-tag">' + (v.in_drill_zone || '--') + '</td>' +
                 '<td>' + statusHtml + '</td>' +
                 '</tr>';
         });
 
         tbody.innerHTML = rows.join('');
         if (sorted.length > 30) {
-            tbody.innerHTML += '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);font-size:9px">... ' + (sorted.length - 30) + ' more vessels</td></tr>';
+            tbody.innerHTML += '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);font-size:9px">... ' + (sorted.length - 30) + ' more vessels</td></tr>';
         }
     }
 
@@ -1686,8 +1652,6 @@
                 return vessels.filter(v => isCnFishingVessel(v));
             case 'suspicious':
                 return vessels.filter(v => v.suspicious);
-            case 'drill_zone':
-                return vessels.filter(v => v.in_drill_zone);
             case 'loitering':
                 { const set = detectLoitering(); return vessels.filter(v => set.has(v.mmsi)); }
             case 'zigzag':
