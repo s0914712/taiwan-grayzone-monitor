@@ -8,58 +8,33 @@ const MapModule = (function() {
 
     let map;
     let layers = {
-        drillZones: null,
         fishingHotspots: null,
         vessels: null,
         submarineCables: null
     };
     let vesselMarkers = {};
 
-    // Drill zone definitions
-    const DRILL_ZONES = {
-        north: { 
-            name: '北部海域', 
-            color: '#00f5ff', 
-            coords: [[25.5, 121.0], [25.5, 122.5], [26.8, 122.5], [26.8, 121.0]] 
-        },
-        east: { 
-            name: '東部海域', 
-            color: '#ff6b35', 
-            coords: [[23.0, 122.5], [23.0, 125.0], [25.5, 125.0], [25.5, 122.5]] 
-        },
-        south: { 
-            name: '南部海域', 
-            color: '#00ff88', 
-            coords: [[21.5, 119.0], [21.5, 121.0], [23.0, 121.0], [23.0, 119.0]] 
-        },
-        west: { 
-            name: '西部海域', 
-            color: '#ffd700', 
-            coords: [[23.5, 118.5], [23.5, 120.0], [25.0, 120.0], [25.0, 118.5]] 
-        }
-    };
-
     // Fishing hotspots
     const FISHING_HOTSPOTS = {
-        taiwan_bank: { 
-            name: '台灣灘漁場', 
-            coords: [[22.0, 117.0], [22.0, 119.5], [23.5, 119.5], [23.5, 117.0]] 
+        taiwan_bank: {
+            name: '台灣灘漁場',
+            coords: [[22.0, 117.0], [22.0, 119.5], [23.5, 119.5], [23.5, 117.0]]
         },
-        penghu: { 
-            name: '澎湖漁場', 
-            coords: [[23.0, 119.0], [23.0, 120.0], [24.0, 120.0], [24.0, 119.0]] 
+        penghu: {
+            name: '澎湖漁場',
+            coords: [[23.0, 119.0], [23.0, 120.0], [24.0, 120.0], [24.0, 119.0]]
         },
-        kuroshio_east: { 
-            name: '東部黑潮漁場', 
-            coords: [[22.5, 121.0], [22.5, 122.0], [24.5, 122.0], [24.5, 121.0]] 
+        kuroshio_east: {
+            name: '東部黑潮漁場',
+            coords: [[22.5, 121.0], [22.5, 122.0], [24.5, 122.0], [24.5, 121.0]]
         },
-        northeast: { 
-            name: '東北漁場', 
-            coords: [[24.8, 121.5], [24.8, 123.0], [25.8, 123.0], [25.8, 121.5]] 
+        northeast: {
+            name: '東北漁場',
+            coords: [[24.8, 121.5], [24.8, 123.0], [25.8, 123.0], [25.8, 121.5]]
         },
-        southwest: { 
-            name: '西南沿岸漁場', 
-            coords: [[22.0, 120.0], [22.0, 120.8], [23.0, 120.8], [23.0, 120.0]] 
+        southwest: {
+            name: '西南沿岸漁場',
+            coords: [[22.0, 120.0], [22.0, 120.8], [23.0, 120.8], [23.0, 120.0]]
         }
     };
 
@@ -106,7 +81,6 @@ const MapModule = (function() {
         }).addTo(map);
 
         // Create layer groups
-        layers.drillZones = L.layerGroup().addTo(map);
         layers.fishingHotspots = L.layerGroup().addTo(map);
         layers.vessels = L.layerGroup().addTo(map);
         layers.submarineCables = L.layerGroup();
@@ -136,27 +110,6 @@ const MapModule = (function() {
             fillColor: '#1a3a5c',
             fillOpacity: 0.3
         }).addTo(map);
-    }
-
-    /**
-     * Draw drill zones on the map
-     */
-    function drawDrillZones() {
-        layers.drillZones.clearLayers();
-
-        Object.entries(DRILL_ZONES).forEach(([key, zone]) => {
-            const polygon = L.polygon(zone.coords, {
-                color: zone.color,
-                weight: 2,
-                opacity: 0.6,
-                fillColor: zone.color,
-                fillOpacity: 0.08,
-                dashArray: '6, 4'
-            }).addTo(layers.drillZones);
-
-            polygon.bindTooltip(zone.name, { permanent: false, direction: 'center' });
-            polygon.on('click', () => map.flyToBounds(zone.coords, { padding: [30, 30] }));
-        });
     }
 
     /**
@@ -222,8 +175,7 @@ const MapModule = (function() {
         layers.vessels.clearLayers();
         vesselMarkers = {};
 
-        let stats = { total: 0, fishing: 0, cargo: 0, tanker: 0, inZone: 0, suspicious: 0 };
-        let zoneCounts = { north: 0, east: 0, south: 0, west: 0 };
+        let stats = { total: 0, fishing: 0, cargo: 0, tanker: 0, suspicious: 0 };
 
         vesselList.forEach(v => {
             vessels.set(v.mmsi, v);
@@ -269,16 +221,9 @@ const MapModule = (function() {
             if (v.type_name === 'fishing') stats.fishing++;
             if (v.type_name === 'cargo') stats.cargo++;
             if (v.type_name === 'tanker') stats.tanker++;
-
-            // Check zone
-            const zone = v.in_drill_zone || getZoneForPosition(v.lat, v.lon);
-            if (zone) {
-                stats.inZone++;
-                zoneCounts[zone]++;
-            }
         });
 
-        return { stats, zoneCounts, vessels };
+        return { stats, vessels };
     }
 
     /**
@@ -347,24 +292,6 @@ const MapModule = (function() {
     }
 
     /**
-     * Get which zone a position is in
-     */
-    function getZoneForPosition(lat, lon) {
-        for (const [key, zone] of Object.entries(DRILL_ZONES)) {
-            const [sw, , ne] = [zone.coords[0], zone.coords[1], zone.coords[2]];
-            const minLat = Math.min(sw[0], ne[0]);
-            const maxLat = Math.max(sw[0], ne[0]);
-            const minLon = Math.min(sw[1], ne[1]);
-            const maxLon = Math.max(sw[1], ne[1]);
-
-            if (lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon) {
-                return key;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Toggle layer visibility
      */
     function toggleLayer(layerName, visible) {
@@ -372,16 +299,6 @@ const MapModule = (function() {
             map.addLayer(layers[layerName]);
         } else {
             map.removeLayer(layers[layerName]);
-        }
-    }
-
-    /**
-     * Focus on a specific zone
-     */
-    function focusZone(key) {
-        const zone = DRILL_ZONES[key];
-        if (zone) {
-            map.flyToBounds(zone.coords, { padding: [30, 30] });
         }
     }
 
@@ -482,20 +399,16 @@ const MapModule = (function() {
     // Public API
     return {
         init,
-        drawDrillZones,
         drawFishingHotspots,
         displayVessels,
         displayDarkVessels,
         displaySuspiciousVessels,
         toggleLayer,
-        focusZone,
         focusVessel,
         focusPosition,
         loadSubmarineCables,
         loadCableFaultStatus,
         getCableFaultStatus,
-        getZoneForPosition,
-        DRILL_ZONES,
         FISHING_HOTSPOTS,
         VESSEL_COLORS,
         REGION_COLORS,

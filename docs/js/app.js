@@ -17,11 +17,9 @@ const App = (function () {
     function init() {
         // Initialize map
         MapModule.init('map');
-        MapModule.drawDrillZones();
         MapModule.drawFishingHotspots();
 
         // Initialize UI
-        updateZoneList();
         setupEventListeners();
         setupMobileNavigation();
 
@@ -34,7 +32,7 @@ const App = (function () {
      */
     function setupEventListeners() {
         // Layer toggle checkboxes
-        ['drillZones', 'fishingHotspots', 'vessels'].forEach(layer => {
+        ['fishingHotspots', 'vessels'].forEach(layer => {
             const checkbox = document.getElementById('show' + layer.charAt(0).toUpperCase() + layer.slice(1));
             if (checkbox) {
                 checkbox.addEventListener('change', () => {
@@ -122,21 +120,6 @@ const App = (function () {
         if (overlay) {
             overlay.classList.toggle('active', sidebarOpen);
         }
-    }
-
-    /**
-     * Update zone list in sidebar
-     */
-    function updateZoneList() {
-        const list = document.getElementById('zoneList');
-        if (!list) return;
-
-        list.innerHTML = Object.entries(MapModule.DRILL_ZONES).map(([key, zone]) => `
-            <div class="zone-item" onclick="App.focusZone('${key}')" style="border-left: 3px solid ${zone.color}">
-                <span>${zone.name}</span>
-                <span class="zone-count" id="zone-${key}" style="color:${zone.color}">0</span>
-            </div>
-        `).join('');
     }
 
     /**
@@ -251,9 +234,6 @@ const App = (function () {
                 return `${oldShort} → ${newShort}`;
             }).join(', ');
 
-            const drillBadge = ev.in_drill_zone
-                ? `<span class="risk-badge risk-critical" style="font-size:7px;margin-left:3px">${typeof i18n !== 'undefined' ? i18n.t('idx.identity_in_drill') : '軍演區'}</span>`
-                : '';
             const multiBadge = ev.multi_field
                 ? `<span class="risk-badge risk-high" style="font-size:7px;margin-left:3px">${typeof i18n !== 'undefined' ? i18n.t('idx.identity_multi') : '多欄位'}</span>`
                 : '';
@@ -265,7 +245,7 @@ const App = (function () {
                 <div class="vessel-item" ${onclick} style="cursor:${hasCoords ? 'pointer' : 'default'}">
                     <div style="flex:1;overflow:hidden">
                         <div style="font-size:8px;color:var(--accent-cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                            MMSI ${ev.mmsi}${drillBadge}${multiBadge}
+                            MMSI ${ev.mmsi}${multiBadge}
                         </div>
                         <div style="font-size:7px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
                             ${desc}
@@ -297,7 +277,6 @@ const App = (function () {
                     darkVessels: 'gfwDarkVessels',
                     trend: 'gfwTrend',
                     chnHours: 'gfwChnHours',
-                    drillRecords: 'gfwDrillRecords',
                     fishingHours: 'gfwFishingHours',
                     dataDays: 'gfwDataDays',
                     sparkline: 'gfwSparkline',
@@ -333,11 +312,9 @@ const App = (function () {
                 vessels = result.vessels;
 
                 ChartsModule.updateAisStats(result.stats);
-                ChartsModule.updateZoneCounts(result.zoneCounts);
 
                 // Update overlay cards
                 document.getElementById('vesselCount').textContent = result.stats.total;
-                document.getElementById('drillZoneCount').textContent = result.stats.inZone;
 
                 updateVesselList();
 
@@ -421,13 +398,6 @@ const App = (function () {
     }
 
     /**
-     * Focus on a zone
-     */
-    function focusZone(key) {
-        MapModule.focusZone(key);
-    }
-
-    /**
      * Focus on a vessel
      */
     function focusVessel(mmsi) {
@@ -456,7 +426,6 @@ const App = (function () {
         init,
         toggleSidebar,
         toggleLayer,
-        focusZone,
         focusVessel,
         focusSuspicious,
         loadData

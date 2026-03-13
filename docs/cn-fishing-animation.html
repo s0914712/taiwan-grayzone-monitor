@@ -290,11 +290,6 @@
             font-weight: 600;
         }
 
-        .vessel-table .zone-tag {
-            color: var(--accent-cyan);
-            font-size: 9px;
-        }
-
         /* Map legend */
         .map-legend-inline {
             display: flex;
@@ -624,10 +619,6 @@
             <div class="label">大陸漁船數</div>
         </div>
         <div class="stat-card">
-            <div class="value alert" id="statDrillZone">--</div>
-            <div class="label">軍演區內</div>
-        </div>
-        <div class="stat-card">
             <div class="value" id="statSuspicious">--</div>
             <div class="label">可疑船</div>
         </div>
@@ -649,7 +640,6 @@
                 <div class="legend-chip"><span class="dot" style="background:#32cd32"></span><span>山東</span></div>
                 <div class="legend-chip"><span class="dot" style="background:#ff69b4"></span><span>海南</span></div>
                 <div class="legend-chip"><span class="dot" style="background:#9370db"></span><span>其他</span></div>
-                <div class="legend-chip"><span class="dot" style="background:rgba(255,51,102,0.3)"></span><span>軍演區域</span></div>
             </div>
         </div>
 
@@ -672,12 +662,11 @@
                             <th>船名</th>
                             <th>省份</th>
                             <th>航速</th>
-                            <th>軍演區</th>
                             <th>狀態</th>
                         </tr>
                     </thead>
                     <tbody id="vesselTableBody">
-                        <tr><td colspan="6" class="empty-state" data-i18n="common.loading">載入中...</td></tr>
+                        <tr><td colspan="5" class="empty-state" data-i18n="common.loading">載入中...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -693,15 +682,8 @@
     <script src="js/i18n.js"></script>
     <script>
     // =========================================================================
-    // Drill zones & fishing hotspots (same as fetch_ais_data.py)
+    // Fishing hotspots (same as fetch_ais_data.py)
     // =========================================================================
-    const DRILL_ZONES = {
-        north: { name: '北區', bounds: [[25.5, 121.0], [26.8, 122.5]], color: 'rgba(255,51,102,0.15)' },
-        east:  { name: '東區', bounds: [[23.0, 122.5], [25.5, 125.0]], color: 'rgba(255,107,53,0.15)' },
-        south: { name: '南區', bounds: [[21.5, 119.0], [23.0, 121.0]], color: 'rgba(255,215,0,0.15)' },
-        west:  { name: '西區', bounds: [[23.5, 118.5], [25.0, 120.0]], color: 'rgba(155,89,182,0.15)' }
-    };
-
     const FISHING_HOTSPOTS = {
         taiwan_bank:   { name: '台灣灘漁場',   bounds: [[22.0, 117.0], [23.5, 119.5]] },
         penghu:        { name: '澎湖漁場',     bounds: [[23.0, 119.0], [24.0, 120.0]] },
@@ -724,7 +706,7 @@
         markerLayer: null,
         trailLayer: null,
         showTrails: true,
-        vesselFilter: 'all',  // 'all', 'cn_fishing', 'suspicious', 'drill_zone'
+        vesselFilter: 'all',  // 'all', 'cn_fishing', 'suspicious'
         chart: null,
         vesselTrails: {}  // mmsi -> [{lat, lon, timestamp}, ...]
     };
@@ -925,7 +907,7 @@
                     heading: v.heading !== undefined ? v.heading : null,
                     frameIdx: fi,
                     name: v.name, type_name: v.type_name,
-                    suspicious: v.suspicious, in_drill_zone: v.in_drill_zone
+                    suspicious: v.suspicious
                 });
             });
         });
@@ -1135,16 +1117,6 @@
             fillColor: '#1a3a5c', fillOpacity: 0.3
         }).addTo(map);
 
-        // Drill zones
-        Object.entries(DRILL_ZONES).forEach(([key, zone]) => {
-            const b = zone.bounds;
-            L.rectangle([b[0], b[1]], {
-                color: '#ff3366', weight: 1.5, opacity: 0.4,
-                fillColor: zone.color, fillOpacity: 0.1,
-                dashArray: '6,4'
-            }).addTo(map).bindTooltip(zone.name, { permanent: false, direction: 'center', className: 'zone-label' });
-        });
-
         // Fishing hotspots
         Object.entries(FISHING_HOTSPOTS).forEach(([key, spot]) => {
             const b = spot.bounds;
@@ -1186,7 +1158,7 @@
                 hideLoading();
                 document.getElementById('dataStatus').textContent = i18n.t('ais_anim.no_data');
                 document.getElementById('vesselTableBody').innerHTML =
-                    '<tr><td colspan="6" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
+                    '<tr><td colspan="5" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
                 return;
             }
 
@@ -1214,7 +1186,7 @@
             hideLoading();
             document.getElementById('dataStatus').textContent = i18n.t('ais_anim.load_fail');
             document.getElementById('vesselTableBody').innerHTML =
-                '<tr><td colspan="6" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
+                '<tr><td colspan="5" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
         }
     }
 
@@ -1384,8 +1356,8 @@
             const heading = computeHeading(v.mmsi, v.lat, v.lon);
             const isSuspicious = v.suspicious;
 
-            // Glow for suspicious or drill zone vessels
-            if (isSuspicious || v.in_drill_zone) {
+            // Glow for suspicious vessels
+            if (isSuspicious) {
                 L.circleMarker([v.lat, v.lon], {
                     radius: 10,
                     fillColor: isSuspicious ? '#ff3366' : color,
@@ -1407,7 +1379,6 @@
                 'MMSI: ' + v.mmsi + '<br>' +
                 i18n.t('ais_anim.popup_speed') + ': ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
                 '航向: ' + headingText + '<br>' +
-                (v.in_drill_zone ? ('<span style="color:#ff3366">軍演區: ' + v.in_drill_zone + '</span><br>') : '') +
                 (isSuspicious ? '<span style="color:#ff3366;font-weight:600;font-size:14px">⚠ SUSPICIOUS</span>' : '') +
                 '</div>'
             );
@@ -1436,11 +1407,9 @@
         const allVessels = frame.vessels || [];
         const filtered = filterVessels(allVessels);
         const total = filtered.length;
-        const drillZone = filtered.filter(v => v.in_drill_zone).length;
         const suspicious = filtered.filter(v => v.suspicious).length;
 
         document.getElementById('statTotal').textContent = total;
-        document.getElementById('statDrillZone').textContent = drillZone;
         document.getElementById('statSuspicious').textContent = suspicious;
 
         const changeEl = document.getElementById('statChange');
@@ -1458,7 +1427,7 @@
     function updateVesselTable(vessels) {
         const tbody = document.getElementById('vesselTableBody');
         if (!vessels || vessels.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
             return;
         }
 
@@ -1472,21 +1441,19 @@
             const isSusp = v.suspicious;
             const provColor = getProvinceColor(v);
             const provName = getProvinceName(v);
-            const statusHtml = isSusp ? '<span class="suspicious-tag">⚠</span>' :
-                               v.in_drill_zone ? '<span style="color:#ffa500">軍演區</span>' : 'OK';
+            const statusHtml = isSusp ? '<span class="suspicious-tag">⚠</span>' : 'OK';
             return '<tr>' +
                 '<td>' + v.mmsi + '</td>' +
                 '<td>' + (v.name || '--') + '</td>' +
                 '<td><span style="color:' + provColor + ';font-weight:600">' + provName + '</span></td>' +
                 '<td>' + (v.speed || 0).toFixed(1) + ' kn</td>' +
-                '<td class="zone-tag">' + (v.in_drill_zone || '--') + '</td>' +
                 '<td>' + statusHtml + '</td>' +
                 '</tr>';
         });
 
         tbody.innerHTML = rows.join('');
         if (sorted.length > 30) {
-            tbody.innerHTML += '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);font-size:9px">... ' + (sorted.length - 30) + ' more vessels</td></tr>';
+            tbody.innerHTML += '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);font-size:9px">... ' + (sorted.length - 30) + ' more vessels</td></tr>';
         }
     }
 

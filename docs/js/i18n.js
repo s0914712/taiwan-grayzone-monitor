@@ -72,9 +72,7 @@ const i18n = (function () {
 
         // ── Index 頁面 ──
         'idx.vessel_count':      { zh: '船隻數', en: 'Vessels' },
-        'idx.drill_zones':       { zh: '軍演區', en: 'Drill Zones' },
         'idx.suspicious':        { zh: '可疑船隻', en: 'Suspicious' },
-        'idx.layer_drills':      { zh: '軍演區域', en: 'Drill Zones' },
         'idx.layer_fishing':     { zh: '漁撈熱點', en: 'Fishing Hotspots' },
         'idx.layer_vessels':     { zh: '船隻', en: 'Vessels' },
         'idx.legend_type':       { zh: '船隻類型', en: 'Vessel Types' },
@@ -90,7 +88,6 @@ const i18n = (function () {
         'idx.avg_dark':          { zh: '日均暗船數', en: 'Avg Daily Dark' },
         'idx.trend_7d':          { zh: '7日趨勢', en: '7-day Trend' },
         'idx.chn_hours':         { zh: '中國船時(萬)', en: 'CHN Hours (10k)' },
-        'idx.drill_records':     { zh: '軍演區記錄', en: 'Drill Records' },
         'idx.fishing_hours':     { zh: '漁撈時數(萬)', en: 'Fishing Hrs (10k)' },
         'idx.data_days':         { zh: '資料天數', en: 'Data Days' },
         'idx.sparkline':         { zh: '每日 SAR 偵測量', en: 'Daily SAR Detections' },
@@ -105,7 +102,6 @@ const i18n = (function () {
         'idx.identity_callsign': { zh: '呼號變更', en: 'Call Sign Change' },
         'idx.identity_imo':      { zh: 'IMO 變更', en: 'IMO Change' },
         'idx.identity_multi':    { zh: '多欄位', en: 'Multi-field' },
-        'idx.identity_in_drill': { zh: '軍演區', en: 'Drill Zone' },
         'idx.identity_ago_h':    { zh: '{0}小時前', en: '{0}h ago' },
         'idx.identity_ago_d':    { zh: '{0}天前', en: '{0}d ago' },
         'idx.identity_just_now': { zh: '剛才', en: 'Just now' },
@@ -122,7 +118,6 @@ const i18n = (function () {
         'id.th_name':            { zh: '目前船名', en: 'Current Name' },
         'id.th_changes':         { zh: '變更次數', en: 'Changes' },
         'id.th_last_change':     { zh: '最近變更', en: 'Last Change' },
-        'id.th_drill_events':    { zh: '軍演區事件', en: 'Drill Zone' },
         'id.th_time':            { zh: '時間', en: 'Time' },
         'id.th_field':           { zh: '欄位', en: 'Field' },
         'id.th_old':             { zh: '變更前', en: 'Before' },
@@ -130,7 +125,6 @@ const i18n = (function () {
         'id.th_location':        { zh: '位置', en: 'Location' },
         'id.no_events':          { zh: '尚無身分變更事件紀錄。資料會在 AIS 排程執行後自動累積。', en: 'No identity change events yet. Data will accumulate after AIS scheduled runs.' },
 
-        'idx.drill_title':       { zh: '⚠️ 軍演監測區', en: '⚠️ Drill Monitoring Zones' },
         'idx.recent_title':      { zh: '🚢 近期船隻', en: '🚢 Recent Vessels' },
 
         // ── Index 關於 ──
@@ -143,7 +137,7 @@ const i18n = (function () {
         'idx.about_sar':         { zh: '合成孔徑雷達 (SAR) 衛星偵測', en: 'Synthetic Aperture Radar (SAR) Detection' },
         'idx.about_sar_text':    { zh: '使用 Global Fishing Watch 提供的 SAR 衛星資料，可在任何天氣條件下偵測海面船隻。將偵測結果與 AIS 資料比對，無法匹配的即為「暗船」。', en: 'Using SAR satellite data from Global Fishing Watch, capable of detecting vessels in any weather. Detection results are cross-referenced with AIS data — unmatched targets are "dark vessels".' },
         'idx.about_csis':        { zh: 'CSIS「蟲群信號」方法論', en: 'CSIS "Signals in the Swarm" Methodology' },
-        'idx.about_csis_1':      { zh: '行為閾值分析：軍演區停留 >30% + 漁場停留 <10%', en: 'Behavioral threshold: Drill zone dwell >30% + Fishing area dwell <10%' },
+        'idx.about_csis_1':      { zh: '行為閾值分析：漁場停留 <10% 的掛漁船旗船隻', en: 'Behavioral threshold: Fishing-flagged vessels with <10% fishing area dwell' },
         'idx.about_csis_2':      { zh: 'AIS 異常偵測：船名變更、AIS 中斷、船型變更', en: 'AIS anomaly: Name changes, AIS interruptions, vessel type changes' },
         'idx.about_csis_3':      { zh: '時間序列相關性：暗船活動與軍事架次的滯後關係', en: 'Time-series correlation: Dark vessel activity vs military sortie lag' },
         'idx.about_multi':       { zh: '多源數據整合', en: 'Multi-Source Data Integration' },
@@ -240,14 +234,12 @@ const i18n = (function () {
         'ais_anim.load_fail':    { zh: '❌ 載入失敗', en: '❌ Loading failed' },
         'ais_anim.frame':        { zh: '第 {0} / {1} 幀', en: 'Frame {0} of {1}' },
         'ais_anim.suspicious':   { zh: '可疑船', en: 'Suspicious' },
-        'ais_anim.drill_zone':   { zh: '軍演區船隻', en: 'Drill Zone Vessels' },
         'ais_anim.total_track':  { zh: '追蹤船隻', en: 'Tracked Vessels' },
         'ais_anim.show_trails':  { zh: '顯示軌跡', en: 'Show Trails' },
         'ais_anim.popup_name':   { zh: '船名', en: 'Name' },
         'ais_anim.popup_mmsi':   { zh: 'MMSI', en: 'MMSI' },
         'ais_anim.popup_type':   { zh: '類型', en: 'Type' },
         'ais_anim.popup_speed':  { zh: '航速', en: 'Speed' },
-        'ais_anim.popup_zone':   { zh: '軍演區', en: 'Drill Zone' },
 
         // ── 大陸漁船 CN Fishing ──
         'nav.cn_fishing':        { zh: '大陸漁船', en: 'CN Fishing' },
@@ -258,7 +250,6 @@ const i18n = (function () {
         'ais_anim.filter_all':       { zh: '全部船隻', en: 'All Vessels' },
         'ais_anim.filter_cn':        { zh: '大陸漁船', en: 'CN Fishing' },
         'ais_anim.filter_suspicious':{ zh: '可疑船', en: 'Suspicious' },
-        'ais_anim.filter_drill':     { zh: '軍演區船隻', en: 'Drill Zone' },
         'ais_anim.filter_loiter':    { zh: '滯留偵測', en: 'Loitering' },
         'ais_anim.filter_zigzag':    { zh: 'Z字型航行', en: 'Zigzag' },
         'ais_anim.filter_near_cable':{ zh: '電纜周邊', en: 'Near Cable' },
@@ -295,7 +286,7 @@ const i18n = (function () {
         'app.no_data':           { zh: '⚠️ 尚無資料', en: '⚠️ No data yet' },
         'app.load_fail_msg':     { zh: '請確認 data.json 是否存在', en: 'Please check if data.json exists' },
         'app.analyzed':          { zh: '已分析 {0} 艘，暫無達到門檻的可疑船隻', en: 'Analyzed {0} vessels, no suspicious vessels above threshold' },
-        'app.csis_suspicious':   { zh: 'CSIS 可疑：漁船在軍演區但不在漁場', en: 'CSIS Suspicious: Fishing vessel in drill zone, not in fishing area' },
+        'app.csis_suspicious':   { zh: 'CSIS 可疑船隻', en: 'CSIS Suspicious Vessel' },
         'app.mmsi':              { zh: 'MMSI:', en: 'MMSI:' },
         'app.type':              { zh: '類型:', en: 'Type:' },
         'app.speed':             { zh: '航速:', en: 'Speed:' },
