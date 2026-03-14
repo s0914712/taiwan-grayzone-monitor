@@ -47,6 +47,24 @@ const MapModule = (function() {
         unknown: '#888888'
     };
 
+    // Flag of Convenience (FOC) MID prefixes - top flag states with strict commercial regulation
+    // These are MMSI Maritime Identification Digits for major open-registry states
+    const FOC_MIDS = new Set([
+        '636', '637',                               // Liberia
+        '351', '352', '353', '354', '355', '356',   // Panama
+        '357', '370', '371', '372', '373', '374',   // Panama (cont.)
+        '538',                                       // Marshall Islands
+        '477',                                       // Hong Kong
+        '563', '564', '565', '566',                  // Singapore
+        '215', '248', '249',                         // Malta
+        '308', '309', '311',                         // Bahamas
+        '237', '239', '240', '241',                  // Greece
+        '431', '432'                                  // Japan
+    ]);
+    const FOC_COMMERCIAL_TYPES = new Set(['cargo', 'tanker', 'passenger']);
+
+    let filterFocEnabled = false;
+
     // Region colors for dark vessels
     const REGION_COLORS = {
         taiwan_strait: '#ff3366',
@@ -178,6 +196,15 @@ const MapModule = (function() {
         let stats = { total: 0, fishing: 0, cargo: 0, tanker: 0, suspicious: 0 };
 
         vesselList.forEach(v => {
+            // Filter out FOC commercial vessels if enabled
+            if (filterFocEnabled) {
+                const mid = (v.mmsi || '').substring(0, 3);
+                if (FOC_MIDS.has(mid) && FOC_COMMERCIAL_TYPES.has(v.type_name)) {
+                    vessels.set(v.mmsi, v);
+                    return; // skip rendering but keep in data
+                }
+            }
+
             vessels.set(v.mmsi, v);
             stats.total++;
 
@@ -397,6 +424,10 @@ const MapModule = (function() {
     }
 
     // Public API
+    function setFilterFoc(enabled) {
+        filterFocEnabled = enabled;
+    }
+
     return {
         init,
         drawFishingHotspots,
@@ -409,6 +440,7 @@ const MapModule = (function() {
         loadSubmarineCables,
         loadCableFaultStatus,
         getCableFaultStatus,
+        setFilterFoc,
         FISHING_HOTSPOTS,
         VESSEL_COLORS,
         REGION_COLORS,
