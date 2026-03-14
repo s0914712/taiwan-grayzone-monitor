@@ -96,6 +96,14 @@ const App = (function () {
                     <span class="nav-icon">🎬</span>
                     <span data-i18n="nav.mob_anim">動畫</span>
                 </a>
+                <a href="ais-animation.html">
+                    <span class="nav-icon">📡</span>
+                    <span data-i18n="nav.mob_ais_anim">船位</span>
+                </a>
+                <a href="cn-fishing-animation.html">
+                    <span class="nav-icon">🐟</span>
+                    <span data-i18n="nav.mob_cn_fishing">大陸</span>
+                </a>
                 <a href="identity-history.html">
                     <span class="nav-icon">🔄</span>
                     <span data-i18n="nav.mob_identity">身分</span>
@@ -107,7 +115,10 @@ const App = (function () {
             const currentPage = window.location.pathname.split('/').pop() || 'index.html';
             bottomNav.querySelectorAll('a').forEach(a => {
                 const href = a.getAttribute('href');
-                if (href === currentPage) a.classList.add('active');
+                if (href === currentPage) {
+                    a.classList.add('active');
+                    setTimeout(() => a.scrollIntoView({ inline: 'center', block: 'nearest' }), 100);
+                }
             });
 
             if (typeof i18n !== 'undefined') i18n.applyAll();

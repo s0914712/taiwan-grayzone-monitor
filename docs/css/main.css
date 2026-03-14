@@ -689,12 +689,15 @@ body {
         left: 0;
         right: 0;
         display: flex;
-        justify-content: space-around;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
         background: var(--bg-secondary);
         border-top: 1px solid var(--border-glow);
         padding: var(--spacing-xs) 0;
         z-index: 1500;
     }
+    .mobile-bottom-nav::-webkit-scrollbar { display: none; }
     .mobile-bottom-nav a {
         display: flex;
         flex-direction: column;
@@ -704,11 +707,13 @@ body {
         font-size: 10px;
         gap: 2px;
         min-height: 48px;
+        min-width: 64px;
+        flex-shrink: 0;
         justify-content: center;
-        padding: 4px 6px;
+        padding: 4px 8px;
     }
     .mobile-bottom-nav a.active { color: var(--accent-cyan); }
-    .mobile-bottom-nav .nav-icon { font-size: 22px; }
+    .mobile-bottom-nav .nav-icon { font-size: 20px; }
 
     /* Font size enlargements */
     .overlay-card .label { font-size: 10px; }
