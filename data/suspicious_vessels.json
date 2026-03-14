@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-03-14T06:50:12.641499+00:00",
+  "updated_at": "2026-03-14T08:37:45.856805+00:00",
   "methodology": "CSIS Signals in the Swarm",
   "thresholds": {
     "behavioral": {
@@ -7,15 +7,15 @@
     }
   },
   "summary": {
-    "total_analyzed": 30043,
-    "suspicious_count": 5689,
-    "behavioral_triggered": 4235,
-    "ais_anomaly_detected": 8527,
+    "total_analyzed": 30545,
+    "suspicious_count": 5784,
+    "behavioral_triggered": 4314,
+    "ais_anomaly_detected": 8677,
     "risk_distribution": {
-      "critical": 201,
-      "high": 5488,
-      "medium": 6524,
-      "normal": 17830
+      "critical": 206,
+      "high": 5578,
+      "medium": 6644,
+      "normal": 18117
     }
   },
   "suspicious_vessels": [
@@ -60,14 +60,15 @@
         "AA3-0985225217-3-33%",
         "AA3-0985225217-3-31%",
         "AA3-0985225217-3-28%",
-        "AA3-0985225217-3-27%"
+        "AA3-0985225217-3-27%",
+        "AA3-0985225217-3-30%"
       ],
-      "total_snapshots": 68,
+      "total_snapshots": 69,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 39 個不同船名",
+          "description": "使用 40 個不同船名",
           "names": [
             "AA3-0985225217-3-87%",
             "AA3-0985225217-3-86%",
@@ -107,20 +108,22 @@
             "AA3-0985225217-3-33%",
             "AA3-0985225217-3-31%",
             "AA3-0985225217-3-28%",
-            "AA3-0985225217-3-27%"
+            "AA3-0985225217-3-27%",
+            "AA3-0985225217-3-30%"
           ],
           "severity": "high"
         },
         {
           "type": "identity_change",
-          "description": "7 天內 4 次身分變更",
-          "count": 4,
+          "description": "7 天內 5 次身分變更",
+          "count": 5,
           "multi_field": false,
           "details": [
             "name: AA3-0985225217-3-31% → AA3-0985225217-3-28%",
             "name: AA3-0985225217-3-28% → AA3-0985225217-3-27%",
             "name: AA3-0985225217-3-27% → AA3-0985225217-3-28%",
-            "name: AA3-0985225217-3-28% → AA3-0985225217-3-33%"
+            "name: AA3-0985225217-3-28% → AA3-0985225217-3-33%",
+            "name: AA3-0985225217-3-33% → AA3-0985225217-3-30%"
           ],
           "severity": "high"
         }
@@ -128,8 +131,8 @@
       "risk_level": "critical",
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
-        "使用 39 個不同船名",
-        "7 天內 4 次身分變更"
+        "使用 40 個不同船名",
+        "7 天內 5 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -153,7 +156,7 @@
         "CTR-TT0833-87%",
         "CTR-TT0833-94%"
       ],
-      "total_snapshots": 74,
+      "total_snapshots": 75,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -193,72 +196,6 @@
         "行為比例異常：掛漁船旗但不在漁場",
         "使用 11 個不同船名",
         "7 天內 4 次身分變更"
-      ],
-      "behavioral_details": {
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": "<10% fishing"
-      },
-      "risk_score": 7,
-      "suspicious": true
-    },
-    {
-      "mmsi": "416123456",
-      "names": [
-        "HUAN DAO NO.10   99%",
-        "HUAN DAO NO.10   67%",
-        "HUAN DAO NO.10   92%",
-        "HUAN DAO NO.10   70%",
-        "HUAN DAO NO.10   79%",
-        "HUAN DAO NO.10   74%",
-        "HUAN DAO NO.10   73%",
-        "HUAN DAO NO.10   71%",
-        "HUAN DAO NO.10   68%",
-        "HUAN DAO NO.10   83%",
-        "HUAN DAO NO.10   76%",
-        "HUAN DAO NO.10   72%",
-        "HUAN DAO NO.10   66%"
-      ],
-      "total_snapshots": 74,
-      "behavioral_threshold": true,
-      "ais_anomalies": [
-        {
-          "type": "name_change",
-          "description": "使用 13 個不同船名",
-          "names": [
-            "HUAN DAO NO.10   99%",
-            "HUAN DAO NO.10   67%",
-            "HUAN DAO NO.10   92%",
-            "HUAN DAO NO.10   70%",
-            "HUAN DAO NO.10   79%",
-            "HUAN DAO NO.10   74%",
-            "HUAN DAO NO.10   73%",
-            "HUAN DAO NO.10   71%",
-            "HUAN DAO NO.10   68%",
-            "HUAN DAO NO.10   83%",
-            "HUAN DAO NO.10   76%",
-            "HUAN DAO NO.10   72%",
-            "HUAN DAO NO.10   66%"
-          ],
-          "severity": "high"
-        },
-        {
-          "type": "identity_change",
-          "description": "7 天內 3 次身分變更",
-          "count": 3,
-          "multi_field": false,
-          "details": [
-            "name: HUAN DAO NO.10   70% → HUAN DAO NO.10   68%",
-            "name: HUAN DAO NO.10   68% → HUAN DAO NO.10   66%",
-            "name: HUAN DAO NO.10   66% → HUAN DAO NO.10   99%"
-          ],
-          "severity": "high"
-        }
-      ],
-      "risk_level": "critical",
-      "flags": [
-        "行為比例異常：掛漁船旗但不在漁場",
-        "使用 13 個不同船名",
-        "7 天內 3 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -323,11 +260,10 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 5 次身分變更",
-          "count": 5,
+          "description": "7 天內 4 次身分變更",
+          "count": 4,
           "multi_field": false,
           "details": [
-            "name: YU60468-21-82% → YU60468-21-81%",
             "name: YU60468-21-81% → YU60468-21-82%",
             "name: YU60468-21-82% → YU60468-21-83%",
             "name: YU60468-21-83% → YU60468-21-99%",
@@ -340,7 +276,7 @@
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
         "使用 20 個不同船名",
-        "7 天內 5 次身分變更"
+        "7 天內 4 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -408,32 +344,42 @@
       "suspicious": true
     },
     {
-      "mmsi": "108022736",
+      "mmsi": "995568270",
       "names": [
-        "WEI ZHI B01-D-96%",
-        "WEI ZHI B01-D-95%",
-        "WEI ZHI B01-D-94%",
-        "WEI ZHI B01-D-93%",
-        "WEI ZHI B01-D-97%",
-        "WEI ZHI B01-D-92%",
-        "WEI ZHI B01-D-91%",
-        "WEI ZHI B01-D-90%"
+        "CT2-5568-70-58%",
+        "CT2-5568-70-57%",
+        "CT2-5568-70-56%",
+        "CT2-5568-70-55%",
+        "CT2-5568-70-54%",
+        "CT2-5568-70-53%",
+        "CT2-5568-70-51%",
+        "CT2-5568-70-50%",
+        "CT2-5568-70-49%",
+        "CT2-5568-70-46%",
+        "CT2-5568-70-45%",
+        "CT2-5568-70-59%",
+        "CT2-5568-70-60%"
       ],
-      "total_snapshots": 70,
+      "total_snapshots": 38,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 8 個不同船名",
+          "description": "使用 13 個不同船名",
           "names": [
-            "WEI ZHI B01-D-96%",
-            "WEI ZHI B01-D-95%",
-            "WEI ZHI B01-D-94%",
-            "WEI ZHI B01-D-93%",
-            "WEI ZHI B01-D-97%",
-            "WEI ZHI B01-D-92%",
-            "WEI ZHI B01-D-91%",
-            "WEI ZHI B01-D-90%"
+            "CT2-5568-70-58%",
+            "CT2-5568-70-57%",
+            "CT2-5568-70-56%",
+            "CT2-5568-70-55%",
+            "CT2-5568-70-54%",
+            "CT2-5568-70-53%",
+            "CT2-5568-70-51%",
+            "CT2-5568-70-50%",
+            "CT2-5568-70-49%",
+            "CT2-5568-70-46%",
+            "CT2-5568-70-45%",
+            "CT2-5568-70-59%",
+            "CT2-5568-70-60%"
           ],
           "severity": "high"
         },
@@ -443,9 +389,9 @@
           "count": 3,
           "multi_field": false,
           "details": [
-            "name: WEI ZHI B01-D-92% → WEI ZHI B01-D-91%",
-            "name: WEI ZHI B01-D-91% → WEI ZHI B01-D-95%",
-            "name: WEI ZHI B01-D-95% → WEI ZHI B01-D-97%"
+            "name: CT2-5568-70-57% → CT2-5568-70-59%",
+            "name: CT2-5568-70-59% → CT2-5568-70-60%",
+            "name: CT2-5568-70-60% → CT2-5568-70-59%"
           ],
           "severity": "high"
         }
@@ -453,7 +399,7 @@
       "risk_level": "critical",
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
-        "使用 8 個不同船名",
+        "使用 13 個不同船名",
         "7 天內 3 次身分變更"
       ],
       "behavioral_details": {
@@ -597,33 +543,36 @@
         "A--0224--3-92%",
         "A--0224--3-94%",
         "A--0224--3-95%",
-        "A--0224--3-96%"
+        "A--0224--3-96%",
+        "A--0224--3-97%"
       ],
-      "total_snapshots": 35,
+      "total_snapshots": 36,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 6 個不同船名",
+          "description": "使用 7 個不同船名",
           "names": [
             "A--0224--3-93%",
             "A--0224--3-91%",
             "A--0224--3-92%",
             "A--0224--3-94%",
             "A--0224--3-95%",
-            "A--0224--3-96%"
+            "A--0224--3-96%",
+            "A--0224--3-97%"
           ],
           "severity": "high"
         },
         {
           "type": "identity_change",
-          "description": "7 天內 3 次身分變更",
-          "count": 3,
+          "description": "7 天內 4 次身分變更",
+          "count": 4,
           "multi_field": false,
           "details": [
             "name: A--0224--3-95% → A--0224--3-94%",
             "name: A--0224--3-94% → A--0224--3-95%",
-            "name: A--0224--3-95% → A--0224--3-96%"
+            "name: A--0224--3-95% → A--0224--3-96%",
+            "name: A--0224--3-96% → A--0224--3-97%"
           ],
           "severity": "high"
         }
@@ -631,8 +580,8 @@
       "risk_level": "critical",
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
-        "使用 6 個不同船名",
-        "7 天內 3 次身分變更"
+        "使用 7 個不同船名",
+        "7 天內 4 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -658,7 +607,7 @@
         "CT2-5568-71-58%",
         "CT2-5568-71-61%"
       ],
-      "total_snapshots": 48,
+      "total_snapshots": 49,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -683,15 +632,16 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 5 次身分變更",
-          "count": 5,
+          "description": "7 天內 6 次身分變更",
+          "count": 6,
           "multi_field": false,
           "details": [
             "name: CT2-5568-71-57% → CT2-5568-71-61%",
             "name: CT2-5568-71-61% → CT2-5568-71-60%",
             "name: CT2-5568-71-60% → CT2-5568-71-62%",
             "name: CT2-5568-71-62% → CT2-5568-71-64%",
-            "name: CT2-5568-71-64% → CT2-5568-71-65%"
+            "name: CT2-5568-71-64% → CT2-5568-71-65%",
+            "name: CT2-5568-71-65% → CT2-5568-71-64%"
           ],
           "severity": "high"
         }
@@ -700,7 +650,7 @@
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
         "使用 13 個不同船名",
-        "7 天內 5 次身分變更"
+        "7 天內 6 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -725,7 +675,7 @@
         "CT2-5568-74-77%",
         "CT2-5568-74-81%"
       ],
-      "total_snapshots": 48,
+      "total_snapshots": 49,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -793,7 +743,7 @@
         "AIS   84%",
         "AIS   83%"
       ],
-      "total_snapshots": 48,
+      "total_snapshots": 49,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -845,6 +795,66 @@
       "suspicious": true
     },
     {
+      "mmsi": "276095229",
+      "names": [
+        "YU60952--29-53%",
+        "YU60952--29-55%",
+        "YU60952--29-58%",
+        "YU60952--29-59%",
+        "YU60952--29-60%",
+        "YU60952--29-67%",
+        "YU60952--29-69%",
+        "YU60952--29-78%",
+        "YU60952--29-79%",
+        "YU60952--29-81%"
+      ],
+      "total_snapshots": 10,
+      "behavioral_threshold": true,
+      "ais_anomalies": [
+        {
+          "type": "name_change",
+          "description": "使用 10 個不同船名",
+          "names": [
+            "YU60952--29-53%",
+            "YU60952--29-55%",
+            "YU60952--29-58%",
+            "YU60952--29-59%",
+            "YU60952--29-60%",
+            "YU60952--29-67%",
+            "YU60952--29-69%",
+            "YU60952--29-78%",
+            "YU60952--29-79%",
+            "YU60952--29-81%"
+          ],
+          "severity": "high"
+        },
+        {
+          "type": "identity_change",
+          "description": "7 天內 3 次身分變更",
+          "count": 3,
+          "multi_field": false,
+          "details": [
+            "name: YU60952--29-69% → YU60952--29-78%",
+            "name: YU60952--29-78% → YU60952--29-79%",
+            "name: YU60952--29-79% → YU60952--29-81%"
+          ],
+          "severity": "high"
+        }
+      ],
+      "risk_level": "critical",
+      "flags": [
+        "行為比例異常：掛漁船旗但不在漁場",
+        "使用 10 個不同船名",
+        "7 天內 3 次身分變更"
+      ],
+      "behavioral_details": {
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": "<10% fishing"
+      },
+      "risk_score": 7,
+      "suspicious": true
+    },
+    {
       "mmsi": "995568269",
       "names": [
         "CT2-5568-69-79%",
@@ -857,7 +867,7 @@
         "CT2-5568-69-85%",
         "CT2-5568-69-86%"
       ],
-      "total_snapshots": 22,
+      "total_snapshots": 23,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -908,7 +918,7 @@
         "HOEGH SEOUL",
         "HOEGH SEOUL  ("
       ],
-      "total_snapshots": 9,
+      "total_snapshots": 10,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -931,12 +941,14 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 1 次身分變更",
-          "count": 1,
+          "description": "7 天內 2 次身分變更",
+          "count": 2,
           "multi_field": true,
           "details": [
             "name: HOEGH SEOUL → HOEGH SEOUL  (",
-            "imo: 9285495 → 864119"
+            "imo: 9285495 → 864119",
+            "name: HOEGH SEOUL  ( → HOEGH SEOUL",
+            "imo: 864119 → 9285495"
           ],
           "severity": "high"
         }
@@ -946,7 +958,7 @@
         "行為比例異常：掛漁船旗但不在漁場",
         "使用 2 個不同船名",
         "船型變更: cargo → fishing",
-        "7 天內 1 次身分變更"
+        "7 天內 2 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -956,12 +968,56 @@
       "suspicious": true
     },
     {
+      "mmsi": "416004942",
+      "names": [
+        "SHIN JIN FA NO.68",
+        "SHIN JIN FA NO-68"
+      ],
+      "total_snapshots": 73,
+      "behavioral_threshold": true,
+      "ais_anomalies": [
+        {
+          "type": "name_change",
+          "description": "使用 2 個不同船名",
+          "names": [
+            "SHIN JIN FA NO.68",
+            "SHIN JIN FA NO-68"
+          ],
+          "severity": "medium"
+        },
+        {
+          "type": "identity_change",
+          "description": "7 天內 3 次身分變更",
+          "count": 3,
+          "multi_field": false,
+          "details": [
+            "name: SHIN JIN FA NO.68 → SHIN JIN FA NO-68",
+            "name: SHIN JIN FA NO-68 → SHIN JIN FA NO.68",
+            "name: SHIN JIN FA NO.68 → SHIN JIN FA NO-68"
+          ],
+          "severity": "high"
+        }
+      ],
+      "risk_level": "critical",
+      "flags": [
+        "行為比例異常：掛漁船旗但不在漁場",
+        "使用 2 個不同船名",
+        "7 天內 3 次身分變更"
+      ],
+      "behavioral_details": {
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": "<10% fishing"
+      },
+      "risk_score": 6,
+      "suspicious": true
+    },
+    {
       "mmsi": "416003893",
       "names": [
         "YU FU 569",
         "YU FU NO.569"
       ],
-      "total_snapshots": 22,
+      "total_snapshots": 23,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -984,11 +1040,12 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 1 次身分變更",
-          "count": 1,
+          "description": "7 天內 2 次身分變更",
+          "count": 2,
           "multi_field": false,
           "details": [
-            "name: YU FU NO.569 → YU FU 569"
+            "name: YU FU NO.569 → YU FU 569",
+            "name: YU FU 569 → YU FU NO.569"
           ],
           "severity": "medium"
         }
@@ -998,7 +1055,7 @@
         "行為比例異常：掛漁船旗但不在漁場",
         "使用 2 個不同船名",
         "船型變更: fishing → special",
-        "7 天內 1 次身分變更"
+        "7 天內 2 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -1096,12 +1153,77 @@
       "suspicious": true
     },
     {
+      "mmsi": "416123456",
+      "names": [
+        "HUAN DAO NO.10   99%",
+        "HUAN DAO NO.10   67%",
+        "HUAN DAO NO.10   92%",
+        "HUAN DAO NO.10   70%",
+        "HUAN DAO NO.10   79%",
+        "HUAN DAO NO.10   74%",
+        "HUAN DAO NO.10   73%",
+        "HUAN DAO NO.10   71%",
+        "HUAN DAO NO.10   68%",
+        "HUAN DAO NO.10   83%",
+        "HUAN DAO NO.10   76%",
+        "HUAN DAO NO.10   72%",
+        "HUAN DAO NO.10   66%"
+      ],
+      "total_snapshots": 75,
+      "behavioral_threshold": true,
+      "ais_anomalies": [
+        {
+          "type": "name_change",
+          "description": "使用 13 個不同船名",
+          "names": [
+            "HUAN DAO NO.10   99%",
+            "HUAN DAO NO.10   67%",
+            "HUAN DAO NO.10   92%",
+            "HUAN DAO NO.10   70%",
+            "HUAN DAO NO.10   79%",
+            "HUAN DAO NO.10   74%",
+            "HUAN DAO NO.10   73%",
+            "HUAN DAO NO.10   71%",
+            "HUAN DAO NO.10   68%",
+            "HUAN DAO NO.10   83%",
+            "HUAN DAO NO.10   76%",
+            "HUAN DAO NO.10   72%",
+            "HUAN DAO NO.10   66%"
+          ],
+          "severity": "high"
+        },
+        {
+          "type": "identity_change",
+          "description": "7 天內 2 次身分變更",
+          "count": 2,
+          "multi_field": false,
+          "details": [
+            "name: HUAN DAO NO.10   68% → HUAN DAO NO.10   66%",
+            "name: HUAN DAO NO.10   66% → HUAN DAO NO.10   99%"
+          ],
+          "severity": "medium"
+        }
+      ],
+      "risk_level": "critical",
+      "flags": [
+        "行為比例異常：掛漁船旗但不在漁場",
+        "使用 13 個不同船名",
+        "7 天內 2 次身分變更"
+      ],
+      "behavioral_details": {
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": "<10% fishing"
+      },
+      "risk_score": 6,
+      "suspicious": true
+    },
+    {
       "mmsi": "416000478",
       "names": [
         "TON SHING NO:268",
         "TON SHING NO-268"
       ],
-      "total_snapshots": 72,
+      "total_snapshots": 73,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -1132,7 +1254,7 @@
         "7 天內 1 次身分變更"
       ],
       "behavioral_details": {
-        "fishing_hotspot_ratio": 0.028,
+        "fishing_hotspot_ratio": 0.041,
         "threshold": "<10% fishing"
       },
       "risk_score": 6,
@@ -1154,14 +1276,15 @@
         "YU60905--78-60%",
         "YU60905--78-69%",
         "YU60905--78-66%",
-        "YU60905--78-65%"
+        "YU60905--78-65%",
+        "YU60905--78-76%"
       ],
-      "total_snapshots": 25,
+      "total_snapshots": 26,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 14 個不同船名",
+          "description": "使用 15 個不同船名",
           "names": [
             "YU60905--78-59%",
             "YU60905--78-58%",
@@ -1176,7 +1299,8 @@
             "YU60905--78-60%",
             "YU60905--78-69%",
             "YU60905--78-66%",
-            "YU60905--78-65%"
+            "YU60905--78-65%",
+            "YU60905--78-76%"
           ],
           "severity": "high"
         },
@@ -1186,8 +1310,8 @@
           "count": 2,
           "multi_field": false,
           "details": [
-            "name: YU60905--78-69% → YU60905--78-66%",
-            "name: YU60905--78-66% → YU60905--78-65%"
+            "name: YU60905--78-66% → YU60905--78-65%",
+            "name: YU60905--78-65% → YU60905--78-76%"
           ],
           "severity": "medium"
         }
@@ -1195,7 +1319,7 @@
       "risk_level": "critical",
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
-        "使用 14 個不同船名",
+        "使用 15 個不同船名",
         "7 天內 2 次身分變更"
       ],
       "behavioral_details": {
@@ -1206,42 +1330,32 @@
       "suspicious": true
     },
     {
-      "mmsi": "995568270",
+      "mmsi": "108022736",
       "names": [
-        "CT2-5568-70-58%",
-        "CT2-5568-70-57%",
-        "CT2-5568-70-56%",
-        "CT2-5568-70-55%",
-        "CT2-5568-70-54%",
-        "CT2-5568-70-53%",
-        "CT2-5568-70-51%",
-        "CT2-5568-70-50%",
-        "CT2-5568-70-49%",
-        "CT2-5568-70-46%",
-        "CT2-5568-70-45%",
-        "CT2-5568-70-59%",
-        "CT2-5568-70-60%"
+        "WEI ZHI B01-D-96%",
+        "WEI ZHI B01-D-95%",
+        "WEI ZHI B01-D-94%",
+        "WEI ZHI B01-D-93%",
+        "WEI ZHI B01-D-97%",
+        "WEI ZHI B01-D-92%",
+        "WEI ZHI B01-D-91%",
+        "WEI ZHI B01-D-90%"
       ],
-      "total_snapshots": 37,
+      "total_snapshots": 71,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 13 個不同船名",
+          "description": "使用 8 個不同船名",
           "names": [
-            "CT2-5568-70-58%",
-            "CT2-5568-70-57%",
-            "CT2-5568-70-56%",
-            "CT2-5568-70-55%",
-            "CT2-5568-70-54%",
-            "CT2-5568-70-53%",
-            "CT2-5568-70-51%",
-            "CT2-5568-70-50%",
-            "CT2-5568-70-49%",
-            "CT2-5568-70-46%",
-            "CT2-5568-70-45%",
-            "CT2-5568-70-59%",
-            "CT2-5568-70-60%"
+            "WEI ZHI B01-D-96%",
+            "WEI ZHI B01-D-95%",
+            "WEI ZHI B01-D-94%",
+            "WEI ZHI B01-D-93%",
+            "WEI ZHI B01-D-97%",
+            "WEI ZHI B01-D-92%",
+            "WEI ZHI B01-D-91%",
+            "WEI ZHI B01-D-90%"
           ],
           "severity": "high"
         },
@@ -1251,8 +1365,8 @@
           "count": 2,
           "multi_field": false,
           "details": [
-            "name: CT2-5568-70-57% → CT2-5568-70-59%",
-            "name: CT2-5568-70-59% → CT2-5568-70-60%"
+            "name: WEI ZHI B01-D-91% → WEI ZHI B01-D-95%",
+            "name: WEI ZHI B01-D-95% → WEI ZHI B01-D-97%"
           ],
           "severity": "medium"
         }
@@ -1260,7 +1374,7 @@
       "risk_level": "critical",
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
-        "使用 13 個不同船名",
+        "使用 8 個不同船名",
         "7 天內 2 次身分變更"
       ],
       "behavioral_details": {
@@ -1839,7 +1953,7 @@
         "YU60937---6-96%",
         "YU60937---6-97%"
       ],
-      "total_snapshots": 48,
+      "total_snapshots": 49,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -1857,11 +1971,10 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 2 次身分變更",
-          "count": 2,
+          "description": "7 天內 1 次身分變更",
+          "count": 1,
           "multi_field": false,
           "details": [
-            "name: YU60937---6-97% → YU60937---6-96%",
             "name: YU60937---6-96% → YU60937---6-95%"
           ],
           "severity": "medium"
@@ -1871,7 +1984,7 @@
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
         "使用 6 個不同船名",
-        "7 天內 2 次身分變更"
+        "7 天內 1 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -1966,11 +2079,10 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 2 次身分變更",
-          "count": 2,
+          "description": "7 天內 1 次身分變更",
+          "count": 1,
           "multi_field": false,
           "details": [
-            "name: A--0224--4-84% → A--0224--4-83%",
             "name: A--0224--4-83% → A--0224--4-85%"
           ],
           "severity": "medium"
@@ -1980,7 +2092,7 @@
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
         "使用 8 個不同船名",
-        "7 天內 2 次身分變更"
+        "7 天內 1 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -1997,7 +2109,7 @@
         "A--0224--7-91%",
         "A--0224--7-94%"
       ],
-      "total_snapshots": 63,
+      "total_snapshots": 64,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -2137,7 +2249,7 @@
         "YU60943--10-57%",
         "YU60943--10-56%"
       ],
-      "total_snapshots": 14,
+      "total_snapshots": 15,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -2282,7 +2394,7 @@
         "66577",
         "MINLIANYU66577"
       ],
-      "total_snapshots": 31,
+      "total_snapshots": 32,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -2296,14 +2408,15 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 2 次身分變更",
-          "count": 2,
+          "description": "7 天內 3 次身分變更",
+          "count": 3,
           "multi_field": true,
           "details": [
             "name: 66577 → MINLIANYU66577",
             "call_sign: 66577 → 066577",
             "name: MINLIANYU66577 → 66577",
-            "call_sign: 066577 → 66577"
+            "call_sign: 066577 → 66577",
+            "call_sign: 66577 → 0000000"
           ],
           "severity": "high"
         }
@@ -2312,7 +2425,7 @@
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
         "使用 2 個不同船名",
-        "7 天內 2 次身分變更"
+        "7 天內 3 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -2365,54 +2478,6 @@
       "suspicious": true
     },
     {
-      "mmsi": "412441139",
-      "names": [
-        "0",
-        "MINLIANYU61817",
-        "MIN LIAN YU 61817",
-        "MINLIANYU6181717"
-      ],
-      "total_snapshots": 66,
-      "behavioral_threshold": true,
-      "ais_anomalies": [
-        {
-          "type": "name_change",
-          "description": "使用 4 個不同船名",
-          "names": [
-            "0",
-            "MINLIANYU61817",
-            "MIN LIAN YU 61817",
-            "MINLIANYU6181717"
-          ],
-          "severity": "medium"
-        },
-        {
-          "type": "identity_change",
-          "description": "7 天內 3 次身分變更",
-          "count": 3,
-          "multi_field": false,
-          "details": [
-            "name: MINLIANYU61817 → MIN LIAN YU 61817",
-            "name: MIN LIAN YU 61817 → MINLIANYU6181717",
-            "name: MINLIANYU6181717 → MINLIANYU61817"
-          ],
-          "severity": "high"
-        }
-      ],
-      "risk_level": "critical",
-      "flags": [
-        "行為比例異常：掛漁船旗但不在漁場",
-        "使用 4 個不同船名",
-        "7 天內 3 次身分變更"
-      ],
-      "behavioral_details": {
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": "<10% fishing"
-      },
-      "risk_score": 6,
-      "suspicious": true
-    },
-    {
       "mmsi": "412441337",
       "names": [
         "MINLIANYU61092",
@@ -2456,6 +2521,49 @@
       "suspicious": true
     },
     {
+      "mmsi": "412451449",
+      "names": [
+        "MINHUIYU01591",
+        "01591"
+      ],
+      "total_snapshots": 17,
+      "behavioral_threshold": true,
+      "ais_anomalies": [
+        {
+          "type": "name_change",
+          "description": "使用 2 個不同船名",
+          "names": [
+            "MINHUIYU01591",
+            "01591"
+          ],
+          "severity": "medium"
+        },
+        {
+          "type": "identity_change",
+          "description": "7 天內 1 次身分變更",
+          "count": 1,
+          "multi_field": true,
+          "details": [
+            "name: 01591 → MINHUIYU01591",
+            "call_sign: 01591 → 00091"
+          ],
+          "severity": "high"
+        }
+      ],
+      "risk_level": "critical",
+      "flags": [
+        "行為比例異常：掛漁船旗但不在漁場",
+        "使用 2 個不同船名",
+        "7 天內 1 次身分變更"
+      ],
+      "behavioral_details": {
+        "fishing_hotspot_ratio": 0.0,
+        "threshold": "<10% fishing"
+      },
+      "risk_score": 6,
+      "suspicious": true
+    },
+    {
       "mmsi": "995568273",
       "names": [
         "CT2-5568-73-99%",
@@ -2464,7 +2572,7 @@
         "CT2-5568-73-96%",
         "CT2-5568-73-95%"
       ],
-      "total_snapshots": 47,
+      "total_snapshots": 48,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -2494,49 +2602,6 @@
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
         "使用 5 個不同船名",
-        "7 天內 1 次身分變更"
-      ],
-      "behavioral_details": {
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": "<10% fishing"
-      },
-      "risk_score": 6,
-      "suspicious": true
-    },
-    {
-      "mmsi": "412442548",
-      "names": [
-        "MIN FU DING YU 04222",
-        "MINFUDINGYU04222"
-      ],
-      "total_snapshots": 41,
-      "behavioral_threshold": true,
-      "ais_anomalies": [
-        {
-          "type": "name_change",
-          "description": "使用 2 個不同船名",
-          "names": [
-            "MIN FU DING YU 04222",
-            "MINFUDINGYU04222"
-          ],
-          "severity": "medium"
-        },
-        {
-          "type": "identity_change",
-          "description": "7 天內 1 次身分變更",
-          "count": 1,
-          "multi_field": true,
-          "details": [
-            "name: MINFUDINGYU04222 → MIN FU DING YU 04222",
-            "call_sign: 0000000 → 04222"
-          ],
-          "severity": "high"
-        }
-      ],
-      "risk_level": "critical",
-      "flags": [
-        "行為比例異常：掛漁船旗但不在漁場",
-        "使用 2 個不同船名",
         "7 天內 1 次身分變更"
       ],
       "behavioral_details": {
@@ -2580,11 +2645,10 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 2 次身分變更",
-          "count": 2,
+          "description": "7 天內 1 次身分變更",
+          "count": 1,
           "multi_field": false,
           "details": [
-            "name: YU60986--60-80% → YU60986--60-78%",
             "name: YU60986--60-78% → YU60986--60-77%"
           ],
           "severity": "medium"
@@ -2594,7 +2658,7 @@
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
         "使用 9 個不同船名",
-        "7 天內 2 次身分變更"
+        "7 天內 1 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -2609,7 +2673,7 @@
         "CHI SHENG NO.10",
         "JI SHUN NO.10"
       ],
-      "total_snapshots": 16,
+      "total_snapshots": 17,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -2706,7 +2770,7 @@
         "MINLIANYU67936",
         "00C"
       ],
-      "total_snapshots": 53,
+      "total_snapshots": 54,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -2721,11 +2785,10 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 5 次身分變更",
-          "count": 5,
+          "description": "7 天內 4 次身分變更",
+          "count": 4,
           "multi_field": false,
           "details": [
-            "name: MINLIANYU67936 → MIN LIAN YU 67936",
             "name: MIN LIAN YU 67936 → MINLIANYU67936",
             "name: MINLIANYU67936 → MIN LIAN YU 67936",
             "name: MIN LIAN YU 67936 → MINLIANYU67936",
@@ -2738,7 +2801,7 @@
       "flags": [
         "行為比例異常：掛漁船旗但不在漁場",
         "使用 3 個不同船名",
-        "7 天內 5 次身分變更"
+        "7 天內 4 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 0.0,
@@ -2759,7 +2822,7 @@
         "MINPUYU02677-9-68%",
         "MINPUYU02677-9-67%"
       ],
-      "total_snapshots": 17,
+      "total_snapshots": 18,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -2808,7 +2871,7 @@
         "MIN LIAN YU61888",
         "MINLIANYU61888"
       ],
-      "total_snapshots": 64,
+      "total_snapshots": 65,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -2822,58 +2885,13 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 4 次身分變更",
-          "count": 4,
-          "multi_field": false,
-          "details": [
-            "name: MINLIANYU61888 → MIN LIAN YU61888",
-            "call_sign: 61888 → 0000000",
-            "call_sign: 0000000 → 61888",
-            "call_sign: 61888 → 0000000"
-          ],
-          "severity": "high"
-        }
-      ],
-      "risk_level": "critical",
-      "flags": [
-        "行為比例異常：掛漁船旗但不在漁場",
-        "使用 2 個不同船名",
-        "7 天內 4 次身分變更"
-      ],
-      "behavioral_details": {
-        "fishing_hotspot_ratio": 0.0,
-        "threshold": "<10% fishing"
-      },
-      "risk_score": 6,
-      "suspicious": true
-    },
-    {
-      "mmsi": "412441296",
-      "names": [
-        "MIN LIAN YU 60915",
-        "MINLIANYU60915"
-      ],
-      "total_snapshots": 26,
-      "behavioral_threshold": true,
-      "ais_anomalies": [
-        {
-          "type": "name_change",
-          "description": "使用 2 個不同船名",
-          "names": [
-            "MIN LIAN YU 60915",
-            "MINLIANYU60915"
-          ],
-          "severity": "medium"
-        },
-        {
-          "type": "identity_change",
           "description": "7 天內 3 次身分變更",
           "count": 3,
           "multi_field": false,
           "details": [
-            "call_sign: 0000000 → 60915",
-            "call_sign: 60915 → 0000000",
-            "call_sign: 0000000 → 60915"
+            "call_sign: 61888 → 0000000",
+            "call_sign: 0000000 → 61888",
+            "call_sign: 61888 → 0000000"
           ],
           "severity": "high"
         }
@@ -2898,7 +2916,7 @@
         "61885NYU61885",
         "MINLIANYU61885"
       ],
-      "total_snapshots": 49,
+      "total_snapshots": 50,
       "behavioral_threshold": true,
       "ais_anomalies": [
         {
@@ -2917,9 +2935,9 @@
           "count": 3,
           "multi_field": false,
           "details": [
-            "name: 61885 → 61885NYU61885",
             "name: 61885NYU61885 → 61885",
-            "name: 61885 → 61885NYU61885"
+            "name: 61885 → 61885NYU61885",
+            "name: 61885NYU61885 → 61885"
           ],
           "severity": "high"
         }
@@ -2949,7 +2967,7 @@
         "SHEN JIN MAN18    3",
         "SHEN JIN MAN18    2"
       ],
-      "total_snapshots": 74,
+      "total_snapshots": 75,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -2967,22 +2985,23 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 2 次身分變更",
-          "count": 2,
+          "description": "7 天內 3 次身分變更",
+          "count": 3,
           "multi_field": false,
           "details": [
             "name: SHEN JIN MAN18    3 → SHEN JIN MAN18    2",
-            "name: SHEN JIN MAN18    2 → SHEN JIN MAN18    3"
+            "name: SHEN JIN MAN18    2 → SHEN JIN MAN18    3",
+            "name: SHEN JIN MAN18    3 → SHEN JIN MAN18    2"
           ],
-          "severity": "medium"
+          "severity": "high"
         }
       ],
       "risk_level": "high",
       "flags": [
         "使用 6 個不同船名",
-        "7 天內 2 次身分變更"
+        "7 天內 3 次身分變更"
       ],
-      "risk_score": 3,
+      "risk_score": 4,
       "suspicious": true
     },
     {
@@ -3001,7 +3020,7 @@
         "69801-19-89%",
         "69801-19-88%"
       ],
-      "total_snapshots": 70,
+      "total_snapshots": 71,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -3424,7 +3443,7 @@
         "01%",
         "NETFISHING      12V2"
       ],
-      "total_snapshots": 36,
+      "total_snapshots": 37,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -3566,7 +3585,7 @@
       "names": [
         "JUN GANG 168"
       ],
-      "total_snapshots": 72,
+      "total_snapshots": 73,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -3586,7 +3605,7 @@
         "NEAU SHENG MAAN NO.1",
         "NEAU YU MAAN NO.1"
       ],
-      "total_snapshots": 72,
+      "total_snapshots": 73,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -3600,11 +3619,12 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 1 次身分變更",
-          "count": 1,
+          "description": "7 天內 2 次身分變更",
+          "count": 2,
           "multi_field": false,
           "details": [
-            "name: NEAU SHENG MAAN NO.1 → NEAU YU MAAN NO.1"
+            "name: NEAU SHENG MAAN NO.1 → NEAU YU MAAN NO.1",
+            "name: NEAU YU MAAN NO.1 → NEAU SHENG MAAN NO.1"
           ],
           "severity": "medium"
         }
@@ -3612,7 +3632,7 @@
       "risk_level": "medium",
       "flags": [
         "使用 2 個不同船名",
-        "7 天內 1 次身分變更"
+        "7 天內 2 次身分變更"
       ],
       "behavioral_details": {
         "fishing_hotspot_ratio": 1.0,
@@ -3669,7 +3689,7 @@
         "SAN59188--3--22%",
         "SAN59188--3--25%"
       ],
-      "total_snapshots": 44,
+      "total_snapshots": 45,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -3706,15 +3726,16 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 5 次身分變更",
-          "count": 5,
+          "description": "7 天內 6 次身分變更",
+          "count": 6,
           "multi_field": false,
           "details": [
             "name: SAN59188--3--19% → SAN59188--3--09%",
             "name: SAN59188--3--09% → SAN59188--3--13%",
             "name: SAN59188--3--13% → SAN59188--3--16%",
             "name: SAN59188--3--16% → SAN59188--3--22%",
-            "name: SAN59188--3--22% → SAN59188--3--25%"
+            "name: SAN59188--3--22% → SAN59188--3--25%",
+            "name: SAN59188--3--25% → SAN59188--3--27%"
           ],
           "severity": "high"
         }
@@ -3722,7 +3743,7 @@
       "risk_level": "high",
       "flags": [
         "使用 25 個不同船名",
-        "7 天內 5 次身分變更"
+        "7 天內 6 次身分變更"
       ],
       "risk_score": 4,
       "suspicious": true
@@ -3843,7 +3864,7 @@
       "names": [
         "MIN SHI YU 06779"
       ],
-      "total_snapshots": 12,
+      "total_snapshots": 13,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -3943,7 +3964,7 @@
         "MIN SHI YU 07706",
         "MINSHIYU07706"
       ],
-      "total_snapshots": 51,
+      "total_snapshots": 52,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -3957,11 +3978,12 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 1 次身分變更",
-          "count": 1,
+          "description": "7 天內 2 次身分變更",
+          "count": 2,
           "multi_field": false,
           "details": [
-            "name: MINSHIYU07706 → MIN SHI YU 07706"
+            "name: MINSHIYU07706 → MIN SHI YU 07706",
+            "name: MIN SHI YU 07706 → MINSHIYU07706"
           ],
           "severity": "medium"
         }
@@ -3969,10 +3991,10 @@
       "risk_level": "medium",
       "flags": [
         "使用 2 個不同船名",
-        "7 天內 1 次身分變更"
+        "7 天內 2 次身分變更"
       ],
       "behavioral_details": {
-        "fishing_hotspot_ratio": 0.471,
+        "fishing_hotspot_ratio": 0.481,
         "threshold": "<10% fishing"
       },
       "risk_score": 2,
@@ -4003,7 +4025,7 @@
         "MINSHIYU06825",
         "MIN SHI YU 06825"
       ],
-      "total_snapshots": 70,
+      "total_snapshots": 71,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -4017,11 +4039,10 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 4 次身分變更",
-          "count": 4,
+          "description": "7 天內 3 次身分變更",
+          "count": 3,
           "multi_field": false,
           "details": [
-            "name: MIN SHI YU 06825 → MINSHIYU06825",
             "name: MINSHIYU06825 → MIN SHI YU 06825",
             "name: MIN SHI YU 06825 → MINSHIYU06825",
             "name: MINSHIYU06825 → MIN SHI YU 06825"
@@ -4032,10 +4053,10 @@
       "risk_level": "high",
       "flags": [
         "使用 2 個不同船名",
-        "7 天內 4 次身分變更"
+        "7 天內 3 次身分變更"
       ],
       "behavioral_details": {
-        "fishing_hotspot_ratio": 0.771,
+        "fishing_hotspot_ratio": 0.761,
         "threshold": "<10% fishing"
       },
       "risk_score": 3,
@@ -4085,7 +4106,7 @@
         "MINSHIYU06053",
         "MIN SHI YU 06053"
       ],
-      "total_snapshots": 64,
+      "total_snapshots": 65,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -4115,7 +4136,7 @@
         "7 天內 2 次身分變更"
       ],
       "behavioral_details": {
-        "fishing_hotspot_ratio": 0.453,
+        "fishing_hotspot_ratio": 0.462,
         "threshold": "<10% fishing"
       },
       "risk_score": 2,
@@ -4147,7 +4168,7 @@
         "00C",
         "MINLONG666"
       ],
-      "total_snapshots": 65,
+      "total_snapshots": 66,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -4162,13 +4183,14 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 3 次身分變更",
-          "count": 3,
+          "description": "7 天內 4 次身分變更",
+          "count": 4,
           "multi_field": false,
           "details": [
             "name: MIN LONG 666 → 00C",
             "name: 00C → MIN LONG 666",
-            "name: MIN LONG 666 → MINLONG666"
+            "name: MIN LONG 666 → MINLONG666",
+            "name: MINLONG666 → MIN LONG 666"
           ],
           "severity": "high"
         }
@@ -4176,7 +4198,7 @@
       "risk_level": "high",
       "flags": [
         "使用 3 個不同船名",
-        "7 天內 3 次身分變更"
+        "7 天內 4 次身分變更"
       ],
       "risk_score": 3,
       "suspicious": true
@@ -4273,7 +4295,7 @@
       "names": [
         "08568"
       ],
-      "total_snapshots": 61,
+      "total_snapshots": 62,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -4537,7 +4559,7 @@
       "names": [
         "MMSI-412700038"
       ],
-      "total_snapshots": 12,
+      "total_snapshots": 13,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -4765,7 +4787,7 @@
       "names": [
         "MINXIAYU15002"
       ],
-      "total_snapshots": 39,
+      "total_snapshots": 40,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -4784,7 +4806,7 @@
       "names": [
         "MINXIAYU62006"
       ],
-      "total_snapshots": 11,
+      "total_snapshots": 12,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -4878,14 +4900,15 @@
         "11077-74-16%",
         "11077-74-15%",
         "11077-74-11%",
-        "11077-74-08%"
+        "11077-74-08%",
+        "11077-74-05%"
       ],
-      "total_snapshots": 73,
+      "total_snapshots": 74,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 40 個不同船名",
+          "description": "使用 41 個不同船名",
           "names": [
             "11077-74-62%",
             "11077-74-61%",
@@ -4926,7 +4949,8 @@
             "11077-74-16%",
             "11077-74-15%",
             "11077-74-11%",
-            "11077-74-08%"
+            "11077-74-08%",
+            "11077-74-05%"
           ],
           "severity": "high"
         },
@@ -4936,19 +4960,19 @@
           "count": 6,
           "multi_field": false,
           "details": [
-            "name: 11077-74-22% → 11077-74-20%",
             "name: 11077-74-20% → 11077-74-18%",
             "name: 11077-74-18% → 11077-74-16%",
             "name: 11077-74-16% → 11077-74-15%",
             "name: 11077-74-15% → 11077-74-11%",
-            "name: 11077-74-11% → 11077-74-08%"
+            "name: 11077-74-11% → 11077-74-08%",
+            "name: 11077-74-08% → 11077-74-05%"
           ],
           "severity": "high"
         }
       ],
       "risk_level": "high",
       "flags": [
-        "使用 40 個不同船名",
+        "使用 41 個不同船名",
         "7 天內 6 次身分變更"
       ],
       "risk_score": 4,
@@ -4959,7 +4983,7 @@
       "names": [
         "JI LONG JIAN"
       ],
-      "total_snapshots": 11,
+      "total_snapshots": 12,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -4997,7 +5021,7 @@
       "names": [
         "MINLIANYUYUN62666"
       ],
-      "total_snapshots": 15,
+      "total_snapshots": 16,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -5026,7 +5050,7 @@
         "B9087-89%",
         "B9087-88%"
       ],
-      "total_snapshots": 55,
+      "total_snapshots": 56,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -5072,7 +5096,7 @@
         "B9088-84%",
         "B9088-83%"
       ],
-      "total_snapshots": 49,
+      "total_snapshots": 50,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -5114,7 +5138,7 @@
         "B9089-93%",
         "B9089-92%"
       ],
-      "total_snapshots": 54,
+      "total_snapshots": 55,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -5156,7 +5180,7 @@
         "B9090-83%",
         "B9090-82%"
       ],
-      "total_snapshots": 48,
+      "total_snapshots": 49,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -5200,7 +5224,7 @@
         "994170001 93%",
         "994170001 92%"
       ],
-      "total_snapshots": 72,
+      "total_snapshots": 73,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -5238,7 +5262,7 @@
         "7 天內 2 次身分變更"
       ],
       "behavioral_details": {
-        "fishing_hotspot_ratio": 0.611,
+        "fishing_hotspot_ratio": 0.603,
         "threshold": "<10% fishing"
       },
       "risk_score": 4,
@@ -5268,14 +5292,15 @@
         "99417-02-76%",
         "99417-02-75%",
         "99417-02-74%",
-        "99417-02-73%"
+        "99417-02-73%",
+        "99417-02-72%"
       ],
-      "total_snapshots": 69,
+      "total_snapshots": 70,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 22 個不同船名",
+          "description": "使用 23 個不同船名",
           "names": [
             "99417-02-99%",
             "99417-02-98%",
@@ -5298,17 +5323,29 @@
             "99417-02-76%",
             "99417-02-75%",
             "99417-02-74%",
-            "99417-02-73%"
+            "99417-02-73%",
+            "99417-02-72%"
           ],
           "severity": "high"
+        },
+        {
+          "type": "identity_change",
+          "description": "7 天內 1 次身分變更",
+          "count": 1,
+          "multi_field": false,
+          "details": [
+            "name: 99417-02-73% → 99417-02-72%"
+          ],
+          "severity": "medium"
         }
       ],
-      "risk_level": "medium",
+      "risk_level": "high",
       "flags": [
-        "使用 22 個不同船名"
+        "使用 23 個不同船名",
+        "7 天內 1 次身分變更"
       ],
-      "risk_score": 2,
-      "suspicious": false
+      "risk_score": 3,
+      "suspicious": true
     },
     {
       "mmsi": "994170005",
@@ -5330,7 +5367,7 @@
         "994170005 36%",
         "994170005 100%"
       ],
-      "total_snapshots": 69,
+      "total_snapshots": 70,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -5362,7 +5399,7 @@
         "使用 16 個不同船名"
       ],
       "behavioral_details": {
-        "fishing_hotspot_ratio": 0.623,
+        "fishing_hotspot_ratio": 0.614,
         "threshold": "<10% fishing"
       },
       "risk_score": 2,
@@ -5403,14 +5440,15 @@
         "994170006-57%",
         "994170006-56%",
         "994170006-55%",
-        "994170006-54%"
+        "994170006-54%",
+        "994170006-53%"
       ],
-      "total_snapshots": 71,
+      "total_snapshots": 72,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 33 個不同船名",
+          "description": "使用 34 個不同船名",
           "names": [
             "994170006-91%",
             "994170006-90%",
@@ -5444,7 +5482,8 @@
             "994170006-57%",
             "994170006-56%",
             "994170006-55%",
-            "994170006-54%"
+            "994170006-54%",
+            "994170006-53%"
           ],
           "severity": "high"
         },
@@ -5454,16 +5493,16 @@
           "count": 3,
           "multi_field": false,
           "details": [
-            "name: 994170006-57% → 994170006-56%",
             "name: 994170006-56% → 994170006-55%",
-            "name: 994170006-55% → 994170006-54%"
+            "name: 994170006-55% → 994170006-54%",
+            "name: 994170006-54% → 994170006-53%"
           ],
           "severity": "high"
         }
       ],
       "risk_level": "high",
       "flags": [
-        "使用 33 個不同船名",
+        "使用 34 個不同船名",
         "7 天內 3 次身分變更"
       ],
       "risk_score": 4,
@@ -5498,7 +5537,7 @@
         "994170007-72%",
         "994170007-71%"
       ],
-      "total_snapshots": 73,
+      "total_snapshots": 74,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -5535,11 +5574,10 @@
         },
         {
           "type": "identity_change",
-          "description": "7 天內 6 次身分變更",
-          "count": 6,
+          "description": "7 天內 5 次身分變更",
+          "count": 5,
           "multi_field": false,
           "details": [
-            "name: 994170007-80% → 994170007-79%",
             "name: 994170007-79% → 994170007-78%",
             "name: 994170007-78% → 994170007-77%",
             "name: 994170007-77% → 994170007-74%",
@@ -5552,7 +5590,7 @@
       "risk_level": "high",
       "flags": [
         "使用 25 個不同船名",
-        "7 天內 6 次身分變更"
+        "7 天內 5 次身分變更"
       ],
       "risk_score": 4,
       "suspicious": true
@@ -5592,7 +5630,7 @@
         "994170008-75%",
         "994170008-73%"
       ],
-      "total_snapshots": 68,
+      "total_snapshots": 69,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -5713,7 +5751,7 @@
         "994170010         7V",
         "994170010         9V"
       ],
-      "total_snapshots": 61,
+      "total_snapshots": 62,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -5749,7 +5787,7 @@
         "994170012 98%",
         "994170012 97%"
       ],
-      "total_snapshots": 72,
+      "total_snapshots": 73,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -5790,7 +5828,7 @@
         "7 天內 3 次身分變更"
       ],
       "behavioral_details": {
-        "fishing_hotspot_ratio": 0.597,
+        "fishing_hotspot_ratio": 0.589,
         "threshold": "<10% fishing"
       },
       "risk_score": 4,
@@ -5813,7 +5851,7 @@
         "994170013 88%",
         "994170013 100%"
       ],
-      "total_snapshots": 65,
+      "total_snapshots": 66,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -5842,7 +5880,7 @@
         "使用 13 個不同船名"
       ],
       "behavioral_details": {
-        "fishing_hotspot_ratio": 0.615,
+        "fishing_hotspot_ratio": 0.606,
         "threshold": "<10% fishing"
       },
       "risk_score": 2,
@@ -5955,14 +5993,15 @@
         "LIN21853--1-27%",
         "LIN21853--1-26%",
         "LIN21853--1-33%",
-        "LIN21853--1-35%"
+        "LIN21853--1-35%",
+        "LIN21853--1-36%"
       ],
-      "total_snapshots": 44,
+      "total_snapshots": 45,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 15 個不同船名",
+          "description": "使用 16 個不同船名",
           "names": [
             "LIN21853--1-32%",
             "LIN21853--1-31%",
@@ -5978,27 +6017,29 @@
             "LIN21853--1-27%",
             "LIN21853--1-26%",
             "LIN21853--1-33%",
-            "LIN21853--1-35%"
+            "LIN21853--1-35%",
+            "LIN21853--1-36%"
           ],
           "severity": "high"
         },
         {
           "type": "identity_change",
-          "description": "7 天內 3 次身分變更",
-          "count": 3,
+          "description": "7 天內 4 次身分變更",
+          "count": 4,
           "multi_field": false,
           "details": [
             "name: LIN21853--1-31% → LIN21853--1-30%",
             "name: LIN21853--1-30% → LIN21853--1-32%",
-            "name: LIN21853--1-32% → LIN21853--1-35%"
+            "name: LIN21853--1-32% → LIN21853--1-35%",
+            "name: LIN21853--1-35% → LIN21853--1-36%"
           ],
           "severity": "high"
         }
       ],
       "risk_level": "high",
       "flags": [
-        "使用 15 個不同船名",
-        "7 天內 3 次身分變更"
+        "使用 16 個不同船名",
+        "7 天內 4 次身分變更"
       ],
       "risk_score": 4,
       "suspicious": true
@@ -6008,7 +6049,7 @@
       "names": [
         "MINLIANYU61858"
       ],
-      "total_snapshots": 30,
+      "total_snapshots": 31,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -6108,7 +6149,7 @@
       "names": [
         "MINFUDINGYULENG09933"
       ],
-      "total_snapshots": 71,
+      "total_snapshots": 72,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -6127,7 +6168,7 @@
       "names": [
         "MINLIANYUYUN60523"
       ],
-      "total_snapshots": 17,
+      "total_snapshots": 18,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -6146,7 +6187,7 @@
       "names": [
         "MINLIANYUYOU60466"
       ],
-      "total_snapshots": 32,
+      "total_snapshots": 33,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -6234,7 +6275,7 @@
         "ZHEFENGYUYUN00138",
         "SAI YANG DIAN ZI"
       ],
-      "total_snapshots": 73,
+      "total_snapshots": 74,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -6281,7 +6322,7 @@
         "7 天內 4 次身分變更"
       ],
       "behavioral_details": {
-        "fishing_hotspot_ratio": 0.288,
+        "fishing_hotspot_ratio": 0.284,
         "threshold": "<10% fishing"
       },
       "risk_score": 5,
@@ -6293,7 +6334,7 @@
         "SHUN ZHOU 99",
         "SHTHHJHOU 99"
       ],
-      "total_snapshots": 72,
+      "total_snapshots": 73,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
@@ -6345,35 +6386,38 @@
       "mmsi": "413354760",
       "names": [
         "SHEN ZHOU 29",
-        "SHEN ZHOU 298"
+        "SHEN ZHOU 298",
+        "SHENZHOU297018"
       ],
-      "total_snapshots": 65,
+      "total_snapshots": 66,
       "behavioral_threshold": false,
       "ais_anomalies": [
         {
           "type": "name_change",
-          "description": "使用 2 個不同船名",
+          "description": "使用 3 個不同船名",
           "names": [
             "SHEN ZHOU 29",
-            "SHEN ZHOU 298"
+            "SHEN ZHOU 298",
+            "SHENZHOU297018"
           ],
           "severity": "medium"
         },
         {
           "type": "identity_change",
-          "description": "7 天內 1 次身分變更",
-          "count": 1,
+          "description": "7 天內 2 次身分變更",
+          "count": 2,
           "multi_field": false,
           "details": [
-            "name: SHEN ZHOU 298 → SHEN ZHOU 29"
+            "name: SHEN ZHOU 298 → SHEN ZHOU 29",
+            "name: SHEN ZHOU 29 → SHENZHOU297018"
           ],
           "severity": "medium"
         }
       ],
       "risk_level": "medium",
       "flags": [
-        "使用 2 個不同船名",
-        "7 天內 1 次身分變更"
+        "使用 3 個不同船名",
+        "7 天內 2 次身分變更"
       ],
       "risk_score": 2,
       "suspicious": false
@@ -6383,7 +6427,7 @@
       "names": [
         "MMSI-412507675"
       ],
-      "total_snapshots": 29,
+      "total_snapshots": 30,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
@@ -6421,7 +6465,7 @@
       "names": [
         "MMSI-412507685"
       ],
-      "total_snapshots": 27,
+      "total_snapshots": 28,
       "behavioral_threshold": true,
       "ais_anomalies": [],
       "risk_level": "high",
