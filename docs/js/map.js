@@ -10,6 +10,7 @@ const MapModule = (function() {
     let layers = {
         fishingHotspots: null,
         vessels: null,
+        darkVessels: null,
         submarineCables: null
     };
     let vesselMarkers = {};
@@ -101,6 +102,7 @@ const MapModule = (function() {
         // Create layer groups
         layers.fishingHotspots = L.layerGroup().addTo(map);
         layers.vessels = L.layerGroup().addTo(map);
+        layers.darkVessels = L.layerGroup().addTo(map);
         layers.submarineCables = L.layerGroup();
 
         // Draw Taiwan outline
@@ -257,6 +259,7 @@ const MapModule = (function() {
      * Display dark vessels on the map
      */
     function displayDarkVessels(darkData) {
+        layers.darkVessels.clearLayers();
         let totalPlotted = 0;
 
         Object.entries(darkData.regions).forEach(([regionKey, region]) => {
@@ -277,7 +280,7 @@ const MapModule = (function() {
                     weight: 1,
                     opacity: 0.6,
                     fillOpacity: 0.35
-                }).addTo(layers.vessels).bindPopup(
+                }).addTo(layers.darkVessels).bindPopup(
                     `<b style="color:${color}">${t2('map.sar_dark')}</b><br>` +
                     `${t2('dv.popup_region')} ${name}<br>` +
                     `${t2('dv.popup_date')} ${d.date}<br>` +
