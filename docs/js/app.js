@@ -8,6 +8,7 @@ const App = (function () {
 
     // State
     let vessels = new Map();
+    let rawVesselList = []; // raw AIS vessel array for re-rendering on filter change
     let suspiciousData = null;
     let sidebarOpen = false;
 
@@ -49,6 +50,21 @@ const App = (function () {
                     await MapModule.loadSubmarineCables();
                 }
                 MapModule.toggleLayer('submarineCables', cableCheckbox.checked);
+            });
+        }
+
+        // FOC commercial vessel filter
+        const focCheckbox = document.getElementById('filterFocVessels');
+        if (focCheckbox) {
+            focCheckbox.addEventListener('change', () => {
+                MapModule.setFilterFoc(focCheckbox.checked);
+                if (rawVesselList.length > 0) {
+                    const result = MapModule.displayVessels(rawVesselList, vessels);
+                    vessels = result.vessels;
+                    ChartsModule.updateAisStats(result.stats);
+                    document.getElementById('vesselCount').textContent = result.stats.total;
+                    updateVesselList();
+                }
             });
         }
     }
@@ -327,7 +343,8 @@ const App = (function () {
             // Load AIS real-time vessels
             const hasAis = data.ais_snapshot && data.ais_snapshot.vessels && data.ais_snapshot.vessels.length > 0;
             if (hasAis) {
-                const result = MapModule.displayVessels(data.ais_snapshot.vessels, vessels);
+                rawVesselList = data.ais_snapshot.vessels;
+                const result = MapModule.displayVessels(rawVesselList, vessels);
                 vessels = result.vessels;
 
                 ChartsModule.updateAisStats(result.stats);
