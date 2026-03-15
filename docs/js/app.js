@@ -537,6 +537,9 @@ const App = (function () {
                 MapModule.displaySuspiciousVessels(suspiciousData);
             }
 
+            // Populate Today's Overview dashboard
+            updateOverview(data);
+
             // Load cable fault status
             loadCableStatus();
 
@@ -629,6 +632,97 @@ const App = (function () {
         }
     }
 
+    /**
+     * Populate the Today's Overview dashboard
+     */
+    function updateOverview(data) {
+        const ov = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+
+        // AIS vessel count
+        const aisCount = data.ais_snapshot?.vessels?.length || 0;
+        ov('ovAisCount', aisCount.toLocaleString());
+
+        // Dark vessels
+        const darkTotal = data.dark_vessels?.overall?.dark_vessels || 0;
+        ov('ovDarkVessels', darkTotal.toLocaleString());
+
+        // Suspicious
+        const suspCount = data.suspicious_analysis?.summary?.suspicious_count || 0;
+        ov('ovSuspicious', suspCount);
+
+        // Identity changes (24h)
+        const idEvents = data.identity_events?.events || [];
+        const now = Date.now();
+        const h24 = idEvents.filter(e => (now - new Date(e.timestamp).getTime()) < 86400000).length;
+        ov('ovIdentity', h24);
+
+        // Update time
+        const updEl = document.getElementById('overviewUpdated');
+        if (updEl && data.updated_at) {
+            const ago = Math.round((now - new Date(data.updated_at).getTime()) / 60000);
+            const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+            updEl.textContent = ago < 60
+                ? (ago + ' min ago')
+                : (Math.round(ago / 60) + ' hr ago');
+        }
+
+        // Alert bar — show top alerts
+        const alertBar = document.getElementById('overviewAlerts');
+        if (alertBar) {
+            const alerts = [];
+            if (darkTotal > 0) {
+                alerts.push('SAR 偵測到 ' + darkTotal + ' 艘暗船於台灣周邊海域');
+            }
+            if (suspCount > 0) {
+                alerts.push(suspCount + ' 艘船隻行為異常（CSIS 方法論判定）');
+            }
+            if (h24 > 0) {
+                alerts.push('過去 24 小時內 ' + h24 + ' 次 AIS 身分變更事件');
+            }
+            alertBar.innerHTML = alerts.map(a =>
+                '<div class="overview-alert-item">' + a + '</div>'
+            ).join('');
+        }
+    }
+
+    /**
+     * Share functions
+     */
+    function shareToTwitter() {
+        const text = buildShareText();
+        const url = 'https://s0914712.github.io/taiwan-grayzone-monitor/';
+        window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank');
+    }
+
+    function shareToLine() {
+        const text = buildShareText();
+        const url = 'https://s0914712.github.io/taiwan-grayzone-monitor/';
+        window.open('https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text), '_blank');
+    }
+
+    function copyShareLink() {
+        const text = buildShareText() + '\nhttps://s0914712.github.io/taiwan-grayzone-monitor/';
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.querySelector('.share-btn:last-child');
+            if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '🔗'; }, 1500); }
+        });
+    }
+
+    function buildShareText() {
+        const ais = document.getElementById('ovAisCount')?.textContent || '--';
+        const dark = document.getElementById('ovDarkVessels')?.textContent || '--';
+        const susp = document.getElementById('ovSuspicious')?.textContent || '--';
+        const date = new Date().toLocaleDateString('zh-TW');
+        return '🛰️ 台灣灰色地帶監測 ' + date +
+               '\nAIS 船隻: ' + ais +
+               ' | 暗船: ' + dark +
+               ' | 可疑: ' + susp +
+               '\n#TaiwanSecurity #GrayZone #OSINT';
+    }
+
     // Public API
     return {
         init,
@@ -636,7 +730,10 @@ const App = (function () {
         toggleLayer,
         focusVessel,
         focusSuspicious,
-        loadData
+        loadData,
+        shareToTwitter,
+        shareToLine,
+        copyShareLink
     };
 })();
 

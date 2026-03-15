@@ -99,6 +99,38 @@
             </div>
         </header>
 
+        <!-- Today's Overview Dashboard -->
+        <div class="today-overview" id="todayOverview">
+            <div class="overview-header">
+                <h2 data-i18n="overview.title">今日概況</h2>
+                <div class="overview-updated" id="overviewUpdated"></div>
+                <div class="share-buttons">
+                    <button class="share-btn" onclick="App.shareToTwitter()" title="Share on X/Twitter">𝕏</button>
+                    <button class="share-btn" onclick="App.shareToLine()" title="Share on LINE">L</button>
+                    <button class="share-btn" onclick="App.copyShareLink()" title="Copy link">🔗</button>
+                </div>
+            </div>
+            <div class="overview-cards">
+                <div class="overview-card">
+                    <div class="overview-value" id="ovAisCount">--</div>
+                    <div class="overview-label" data-i18n="overview.ais_vessels">AIS 船隻</div>
+                </div>
+                <div class="overview-card alert">
+                    <div class="overview-value" id="ovDarkVessels">--</div>
+                    <div class="overview-label" data-i18n="overview.dark_vessels">暗船偵測</div>
+                </div>
+                <div class="overview-card warn">
+                    <div class="overview-value" id="ovSuspicious">--</div>
+                    <div class="overview-label" data-i18n="overview.suspicious">可疑船隻</div>
+                </div>
+                <div class="overview-card">
+                    <div class="overview-value" id="ovIdentity">--</div>
+                    <div class="overview-label" data-i18n="overview.identity_changes">身分變更</div>
+                </div>
+            </div>
+            <div class="overview-alert-bar" id="overviewAlerts"></div>
+        </div>
+
         <div class="map-section">
             <div id="map"></div>
 
