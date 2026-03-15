@@ -11,9 +11,31 @@ const MapModule = (function() {
         fishingHotspots: null,
         vessels: null,
         darkVessels: null,
-        submarineCables: null
+        submarineCables: null,
+        vesselRoutes: null
     };
     let vesselMarkers = {};
+
+    // Cached vessel data for zoom-based re-rendering
+    let cachedVesselList = [];
+    let cachedVessels = new Map();
+    let cachedStats = { total: 0, fishing: 0, cargo: 0, tanker: 0, suspicious: 0 };
+
+    // Zoom threshold: <= this shows clusters, > this shows individual markers
+    const CLUSTER_ZOOM_THRESHOLD = 8;
+
+    // Cluster region centers for aggregate display
+    const CLUSTER_CENTERS = {
+        taiwan_bank:   { center: [22.75, 118.25], name: '台灣灘', zoom: 9 },
+        penghu:        { center: [23.5, 119.5],   name: '澎湖',   zoom: 10 },
+        kuroshio_east: { center: [23.5, 121.5],   name: '東部',   zoom: 9 },
+        northeast:     { center: [25.3, 122.25],  name: '東北',   zoom: 9 },
+        southwest:     { center: [22.5, 120.4],   name: '西南',   zoom: 10 },
+        other:         { center: [23.5, 119.5],   name: '其他海域', zoom: 8 }
+    };
+
+    // Vessels with pre-extracted route data
+    const TRACKED_VESSELS = ['677025700'];
 
     // Fishing hotspots
     const FISHING_HOTSPOTS = {
@@ -104,9 +126,20 @@ const MapModule = (function() {
         layers.vessels = L.layerGroup().addTo(map);
         layers.darkVessels = L.layerGroup().addTo(map);
         layers.submarineCables = L.layerGroup();
+        layers.vesselRoutes = L.layerGroup().addTo(map);
 
         // Draw Taiwan outline
         drawTaiwanOutline();
+
+        // Zoom/move events for cluster <-> detail transitions
+        map.on('zoomend', () => {
+            if (cachedVesselList.length > 0) renderVesselsForZoom();
+        });
+        map.on('moveend', () => {
+            if (cachedVesselList.length > 0 && map.getZoom() > CLUSTER_ZOOM_THRESHOLD) {
+                renderVesselsForZoom();
+            }
+        });
 
         return map;
     }
@@ -156,25 +189,30 @@ const MapModule = (function() {
      * Create a MarineTraffic-style triangle SVG icon
      */
     function createVesselIcon(color, isSuspicious, heading) {
-        const size = isSuspicious ? 16 : 12;
-        const half = size / 2;
+        const w = isSuspicious ? 10 : 7;
+        const h = isSuspicious ? 20 : 16;
         const rotation = heading !== null && heading !== undefined ? heading : 0;
-        const opacity = isSuspicious ? 0.85 : 0.6;
+        const opacity = isSuspicious ? 0.85 : 0.7;
+        const sw = isSuspicious ? 1.5 : 0.8;
 
         let shape;
         if (heading !== null && heading !== undefined) {
-            // Triangle pointing up, rotated by heading
-            shape = '<polygon points="' + half + ',1 ' + (size - 1) + ',' + (size - 1) + ' 1,' + (size - 1) + '" ' +
+            // Narrow arrow with notch — shows heading direction clearly
+            const cx = w / 2;
+            const notch = h * 0.7;
+            shape = '<polygon points="' + cx + ',0 ' + w + ',' + h + ' ' + cx + ',' + notch + ' 0,' + h + '" ' +
                     'fill="' + color + '" fill-opacity="' + opacity + '" ' +
-                    'stroke="' + color + '" stroke-width="' + (isSuspicious ? 1.5 : 0.8) + '" stroke-opacity="0.9"/>';
+                    'stroke="' + color + '" stroke-width="' + sw + '" stroke-opacity="0.9"/>';
         } else {
             // Diamond for unknown heading
-            shape = '<polygon points="' + half + ',1 ' + (size - 1) + ',' + half + ' ' + half + ',' + (size - 1) + ' 1,' + half + '" ' +
+            const cx = w / 2;
+            const cy = h / 2;
+            shape = '<polygon points="' + cx + ',0 ' + w + ',' + cy + ' ' + cx + ',' + h + ' 0,' + cy + '" ' +
                     'fill="' + color + '" fill-opacity="' + opacity + '" ' +
-                    'stroke="' + color + '" stroke-width="' + (isSuspicious ? 1.5 : 0.8) + '" stroke-opacity="0.9"/>';
+                    'stroke="' + color + '" stroke-width="' + sw + '" stroke-opacity="0.9"/>';
         }
 
-        const svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" ' +
+        const svg = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" ' +
                     'xmlns="http://www.w3.org/2000/svg" ' +
                     'style="transform:rotate(' + rotation + 'deg)">' +
                     shape + '</svg>';
@@ -182,9 +220,9 @@ const MapModule = (function() {
         return L.divIcon({
             html: svg,
             className: 'vessel-icon',
-            iconSize: [size, size],
-            iconAnchor: [half, half],
-            popupAnchor: [0, -half]
+            iconSize: [w, h],
+            iconAnchor: [w / 2, h / 2],
+            popupAnchor: [0, -h / 2]
         });
     }
 
@@ -253,6 +291,213 @@ const MapModule = (function() {
         });
 
         return { stats, vessels };
+    }
+
+    /**
+     * Compute stats from full vessel list (independent of what is rendered)
+     */
+    function computeVesselStats(vesselList) {
+        let stats = { total: 0, fishing: 0, cargo: 0, tanker: 0, suspicious: 0 };
+        vesselList.forEach(v => {
+            if (filterFocEnabled) {
+                const mid = (v.mmsi || '').substring(0, 3);
+                if (FOC_MIDS.has(mid) && FOC_COMMERCIAL_TYPES.has(v.type_name)) return;
+            }
+            stats.total++;
+            if (v.suspicious) stats.suspicious++;
+            if (v.type_name === 'fishing') stats.fishing++;
+            if (v.type_name === 'cargo') stats.cargo++;
+            if (v.type_name === 'tanker') stats.tanker++;
+        });
+        return stats;
+    }
+
+    /**
+     * Display cluster markers (zoom <= threshold)
+     */
+    function displayVesselClusters(vesselList) {
+        layers.vessels.clearLayers();
+        vesselMarkers = {};
+
+        // Group by in_fishing_hotspot
+        const groups = {};
+        Object.keys(CLUSTER_CENTERS).forEach(k => { groups[k] = { total: 0, fishing: 0, cargo: 0, suspicious: 0 }; });
+
+        vesselList.forEach(v => {
+            if (filterFocEnabled) {
+                const mid = (v.mmsi || '').substring(0, 3);
+                if (FOC_MIDS.has(mid) && FOC_COMMERCIAL_TYPES.has(v.type_name)) return;
+            }
+            const region = v.in_fishing_hotspot || 'other';
+            if (!groups[region]) groups[region] = { total: 0, fishing: 0, cargo: 0, suspicious: 0 };
+            groups[region].total++;
+            if (v.type_name === 'fishing') groups[region].fishing++;
+            if (v.type_name === 'cargo') groups[region].cargo++;
+            if (v.suspicious) groups[region].suspicious++;
+        });
+
+        Object.entries(groups).forEach(([region, g]) => {
+            if (g.total === 0) return;
+            const info = CLUSTER_CENTERS[region];
+            if (!info) return;
+
+            // Size proportional to count
+            const r = Math.max(28, Math.min(55, 20 + Math.sqrt(g.total) * 2));
+            const suspBadge = g.suspicious > 0
+                ? '<div style="color:#ff3366;font-size:9px;font-weight:700">' + g.suspicious + ' suspicious</div>'
+                : '';
+
+            const icon = L.divIcon({
+                className: 'vessel-cluster-wrapper',
+                iconSize: [r, r],
+                iconAnchor: [r / 2, r / 2],
+                html: '<div class="vessel-cluster" style="width:' + r + 'px;height:' + r + 'px">' +
+                      '<span class="cluster-count">' + g.total + '</span>' +
+                      '<span class="cluster-label">' + info.name + '</span>' +
+                      suspBadge + '</div>'
+            });
+
+            L.marker(info.center, { icon: icon })
+                .addTo(layers.vessels)
+                .on('click', () => { map.flyTo(info.center, info.zoom); });
+        });
+    }
+
+    /**
+     * Display individual vessels only within current viewport (zoom > threshold)
+     */
+    function displayVesselsInBounds(vesselList, vessels) {
+        layers.vessels.clearLayers();
+        vesselMarkers = {};
+
+        const bounds = map.getBounds();
+
+        vesselList.forEach(v => {
+            if (filterFocEnabled) {
+                const mid = (v.mmsi || '').substring(0, 3);
+                if (FOC_MIDS.has(mid) && FOC_COMMERCIAL_TYPES.has(v.type_name)) return;
+            }
+
+            // Viewport culling
+            if (!bounds.contains([v.lat, v.lon])) {
+                vessels.set(v.mmsi, v);
+                return;
+            }
+
+            vessels.set(v.mmsi, v);
+
+            const isSuspicious = v.suspicious;
+            const color = isSuspicious ? '#ff3366' : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
+
+            if (isSuspicious) {
+                L.circleMarker([v.lat, v.lon], {
+                    radius: 12, fillColor: '#ff3366', color: '#ff3366',
+                    weight: 1, opacity: 0.3, fillOpacity: 0.15
+                }).addTo(layers.vessels);
+            }
+
+            const heading = v.heading !== undefined && v.heading !== null ? v.heading : null;
+            const icon = createVesselIcon(color, isSuspicious, heading);
+            const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(layers.vessels);
+
+            const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+            const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
+            const suspiciousInfo = isSuspicious
+                ? '<br><b style="color:#ff3366">' + t('app.csis_suspicious') + '</b>' : '';
+            const routeLink = TRACKED_VESSELS.includes(v.mmsi)
+                ? '<br><a href="#" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;" style="color:#ffd700">📍 顯示航跡 Track</a>' : '';
+
+            marker.bindPopup(
+                '<b>' + (v.name || 'Unknown') + '</b><br>' +
+                t('app.mmsi') + ' ' + v.mmsi + '<br>' +
+                t('app.type') + ' ' + (v.type_name || t('common.unknown')) + '<br>' +
+                t('app.speed') + ' ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
+                '航向: ' + headingText + suspiciousInfo + routeLink
+            );
+
+            vesselMarkers[v.mmsi] = marker;
+        });
+    }
+
+    /**
+     * Main render function — decides cluster vs detail based on zoom
+     * Returns stats (always computed from full list)
+     */
+    function renderVesselsForZoom(vesselList, vessels) {
+        // Update cache if new data provided
+        if (vesselList) {
+            cachedVesselList = vesselList;
+            cachedVessels = vessels || new Map();
+            cachedStats = computeVesselStats(vesselList);
+        }
+
+        if (cachedVesselList.length === 0) return { stats: cachedStats, vessels: cachedVessels };
+
+        if (map.getZoom() <= CLUSTER_ZOOM_THRESHOLD) {
+            displayVesselClusters(cachedVesselList);
+        } else {
+            displayVesselsInBounds(cachedVesselList, cachedVessels);
+        }
+
+        return { stats: cachedStats, vessels: cachedVessels };
+    }
+
+    /**
+     * Load and display vessel route from pre-extracted data
+     */
+    async function loadVesselRoute(mmsi) {
+        layers.vesselRoutes.clearLayers();
+        try {
+            const res = await fetch('vessel_routes/' + mmsi + '.json?' + Date.now());
+            if (!res.ok) { console.error('Route not found for', mmsi); return; }
+            const data = await res.json();
+            if (!data.track || data.track.length === 0) return;
+
+            const points = data.track.map(p => [p.lat, p.lon]);
+
+            // Draw route polyline
+            L.polyline(points, {
+                color: '#ffd700',
+                weight: 2.5,
+                opacity: 0.7,
+                dashArray: '6,4'
+            }).addTo(layers.vesselRoutes)
+              .bindTooltip(data.name + ' — 14 日航跡', { sticky: true });
+
+            // Start marker (green)
+            const first = data.track[0];
+            L.circleMarker([first.lat, first.lon], {
+                radius: 5, fillColor: '#00ff88', color: '#fff', weight: 1.5, fillOpacity: 0.9
+            }).addTo(layers.vesselRoutes)
+              .bindTooltip('起點 ' + new Date(first.t).toLocaleDateString(), { permanent: false });
+
+            // End marker (red)
+            const last = data.track[data.track.length - 1];
+            L.circleMarker([last.lat, last.lon], {
+                radius: 5, fillColor: '#ff3366', color: '#fff', weight: 1.5, fillOpacity: 0.9
+            }).addTo(layers.vesselRoutes)
+              .bindTooltip('終點 ' + new Date(last.t).toLocaleDateString(), { permanent: false });
+
+            // Intermediate time markers (every 12 points ≈ once per day)
+            data.track.forEach((p, i) => {
+                if (i > 0 && i < data.track.length - 1 && i % 12 === 0) {
+                    L.circleMarker([p.lat, p.lon], {
+                        radius: 3, fillColor: '#ffd700', color: '#ffd700', weight: 1, fillOpacity: 0.6
+                    }).addTo(layers.vesselRoutes)
+                      .bindTooltip(new Date(p.t).toLocaleDateString(), { permanent: false });
+                }
+            });
+
+            // Zoom to route
+            map.fitBounds(L.polyline(points).getBounds().pad(0.2));
+
+        } catch (e) {
+            console.error('Load vessel route failed:', e);
+        }
+    }
+
+    function clearVesselRoute() {
+        layers.vesselRoutes.clearLayers();
     }
 
     /**
@@ -435,6 +680,7 @@ const MapModule = (function() {
         init,
         drawFishingHotspots,
         displayVessels,
+        renderVesselsForZoom,
         displayDarkVessels,
         displaySuspiciousVessels,
         toggleLayer,
@@ -443,6 +689,8 @@ const MapModule = (function() {
         loadSubmarineCables,
         loadCableFaultStatus,
         getCableFaultStatus,
+        loadVesselRoute,
+        clearVesselRoute,
         setFilterFoc,
         FISHING_HOTSPOTS,
         VESSEL_COLORS,

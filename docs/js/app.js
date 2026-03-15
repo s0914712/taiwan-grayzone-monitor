@@ -38,7 +38,7 @@ const App = (function () {
      */
     function setupEventListeners() {
         // Layer toggle checkboxes
-        ['fishingHotspots', 'vessels', 'darkVessels'].forEach(layer => {
+        ['fishingHotspots', 'vessels', 'darkVessels', 'vesselRoutes'].forEach(layer => {
             const checkbox = document.getElementById('show' + layer.charAt(0).toUpperCase() + layer.slice(1));
             if (checkbox) {
                 checkbox.addEventListener('change', () => {
@@ -64,10 +64,11 @@ const App = (function () {
             focCheckbox.addEventListener('change', () => {
                 MapModule.setFilterFoc(focCheckbox.checked);
                 if (rawVesselList.length > 0) {
-                    const result = MapModule.displayVessels(rawVesselList, vessels);
+                    const result = MapModule.renderVesselsForZoom(rawVesselList, vessels);
                     vessels = result.vessels;
                     ChartsModule.updateAisStats(result.stats);
-                    document.getElementById('vesselCount').textContent = result.stats.total;
+                    const vc = document.getElementById('vesselCount');
+                    if (vc) vc.textContent = result.stats.total;
                     updateVesselList();
                 }
             });
@@ -159,6 +160,7 @@ const App = (function () {
                 <label class="layer-toggle"><input type="checkbox" id="bsShowVessels" checked> <span data-i18n="idx.layer_vessels">AIS 船隻</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="bsShowDarkVessels" checked> <span data-i18n="idx.layer_dark">暗船 (SAR)</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="bsShowSubmarineCables" checked> <span data-i18n="ais_anim.layer_cables">海底電纜</span></label>
+                <label class="layer-toggle"><input type="checkbox" id="bsShowVesselRoutes" checked> <span data-i18n="idx.layer_routes">船隻航跡</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="bsFilterFocVessels"> <span data-i18n="idx.filter_foc">過濾權宜船</span></label>
             </div>`;
         }
@@ -227,10 +229,11 @@ const App = (function () {
                 if (checked) await MapModule.loadSubmarineCables();
                 MapModule.toggleLayer('submarineCables', checked);
             });
+            syncCheckbox('bsShowVesselRoutes', 'showVesselRoutes', layer => MapModule.toggleLayer('vesselRoutes', layer));
             syncCheckbox('bsFilterFocVessels', 'filterFocVessels', checked => {
                 MapModule.setFilterFoc(checked);
                 if (rawVesselList.length > 0) {
-                    const result = MapModule.displayVessels(rawVesselList, vessels);
+                    const result = MapModule.renderVesselsForZoom(rawVesselList, vessels);
                     vessels = result.vessels;
                     ChartsModule.updateAisStats(result.stats);
                     const vc = document.getElementById('vesselCount');
@@ -500,12 +503,12 @@ const App = (function () {
             // Load identity change alerts
             updateIdentitySection(data);
 
-            // Load AIS real-time vessels
+            // Load AIS real-time vessels (zoom-based: clusters when zoomed out, details when zoomed in)
             const hasAis = data.ais_snapshot && data.ais_snapshot.vessels && data.ais_snapshot.vessels.length > 0;
             console.log('[Monitor] AIS check:', hasAis, 'vessels:', data.ais_snapshot?.vessels?.length || 0);
             if (hasAis) {
                 rawVesselList = data.ais_snapshot.vessels;
-                const result = MapModule.displayVessels(rawVesselList, vessels);
+                const result = MapModule.renderVesselsForZoom(rawVesselList, vessels);
                 vessels = result.vessels;
                 console.log('[Monitor] AIS rendered:', result.stats);
 
