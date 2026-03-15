@@ -93,7 +93,18 @@
             text-align: center;
             color: var(--text-secondary);
             padding: 24px;
-            font-size: 10px;
+            font-size: 12px;
+        }
+        @media (max-width: 900px) {
+            .freq-table { font-size: 12px; }
+            .timeline-table { font-size: 12px; }
+            .freq-table td, .timeline-table td { padding: 10px 8px; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px; }
+            .stat-card { padding: 12px; }
+            .stat-card .value { font-size: 22px; }
+            .stat-card .label { font-size: 12px; }
+            #map { height: calc(100vh - 44px - 56px - 20px); max-height: 350px; min-height: 200px; }
+            .main-content { padding-bottom: 72px; }
         }
     </style>
 </head>

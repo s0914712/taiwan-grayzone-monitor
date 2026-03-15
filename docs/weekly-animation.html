@@ -337,34 +337,58 @@
         @media (max-width: 768px) {
             .stats-row {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                padding: 8px;
             }
+            .stat-card { padding: 12px; }
+            .stat-card .value { font-size: 22px; }
+            .stat-card .label { font-size: 12px; }
 
             .anim-controls {
                 margin: 8px 8px 0;
                 gap: 6px;
             }
+            .range-selector {
+                display: flex;
+                justify-content: center;
+                gap: 4px;
+                width: 100%;
+            }
+            .playback-controls {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 6px;
+                width: 100%;
+            }
+            .anim-btn {
+                min-height: 44px;
+                min-width: 44px;
+                font-size: 12px;
+                padding: 8px 10px;
+            }
+            .anim-label { display: none; }
+            .anim-separator { display: none; }
 
             .day-indicator {
                 margin-left: 0;
                 width: 100%;
                 text-align: center;
-                margin-top: 4px;
+                font-size: 13px;
             }
 
             #map {
-                height: 350px;
+                height: calc(100vh - 44px - 56px - 120px);
+                max-height: 350px;
+                min-height: 200px;
             }
 
             .main-content {
-                padding: 0 8px 60px;
+                padding: 0 8px 72px;
             }
 
             .timeline-panel {
                 margin: 0 8px;
-            }
-
-            .stats-row {
-                padding: 8px;
             }
         }
 
@@ -407,26 +431,23 @@
 
     <!-- Animation controls -->
     <div class="anim-controls" id="animControls">
-        <span class="anim-label" data-i18n="anim.range">範圍</span>
-        <button class="anim-btn" data-range="7" onclick="setRange(7)">7 天</button>
-        <button class="anim-btn" data-range="14" onclick="setRange(14)">14 天</button>
-        <button class="anim-btn" data-range="30" onclick="setRange(30)" data-i18n="anim.days_30">30 天</button>
-        <button class="anim-btn active" data-range="60" onclick="setRange(60)" data-i18n="anim.days_60">60 天</button>
-        <button class="anim-btn" data-range="90" onclick="setRange(90)" data-i18n="anim.days_90">90 天</button>
-
-        <div class="anim-separator"></div>
-
-        <button class="anim-btn" onclick="stepBackward()" data-i18n-title="anim.prev" title="上一天">⏮</button>
-        <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" data-i18n-title="anim.play" title="播放/暫停">▶</button>
-        <button class="anim-btn" onclick="stepForward()" data-i18n-title="anim.next" title="下一天">⏭</button>
-
-        <div class="anim-separator"></div>
-
-        <span class="anim-label" data-i18n="anim.speed">速度</span>
-        <button class="anim-btn active" data-speed="1" onclick="setSpeed(1)">1x</button>
-        <button class="anim-btn" data-speed="2" onclick="setSpeed(2)">2x</button>
-        <button class="anim-btn" data-speed="4" onclick="setSpeed(4)">4x</button>
-
+        <div class="range-selector">
+            <span class="anim-label" data-i18n="anim.range">範圍</span>
+            <button class="anim-btn" data-range="7" onclick="setRange(7)">7天</button>
+            <button class="anim-btn" data-range="14" onclick="setRange(14)">14天</button>
+            <button class="anim-btn" data-range="30" onclick="setRange(30)" data-i18n="anim.days_30">30天</button>
+            <button class="anim-btn active" data-range="60" onclick="setRange(60)" data-i18n="anim.days_60">60天</button>
+            <button class="anim-btn" data-range="90" onclick="setRange(90)" data-i18n="anim.days_90">90天</button>
+        </div>
+        <div class="playback-controls">
+            <button class="anim-btn" onclick="stepBackward()" data-i18n-title="anim.prev" title="上一天">⏮</button>
+            <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" data-i18n-title="anim.play" title="播放/暫停">▶</button>
+            <button class="anim-btn" onclick="stepForward()" data-i18n-title="anim.next" title="下一天">⏭</button>
+            <span class="anim-label" data-i18n="anim.speed">速度</span>
+            <button class="anim-btn active" data-speed="1" onclick="setSpeed(1)">1x</button>
+            <button class="anim-btn" data-speed="2" onclick="setSpeed(2)">2x</button>
+            <button class="anim-btn" data-speed="4" onclick="setSpeed(4)">4x</button>
+        </div>
         <div class="day-indicator" id="dayIndicator">
             <div class="date-text">--</div>
             <div class="frame-text" data-i18n="common.loading">載入中...</div>
