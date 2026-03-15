@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>船位動畫 | AIS Track Animation - Taiwan Gray Zone Monitor</title>
     <meta name="description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤可疑漁船位置變化">
     <meta name="keywords" content="AIS動畫,船位追蹤,可疑船隻,台灣海峽,Taiwan Strait,maritime surveillance">
@@ -1683,41 +1683,12 @@
     });
 
     // =========================================================================
-    // Mobile bottom nav
-    // =========================================================================
-    function setupMobileNav() {
-        if (document.querySelector('.mobile-bottom-nav')) return;
-        const nav = document.createElement('nav');
-        nav.className = 'mobile-bottom-nav';
-        nav.innerHTML = `
-            <a href="index.html">
-                <span class="nav-icon">🛰️</span>
-                <span data-i18n="nav.mob_monitor">監測</span>
-            </a>
-            <a href="dark-vessels.html">
-                <span class="nav-icon">🔦</span>
-                <span data-i18n="nav.mob_dark">暗船</span>
-            </a>
-            <a href="weekly-animation.html">
-                <span class="nav-icon">🎬</span>
-                <span data-i18n="nav.mob_anim">動畫</span>
-            </a>
-            <a href="ais-animation.html" class="active">
-                <span class="nav-icon">🚢</span>
-                <span data-i18n="nav.mob_ais_anim">船位</span>
-            </a>
-        `;
-        i18n.applyAll();
-        document.body.appendChild(nav);
-    }
-
-    // =========================================================================
     // Initialize
     // =========================================================================
     initMap();
-    setupMobileNav();
     loadData();
     </script>
+    <script src="js/mobile-nav.js"></script>
 </body>
 
 </html>

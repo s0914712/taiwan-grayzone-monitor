@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>暗船動畫 | Dark Vessel Animation - Taiwan Gray Zone Monitor</title>
     <meta name="description" content="台灣周邊暗船偵測動畫播放，依實際 SAR 衛星偵測日逐日呈現暗船位置變化">
     <meta name="keywords" content="暗船動畫,dark vessel animation,SAR,台灣海峽,Taiwan Strait,衛星偵測,maritime surveillance">
@@ -992,41 +992,12 @@
     });
 
     // =========================================================================
-    // Mobile bottom nav
-    // =========================================================================
-    function setupMobileNav() {
-        if (document.querySelector('.mobile-bottom-nav')) return;
-        const nav = document.createElement('nav');
-        nav.className = 'mobile-bottom-nav';
-        nav.innerHTML = `
-            <a href="index.html">
-                <span class="nav-icon">🛰️</span>
-                <span data-i18n="nav.mob_monitor">監測</span>
-            </a>
-            <a href="dark-vessels.html">
-                <span class="nav-icon">🔦</span>
-                <span data-i18n="nav.mob_dark">暗船</span>
-            </a>
-            <a href="statistics.html">
-                <span class="nav-icon">📊</span>
-                <span data-i18n="nav.mob_stats">統計</span>
-            </a>
-            <a href="weekly-animation.html" class="active">
-                <span class="nav-icon">🎬</span>
-                <span data-i18n="nav.mob_anim">動畫</span>
-            </a>
-        `;
-        i18n.applyAll(); // Apply translations to newly created elements
-        document.body.appendChild(nav);
-    }
-
-    // =========================================================================
     // Initialize
     // =========================================================================
     initMap();
-    setupMobileNav();
     loadData();
     </script>
+    <script src="js/mobile-nav.js"></script>
 </body>
 
 </html>

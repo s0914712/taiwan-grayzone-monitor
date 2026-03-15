@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>大陸漁船動畫 | CN Fishing Vessel Animation - Taiwan Gray Zone Monitor</title>
     <meta name="description" content="台灣周邊中國大陸漁船 AIS 軌跡動畫，追蹤各省漁船活動範圍與行為模式">
     <meta name="keywords" content="中國漁船,大陸漁船,AIS動畫,台灣海峽,Chinese fishing vessels">
@@ -1689,41 +1689,12 @@
     });
 
     // =========================================================================
-    // Mobile bottom nav
-    // =========================================================================
-    function setupMobileNav() {
-        if (document.querySelector('.mobile-bottom-nav')) return;
-        const nav = document.createElement('nav');
-        nav.className = 'mobile-bottom-nav';
-        nav.innerHTML = `
-            <a href="index.html">
-                <span class="nav-icon">🛰️</span>
-                <span data-i18n="nav.mob_monitor">監測</span>
-            </a>
-            <a href="dark-vessels.html">
-                <span class="nav-icon">🔦</span>
-                <span data-i18n="nav.mob_dark">暗船</span>
-            </a>
-            <a href="weekly-animation.html">
-                <span class="nav-icon">🎬</span>
-                <span data-i18n="nav.mob_anim">動畫</span>
-            </a>
-            <a href="cn-fishing-animation.html" class="active">
-                <span class="nav-icon">🇨🇳</span>
-                <span data-i18n="nav.mob_cn_fishing">大陸</span>
-            </a>
-        `;
-        i18n.applyAll();
-        document.body.appendChild(nav);
-    }
-
-    // =========================================================================
     // Initialize
     // =========================================================================
     initMap();
-    setupMobileNav();
     loadData();
     </script>
+    <script src="js/mobile-nav.js"></script>
 </body>
 
 </html>

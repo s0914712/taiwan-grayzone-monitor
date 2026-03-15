@@ -623,9 +623,9 @@ body {
 
 @media (max-width: 900px) {
     /* Layout */
-    body { padding-bottom: 64px; }
+    body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0)); }
     .app-container { grid-template-columns: 1fr; }
-    .main-content { grid-template-columns: 1fr; padding-bottom: 72px; }
+    .main-content { grid-template-columns: 1fr; padding-bottom: calc(72px + env(safe-area-inset-bottom, 0)); }
 
     /* Header - minimal: title + lang toggle + status */
     .header { padding: 8px 12px; min-height: 44px; }
@@ -684,7 +684,7 @@ body {
         left: 0;
         right: 0;
         display: flex;
-        height: 56px;
+        height: calc(56px + env(safe-area-inset-bottom, 0));
         background: rgba(20, 30, 50, 0.98);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
@@ -730,7 +730,7 @@ body {
     /* ===== Animation Popover (submenu) ===== */
     .nav-popover {
         position: fixed;
-        bottom: 56px;
+        bottom: calc(56px + env(safe-area-inset-bottom, 0));
         left: 0;
         right: 0;
         background: rgba(20, 30, 50, 0.98);
@@ -760,7 +760,7 @@ body {
     /* ===== Bottom Sheet (tools panel) ===== */
     .bottom-sheet {
         position: fixed;
-        bottom: 56px;
+        bottom: calc(56px + env(safe-area-inset-bottom, 0));
         left: 0;
         right: 0;
         max-height: min(70vh, 500px);
@@ -843,7 +843,7 @@ body {
     .bs-suspect-item:active { opacity: 0.7; }
     .bottom-sheet-overlay {
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 56px;
+        top: 0; left: 0; right: 0; bottom: calc(56px + env(safe-area-inset-bottom, 0));
         background: rgba(0, 0, 0, 0.4);
         z-index: 1399;
         opacity: 0;
