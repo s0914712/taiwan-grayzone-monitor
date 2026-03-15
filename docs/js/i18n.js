@@ -28,8 +28,14 @@ const i18n = (function () {
         'nav.mob_dark':          { zh: '暗船', en: 'Dark' },
         'nav.mob_stats':         { zh: '統計', en: 'Stats' },
         'nav.mob_anim':          { zh: '動畫', en: 'Anim' },
+        'nav.mob_tools':         { zh: '工具', en: 'Tools' },
         'nav.identity':          { zh: '身分追蹤', en: 'Identity' },
         'nav.mob_identity':      { zh: '身分', en: 'ID' },
+
+        // ── Bottom Sheet ──
+        'bs.layers':             { zh: '圖層控制', en: 'Layer Controls' },
+        'bs.realtime_stats':     { zh: '即時統計', en: 'Live Stats' },
+        'bs.suspicious':         { zh: '可疑船隻', en: 'Suspicious Vessels' },
 
         // ── 通用 Common ──
         'common.loading':        { zh: '載入中...', en: 'Loading...' },

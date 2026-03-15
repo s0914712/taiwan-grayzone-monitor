@@ -346,31 +346,29 @@
         @media (max-width: 768px) {
             .stats-row {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
             }
-
-            .anim-controls {
-                margin: 8px 8px 0;
+            .stat-card { padding: 12px; }
+            .stat-card .value { font-size: 22px; }
+            .stat-card .label { font-size: 12px; }
+            .anim-controls { margin: 8px 8px 0; gap: 6px; }
+            .range-selector, .playback-controls {
+                display: flex;
+                justify-content: center;
+                align-items: center;
                 gap: 6px;
-            }
-
-            .day-indicator {
-                margin-left: 0;
                 width: 100%;
-                text-align: center;
-                margin-top: 4px;
+                flex-wrap: wrap;
             }
-
-            #map {
-                height: 350px;
-            }
-
-            .main-content {
-                padding: 0 8px 60px;
-            }
-
-            .timeline-panel {
-                margin: 0 8px;
-            }
+            .anim-btn { min-height: 44px; min-width: 44px; font-size: 12px; padding: 8px 10px; }
+            .anim-label { display: none; }
+            .anim-separator { display: none; }
+            .vessel-filter-select { min-height: 44px; font-size: 12px; }
+            .trail-toggle { font-size: 12px; }
+            .day-indicator { margin-left: 0; width: 100%; text-align: center; font-size: 13px; }
+            #map { height: calc(100vh - 44px - 56px - 120px); max-height: 350px; min-height: 200px; }
+            .main-content { padding: 0 8px 72px; }
+            .timeline-panel { margin: 0 8px; }
 
             .stats-row {
                 padding: 8px;
@@ -548,58 +546,48 @@
 
     <!-- Animation controls -->
     <div class="anim-controls" id="animControls">
-        <span class="anim-label" data-i18n="ais_anim.range">範圍</span>
-        <button class="anim-btn" data-range="1" onclick="setRange(1)">1 天</button>
-        <button class="anim-btn" data-range="3" onclick="setRange(3)">3 天</button>
-        <button class="anim-btn" data-range="7" onclick="setRange(7)" data-i18n="ais_anim.days_7">7 天</button>
-        <button class="anim-btn active" data-range="14" onclick="setRange(14)" data-i18n="ais_anim.days_14">14 天</button>
-
-        <div class="anim-separator"></div>
-
-        <button class="anim-btn" onclick="stepBackward()" title="上一幀">⏮</button>
-        <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" title="播放/暫停">▶</button>
-        <button class="anim-btn" onclick="stepForward()" title="下一幀">⏭</button>
-
-        <div class="anim-separator"></div>
-
-        <span class="anim-label" data-i18n="ais_anim.speed">速度</span>
-        <button class="anim-btn active" data-speed="1" onclick="setSpeed(1)">1x</button>
-        <button class="anim-btn" data-speed="2" onclick="setSpeed(2)">2x</button>
-        <button class="anim-btn" data-speed="4" onclick="setSpeed(4)">4x</button>
-
-        <div class="anim-separator"></div>
-
-        <label class="trail-toggle">
-            <input type="checkbox" id="showTrails" checked onchange="toggleTrails()">
-            <span data-i18n="ais_anim.show_trails">顯示軌跡</span>
-        </label>
-
-        <label class="trail-toggle">
-            <input type="checkbox" id="showCables" onchange="toggleCableLayer()">
-            <span data-i18n="ais_anim.layer_cables">海底電纜</span>
-        </label>
-
+        <div class="range-selector">
+            <span class="anim-label" data-i18n="ais_anim.range">範圍</span>
+            <button class="anim-btn" data-range="1" onclick="setRange(1)">1天</button>
+            <button class="anim-btn" data-range="3" onclick="setRange(3)">3天</button>
+            <button class="anim-btn" data-range="7" onclick="setRange(7)" data-i18n="ais_anim.days_7">7天</button>
+            <button class="anim-btn active" data-range="14" onclick="setRange(14)" data-i18n="ais_anim.days_14">14天</button>
+        </div>
+        <div class="playback-controls">
+            <button class="anim-btn" onclick="stepBackward()" title="上一幀">⏮</button>
+            <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" title="播放/暫停">▶</button>
+            <button class="anim-btn" onclick="stepForward()" title="下一幀">⏭</button>
+            <span class="anim-label" data-i18n="ais_anim.speed">速度</span>
+            <button class="anim-btn active" data-speed="1" onclick="setSpeed(1)">1x</button>
+            <button class="anim-btn" data-speed="2" onclick="setSpeed(2)">2x</button>
+            <button class="anim-btn" data-speed="4" onclick="setSpeed(4)">4x</button>
+        </div>
+        <div class="playback-controls">
+            <label class="trail-toggle">
+                <input type="checkbox" id="showTrails" checked onchange="toggleTrails()">
+                <span data-i18n="ais_anim.show_trails">顯示軌跡</span>
+            </label>
+            <label class="trail-toggle">
+                <input type="checkbox" id="showCables" onchange="toggleCableLayer()">
+                <span data-i18n="ais_anim.layer_cables">海底電纜</span>
+            </label>
+            <select id="vesselFilter" onchange="setVesselFilter(this.value)" class="vessel-filter-select">
+                <option value="all">全部大陸漁船</option>
+                <option value="fujian">福建 (閩)</option>
+                <option value="zhejiang">浙江 (浙)</option>
+                <option value="guangdong">廣東 (粵)</option>
+                <option value="shandong">山東 (魯)</option>
+                <option value="hainan">海南 (瓊)</option>
+                <option value="jiangsu">江蘇 (蘇)</option>
+                <option value="guangxi">廣西 (桂)</option>
+                <option value="other_cn">其他省份</option>
+            </select>
+        </div>
         <div class="cable-controls" id="cableControls" style="display:none">
             <span data-i18n="ais_anim.cable_buffer">電纜緩衝區 (nm)</span>
             <input type="range" id="cableBuffer" min="1" max="10" value="2" step="0.5" oninput="updateCableBuffer()">
             <span class="cable-buffer-val" id="cableBufferVal">2</span>
         </div>
-
-        <div class="anim-separator"></div>
-
-        <span class="anim-label">省份</span>
-        <select id="vesselFilter" onchange="setVesselFilter(this.value)" class="vessel-filter-select">
-            <option value="all">全部大陸漁船</option>
-            <option value="fujian">福建 (閩)</option>
-            <option value="zhejiang">浙江 (浙)</option>
-            <option value="guangdong">廣東 (粵)</option>
-            <option value="shandong">山東 (魯)</option>
-            <option value="hainan">海南 (瓊)</option>
-            <option value="jiangsu">江蘇 (蘇)</option>
-            <option value="guangxi">廣西 (桂)</option>
-            <option value="other_cn">其他省份</option>
-        </select>
-
         <div class="day-indicator" id="dayIndicator">
             <div class="date-text">--</div>
             <div class="frame-text" data-i18n="common.loading">載入中...</div>

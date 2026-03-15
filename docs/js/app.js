@@ -70,75 +70,227 @@ const App = (function () {
     }
 
     /**
-     * Setup mobile navigation
+     * Setup mobile navigation - 5-tab bottom nav with popover & bottom sheet
      */
     function setupMobileNavigation() {
-        // Create mobile menu button if it doesn't exist
-        const header = document.querySelector('.header-info');
-        if (header && !document.querySelector('.mobile-menu-btn')) {
-            const menuBtn = document.createElement('button');
-            menuBtn.className = 'mobile-menu-btn';
-            menuBtn.innerHTML = '☰';
-            menuBtn.onclick = toggleSidebar;
-            header.insertBefore(menuBtn, header.firstChild);
+        if (document.querySelector('.mobile-bottom-nav')) return;
+
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        const animPages = ['weekly-animation.html', 'ais-animation.html', 'cn-fishing-animation.html', 'identity-history.html'];
+        const isAnimPage = animPages.includes(currentPage);
+
+        // --- Bottom Nav (5 tabs) ---
+        const bottomNav = document.createElement('nav');
+        bottomNav.className = 'mobile-bottom-nav';
+        bottomNav.innerHTML = `
+            <a href="index.html" ${currentPage === 'index.html' ? 'class="active"' : ''}>
+                <span class="nav-icon">🛰️</span>
+                <span data-i18n="nav.mob_monitor">監測</span>
+            </a>
+            <a href="dark-vessels.html" ${currentPage === 'dark-vessels.html' ? 'class="active"' : ''}>
+                <span class="nav-icon">🔦</span>
+                <span data-i18n="nav.mob_dark">暗船</span>
+            </a>
+            <a href="statistics.html" ${currentPage === 'statistics.html' ? 'class="active"' : ''}>
+                <span class="nav-icon">📊</span>
+                <span data-i18n="nav.mob_stats">統計</span>
+            </a>
+            <button id="navAnimBtn" ${isAnimPage ? 'class="active"' : ''}>
+                <span class="nav-icon">🎬</span>
+                <span data-i18n="nav.mob_anim">動畫</span>
+            </button>
+            <button id="navToolsBtn">
+                <span class="nav-icon">⚙️</span>
+                <span data-i18n="nav.mob_tools">工具</span>
+            </button>
+        `;
+        document.body.appendChild(bottomNav);
+
+        // --- Animation Popover ---
+        const popover = document.createElement('div');
+        popover.className = 'nav-popover';
+        popover.innerHTML = `
+            <a href="weekly-animation.html" ${currentPage === 'weekly-animation.html' ? 'class="active"' : ''}>
+                <span class="pop-icon">🎬</span>
+                <span data-i18n="nav.animation">暗船動畫</span>
+            </a>
+            <a href="ais-animation.html" ${currentPage === 'ais-animation.html' ? 'class="active"' : ''}>
+                <span class="pop-icon">📡</span>
+                <span data-i18n="nav.ais_anim">船位動畫</span>
+            </a>
+            <a href="cn-fishing-animation.html" ${currentPage === 'cn-fishing-animation.html' ? 'class="active"' : ''}>
+                <span class="pop-icon">🐟</span>
+                <span data-i18n="nav.cn_fishing">大陸漁船</span>
+            </a>
+            <a href="identity-history.html" ${currentPage === 'identity-history.html' ? 'class="active"' : ''}>
+                <span class="pop-icon">🔄</span>
+                <span data-i18n="nav.identity">身分追蹤</span>
+            </a>
+        `;
+        document.body.appendChild(popover);
+
+        // --- Bottom Sheet Overlay ---
+        const sheetOverlay = document.createElement('div');
+        sheetOverlay.className = 'bottom-sheet-overlay';
+        document.body.appendChild(sheetOverlay);
+
+        // --- Bottom Sheet ---
+        const sheet = document.createElement('div');
+        sheet.className = 'bottom-sheet';
+        sheet.id = 'bottomSheet';
+
+        const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+        const isIndex = currentPage === 'index.html';
+
+        let sheetHTML = `<div class="bottom-sheet-handle"></div>`;
+
+        // Layer controls section (only on pages with maps)
+        const hasMap = document.getElementById('map');
+        if (hasMap) {
+            sheetHTML += `
+            <div class="bottom-sheet-section">
+                <div class="bottom-sheet-title" data-i18n="bs.layers">圖層控制</div>
+                <label class="layer-toggle"><input type="checkbox" id="bsShowFishingHotspots" checked> <span data-i18n="idx.layer_fishing">漁撈熱點</span></label>
+                <label class="layer-toggle"><input type="checkbox" id="bsShowVessels" checked> <span data-i18n="idx.layer_vessels">船隻</span></label>
+                <label class="layer-toggle"><input type="checkbox" id="bsShowSubmarineCables"> <span data-i18n="ais_anim.layer_cables">海底電纜</span></label>
+                <label class="layer-toggle"><input type="checkbox" id="bsFilterFocVessels"> <span data-i18n="idx.filter_foc">過濾權宜船</span></label>
+            </div>`;
         }
 
-        // Create sidebar overlay
-        if (!document.querySelector('.sidebar-overlay')) {
-            const overlay = document.createElement('div');
-            overlay.className = 'sidebar-overlay';
-            overlay.onclick = toggleSidebar;
-            document.body.appendChild(overlay);
+        // Stats + suspicious section (only on index)
+        if (isIndex) {
+            sheetHTML += `
+            <div class="bottom-sheet-section">
+                <div class="bottom-sheet-title" data-i18n="bs.realtime_stats">即時統計</div>
+                <div class="bs-stats-grid">
+                    <div class="bs-stat-item"><div class="bs-stat-value" id="bsVesselCount">--</div><div class="bs-stat-label" data-i18n="idx.total_vessels">總船隻</div></div>
+                    <div class="bs-stat-item"><div class="bs-stat-value" id="bsFishingCount">--</div><div class="bs-stat-label" data-i18n="vessel.fishing">漁船</div></div>
+                    <div class="bs-stat-item"><div class="bs-stat-value" id="bsCargoCount">--</div><div class="bs-stat-label" data-i18n="vessel.cargo">貨船</div></div>
+                    <div class="bs-stat-item"><div class="bs-stat-value alert" id="bsSuspCount">--</div><div class="bs-stat-label" data-i18n="idx.suspicious">可疑</div></div>
+                </div>
+            </div>
+            <div class="bottom-sheet-section">
+                <div class="bottom-sheet-title" data-i18n="bs.suspicious">可疑船隻</div>
+                <div id="bsSuspiciousList"></div>
+            </div>`;
         }
 
-        // Create mobile bottom nav if it doesn't exist
-        if (!document.querySelector('.mobile-bottom-nav')) {
-            const bottomNav = document.createElement('nav');
-            bottomNav.className = 'mobile-bottom-nav';
-            bottomNav.innerHTML = `
-                <a href="index.html">
-                    <span class="nav-icon">🛰️</span>
-                    <span data-i18n="nav.mob_monitor">監測</span>
-                </a>
-                <a href="dark-vessels.html">
-                    <span class="nav-icon">🔦</span>
-                    <span data-i18n="nav.mob_dark">暗船</span>
-                </a>
-                <a href="statistics.html">
-                    <span class="nav-icon">📊</span>
-                    <span data-i18n="nav.mob_stats">統計</span>
-                </a>
-                <a href="weekly-animation.html">
-                    <span class="nav-icon">🎬</span>
-                    <span data-i18n="nav.mob_anim">動畫</span>
-                </a>
-                <a href="ais-animation.html">
-                    <span class="nav-icon">📡</span>
-                    <span data-i18n="nav.mob_ais_anim">船位</span>
-                </a>
-                <a href="cn-fishing-animation.html">
-                    <span class="nav-icon">🐟</span>
-                    <span data-i18n="nav.mob_cn_fishing">大陸</span>
-                </a>
-                <a href="identity-history.html">
-                    <span class="nav-icon">🔄</span>
-                    <span data-i18n="nav.mob_identity">身分</span>
-                </a>
-            `;
-            document.body.appendChild(bottomNav);
+        // Update info
+        sheetHTML += `
+        <div class="bottom-sheet-section">
+            <div style="font-size:12px;color:var(--text-secondary)" id="bsUpdateInfo"></div>
+        </div>`;
 
-            // Detect current page and set active state
-            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-            bottomNav.querySelectorAll('a').forEach(a => {
-                const href = a.getAttribute('href');
-                if (href === currentPage) {
-                    a.classList.add('active');
-                    setTimeout(() => a.scrollIntoView({ inline: 'center', block: 'nearest' }), 100);
+        sheet.innerHTML = sheetHTML;
+        document.body.appendChild(sheet);
+
+        // --- Event Handlers ---
+        let popoverOpen = false;
+        let sheetOpen = false;
+
+        function closeAll() {
+            popover.classList.remove('open');
+            sheet.classList.remove('open');
+            sheetOverlay.classList.remove('active');
+            popoverOpen = false;
+            sheetOpen = false;
+        }
+
+        document.getElementById('navAnimBtn').addEventListener('click', () => {
+            if (sheetOpen) { sheet.classList.remove('open'); sheetOpen = false; }
+            popoverOpen = !popoverOpen;
+            popover.classList.toggle('open', popoverOpen);
+            sheetOverlay.classList.toggle('active', popoverOpen);
+        });
+
+        document.getElementById('navToolsBtn').addEventListener('click', () => {
+            if (popoverOpen) { popover.classList.remove('open'); popoverOpen = false; }
+            sheetOpen = !sheetOpen;
+            sheet.classList.toggle('open', sheetOpen);
+            sheetOverlay.classList.toggle('active', sheetOpen);
+        });
+
+        sheetOverlay.addEventListener('click', closeAll);
+
+        // Sync bottom sheet checkboxes with page controls
+        if (hasMap) {
+            syncCheckbox('bsShowFishingHotspots', 'showFishingHotspots', layer => MapModule.toggleLayer('fishingHotspots', layer));
+            syncCheckbox('bsShowVessels', 'showVessels', layer => MapModule.toggleLayer('vessels', layer));
+            syncCheckbox('bsShowSubmarineCables', 'showSubmarineCables', async checked => {
+                if (checked) await MapModule.loadSubmarineCables();
+                MapModule.toggleLayer('submarineCables', checked);
+            });
+            syncCheckbox('bsFilterFocVessels', 'filterFocVessels', checked => {
+                MapModule.setFilterFoc(checked);
+                if (rawVesselList.length > 0) {
+                    const result = MapModule.displayVessels(rawVesselList, vessels);
+                    vessels = result.vessels;
+                    ChartsModule.updateAisStats(result.stats);
+                    const vc = document.getElementById('vesselCount');
+                    if (vc) vc.textContent = result.stats.total;
+                    updateVesselList();
+                    updateBottomSheetStats(result.stats);
                 }
             });
-
-            if (typeof i18n !== 'undefined') i18n.applyAll();
         }
+
+        // Touch drag to dismiss bottom sheet
+        let startY = 0;
+        sheet.querySelector('.bottom-sheet-handle').addEventListener('touchstart', e => {
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+        sheet.addEventListener('touchmove', e => {
+            if (startY === 0) return;
+            const dy = e.touches[0].clientY - startY;
+            if (dy > 60) { closeAll(); startY = 0; }
+        }, { passive: true });
+        sheet.addEventListener('touchend', () => { startY = 0; }, { passive: true });
+
+        if (typeof i18n !== 'undefined') i18n.applyAll();
+    }
+
+    /**
+     * Sync a bottom sheet checkbox with its page counterpart
+     */
+    function syncCheckbox(bsId, pageId, onChange) {
+        const bsCb = document.getElementById(bsId);
+        const pageCb = document.getElementById(pageId);
+        if (!bsCb) return;
+
+        // Sync initial state from page checkbox
+        if (pageCb) bsCb.checked = pageCb.checked;
+
+        bsCb.addEventListener('change', () => {
+            if (pageCb) pageCb.checked = bsCb.checked;
+            onChange(bsCb.checked);
+        });
+    }
+
+    /**
+     * Update bottom sheet stats display
+     */
+    function updateBottomSheetStats(stats) {
+        const ids = { bsVesselCount: 'total', bsFishingCount: 'fishing', bsCargoCount: 'cargo', bsSuspCount: 'suspicious' };
+        Object.entries(ids).forEach(([elId, key]) => {
+            const el = document.getElementById(elId);
+            if (el) el.textContent = stats[key] || 0;
+        });
+    }
+
+    /**
+     * Update bottom sheet suspicious list
+     */
+    function updateBottomSheetSuspicious() {
+        const list = document.getElementById('bsSuspiciousList');
+        if (!list || !suspiciousData || !suspiciousData.suspicious_vessels) return;
+
+        list.innerHTML = suspiciousData.suspicious_vessels.slice(0, 5).map(sv => {
+            const name = (sv.names && sv.names[0]) || sv.mmsi;
+            return `<div class="bs-suspect-item" onclick="App.focusSuspicious(${sv.last_lat}, ${sv.last_lon})">
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name.substring(0, 16)}</span>
+                <span class="risk-badge risk-${sv.risk_level}">${sv.risk_level}</span>
+            </div>`;
+        }).join('');
     }
 
     /**
@@ -169,7 +321,7 @@ const App = (function () {
         list.innerHTML = recent.map(v => `
             <div class="vessel-item" onclick="App.focusVessel('${v.mmsi}')">
                 <span style="color:${MapModule.VESSEL_COLORS[v.type_name] || MapModule.VESSEL_COLORS.other}">${(v.name || 'Unknown').substring(0, 14)}</span>
-                <span style="font-size:7px;color:var(--text-secondary)">${v.type_name || '未知'}</span>
+                <span style="font-size:11px;color:var(--text-secondary)">${v.type_name || '未知'}</span>
             </div>
         `).join('');
     }
@@ -187,7 +339,7 @@ const App = (function () {
                 const msg = typeof i18n !== 'undefined'
                     ? i18n.t('app.analyzed', summary.total_analyzed)
                     : `已分析 ${summary.total_analyzed} 艘，暫無達到門檻的可疑船隻`;
-                list.innerHTML = `<div style="font-size:8px;color:var(--text-secondary);padding:4px">${msg}</div>`;
+                list.innerHTML = `<div style="font-size:12px;color:var(--text-secondary);padding:8px">${msg}</div>`;
             }
             return;
         }
@@ -270,7 +422,7 @@ const App = (function () {
             }).join(', ');
 
             const multiBadge = ev.multi_field
-                ? `<span class="risk-badge risk-high" style="font-size:7px;margin-left:3px">${typeof i18n !== 'undefined' ? i18n.t('idx.identity_multi') : '多欄位'}</span>`
+                ? `<span class="risk-badge risk-high" style="font-size:9px;margin-left:4px">${typeof i18n !== 'undefined' ? i18n.t('idx.identity_multi') : '多欄位'}</span>`
                 : '';
 
             const hasCoords = ev.lat != null && ev.lon != null;
@@ -279,14 +431,14 @@ const App = (function () {
             return `
                 <div class="vessel-item" ${onclick} style="cursor:${hasCoords ? 'pointer' : 'default'}">
                     <div style="flex:1;overflow:hidden">
-                        <div style="font-size:8px;color:var(--accent-cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        <div style="font-size:12px;color:var(--accent-cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
                             MMSI ${ev.mmsi}${multiBadge}
                         </div>
-                        <div style="font-size:7px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        <div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
                             ${desc}
                         </div>
                     </div>
-                    <span style="font-size:7px;color:var(--text-secondary);white-space:nowrap;margin-left:4px">${timeAgo(ev.timestamp)}</span>
+                    <span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;margin-left:4px">${timeAgo(ev.timestamp)}</span>
                 </div>`;
         }).join('');
 
@@ -302,8 +454,11 @@ const App = (function () {
             const data = await res.json();
 
             const updateTime = new Date(data.updated_at).toLocaleString();
+            const updateLabel = (typeof i18n !== 'undefined' ? i18n.t('common.updated') : '更新:') + ' ' + updateTime;
             const updateEl = document.getElementById('updateInfo');
-            if (updateEl) updateEl.textContent = (typeof i18n !== 'undefined' ? i18n.t('common.updated') : '更新:') + ' ' + updateTime;
+            if (updateEl) updateEl.textContent = updateLabel;
+            const bsUpdate = document.getElementById('bsUpdateInfo');
+            if (bsUpdate) bsUpdate.textContent = updateLabel;
 
             // Load GFW satellite monitoring data
             if (data.vessel_monitoring) {
@@ -329,6 +484,7 @@ const App = (function () {
             if (data.suspicious_analysis) {
                 suspiciousData = data.suspicious_analysis;
                 updateSuspiciousList();
+                updateBottomSheetSuspicious();
 
                 // Update suspicious count
                 const suspEl = document.getElementById('suspiciousCount');
@@ -353,6 +509,7 @@ const App = (function () {
                 document.getElementById('vesselCount').textContent = result.stats.total;
 
                 updateVesselList();
+                updateBottomSheetStats(result.stats);
 
                 setDataStatus(typeof i18n !== 'undefined' ? i18n.t('app.ais_sat_loaded') : '✅ AIS + 衛星資料已載入', true);
             } else if (data.vessel_monitoring) {
