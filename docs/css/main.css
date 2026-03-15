@@ -1044,6 +1044,40 @@ body {
     border: none !important;
 }
 
+.vessel-cluster-wrapper {
+    background: none !important;
+    border: none !important;
+}
+
+.vessel-cluster {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 245, 255, 0.1);
+    border: 1.5px solid rgba(0, 245, 255, 0.45);
+    border-radius: 50%;
+    color: #e0f0ff;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+}
+.vessel-cluster:hover {
+    transform: scale(1.1);
+    border-color: rgba(0, 245, 255, 0.8);
+}
+.vessel-cluster .cluster-count {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+}
+.vessel-cluster .cluster-label {
+    font-size: 8px;
+    opacity: 0.7;
+    line-height: 1;
+    margin-top: 1px;
+}
+
 /* =============================================================================
    Introduction Page
    ============================================================================= */
