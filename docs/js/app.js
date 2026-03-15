@@ -38,7 +38,7 @@ const App = (function () {
      */
     function setupEventListeners() {
         // Layer toggle checkboxes
-        ['fishingHotspots', 'vessels'].forEach(layer => {
+        ['fishingHotspots', 'vessels', 'darkVessels'].forEach(layer => {
             const checkbox = document.getElementById('show' + layer.charAt(0).toUpperCase() + layer.slice(1));
             if (checkbox) {
                 checkbox.addEventListener('change', () => {
@@ -156,7 +156,8 @@ const App = (function () {
             <div class="bottom-sheet-section">
                 <div class="bottom-sheet-title" data-i18n="bs.layers">圖層控制</div>
                 <label class="layer-toggle"><input type="checkbox" id="bsShowFishingHotspots" checked> <span data-i18n="idx.layer_fishing">漁撈熱點</span></label>
-                <label class="layer-toggle"><input type="checkbox" id="bsShowVessels" checked> <span data-i18n="idx.layer_vessels">船隻</span></label>
+                <label class="layer-toggle"><input type="checkbox" id="bsShowVessels" checked> <span data-i18n="idx.layer_vessels">AIS 船隻</span></label>
+                <label class="layer-toggle"><input type="checkbox" id="bsShowDarkVessels" checked> <span data-i18n="idx.layer_dark">暗船 (SAR)</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="bsShowSubmarineCables" checked> <span data-i18n="ais_anim.layer_cables">海底電纜</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="bsFilterFocVessels"> <span data-i18n="idx.filter_foc">過濾權宜船</span></label>
             </div>`;
@@ -221,6 +222,7 @@ const App = (function () {
         if (hasMap) {
             syncCheckbox('bsShowFishingHotspots', 'showFishingHotspots', layer => MapModule.toggleLayer('fishingHotspots', layer));
             syncCheckbox('bsShowVessels', 'showVessels', layer => MapModule.toggleLayer('vessels', layer));
+            syncCheckbox('bsShowDarkVessels', 'showDarkVessels', layer => MapModule.toggleLayer('darkVessels', layer));
             syncCheckbox('bsShowSubmarineCables', 'showSubmarineCables', async checked => {
                 if (checked) await MapModule.loadSubmarineCables();
                 MapModule.toggleLayer('submarineCables', checked);
@@ -500,15 +502,18 @@ const App = (function () {
 
             // Load AIS real-time vessels
             const hasAis = data.ais_snapshot && data.ais_snapshot.vessels && data.ais_snapshot.vessels.length > 0;
+            console.log('[Monitor] AIS check:', hasAis, 'vessels:', data.ais_snapshot?.vessels?.length || 0);
             if (hasAis) {
                 rawVesselList = data.ais_snapshot.vessels;
                 const result = MapModule.displayVessels(rawVesselList, vessels);
                 vessels = result.vessels;
+                console.log('[Monitor] AIS rendered:', result.stats);
 
                 ChartsModule.updateAisStats(result.stats);
 
                 // Update overlay cards
-                document.getElementById('vesselCount').textContent = result.stats.total;
+                const vesselCountEl = document.getElementById('vesselCount');
+                if (vesselCountEl) vesselCountEl.textContent = result.stats.total;
 
                 updateVesselList();
                 updateBottomSheetStats(result.stats);

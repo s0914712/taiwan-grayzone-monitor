@@ -1689,41 +1689,12 @@
     });
 
     // =========================================================================
-    // Mobile bottom nav
-    // =========================================================================
-    function setupMobileNav() {
-        if (document.querySelector('.mobile-bottom-nav')) return;
-        const nav = document.createElement('nav');
-        nav.className = 'mobile-bottom-nav';
-        nav.innerHTML = `
-            <a href="index.html">
-                <span class="nav-icon">🛰️</span>
-                <span data-i18n="nav.mob_monitor">監測</span>
-            </a>
-            <a href="dark-vessels.html">
-                <span class="nav-icon">🔦</span>
-                <span data-i18n="nav.mob_dark">暗船</span>
-            </a>
-            <a href="weekly-animation.html">
-                <span class="nav-icon">🎬</span>
-                <span data-i18n="nav.mob_anim">動畫</span>
-            </a>
-            <a href="cn-fishing-animation.html" class="active">
-                <span class="nav-icon">🇨🇳</span>
-                <span data-i18n="nav.mob_cn_fishing">大陸</span>
-            </a>
-        `;
-        i18n.applyAll();
-        document.body.appendChild(nav);
-    }
-
-    // =========================================================================
     // Initialize
     // =========================================================================
     initMap();
-    setupMobileNav();
     loadData();
     </script>
+    <script src="js/mobile-nav.js"></script>
 </body>
 
 </html>

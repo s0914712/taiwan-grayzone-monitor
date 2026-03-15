@@ -992,41 +992,12 @@
     });
 
     // =========================================================================
-    // Mobile bottom nav
-    // =========================================================================
-    function setupMobileNav() {
-        if (document.querySelector('.mobile-bottom-nav')) return;
-        const nav = document.createElement('nav');
-        nav.className = 'mobile-bottom-nav';
-        nav.innerHTML = `
-            <a href="index.html">
-                <span class="nav-icon">🛰️</span>
-                <span data-i18n="nav.mob_monitor">監測</span>
-            </a>
-            <a href="dark-vessels.html">
-                <span class="nav-icon">🔦</span>
-                <span data-i18n="nav.mob_dark">暗船</span>
-            </a>
-            <a href="statistics.html">
-                <span class="nav-icon">📊</span>
-                <span data-i18n="nav.mob_stats">統計</span>
-            </a>
-            <a href="weekly-animation.html" class="active">
-                <span class="nav-icon">🎬</span>
-                <span data-i18n="nav.mob_anim">動畫</span>
-            </a>
-        `;
-        i18n.applyAll(); // Apply translations to newly created elements
-        document.body.appendChild(nav);
-    }
-
-    // =========================================================================
     // Initialize
     // =========================================================================
     initMap();
-    setupMobileNav();
     loadData();
     </script>
+    <script src="js/mobile-nav.js"></script>
 </body>
 
 </html>
