@@ -1043,3 +1043,131 @@ body {
     background: none !important;
     border: none !important;
 }
+
+/* =============================================================================
+   Introduction Page
+   ============================================================================= */
+
+.intro-hero {
+    text-align: center;
+    padding: 60px 24px 40px;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.intro-hero h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.intro-hero .subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+}
+
+.intro-section {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 24px 8px;
+}
+
+.intro-section h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    color: var(--accent-cyan);
+}
+
+.intro-section p {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+}
+
+.intro-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px 32px;
+}
+
+.intro-tool-card {
+    display: block;
+    background: var(--bg-card);
+    border: 1px solid rgba(0, 245, 255, 0.12);
+    border-radius: 12px;
+    padding: 20px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.intro-tool-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 4px 20px rgba(0, 245, 255, 0.1);
+}
+
+.intro-tool-card .tool-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.intro-tool-card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.intro-tool-card p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.intro-cta {
+    text-align: center;
+    padding: 16px 24px 64px;
+}
+
+.intro-cta a {
+    display: inline-block;
+    background: var(--accent-cyan);
+    color: var(--bg-primary);
+    padding: 14px 36px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.intro-cta a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 24px rgba(0, 245, 255, 0.3);
+}
+
+@media (max-width: 600px) {
+    .intro-hero {
+        padding: 40px 20px 28px;
+    }
+    .intro-hero h1 {
+        font-size: 22px;
+    }
+    .intro-tools-grid {
+        grid-template-columns: 1fr;
+        padding: 0 16px 24px;
+    }
+    .intro-section {
+        padding: 20px 16px 8px;
+    }
+}

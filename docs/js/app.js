@@ -24,6 +24,11 @@ const App = (function () {
         setupEventListeners();
         setupMobileNavigation();
 
+        // Load submarine cables by default
+        MapModule.loadSubmarineCables().then(() => {
+            MapModule.toggleLayer('submarineCables', true);
+        });
+
         // Load data
         loadData();
     }
@@ -152,7 +157,7 @@ const App = (function () {
                 <div class="bottom-sheet-title" data-i18n="bs.layers">圖層控制</div>
                 <label class="layer-toggle"><input type="checkbox" id="bsShowFishingHotspots" checked> <span data-i18n="idx.layer_fishing">漁撈熱點</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="bsShowVessels" checked> <span data-i18n="idx.layer_vessels">船隻</span></label>
-                <label class="layer-toggle"><input type="checkbox" id="bsShowSubmarineCables"> <span data-i18n="ais_anim.layer_cables">海底電纜</span></label>
+                <label class="layer-toggle"><input type="checkbox" id="bsShowSubmarineCables" checked> <span data-i18n="ais_anim.layer_cables">海底電纜</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="bsFilterFocVessels"> <span data-i18n="idx.filter_foc">過濾權宜船</span></label>
             </div>`;
         }
@@ -356,9 +361,6 @@ const App = (function () {
                     <span class="risk-badge ${riskClass}">${sv.risk_level}</span>
                 </div>`;
         }).join('');
-
-        // Also display on map
-        MapModule.displaySuspiciousVessels(suspiciousData);
     }
 
     /**
@@ -520,6 +522,11 @@ const App = (function () {
                 setDataStatus(typeof i18n !== 'undefined' ? i18n.t('app.sat_loaded') : '🛰️ 衛星資料已載入', true);
             } else {
                 setDataStatus(typeof i18n !== 'undefined' ? i18n.t('app.no_data') : '⚠️ 尚無資料', false);
+            }
+
+            // Display suspicious vessels on map (after AIS vessels to avoid being cleared)
+            if (suspiciousData) {
+                MapModule.displaySuspiciousVessels(suspiciousData);
             }
 
             // Load cable fault status

@@ -153,6 +153,18 @@ const i18n = (function () {
         'idx.about_multi_3':     { zh: '解放軍軍事出動記錄：MND 每日國防消息', en: 'PLA military sortie records: MND daily defense reports' },
         'idx.about_refs':        { zh: '參考文獻', en: 'References' },
 
+        // ── Introduction 頁面 ──
+        'intro.hero_title':      { zh: '台灣周邊海域灰色地帶監測', en: 'Gray Zone Activity Monitor around Taiwan' },
+        'intro.hero_subtitle':   { zh: '開源衛星數據 • 即時船舶追蹤 • 海纜安全', en: 'Open Satellite Data • Real-time Vessel Tracking • Cable Security' },
+        'intro.gz_title':        { zh: '🌊 什麼是灰色地帶活動？', en: '🌊 What is Gray Zone Activity?' },
+        'intro.gz_p1':           { zh: '「灰色地帶」是指介於和平與戰爭之間的模糊狀態。在台灣周邊海域，這包括：大量漁船越界作業、船隻關閉 AIS 定位訊號成為「暗船」、海上民兵偽裝為漁船活動，以及與軍事演習高度相關的異常船舶行為。', en: 'The "gray zone" refers to the ambiguous space between peace and war. Around Taiwan, this includes: fishing fleets crossing maritime boundaries, vessels disabling AIS transponders to become "dark ships," maritime militia disguised as fishing boats, and anomalous vessel behavior closely correlated with military exercises.' },
+        'intro.gz_p2':           { zh: '這些活動不構成傳統意義上的軍事衝突，卻持續侵蝕海上秩序、消耗監測資源，並可能為進一步行動創造條件。透過衛星與 AIS 數據的交叉比對，我們能追蹤這些隱蔽的海上活動。', en: 'These activities fall short of traditional military conflict but continuously erode maritime order, drain monitoring resources, and may create conditions for further action. By cross-referencing satellite imagery and AIS data, we can track these covert maritime activities.' },
+        'intro.cable_title':     { zh: '🔌 海底電纜與灰色地帶', en: '🔌 Submarine Cables & the Gray Zone' },
+        'intro.cable_p1':        { zh: '台灣超過 95% 的對外網路通訊依賴海底電纜。這些電纜集中通過台灣海峽與周邊海域——正是灰色地帶活動最頻繁的區域。', en: 'Over 95% of Taiwan\'s international internet traffic relies on submarine cables. These cables pass through the Taiwan Strait and surrounding waters — precisely where gray zone activity is most intense.' },
+        'intro.cable_p2':        { zh: '拖網漁船的錨泊與作業是電纜損壞的主因之一。當大量不明船隻在電纜路線附近活動，便構成潛在威脅。本站地圖圖層可疊加顯示海底電纜路線與船隻分布，協助識別風險。', en: 'Anchor dragging by fishing trawlers is a leading cause of cable damage. When unidentified vessels operate near cable routes, they pose a potential threat. Our map layers overlay submarine cable routes with vessel positions to help identify risks.' },
+        'intro.tools_title':     { zh: '🧰 監測工具', en: '🧰 Monitoring Tools' },
+        'intro.cta':             { zh: '開始監測 →', en: 'Start Monitoring →' },
+
         // ── Dark Vessels 頁面 ──
         'dv.map_title':          { zh: '📍 暗船位置分布（SAR 衛星偵測、無 AIS 匹配）', en: '📍 Dark Vessel Locations (SAR Detection, No AIS Match)' },
         'dv.daily_title':        { zh: '📊 每日暗船數量趨勢', en: '📊 Daily Dark Vessel Trend' },
