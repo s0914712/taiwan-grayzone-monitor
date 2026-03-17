@@ -134,6 +134,11 @@
         <div class="map-section">
             <div id="map"></div>
 
+            <div class="route-search">
+                <input type="text" id="mmsiSearchInput" placeholder="MMSI 查詢航跡..." maxlength="9" inputmode="numeric" pattern="[0-9]*">
+                <button onclick="MapModule.searchVesselRoute()">查詢</button>
+            </div>
+
             <div class="map-overlay">
                 <div class="overlay-card">
                     <div class="label" data-i18n="idx.vessel_count">船隻數</div>
