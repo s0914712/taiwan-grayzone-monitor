@@ -32,11 +32,38 @@ OUTPUT_FILE = DATA_DIR / "suspicious_vessels.json"
 
 # ── 門檻設定 ────────────────────────────────────────────
 CABLE_PROXIMITY_KM = 5.0          # 海纜 5 公里內視為鄰近
+CABLE_LOITER_HOURS = 3.0          # 海纜鄰近低速徘徊 > 3 小時
+CABLE_LOITER_MAX_KNOTS = 8.0      # 低速定義 < 8 knots
 ZIGZAG_HEADING_CHANGE_DEG = 45    # 航向變化 > 45° 視為一次轉向
 ZIGZAG_MIN_TURNS = 3              # 至少 3 次轉向才算 Z 字型
 DEPTH_200M_CONTOUR_KM = 10.0      # 200m 等深線緩衝區寬度
 NAME_CHANGE_THRESHOLD = 2         # 船名變更 ≥ 2 次
 GOING_DARK_GAP_HOURS = 18         # AIS 消失 > 18 小時
+
+# ── 前十大船旗國 MMSI MID（國籍非前十大視為額外可疑）────────
+# MID = MMSI 前 3 碼，對照 ITU MID 表
+TOP_10_FLAG_MIDS = {
+    # Panama
+    '351', '352', '353', '354', '355', '356', '357',
+    # Liberia
+    '636', '637',
+    # Marshall Islands
+    '538',
+    # Hong Kong
+    '477',
+    # Singapore
+    '563', '564', '565', '566',
+    # Bahamas
+    '308', '309',
+    # Malta
+    '215', '229', '249', '256',
+    # China
+    '412', '413', '414',
+    # Japan
+    '431', '432',
+    # Taiwan (ROC)
+    '416',
+}
 
 # ── 台灣周邊 200m 等深線近似座標 ─────────────────────────
 # 大陸棚邊緣（西側較淺、東側急降）
@@ -121,6 +148,7 @@ def point_to_segment_distance_km(plat, plon, lat1, lon1, lat2, lon2):
 def check_cable_proximity(track_points):
     """
     檢查船隻航跡是否經過海纜附近
+    同時偵測低速徘徊（<8kn 在海纜 5km 內超過 3 小時）
     回傳: (is_near, details)
     """
     cables = load_cable_segments()
@@ -130,6 +158,7 @@ def check_cable_proximity(track_points):
     near_cables = set()
     min_dist = float('inf')
     near_count = 0
+    loiter_slow_count = 0  # 海纜鄰近且低速的快照數
 
     for pt in track_points:
         plat = pt.get('lat')
@@ -137,6 +166,7 @@ def check_cable_proximity(track_points):
         if plat is None or plon is None:
             continue
 
+        is_near_cable = False
         for cable in cables:
             points = cable['points']
             for i in range(len(points) - 1):
@@ -150,13 +180,26 @@ def check_cable_proximity(track_points):
                 if dist <= CABLE_PROXIMITY_KM:
                     near_cables.add(cable['slug'])
                     near_count += 1
-                    break  # no need to check other segments of same cable
+                    is_near_cable = True
+                    break
+            if is_near_cable:
+                break
+
+        # 計算低速徘徊（海纜鄰近 + 速度 < 8 knots）
+        if is_near_cable and pt.get('speed', 99) < CABLE_LOITER_MAX_KNOTS:
+            loiter_slow_count += 1
+
+    # 估算徘徊時數（每個快照間隔約 2 小時）
+    loiter_hours = loiter_slow_count * 2.0
+    is_loitering = loiter_hours >= CABLE_LOITER_HOURS
 
     is_near = len(near_cables) > 0
     return is_near, {
         'cables_nearby': list(near_cables),
         'min_distance_km': round(min_dist, 2) if min_dist < float('inf') else None,
         'proximity_points': near_count,
+        'loiter_slow_hours': round(loiter_hours, 1),
+        'loiter_triggered': is_loitering,
     }
 
 
@@ -388,6 +431,8 @@ def classify_vessel(profile, track_points, identity_events=None):
         'flags_used': [],
         'total_snapshots': profile.get('total_snapshots', 0),
         'cable_proximity': False,
+        'cable_loitering': False,
+        'non_top10_flag': False,
         'zigzag_pattern': False,
         'depth_200m_activity': False,
         'ais_anomalies': [],
@@ -403,6 +448,14 @@ def classify_vessel(profile, track_points, identity_events=None):
         if cable_near:
             cables_str = ', '.join(cable_details.get('cables_nearby', [])[:3])
             classification['flags'].append(f'海纜鄰近活動：{cables_str}')
+
+        # Criterion 1b: 海纜鄰近低速徘徊 (>3hr, <8kn)
+        if cable_details.get('loiter_triggered'):
+            classification['cable_loitering'] = True
+            hrs = cable_details.get('loiter_slow_hours', 0)
+            classification['flags'].append(
+                f'海纜低速徘徊：{hrs}h (<{CABLE_LOITER_MAX_KNOTS}kn)'
+            )
 
     # ── Criterion 2: Z 字型移動 ──
     if track_points:
@@ -429,11 +482,19 @@ def classify_vessel(profile, track_points, identity_events=None):
     if anomalies:
         classification['flags'].extend([a['description'] for a in anomalies])
 
+    # ── Criterion 5: 非前十大船旗國 ──
+    mid = mmsi[:3] if len(mmsi) >= 3 else ''
+    if mid and mid not in TOP_10_FLAG_MIDS:
+        classification['non_top10_flag'] = True
+        classification['flags'].append(f'非前十大船旗國 (MID {mid})')
+
     # ── 風險計分 ──
     score = 0
     # 海纜鄰近 + Z字型 = 強烈可疑（可能拖錨破壞）
     if classification['cable_proximity']:
         score += 3
+    if classification['cable_loitering']:
+        score += 2  # 海纜低速徘徊 >3hr <8kn
     if classification['zigzag_pattern']:
         score += 2
     # 海纜鄰近 + Z字型組合加分
@@ -441,6 +502,8 @@ def classify_vessel(profile, track_points, identity_events=None):
         score += 2
     if classification['depth_200m_activity']:
         score += 1
+    if classification['non_top10_flag']:
+        score += 1  # 非前十大船旗國
     for a in anomalies:
         if a['severity'] == 'high':
             score += 2
@@ -533,26 +596,34 @@ def main():
     # 統計
     risk_counts = {'critical': 0, 'high': 0, 'medium': 0, 'normal': 0}
     cable_count = 0
+    loiter_count = 0
     zigzag_count = 0
     depth_count = 0
     anomaly_count = 0
+    non_top10_count = 0
 
     for c in classifications:
         risk_counts[c['risk_level']] += 1
         if c.get('cable_proximity'):
             cable_count += 1
+        if c.get('cable_loitering'):
+            loiter_count += 1
         if c.get('zigzag_pattern'):
             zigzag_count += 1
         if c.get('depth_200m_activity'):
             depth_count += 1
         if c.get('ais_anomalies'):
             anomaly_count += 1
+        if c.get('non_top10_flag'):
+            non_top10_count += 1
 
     output = {
         'updated_at': datetime.now(timezone.utc).isoformat(),
         'methodology': 'Submarine Cable Threat Detection',
         'criteria': {
             'cable_proximity_km': CABLE_PROXIMITY_KM,
+            'cable_loiter_hours': CABLE_LOITER_HOURS,
+            'cable_loiter_max_knots': CABLE_LOITER_MAX_KNOTS,
             'zigzag_min_turns': ZIGZAG_MIN_TURNS,
             'zigzag_heading_change_deg': ZIGZAG_HEADING_CHANGE_DEG,
             'depth_200m_contour_km': DEPTH_200M_CONTOUR_KM,
@@ -562,9 +633,11 @@ def main():
             'total_analyzed': len(all_mmsi),
             'suspicious_count': len(suspicious_vessels),
             'cable_proximity_triggered': cable_count,
+            'cable_loitering_triggered': loiter_count,
             'zigzag_pattern_detected': zigzag_count,
             'depth_200m_activity': depth_count,
             'ais_anomaly_detected': anomaly_count,
+            'non_top10_flag': non_top10_count,
             'risk_distribution': risk_counts,
         },
         'suspicious_vessels': suspicious_vessels[:50],
@@ -578,9 +651,11 @@ def main():
     print(f"   分析船隻數: {len(all_mmsi)}")
     print(f"   可疑船隻 (score ≥ 4): {len(suspicious_vessels)}")
     print(f"   海纜鄰近: {cable_count}")
+    print(f"   海纜低速徘徊 (>3hr <8kn): {loiter_count}")
     print(f"   Z字型移動: {zigzag_count}")
     print(f"   200m等深線: {depth_count}")
     print(f"   AIS 異常: {anomaly_count}")
+    print(f"   非前十大船旗: {non_top10_count}")
     print(f"   風險分布: {risk_counts}")
     print(f"\n📁 結果已輸出至: {OUTPUT_FILE}")
 
