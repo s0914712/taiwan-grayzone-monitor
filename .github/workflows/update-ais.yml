@@ -34,6 +34,10 @@ jobs:
         run: python src/analyze_suspicious.py
         continue-on-error: true
 
+      - name: Extract all vessel routes
+        run: python src/extract_all_routes.py
+        continue-on-error: true
+
       - name: Generate dashboard data
         run: python src/generate_dashboard.py
 

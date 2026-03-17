@@ -34,9 +34,6 @@ const MapModule = (function() {
         other:         { center: [23.5, 119.5],   name: '其他海域', zoom: 8 }
     };
 
-    // Vessels with pre-extracted route data
-    const TRACKED_VESSELS = ['677025700'];
-
     // Fishing hotspots
     const FISHING_HOTSPOTS = {
         taiwan_bank: {
@@ -140,6 +137,14 @@ const MapModule = (function() {
                 renderVesselsForZoom();
             }
         });
+
+        // Bind Enter key on MMSI search input
+        var mmsiInput = document.getElementById('mmsiSearchInput');
+        if (mmsiInput) {
+            mmsiInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') searchVesselRoute();
+            });
+        }
 
         return map;
     }
@@ -274,12 +279,14 @@ const MapModule = (function() {
                 ? `<br><b style="color:#ff3366">${t('app.csis_suspicious')}</b>`
                 : '';
 
+            const routeLink = '<br><a href="#" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;" style="color:#ffd700">📍 顯示航跡 Track</a>';
+
             marker.bindPopup(`
                 <b>${v.name || 'Unknown'}</b><br>
                 ${t('app.mmsi')} ${v.mmsi}<br>
                 ${t('app.type')} ${v.type_name || t('common.unknown')}<br>
                 ${t('app.speed')} ${(v.speed || 0).toFixed(1)} kn<br>
-                航向: ${headingText}${suspiciousInfo}
+                航向: ${headingText}${suspiciousInfo}${routeLink}
             `);
 
             vesselMarkers[v.mmsi] = marker;
@@ -404,8 +411,7 @@ const MapModule = (function() {
             const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
             const suspiciousInfo = isSuspicious
                 ? '<br><b style="color:#ff3366">' + t('app.csis_suspicious') + '</b>' : '';
-            const routeLink = TRACKED_VESSELS.includes(v.mmsi)
-                ? '<br><a href="#" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;" style="color:#ffd700">📍 顯示航跡 Track</a>' : '';
+            const routeLink = '<br><a href="#" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;" style="color:#ffd700">📍 顯示航跡 Track</a>';
 
             marker.bindPopup(
                 '<b>' + (v.name || 'Unknown') + '</b><br>' +
@@ -449,9 +455,15 @@ const MapModule = (function() {
         layers.vesselRoutes.clearLayers();
         try {
             const res = await fetch('vessel_routes/' + mmsi + '.json?' + Date.now());
-            if (!res.ok) { console.error('Route not found for', mmsi); return; }
+            if (!res.ok) {
+                showRouteToast('此船隻尚無航跡資料 (MMSI ' + mmsi + ')');
+                return;
+            }
             const data = await res.json();
-            if (!data.track || data.track.length === 0) return;
+            if (!data.track || data.track.length === 0) {
+                showRouteToast('航跡資料為空 (MMSI ' + mmsi + ')');
+                return;
+            }
 
             const points = data.track.map(p => [p.lat, p.lon]);
 
@@ -493,11 +505,42 @@ const MapModule = (function() {
 
         } catch (e) {
             console.error('Load vessel route failed:', e);
+            showRouteToast('航跡載入失敗 / Route load failed');
         }
     }
 
     function clearVesselRoute() {
         layers.vesselRoutes.clearLayers();
+    }
+
+    /**
+     * Show a brief toast message for route operations
+     */
+    function showRouteToast(msg) {
+        var toast = document.getElementById('routeToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'routeToast';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(function() { toast.style.opacity = '0'; }, 3000);
+    }
+
+    /**
+     * Search vessel route by MMSI from the search box
+     */
+    function searchVesselRoute() {
+        var input = document.getElementById('mmsiSearchInput');
+        if (!input) return;
+        var mmsi = input.value.trim();
+        if (!mmsi || !/^\d{5,9}$/.test(mmsi)) {
+            showRouteToast('請輸入有效的 MMSI (5-9 位數字)');
+            return;
+        }
+        loadVesselRoute(mmsi);
     }
 
     /**
@@ -691,6 +734,7 @@ const MapModule = (function() {
         getCableFaultStatus,
         loadVesselRoute,
         clearVesselRoute,
+        searchVesselRoute,
         setFilterFoc,
         FISHING_HOTSPOTS,
         VESSEL_COLORS,
