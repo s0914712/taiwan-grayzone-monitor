@@ -258,7 +258,7 @@
             </div>
 
             <div class="sidebar-section">
-                <div class="section-title" data-i18n="idx.suspicious_title">🔍 可疑船隻 (CSIS 方法論)</div>
+                <div class="section-title" data-i18n="idx.suspicious_title">🔍 可疑船隻（海纜威脅偵測）</div>
                 <div class="suspicious-list" id="suspiciousList">
                     <div style="font-size:8px;color:var(--text-secondary);padding:4px" data-i18n="idx.suspicious_wait">累積觀測資料中...</div>
                 </div>
@@ -317,12 +317,13 @@
                     <p>本專案採用與 Global Fishing Watch 相同的核心技術——合成孔徑雷達 (Synthetic Aperture Radar, SAR) 衛星影像分析。SAR 技術不受日夜與天候影響，能穿透厚雲層偵測海面船隻。</p>
                 </div>
                 <div class="about-card">
-                    <h3>CSIS「蟲群信號」方法論</h3>
-                    <p>本系統參考美國戰略與國際研究中心 (CSIS) 的 <em>Signals in the Swarm</em> 研究框架，建立多層次的可疑船隻識別機制：</p>
+                    <h3>海底電纜威脅偵測</h3>
+                    <p>本系統針對海底電纜破壞威脅，建立多層次可疑船隻識別機制：</p>
                     <ul>
-                        <li><strong>行為閾值分析：</strong>偵測活動時間異常高、但在漁撈熱點極少出現的船隻</li>
-                        <li><strong>AIS 異常偵測：</strong>識別頻繁更改船名、長時間關閉 AIS（>18小時）、或變更船舶類型等異常行為</li>
-                        <li><strong>時間序列相關性：</strong>透過 Granger 因果檢定分析暗船活動與解放軍軍事出動之間的時序關聯</li>
+                        <li><strong>海纜鄰近活動：</strong>偵測航跡經過海底電纜路線 5 公里內的船隻</li>
+                        <li><strong>Z字型移動模式：</strong>識別頻繁大幅轉向（疑似拖錨破壞行為）的船隻</li>
+                        <li><strong>200m等深線活動：</strong>在大陸棚邊緣（海纜密集區）持續活動的船隻</li>
+                        <li><strong>AIS 身分變更：</strong>變更船名、呼號、IMO 等識別資訊的異常行為</li>
                     </ul>
                 </div>
                 <div class="about-card">
@@ -368,12 +369,13 @@
                     <p>This project uses the same core technology as Global Fishing Watch — Synthetic Aperture Radar (SAR) satellite imagery analysis. SAR works day and night, in any weather, penetrating cloud cover to detect vessels at sea.</p>
                 </div>
                 <div class="about-card">
-                    <h3>CSIS "Signals in the Swarm" Methodology</h3>
-                    <p>The system references the CSIS <em>Signals in the Swarm</em> research framework, establishing multi-layered suspicious vessel identification:</p>
+                    <h3>Submarine Cable Threat Detection</h3>
+                    <p>The system detects potential submarine cable threats through multi-layered suspicious vessel identification:</p>
                     <ul>
-                        <li><strong>Behavioral Threshold:</strong> Detecting vessels with abnormally high activity but rarely present in fishing hotspots</li>
-                        <li><strong>AIS Anomaly Detection:</strong> Identifying frequent name changes, prolonged AIS silence (&gt;18 hours), or vessel type changes</li>
-                        <li><strong>Time-Series Correlation:</strong> Granger causality analysis between dark vessel activity and PLA military sorties</li>
+                        <li><strong>Cable Proximity:</strong> Detecting vessels operating within 5km of submarine cable routes</li>
+                        <li><strong>Zigzag Pattern:</strong> Identifying vessels with frequent large heading changes (potential anchor-dragging behavior)</li>
+                        <li><strong>200m Depth Contour:</strong> Vessels persistently operating along the continental shelf edge (cable-dense area)</li>
+                        <li><strong>AIS Identity Changes:</strong> Detecting name, call sign, or IMO number manipulation</li>
                     </ul>
                 </div>
                 <div class="about-card">

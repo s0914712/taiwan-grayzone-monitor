@@ -677,7 +677,7 @@ const App = (function () {
                 alerts.push('SAR 偵測到 ' + darkTotal + ' 艘暗船於台灣周邊海域');
             }
             if (suspCount > 0) {
-                alerts.push(suspCount + ' 艘船隻行為異常（CSIS 方法論判定）');
+                alerts.push(suspCount + ' 艘船隻疑似海纜威脅（鄰近海纜+異常移動）');
             }
             if (h24 > 0) {
                 alerts.push('過去 24 小時內 ' + h24 + ' 次 AIS 身分變更事件');
