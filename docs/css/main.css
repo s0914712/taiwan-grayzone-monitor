@@ -180,6 +180,105 @@ body {
     font-family: 'JetBrains Mono', monospace;
 }
 
+/* Route lookup button in vessel popup */
+.route-lookup-btn {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 4px 12px;
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffd700;
+    border: 1px solid rgba(255, 215, 0, 0.6);
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+}
+.route-lookup-btn:hover {
+    background: rgba(255, 215, 0, 0.35);
+    transform: scale(1.03);
+}
+.route-lookup-btn:active {
+    transform: scale(0.97);
+}
+
+/* Route loading spinner */
+#routeLoadingSpinner {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: rgba(10, 15, 28, 0.95);
+    color: #ffd700;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.5);
+    font-size: 13px;
+    z-index: 10000;
+    font-family: 'JetBrains Mono', monospace;
+}
+#routeLoadingSpinner.active { display: flex; }
+.route-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-top-color: #ffd700;
+    border-radius: 50%;
+    animation: routeSpin 0.8s linear infinite;
+}
+@keyframes routeSpin { to { transform: rotate(360deg); } }
+
+/* Track info panel */
+#trackInfoPanel {
+    position: absolute;
+    bottom: 20px;
+    right: 10px;
+    z-index: 1000;
+    background: rgba(10, 15, 28, 0.92);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text-primary);
+    font-size: 12px;
+    min-width: 180px;
+    max-width: 260px;
+    display: none;
+    backdrop-filter: blur(8px);
+}
+#trackInfoPanel.active { display: block; }
+.track-info-header {
+    font-weight: 700;
+    color: #ffd700;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+.track-info-body {
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+.track-clear-btn {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 6px 0;
+    background: rgba(255, 51, 102, 0.2);
+    color: #ff3366;
+    border: 1px solid rgba(255, 51, 102, 0.5);
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+.track-clear-btn:hover {
+    background: rgba(255, 51, 102, 0.4);
+}
+
 .map-overlay {
     position: absolute;
     top: var(--spacing-sm);
@@ -927,6 +1026,7 @@ body {
     .region-table th { font-size: 12px; }
     .update-info { font-size: 12px; }
     .leaflet-popup-content { font-size: 13px; }
+    #trackInfoPanel { bottom: 70px; right: 5px; left: 5px; max-width: none; }
     .gfw-stat-box .label { font-size: 12px; }
     .alert-item { font-size: 13px; padding: 12px; }
     .panel-title { font-size: 14px; }
