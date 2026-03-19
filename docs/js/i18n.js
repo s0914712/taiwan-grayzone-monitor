@@ -323,6 +323,8 @@ const i18n = (function () {
         'app.track_source_live': { zh: '即時提取', en: 'Live extracted' },
         'app.clear_track':       { zh: '✕ 清除航跡', en: '✕ Clear Track' },
         'app.track_load_fail':   { zh: '航跡載入失敗', en: 'Track load failed' },
+        'app.sanctioned':        { zh: '🚫 UN 制裁船舶', en: '🚫 UN Sanctioned Vessel' },
+        'app.sanction_res':      { zh: 'UNSCR', en: 'UNSCR' },
 
         // ── Charts 模組 ──
         'chart.detect':          { zh: '偵測', en: 'det' },

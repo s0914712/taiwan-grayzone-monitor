@@ -28,6 +28,7 @@ HISTORY_FILE = DATA_DIR / "vessel_profiles.json"
 TRACK_HISTORY_FILE = DATA_DIR / "ais_track_history.json"
 CABLE_GEO_FILE = DATA_DIR / "cable-geo.json"
 IDENTITY_EVENTS_FILE = DATA_DIR / "identity_events.json"
+SANCTIONS_FILE = DATA_DIR / "un_sanctions_vessels.json"
 OUTPUT_FILE = DATA_DIR / "suspicious_vessels.json"
 
 # ── 門檻設定 ────────────────────────────────────────────
@@ -384,6 +385,30 @@ def load_identity_events():
     return by_mmsi
 
 
+def load_sanctions_list():
+    """載入 UN 制裁船舶清單，回傳 IMO set 與 name set 和詳細資料 dict"""
+    if not SANCTIONS_FILE.exists():
+        return {}, set(), set()
+    try:
+        with open(SANCTIONS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception:
+        return {}, set(), set()
+
+    by_imo = {}
+    imo_set = set()
+    name_set = set()
+    for v in data.get('vessels', []):
+        imo = v.get('imo', '')
+        name = v.get('name', '').upper().strip()
+        if imo:
+            imo_set.add(imo)
+            by_imo[imo] = v
+        if name:
+            name_set.add(name)
+    return by_imo, imo_set, name_set
+
+
 def load_track_history():
     """載入 ais_track_history.json，按 MMSI 組織航跡"""
     # Try docs/ first (may be more up-to-date), then data/
@@ -418,10 +443,11 @@ def load_track_history():
     return tracks
 
 
-def classify_vessel(profile, track_points, identity_events=None):
+def classify_vessel(profile, track_points, identity_events=None,
+                     sanctions_match=None):
     """
     綜合分類單一船隻的可疑程度
-    新標準：海纜鄰近 + Z字型 + 200m等深線 + AIS變更
+    新標準：海纜鄰近 + Z字型 + 200m等深線 + AIS變更 + UN制裁
     """
     mmsi = profile['mmsi']
 
@@ -435,6 +461,7 @@ def classify_vessel(profile, track_points, identity_events=None):
         'non_top10_flag': False,
         'zigzag_pattern': False,
         'depth_200m_activity': False,
+        'sanctioned': False,
         'ais_anomalies': [],
         'risk_level': 'normal',
         'flags': [],
@@ -488,6 +515,16 @@ def classify_vessel(profile, track_points, identity_events=None):
         classification['non_top10_flag'] = True
         classification['flags'].append(f'非前十大船旗國 (MID {mid})')
 
+    # ── Criterion 6: UN 制裁清單 ──
+    if sanctions_match:
+        classification['sanctioned'] = True
+        classification['sanction_info'] = sanctions_match
+        res = sanctions_match.get('resolution', '1718')
+        measures = ', '.join(sanctions_match.get('measures', []))
+        classification['flags'].append(
+            f'⚠️ UN 制裁船舶 (UNSCR {res}: {measures})'
+        )
+
     # ── 風險計分 ──
     score = 0
     # 海纜鄰近 + Z字型 = 強烈可疑（可能拖錨破壞）
@@ -504,6 +541,8 @@ def classify_vessel(profile, track_points, identity_events=None):
         score += 1
     if classification['non_top10_flag']:
         score += 1  # 非前十大船旗國
+    if classification['sanctioned']:
+        score += 5  # UN 制裁船舶 — 最高優先
     for a in anomalies:
         if a['severity'] == 'high':
             score += 2
@@ -549,6 +588,10 @@ def main():
     id_event_count = sum(len(v) for v in id_events_by_mmsi.values())
     print(f"🔄 身分變更事件: {id_event_count} 筆 ({len(id_events_by_mmsi)} 艘船)")
 
+    # 載入 UN 制裁清單
+    sanctions_by_imo, sanctions_imo_set, sanctions_name_set = load_sanctions_list()
+    print(f"🚫 UN 制裁船舶: {len(sanctions_imo_set)} 艘")
+
     # 載入船隻 profile（用於 AIS 異常偵測）
     profiles = {}
     if HISTORY_FILE.exists():
@@ -584,7 +627,23 @@ def main():
         track_pts = tracks.get(mmsi, [])
         id_events = id_events_by_mmsi.get(mmsi)
 
-        result = classify_vessel(profile, track_pts, id_events)
+        # 檢查是否在 UN 制裁清單中（比對 IMO 和船名）
+        sanction_hit = None
+        imo = profile.get('last_imo', '')
+        if imo and imo in sanctions_imo_set:
+            sanction_hit = sanctions_by_imo.get(imo)
+        if not sanction_hit:
+            for name in profile.get('names_seen', []):
+                if name.upper().strip() in sanctions_name_set:
+                    # 名稱匹配 — 找到對應的制裁條目
+                    for sv in sanctions_by_imo.values():
+                        if sv.get('name', '').upper().strip() == name.upper().strip():
+                            sanction_hit = sv
+                            break
+                    break
+
+        result = classify_vessel(profile, track_pts, id_events,
+                                 sanctions_match=sanction_hit)
         if result['risk_score'] > 0:
             classifications.append(result)
         if result['suspicious']:
@@ -601,6 +660,7 @@ def main():
     depth_count = 0
     anomaly_count = 0
     non_top10_count = 0
+    sanctioned_count = 0
 
     for c in classifications:
         risk_counts[c['risk_level']] += 1
@@ -616,6 +676,8 @@ def main():
             anomaly_count += 1
         if c.get('non_top10_flag'):
             non_top10_count += 1
+        if c.get('sanctioned'):
+            sanctioned_count += 1
 
     output = {
         'updated_at': datetime.now(timezone.utc).isoformat(),
@@ -638,6 +700,7 @@ def main():
             'depth_200m_activity': depth_count,
             'ais_anomaly_detected': anomaly_count,
             'non_top10_flag': non_top10_count,
+            'sanctioned_vessels': sanctioned_count,
             'risk_distribution': risk_counts,
         },
         'suspicious_vessels': suspicious_vessels[:50],
@@ -656,6 +719,7 @@ def main():
     print(f"   200m等深線: {depth_count}")
     print(f"   AIS 異常: {anomaly_count}")
     print(f"   非前十大船旗: {non_top10_count}")
+    print(f"   UN 制裁匹配: {sanctioned_count}")
     print(f"   風險分布: {risk_counts}")
     print(f"\n📁 結果已輸出至: {OUTPUT_FILE}")
 

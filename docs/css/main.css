@@ -181,6 +181,24 @@ body {
 }
 
 /* Route lookup button in vessel popup */
+/* Sanction warning in vessel popup */
+.sanction-warning {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 8px;
+    background: rgba(255, 0, 0, 0.2);
+    border: 1px solid #ff0000;
+    border-radius: 3px;
+    color: #ff0000;
+    font-weight: bold;
+    font-size: 10px;
+    animation: sanctionPulse 2s ease-in-out infinite;
+}
+@keyframes sanctionPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
 .route-lookup-btn {
     display: inline-block;
     margin-top: 6px;
