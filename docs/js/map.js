@@ -279,7 +279,7 @@ const MapModule = (function() {
                 ? `<br><b style="color:#ff3366">${t('app.csis_suspicious')}</b>`
                 : '';
 
-            const routeLink = '<br><a href="#" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;" style="color:#ffd700">📍 顯示航跡 Track</a>';
+            const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
 
             marker.bindPopup(`
                 <b>${v.name || 'Unknown'}</b><br>
@@ -411,7 +411,7 @@ const MapModule = (function() {
             const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
             const suspiciousInfo = isSuspicious
                 ? '<br><b style="color:#ff3366">' + t('app.csis_suspicious') + '</b>' : '';
-            const routeLink = '<br><a href="#" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;" style="color:#ffd700">📍 顯示航跡 Track</a>';
+            const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
 
             marker.bindPopup(
                 '<b>' + (v.name || 'Unknown') + '</b><br>' +
@@ -449,68 +449,235 @@ const MapModule = (function() {
     }
 
     /**
-     * Load and display vessel route from pre-extracted data
+     * Show/hide route loading spinner
+     */
+    function showRouteLoading(show, msg) {
+        var spinner = document.getElementById('routeLoadingSpinner');
+        if (show) {
+            if (!spinner) {
+                spinner = document.createElement('div');
+                spinner.id = 'routeLoadingSpinner';
+                document.body.appendChild(spinner);
+            }
+            var t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : function(k) { return k; };
+            spinner.innerHTML = '<div class="route-spinner"></div><span>' +
+                (msg || t('app.loading_track')) + '</span>';
+            spinner.className = 'active';
+        } else {
+            if (spinner) spinner.className = '';
+        }
+    }
+
+    /**
+     * Update loading spinner message text
+     */
+    function updateRouteLoadingMsg(msg) {
+        var spinner = document.getElementById('routeLoadingSpinner');
+        if (spinner) {
+            var span = spinner.querySelector('span');
+            if (span) span.textContent = msg;
+        }
+    }
+
+    /**
+     * Show track info panel on the map
+     */
+    function showTrackInfoPanel(data, source) {
+        var panel = document.getElementById('trackInfoPanel');
+        var mapEl = document.getElementById('map');
+        if (!panel && mapEl) {
+            panel = document.createElement('div');
+            panel.id = 'trackInfoPanel';
+            mapEl.appendChild(panel);
+        }
+        if (!panel) return;
+
+        var t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : function(k) { return k; };
+        var first = data.track[0];
+        var last = data.track[data.track.length - 1];
+        var startDate = new Date(first.t).toLocaleDateString();
+        var endDate = new Date(last.t).toLocaleDateString();
+        var points = data.track.length;
+        var sourceName = source === 'history' ? t('app.track_source_live') : t('app.track_source_pre');
+
+        panel.innerHTML =
+            '<div class="track-info-header">' + t('app.track_info_title') + '</div>' +
+            '<div class="track-info-body">' +
+                '<div><b>' + (data.name || 'Unknown') + '</b></div>' +
+                '<div>' + t('app.mmsi') + ' ' + data.mmsi + '</div>' +
+                '<div>' + startDate + ' ~ ' + endDate + '</div>' +
+                '<div>' + t('app.track_points') + ' ' + points + '</div>' +
+                '<div>' + t('app.track_source') + ' ' + sourceName + '</div>' +
+            '</div>' +
+            '<button class="track-clear-btn" onclick="MapModule.clearVesselRoute(); return false;">' +
+                t('app.clear_track') + '</button>';
+        panel.className = 'active';
+    }
+
+    /**
+     * Hide track info panel
+     */
+    function hideTrackInfoPanel() {
+        var panel = document.getElementById('trackInfoPanel');
+        if (panel) panel.className = '';
+    }
+
+    /**
+     * Fallback: extract vessel route from ais_track_history.json
+     */
+    var cachedTrackHistory = null;
+    async function extractRouteFromHistory(mmsi) {
+        var t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : function(k) { return k; };
+        updateRouteLoadingMsg(t('app.extracting_track'));
+
+        if (!cachedTrackHistory) {
+            var res = await fetch('ais_track_history.json?' + Date.now());
+            if (!res.ok) return null;
+            cachedTrackHistory = await res.json();
+        }
+        if (!Array.isArray(cachedTrackHistory)) return null;
+
+        var track = [];
+        var vesselName = '';
+        var vesselType = '';
+
+        for (var i = 0; i < cachedTrackHistory.length; i++) {
+            var snapshot = cachedTrackHistory[i];
+            var vessels = snapshot.vessels || [];
+            for (var j = 0; j < vessels.length; j++) {
+                var v = vessels[j];
+                if (String(v.mmsi) === String(mmsi)) {
+                    if (!vesselName && v.name) vesselName = v.name;
+                    if (!vesselType && v.type_name) vesselType = v.type_name;
+                    track.push({
+                        t: snapshot.timestamp,
+                        lat: v.lat,
+                        lon: v.lon,
+                        speed: v.speed || 0,
+                        heading: v.heading || 0
+                    });
+                }
+            }
+        }
+
+        if (track.length < 2) return null;
+
+        // Sort by timestamp
+        track.sort(function(a, b) { return new Date(a.t) - new Date(b.t); });
+
+        // Deduplicate consecutive identical positions
+        var deduped = [track[0]];
+        for (var k = 1; k < track.length; k++) {
+            if (track[k].lat !== deduped[deduped.length - 1].lat ||
+                track[k].lon !== deduped[deduped.length - 1].lon) {
+                deduped.push(track[k]);
+            } else if (k === track.length - 1) {
+                deduped.push(track[k]);
+            }
+        }
+
+        if (deduped.length < 2) return null;
+
+        return {
+            mmsi: mmsi,
+            name: vesselName || 'MMSI ' + mmsi,
+            type: vesselType,
+            source: 'history',
+            track: deduped
+        };
+    }
+
+    /**
+     * Render route polyline + markers on the map
+     */
+    function renderRoute(data) {
+        var points = data.track.map(function(p) { return [p.lat, p.lon]; });
+        var tooltipLabel = data.name + (data.source === 'history' ? ' — AIS 歷史航跡' : ' — 14 日航跡');
+
+        // Draw route polyline
+        L.polyline(points, {
+            color: '#ffd700',
+            weight: 2.5,
+            opacity: 0.7,
+            dashArray: '6,4'
+        }).addTo(layers.vesselRoutes)
+          .bindTooltip(tooltipLabel, { sticky: true });
+
+        // Start marker (green)
+        var first = data.track[0];
+        L.circleMarker([first.lat, first.lon], {
+            radius: 5, fillColor: '#00ff88', color: '#fff', weight: 1.5, fillOpacity: 0.9
+        }).addTo(layers.vesselRoutes)
+          .bindTooltip('起點 ' + new Date(first.t).toLocaleDateString(), { permanent: false });
+
+        // End marker (red)
+        var last = data.track[data.track.length - 1];
+        L.circleMarker([last.lat, last.lon], {
+            radius: 5, fillColor: '#ff3366', color: '#fff', weight: 1.5, fillOpacity: 0.9
+        }).addTo(layers.vesselRoutes)
+          .bindTooltip('終點 ' + new Date(last.t).toLocaleDateString(), { permanent: false });
+
+        // Intermediate time markers (every 12 points ≈ once per day)
+        data.track.forEach(function(p, i) {
+            if (i > 0 && i < data.track.length - 1 && i % 12 === 0) {
+                L.circleMarker([p.lat, p.lon], {
+                    radius: 3, fillColor: '#ffd700', color: '#ffd700', weight: 1, fillOpacity: 0.6
+                }).addTo(layers.vesselRoutes)
+                  .bindTooltip(new Date(p.t).toLocaleDateString(), { permanent: false });
+            }
+        });
+
+        // Zoom to route
+        map.fitBounds(L.polyline(points).getBounds().pad(0.2));
+    }
+
+    /**
+     * Load and display vessel route (with fallback to history extraction)
      */
     async function loadVesselRoute(mmsi) {
         layers.vesselRoutes.clearLayers();
+        hideTrackInfoPanel();
+        showRouteLoading(true);
+
         try {
-            const res = await fetch('vessel_routes/' + mmsi + '.json?' + Date.now());
-            if (!res.ok) {
-                showRouteToast('此船隻尚無航跡資料 (MMSI ' + mmsi + ')');
+            var data = null;
+            var source = 'pre';
+
+            // Try pre-generated route file first
+            var res = await fetch('vessel_routes/' + mmsi + '.json?' + Date.now());
+            if (res.ok) {
+                data = await res.json();
+                if (!data.track || data.track.length === 0) data = null;
+            }
+
+            // Fallback: extract from ais_track_history.json
+            if (!data) {
+                data = await extractRouteFromHistory(mmsi);
+                source = 'history';
+            }
+
+            showRouteLoading(false);
+
+            if (!data) {
+                var t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : function(k) { return k; };
+                showRouteToast(t('app.no_track_data') + ' (MMSI ' + mmsi + ')');
                 return;
             }
-            const data = await res.json();
-            if (!data.track || data.track.length === 0) {
-                showRouteToast('航跡資料為空 (MMSI ' + mmsi + ')');
-                return;
-            }
 
-            const points = data.track.map(p => [p.lat, p.lon]);
-
-            // Draw route polyline
-            L.polyline(points, {
-                color: '#ffd700',
-                weight: 2.5,
-                opacity: 0.7,
-                dashArray: '6,4'
-            }).addTo(layers.vesselRoutes)
-              .bindTooltip(data.name + ' — 14 日航跡', { sticky: true });
-
-            // Start marker (green)
-            const first = data.track[0];
-            L.circleMarker([first.lat, first.lon], {
-                radius: 5, fillColor: '#00ff88', color: '#fff', weight: 1.5, fillOpacity: 0.9
-            }).addTo(layers.vesselRoutes)
-              .bindTooltip('起點 ' + new Date(first.t).toLocaleDateString(), { permanent: false });
-
-            // End marker (red)
-            const last = data.track[data.track.length - 1];
-            L.circleMarker([last.lat, last.lon], {
-                radius: 5, fillColor: '#ff3366', color: '#fff', weight: 1.5, fillOpacity: 0.9
-            }).addTo(layers.vesselRoutes)
-              .bindTooltip('終點 ' + new Date(last.t).toLocaleDateString(), { permanent: false });
-
-            // Intermediate time markers (every 12 points ≈ once per day)
-            data.track.forEach((p, i) => {
-                if (i > 0 && i < data.track.length - 1 && i % 12 === 0) {
-                    L.circleMarker([p.lat, p.lon], {
-                        radius: 3, fillColor: '#ffd700', color: '#ffd700', weight: 1, fillOpacity: 0.6
-                    }).addTo(layers.vesselRoutes)
-                      .bindTooltip(new Date(p.t).toLocaleDateString(), { permanent: false });
-                }
-            });
-
-            // Zoom to route
-            map.fitBounds(L.polyline(points).getBounds().pad(0.2));
+            renderRoute(data);
+            showTrackInfoPanel(data, source);
 
         } catch (e) {
             console.error('Load vessel route failed:', e);
-            showRouteToast('航跡載入失敗 / Route load failed');
+            showRouteLoading(false);
+            var t2 = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : function(k) { return k; };
+            showRouteToast(t2('app.track_load_fail'));
         }
     }
 
     function clearVesselRoute() {
         layers.vesselRoutes.clearLayers();
+        hideTrackInfoPanel();
     }
 
     /**

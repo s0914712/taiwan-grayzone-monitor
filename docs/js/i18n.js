@@ -311,6 +311,18 @@ const i18n = (function () {
         'app.speed':             { zh: '航速:', en: 'Speed:' },
         'app.risk':              { zh: '風險:', en: 'Risk:' },
         'app.score':             { zh: '分數:', en: 'Score:' },
+        'app.show_track':        { zh: '📍 查詢航跡', en: '📍 Show Track' },
+        'app.loading_track':     { zh: '航跡載入中...', en: 'Loading track...' },
+        'app.extracting_track':  { zh: '正在從歷史資料提取...', en: 'Extracting from history...' },
+        'app.no_track_data':     { zh: '此船隻尚無航跡資料', en: 'No track data for this vessel' },
+        'app.track_empty':       { zh: '航跡資料為空', en: 'Track data is empty' },
+        'app.track_info_title':  { zh: '📍 航跡資訊', en: '📍 Track Info' },
+        'app.track_points':      { zh: '航跡點數:', en: 'Track points:' },
+        'app.track_source':      { zh: '來源:', en: 'Source:' },
+        'app.track_source_pre':  { zh: '預產生', en: 'Pre-generated' },
+        'app.track_source_live': { zh: '即時提取', en: 'Live extracted' },
+        'app.clear_track':       { zh: '✕ 清除航跡', en: '✕ Clear Track' },
+        'app.track_load_fail':   { zh: '航跡載入失敗', en: 'Track load failed' },
 
         // ── Charts 模組 ──
         'chart.detect':          { zh: '偵測', en: 'det' },
