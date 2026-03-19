@@ -150,8 +150,20 @@ const App = (function () {
 
         let sheetHTML = `<div class="bottom-sheet-handle"></div>`;
 
-        // Layer controls section (only on pages with maps)
+        // Route search section (only on pages with maps)
         const hasMap = document.getElementById('map');
+        if (hasMap) {
+            sheetHTML += `
+            <div class="bottom-sheet-section">
+                <div class="bottom-sheet-title" data-i18n="bs.route_search">航跡查詢</div>
+                <div class="bs-route-search">
+                    <input type="text" id="bsMmsiSearchInput" placeholder="MMSI" maxlength="9" inputmode="numeric" pattern="[0-9]*">
+                    <button id="bsMmsiSearchBtn" data-i18n="app.search">查詢</button>
+                </div>
+            </div>`;
+        }
+
+        // Layer controls section (only on pages with maps)
         if (hasMap) {
             sheetHTML += `
             <div class="bottom-sheet-section">
@@ -241,6 +253,25 @@ const App = (function () {
                     updateVesselList();
                     updateBottomSheetStats(result.stats);
                 }
+            });
+        }
+
+        // Wire bottom-sheet route search
+        var bsMmsiInput = document.getElementById('bsMmsiSearchInput');
+        var bsMmsiBtn = document.getElementById('bsMmsiSearchBtn');
+        if (bsMmsiInput && bsMmsiBtn) {
+            bsMmsiBtn.addEventListener('click', function() {
+                var val = bsMmsiInput.value.trim();
+                if (val) {
+                    // Copy value to main input and trigger search
+                    var mainInput = document.getElementById('mmsiSearchInput');
+                    if (mainInput) mainInput.value = val;
+                    closeAll();
+                    MapModule.loadVesselRoute(val);
+                }
+            });
+            bsMmsiInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') bsMmsiBtn.click();
             });
         }
 

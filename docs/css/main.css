@@ -222,6 +222,38 @@ body {
     transform: scale(0.97);
 }
 
+/* Bottom sheet route search */
+.bs-route-search {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+.bs-route-search input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-glow);
+    background: rgba(10, 15, 28, 0.9);
+    color: var(--text-primary);
+    font-size: 16px;
+    font-family: 'JetBrains Mono', monospace;
+}
+.bs-route-search input::placeholder { color: var(--text-secondary); opacity: 0.5; }
+.bs-route-search button {
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--accent-cyan);
+    background: rgba(0, 245, 255, 0.15);
+    color: var(--accent-cyan);
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+    min-height: 48px;
+}
+.bs-route-search button:active { background: rgba(0, 245, 255, 0.3); }
+
 /* Route loading spinner */
 #routeLoadingSpinner {
     position: fixed;
@@ -1043,8 +1075,23 @@ body {
     .region-table { font-size: 12px; }
     .region-table th { font-size: 12px; }
     .update-info { font-size: 12px; }
-    .leaflet-popup-content { font-size: 13px; }
-    #trackInfoPanel { bottom: 70px; right: 5px; left: 5px; max-width: none; }
+    .leaflet-popup-content { font-size: 13px; line-height: 1.6; }
+    .leaflet-popup-content-wrapper { max-width: 280px; }
+    .route-lookup-btn {
+        display: block;
+        width: 100%;
+        padding: 10px 16px;
+        font-size: 14px;
+        text-align: center;
+        margin-top: 8px;
+        border-radius: 6px;
+        min-height: 44px;
+        line-height: 24px;
+    }
+    .sanction-warning { font-size: 11px; padding: 4px 10px; }
+    #trackInfoPanel { bottom: 70px; right: 5px; left: 5px; max-width: none; font-size: 13px; }
+    .track-clear-btn { padding: 10px 0; font-size: 14px; min-height: 44px; border-radius: 6px; }
+    .route-search { display: none; }  /* Hidden on mobile, use bottom sheet instead */
     .gfw-stat-box .label { font-size: 12px; }
     .alert-item { font-size: 13px; padding: 12px; }
     .panel-title { font-size: 14px; }
@@ -1320,8 +1367,6 @@ body {
 @media (max-width: 400px) {
     .overview-value { font-size: 20px; }
     .overview-card { padding: 8px 6px; }
-    .route-search input { width: 100px; }
-    .route-search { top: 8px; right: 8px; }
 }
 
 .vessel-icon {
