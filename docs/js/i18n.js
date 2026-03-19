@@ -33,6 +33,7 @@ const i18n = (function () {
         'nav.mob_identity':      { zh: '身分', en: 'ID' },
 
         // ── Bottom Sheet ──
+        'bs.route_search':       { zh: '航跡查詢', en: 'Route Search' },
         'bs.layers':             { zh: '圖層控制', en: 'Layer Controls' },
         'bs.realtime_stats':     { zh: '即時統計', en: 'Live Stats' },
         'bs.suspicious':         { zh: '可疑船隻', en: 'Suspicious Vessels' },
