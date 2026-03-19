@@ -21,6 +21,11 @@ const MapModule = (function() {
     let cachedVessels = new Map();
     let cachedStats = { total: 0, fishing: 0, cargo: 0, tanker: 0, suspicious: 0 };
 
+    // UN sanctions lookup (loaded on init)
+    var sanctionsNameSet = new Set();
+    var sanctionsImoSet = new Set();
+    var sanctionsByName = {};  // uppercase name -> sanction entry
+
     // Zoom threshold: <= this shows clusters, > this shows individual markers
     const CLUSTER_ZOOM_THRESHOLD = 8;
 
@@ -146,6 +151,9 @@ const MapModule = (function() {
             });
         }
 
+        // Load UN sanctions list for vessel warnings
+        loadSanctionsList();
+
         return map;
     }
 
@@ -232,6 +240,37 @@ const MapModule = (function() {
     }
 
     /**
+     * Load UN sanctions vessel list for matching
+     */
+    function loadSanctionsList() {
+        fetch('un_sanctions_vessels.json?' + Date.now())
+            .then(function(res) { return res.ok ? res.json() : null; })
+            .then(function(data) {
+                if (!data || !data.vessels) return;
+                data.vessels.forEach(function(v) {
+                    var name = (v.name || '').toUpperCase().trim();
+                    if (name) {
+                        sanctionsNameSet.add(name);
+                        sanctionsByName[name] = v;
+                    }
+                    if (v.imo) sanctionsImoSet.add(v.imo);
+                });
+                console.log('UN sanctions loaded:', sanctionsNameSet.size, 'vessels');
+            })
+            .catch(function() { /* sanctions file not available */ });
+    }
+
+    /**
+     * Check if a vessel matches sanctions list (by name)
+     */
+    function getSanctionMatch(vesselName) {
+        if (!vesselName) return null;
+        var upper = vesselName.toUpperCase().trim();
+        if (sanctionsNameSet.has(upper)) return sanctionsByName[upper];
+        return null;
+    }
+
+    /**
      * Display vessels on the map
      */
     function displayVessels(vesselList, vessels = new Map()) {
@@ -278,6 +317,10 @@ const MapModule = (function() {
             const suspiciousInfo = isSuspicious
                 ? `<br><b style="color:#ff3366">${t('app.csis_suspicious')}</b>`
                 : '';
+            const sanctionHit = getSanctionMatch(v.name);
+            const sanctionInfo = sanctionHit
+                ? `<br><span class="sanction-warning">${t('app.sanctioned')} (${t('app.sanction_res')} ${sanctionHit.resolution || '1718'})</span>`
+                : '';
 
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
 
@@ -286,7 +329,7 @@ const MapModule = (function() {
                 ${t('app.mmsi')} ${v.mmsi}<br>
                 ${t('app.type')} ${v.type_name || t('common.unknown')}<br>
                 ${t('app.speed')} ${(v.speed || 0).toFixed(1)} kn<br>
-                航向: ${headingText}${suspiciousInfo}${routeLink}
+                航向: ${headingText}${suspiciousInfo}${sanctionInfo}${routeLink}
             `);
 
             vesselMarkers[v.mmsi] = marker;
@@ -411,6 +454,10 @@ const MapModule = (function() {
             const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
             const suspiciousInfo = isSuspicious
                 ? '<br><b style="color:#ff3366">' + t('app.csis_suspicious') + '</b>' : '';
+            var sanctionHit2 = getSanctionMatch(v.name);
+            var sanctionInfo2 = sanctionHit2
+                ? '<br><span class="sanction-warning">' + t('app.sanctioned') + ' (' + t('app.sanction_res') + ' ' + (sanctionHit2.resolution || '1718') + ')</span>'
+                : '';
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
 
             marker.bindPopup(
@@ -418,7 +465,7 @@ const MapModule = (function() {
                 t('app.mmsi') + ' ' + v.mmsi + '<br>' +
                 t('app.type') + ' ' + (v.type_name || t('common.unknown')) + '<br>' +
                 t('app.speed') + ' ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
-                '航向: ' + headingText + suspiciousInfo + routeLink
+                '航向: ' + headingText + suspiciousInfo + sanctionInfo2 + routeLink
             );
 
             vesselMarkers[v.mmsi] = marker;
