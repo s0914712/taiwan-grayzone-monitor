@@ -10,6 +10,7 @@ const MapModule = (function() {
     let layers = {
         fishingHotspots: null,
         vessels: null,
+        suspiciousVessels: null,
         darkVessels: null,
         submarineCables: null,
         vesselRoutes: null
@@ -126,6 +127,7 @@ const MapModule = (function() {
         // Create layer groups
         layers.fishingHotspots = L.layerGroup().addTo(map);
         layers.vessels = L.layerGroup().addTo(map);
+        layers.suspiciousVessels = L.layerGroup().addTo(map);
         layers.darkVessels = L.layerGroup().addTo(map);
         layers.submarineCables = L.layerGroup();
         layers.vesselRoutes = L.layerGroup().addTo(map);
@@ -803,6 +805,9 @@ const MapModule = (function() {
 
         if (!suspiciousData.suspicious_vessels) return;
 
+        // Clear previous suspicious markers (separate layer so they survive zoom/pan)
+        layers.suspiciousVessels.clearLayers();
+
         suspiciousData.suspicious_vessels.forEach(sv => {
             if (sv.last_lat && sv.last_lon) {
                 L.circleMarker([sv.last_lat, sv.last_lon], {
@@ -812,7 +817,7 @@ const MapModule = (function() {
                     weight: 2,
                     opacity: 0.9,
                     fillOpacity: 0.9
-                }).addTo(layers.vessels).bindPopup(() => {
+                }).addTo(layers.suspiciousVessels).bindPopup(() => {
                     const t3 = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
                     return `<b style="color:${riskColors[sv.risk_level] || '#ff3366'}">${(sv.names && sv.names[0]) || sv.mmsi}</b><br>
                     ${t3('app.mmsi')} ${sv.mmsi}<br>
@@ -831,6 +836,14 @@ const MapModule = (function() {
             map.addLayer(layers[layerName]);
         } else {
             map.removeLayer(layers[layerName]);
+        }
+        // Suspicious vessels follow the vessels layer toggle
+        if (layerName === 'vessels' && layers.suspiciousVessels) {
+            if (visible) {
+                map.addLayer(layers.suspiciousVessels);
+            } else {
+                map.removeLayer(layers.suspiciousVessels);
+            }
         }
     }
 
