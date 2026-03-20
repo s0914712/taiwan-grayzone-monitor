@@ -45,6 +45,8 @@
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- html2canvas for map snapshot -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="css/main.css">
@@ -98,38 +100,6 @@
                 <div class="data-status" id="dataStatus" data-i18n="common.loading">⏳ 載入中...</div>
             </div>
         </header>
-
-        <!-- Today's Overview Dashboard -->
-        <div class="today-overview" id="todayOverview">
-            <div class="overview-header">
-                <h2 data-i18n="overview.title">今日概況</h2>
-                <div class="overview-updated" id="overviewUpdated"></div>
-                <div class="share-buttons">
-                    <button class="share-btn" onclick="App.shareToTwitter()" title="Share on X/Twitter">𝕏</button>
-                    <button class="share-btn" onclick="App.shareToLine()" title="Share on LINE">L</button>
-                    <button class="share-btn" onclick="App.copyShareLink()" title="Copy link">🔗</button>
-                </div>
-            </div>
-            <div class="overview-cards">
-                <div class="overview-card">
-                    <div class="overview-value" id="ovAisCount">--</div>
-                    <div class="overview-label" data-i18n="overview.ais_vessels">AIS 船隻</div>
-                </div>
-                <div class="overview-card alert">
-                    <div class="overview-value" id="ovDarkVessels">--</div>
-                    <div class="overview-label" data-i18n="overview.dark_vessels">暗船偵測</div>
-                </div>
-                <div class="overview-card warn">
-                    <div class="overview-value" id="ovSuspicious">--</div>
-                    <div class="overview-label" data-i18n="overview.suspicious">可疑船隻</div>
-                </div>
-                <div class="overview-card">
-                    <div class="overview-value" id="ovIdentity">--</div>
-                    <div class="overview-label" data-i18n="overview.identity_changes">身分變更</div>
-                </div>
-            </div>
-            <div class="overview-alert-bar" id="overviewAlerts"></div>
-        </div>
 
         <div class="map-section">
             <div id="map"></div>
