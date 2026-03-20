@@ -193,39 +193,6 @@
             font-family: 'JetBrains Mono', monospace;
         }
 
-        /* Stats row */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            padding: 12px 16px;
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-glow);
-            border-radius: 6px;
-            padding: 10px;
-            text-align: center;
-        }
-
-        .stat-card .value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--accent-cyan);
-        }
-
-        .stat-card .value.alert {
-            color: var(--accent-red);
-        }
-
-        .stat-card .label {
-            font-size: 9px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
         /* Main content */
         .main-content {
             padding: 0 16px 16px;
@@ -344,13 +311,6 @@
 
         /* Responsive */
         @media (max-width: 768px) {
-            .stats-row {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-            }
-            .stat-card { padding: 12px; }
-            .stat-card .value { font-size: 22px; }
-            .stat-card .label { font-size: 12px; }
             .anim-controls { margin: 8px 8px 0; gap: 6px; }
             .range-selector, .playback-controls {
                 display: flex;
@@ -370,9 +330,6 @@
             .main-content { padding: 0 8px 72px; }
             .timeline-panel { margin: 0 8px; }
 
-            .stats-row {
-                padding: 8px;
-            }
         }
 
         /* Footer */
@@ -598,22 +555,6 @@
     <div class="timeline-panel">
         <input type="range" class="day-slider" id="daySlider" min="0" max="0" value="0">
         <div class="timeline-labels" id="timelineLabels"></div>
-    </div>
-
-    <!-- Stats -->
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="value" id="statTotal">--</div>
-            <div class="label">大陸漁船數</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statSuspicious">--</div>
-            <div class="label">可疑船</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statChange">--</div>
-            <div class="label">較上次變化</div>
-        </div>
     </div>
 
     <div class="main-content">
@@ -1392,24 +1333,7 @@
     }
 
     function updateStatCards(frame, idx) {
-        const allVessels = frame.vessels || [];
-        const filtered = filterVessels(allVessels);
-        const total = filtered.length;
-        const suspicious = filtered.filter(v => v.suspicious).length;
-
-        document.getElementById('statTotal').textContent = total;
-        document.getElementById('statSuspicious').textContent = suspicious;
-
-        const changeEl = document.getElementById('statChange');
-        if (idx > 0) {
-            const prev = Anim.filteredFrames[idx - 1].suspicious_count || 0;
-            const diff = suspicious - prev;
-            changeEl.textContent = (diff >= 0 ? '+' : '') + diff;
-            changeEl.className = 'value ' + (diff > 0 ? 'alert' : diff < 0 ? 'trend-down' : '');
-        } else {
-            changeEl.textContent = '--';
-            changeEl.className = 'value';
-        }
+        // Stats cards removed from UI – keep function as no-op
     }
 
     function updateVesselTable(vessels) {
