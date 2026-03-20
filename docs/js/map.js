@@ -550,16 +550,17 @@ const MapModule = (function() {
         var sourceName = source === 'history' ? t('app.track_source_live') : t('app.track_source_pre');
 
         panel.innerHTML =
-            '<div class="track-info-header">' + t('app.track_info_title') + '</div>' +
+            '<div class="track-info-header">' + (data.name || 'Unknown') + '</div>' +
             '<div class="track-info-body">' +
-                '<div><b>' + (data.name || 'Unknown') + '</b></div>' +
-                '<div>' + t('app.mmsi') + ' ' + data.mmsi + '</div>' +
-                '<div>' + startDate + ' ~ ' + endDate + '</div>' +
-                '<div>' + t('app.track_points') + ' ' + points + '</div>' +
-                '<div>' + t('app.track_source') + ' ' + sourceName + '</div>' +
+                '<div>MMSI ' + data.mmsi + '</div>' +
+                '<div>' + startDate + ' ~ ' + endDate + ' (' + points + 'pts)</div>' +
             '</div>' +
-            '<button class="track-clear-btn" onclick="MapModule.clearVesselRoute(); return false;">' +
-                t('app.clear_track') + '</button>';
+            '<div class="track-action-row">' +
+                '<button class="track-snapshot-btn" onclick="MapModule.snapshotMap(); return false;">' +
+                    t('app.snapshot') + '</button>' +
+                '<button class="track-clear-btn" onclick="MapModule.clearVesselRoute(); return false;">' +
+                    t('app.clear_track') + '</button>' +
+            '</div>';
         panel.className = 'active';
     }
 
@@ -569,6 +570,53 @@ const MapModule = (function() {
     function hideTrackInfoPanel() {
         var panel = document.getElementById('trackInfoPanel');
         if (panel) panel.className = '';
+    }
+
+    /**
+     * Snapshot map to clipboard (uses html2canvas)
+     */
+    async function snapshotMap() {
+        var t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : function(k) { return k; };
+        var mapEl = document.getElementById('map');
+        if (!mapEl) return;
+
+        // Temporarily hide track info panel so it doesn't appear in snapshot
+        var panel = document.getElementById('trackInfoPanel');
+        if (panel) panel.style.visibility = 'hidden';
+
+        try {
+            if (typeof html2canvas === 'undefined') {
+                showRouteToast(t('app.snapshot_fail'));
+                return;
+            }
+            var canvas = await html2canvas(mapEl, {
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#0a1628',
+                scale: 2
+            });
+            canvas.toBlob(async function(blob) {
+                if (blob && navigator.clipboard && window.ClipboardItem) {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    showRouteToast(t('app.snapshot_ok'));
+                } else {
+                    // Fallback: download
+                    var url = canvas.toDataURL('image/png');
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'map-snapshot.png';
+                    a.click();
+                    showRouteToast(t('app.snapshot_saved'));
+                }
+            }, 'image/png');
+        } catch (e) {
+            console.error('Snapshot failed:', e);
+            showRouteToast(t('app.snapshot_fail'));
+        } finally {
+            if (panel) panel.style.visibility = '';
+        }
     }
 
     /**
@@ -962,6 +1010,7 @@ const MapModule = (function() {
         loadVesselRoute,
         clearVesselRoute,
         searchVesselRoute,
+        snapshotMap,
         setFilterFoc,
         FISHING_HOTSPOTS,
         VESSEL_COLORS,

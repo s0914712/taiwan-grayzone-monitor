@@ -568,9 +568,6 @@ const App = (function () {
                 MapModule.displaySuspiciousVessels(suspiciousData);
             }
 
-            // Populate Today's Overview dashboard
-            updateOverview(data);
-
             // Load cable fault status
             loadCableStatus();
 
