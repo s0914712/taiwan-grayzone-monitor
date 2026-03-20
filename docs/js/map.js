@@ -867,10 +867,16 @@ const MapModule = (function() {
                     fillOpacity: 0.9
                 }).addTo(layers.suspiciousVessels).bindPopup(() => {
                     const t3 = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
-                    return `<b style="color:${riskColors[sv.risk_level] || '#ff3366'}">${(sv.names && sv.names[0]) || sv.mmsi}</b><br>
-                    ${t3('app.mmsi')} ${sv.mmsi}<br>
-                    <b>${t3('app.risk')} ${sv.risk_level.toUpperCase()}</b> (${t3('app.score')} ${sv.risk_score})<br>
-                    ${(sv.flags || []).map(f => '- ' + f).join('<br>')}`;
+                    var sanctionHit = getSanctionMatch((sv.names && sv.names[0]) || '');
+                    var sanctionLine = sanctionHit
+                        ? '<br><span class="sanction-warning">' + t3('app.sanctioned') + ' (' + t3('app.sanction_res') + ' ' + (sanctionHit.resolution || '1718') + ')</span>'
+                        : '';
+                    return '<b style="color:' + (riskColors[sv.risk_level] || '#ff3366') + '">' + ((sv.names && sv.names[0]) || sv.mmsi) + '</b><br>' +
+                        t3('app.mmsi') + ' ' + sv.mmsi + '<br>' +
+                        '<b>' + t3('app.risk') + ' ' + sv.risk_level.toUpperCase() + '</b> (' + t3('app.score') + ' ' + sv.risk_score + ')<br>' +
+                        (sv.flags || []).map(function(f) { return '- ' + f; }).join('<br>') +
+                        sanctionLine +
+                        '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + sv.mmsi + '\'); return false;">' + t3('app.show_track') + '</button>';
                 });
             }
         });
