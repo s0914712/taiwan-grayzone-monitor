@@ -8,11 +8,14 @@ Threads 社群媒體自動發布腳本 — Taiwan Gray Zone Monitor
   THREADS_ACCESS_TOKEN  — Threads API 存取權杖
   THREADS_APP_SECRET    — Threads App Secret
   GITHUB_TOKEN          — GitHub API token（圖片上傳用）
+  ANTHROPIC_API_KEY     — Claude API key（LLM 產生貼文用，選填）
 
 Usage: python publish_threads.py [--dry-run] [--mode daily|weekly]
 """
 import argparse
 import base64
+import hashlib
+import hmac
 import json
 import os
 import sys
@@ -145,18 +148,170 @@ def upload_chart_to_github(local_path, github_token):
     return raw_url
 
 
-def compose_post_text(summary):
-    """Compose Threads post text from summary data."""
+def collect_5day_briefing(data):
+    """Collect recent 5-day statistics from ais_history.json for LLM context."""
+    history_path = DOCS_DIR / "ais_history.json"
+    if not history_path.exists():
+        return None
+
+    with open(history_path, encoding="utf-8") as f:
+        history = json.load(f)
+
+    now = datetime.now(TW_TZ)
+    cutoff = (now - timedelta(days=5)).strftime("%Y-%m-%d")
+    recent = [e for e in history if e.get("date", "") >= cutoff]
+    if not recent:
+        return None
+
+    # Aggregate per-day stats
+    from collections import defaultdict
+    daily = defaultdict(lambda: {"counts": [], "fishing": [], "suspicious": [], "by_type": defaultdict(list)})
+    for e in recent:
+        day = e["date"][:10]
+        s = e.get("stats", {})
+        daily[day]["counts"].append(s.get("total_vessels", 0))
+        daily[day]["fishing"].append(s.get("fishing_vessels", 0))
+        daily[day]["suspicious"].append(s.get("suspicious_count", 0))
+        for t, c in s.get("by_type", {}).items():
+            daily[day]["by_type"][t].append(c)
+
+    days_summary = []
+    for day in sorted(daily.keys()):
+        d = daily[day]
+        avg_total = round(sum(d["counts"]) / len(d["counts"]))
+        avg_fishing = round(sum(d["fishing"]) / len(d["fishing"]))
+        max_susp = max(d["suspicious"]) if d["suspicious"] else 0
+        types_avg = {t: round(sum(v) / len(v)) for t, v in d["by_type"].items()}
+        days_summary.append({
+            "date": day,
+            "avg_vessels": avg_total,
+            "avg_fishing": avg_fishing,
+            "max_suspicious": max_susp,
+            "types": types_avg,
+        })
+
+    # Current snapshot extras
+    susp_analysis = data.get("suspicious_analysis", {})
+    dark = data.get("dark_vessels", {})
+    identity = data.get("identity_events", {})
+
+    return {
+        "days": days_summary,
+        "current_suspicious_count": susp_analysis.get("summary", {}).get("suspicious_count", 0),
+        "dark_vessels_total": dark.get("overall", {}).get("dark_vessels", 0),
+        "identity_changes_24h": identity.get("summary", {}).get("count_24h", 0),
+        "identity_changes_7d": identity.get("summary", {}).get("count_7d", 0),
+    }
+
+
+def generate_llm_post(summary, data):
+    """Use Claude API to generate a witty, informative 5-day briefing for Threads."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        print("⚠️ ANTHROPIC_API_KEY not set, falling back to template text")
+        return None
+
+    briefing = collect_5day_briefing(data)
+    if not briefing:
+        print("⚠️ No 5-day history available, falling back to template text")
+        return None
+
+    # Build context for LLM
+    days_text = []
+    for d in briefing["days"]:
+        types_str = ", ".join(f"{t}: {c}" for t, c in sorted(d["types"].items(), key=lambda x: -x[1])[:5])
+        days_text.append(
+            f"  {d['date']}: 平均 {d['avg_vessels']} 艘 (漁船 {d['avg_fishing']}, "
+            f"可疑 {d['max_suspicious']}) [{types_str}]"
+        )
+
+    context = f"""近 5 日台灣周邊灰色地帶海域監測數據：
+{chr(10).join(days_text)}
+
+今日摘要：
+- AIS 船隻總數: {summary.get('ais_total', 0)}
+- SAR 暗船: {briefing['dark_vessels_total']}
+- 可疑船隻 (CSIS 方法): {briefing['current_suspicious_count']}
+- 24h 內 AIS 身份變更: {briefing['identity_changes_24h']}
+- 7日內身份變更: {briefing['identity_changes_7d']}
+- 權宜船 (FOC): {summary.get('foc_vessels', 0)}"""
+
+    prompt = f"""你是一條養在 GitHub 上的蝦子，每天都被主人虐待找資料。
+請用這個角色設定，根據以下近 5 天的數據，用**中文**撰寫一則 Threads 週報貼文。
+
+要求：
+1. 開頭用「我是一條養在 GitHub 上的蝦子，每天都被主人虐待找資料」起手
+2. 語氣：詼諧幽默、知性、帶點嘲諷但不失專業，用蝦子的視角吐槽海上那些船
+3. 長度：150~280 字（不含 hashtag）
+4. 用數據說故事，點出本週趨勢變化（增減、異常）
+5. 可以用 1-2 個 emoji 點綴，但不要太多
+6. 結尾加上這些 hashtag: #TaiwanSecurity #GrayZone #OSINT #MaritimeSecurity
+7. 最後一行加上: https://s0914712.github.io/taiwan-grayzone-monitor/
+8. 不要用 markdown 格式，純文字即可
+
+{context}
+
+直接輸出貼文內容，不要加任何前言或解釋。"""
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": "claude-haiku-4-5-20251001",
+                "max_tokens": 512,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            print(f"⚠️ Claude API error: {resp.status_code} {resp.text[:200]}")
+            return None
+
+        result = resp.json()
+        text = result["content"][0]["text"].strip()
+        print(f"✅ LLM generated post ({len(text)} chars)")
+        return text
+
+    except Exception as e:
+        print(f"⚠️ Claude API call failed: {e}")
+        return None
+
+
+def compose_post_text(summary, data=None):
+    """Compose Threads post text — try LLM first, fall back to template."""
+    # Try LLM-powered witty post
+    if data:
+        llm_text = generate_llm_post(summary, data)
+        if llm_text:
+            return llm_text
+
+    # Fallback: deterministic template
     from generate_summary import format_text_report
     text = format_text_report(summary)
-    # Add project URL
     text += "\n\nhttps://s0914712.github.io/taiwan-grayzone-monitor/"
     return text
+
+
+def _make_appsecret_proof(access_token, app_secret):
+    """Generate appsecret_proof = HMAC-SHA256(access_token, app_secret)."""
+    return hmac.new(
+        app_secret.encode("utf-8"),
+        access_token.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
 
 
 def publish_to_threads(text, image_url, user_id, access_token, app_secret):
     """Publish to Threads via Graph API (two-step: create container → publish)."""
     base_url = "https://graph.threads.net/v1.0"
+
+    # appsecret_proof prevents "Failed to decrypt" error (code 190)
+    proof = _make_appsecret_proof(access_token, app_secret) if app_secret else None
 
     # Step 1: Create media container
     create_params = {
@@ -164,6 +319,8 @@ def publish_to_threads(text, image_url, user_id, access_token, app_secret):
         "text": text,
         "access_token": access_token,
     }
+    if proof:
+        create_params["appsecret_proof"] = proof
     if image_url:
         create_params["image_url"] = image_url
 
@@ -185,6 +342,8 @@ def publish_to_threads(text, image_url, user_id, access_token, app_secret):
         "creation_id": container_id,
         "access_token": access_token,
     }
+    if proof:
+        publish_params["appsecret_proof"] = proof
     resp = requests.post(f"{base_url}/{user_id}/threads_publish", data=publish_params)
     if resp.status_code != 200:
         print(f"❌ Publish failed: {resp.status_code} {resp.text}")
@@ -213,8 +372,8 @@ def main():
     print("🎨 Generating chart...")
     chart_result = generate_chart(summary, chart_path)
 
-    # 3. Compose post text
-    post_text = compose_post_text(summary)
+    # 3. Compose post text (LLM-powered if ANTHROPIC_API_KEY is set)
+    post_text = compose_post_text(summary, data)
     print("\n📝 Post content:")
     print("─" * 40)
     print(post_text)

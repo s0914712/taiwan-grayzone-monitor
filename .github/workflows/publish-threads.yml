@@ -1,19 +1,11 @@
-name: Publish Daily Summary to Threads
+name: Publish Weekly Summary to Threads
 
 on:
   schedule:
-    # 每天 UTC 00:30（台灣時間 08:30）— 在 update-data 完成後
-    - cron: '30 0 * * *'
+    # 每週一 UTC 00:30（台灣時間 08:30）
+    - cron: '30 0 * * 1'
   workflow_dispatch:
     inputs:
-      mode:
-        description: 'Report type (daily or weekly)'
-        required: false
-        default: 'daily'
-        type: choice
-        options:
-          - daily
-          - weekly
       dry_run:
         description: 'Dry run (preview only)'
         required: false
@@ -39,32 +31,16 @@ jobs:
         run: |
           pip install requests matplotlib
 
-      - name: Determine report mode
-        id: mode
-        run: |
-          # Weekly report on Mondays, daily otherwise
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "mode=${{ inputs.mode }}" >> $GITHUB_OUTPUT
-            echo "dry_run=${{ inputs.dry_run }}" >> $GITHUB_OUTPUT
-          else
-            DOW=$(date -u +%u)
-            if [ "$DOW" = "1" ]; then
-              echo "mode=weekly" >> $GITHUB_OUTPUT
-            else
-              echo "mode=daily" >> $GITHUB_OUTPUT
-            fi
-            echo "dry_run=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Generate and publish summary
+      - name: Generate and publish weekly summary
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
           THREADS_APP_SECRET: ${{ secrets.THREADS_APP_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          ARGS="--mode ${{ steps.mode.outputs.mode }}"
-          if [ "${{ steps.mode.outputs.dry_run }}" = "true" ]; then
+          ARGS="--mode weekly"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
             ARGS="$ARGS --dry-run"
           fi
           python src/publish_threads.py $ARGS
