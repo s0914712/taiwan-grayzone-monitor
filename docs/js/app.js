@@ -78,6 +78,7 @@ const App = (function () {
                     const vc = document.getElementById('vesselCount');
                     if (vc) vc.textContent = result.stats.total;
                     updateVesselList();
+                    updateBottomSheetLng();
                 }
             });
         }
@@ -185,7 +186,7 @@ const App = (function () {
             </div>`;
         }
 
-        // Stats + suspicious section (only on index)
+        // Stats + suspicious + LNG section (only on index)
         if (isIndex) {
             sheetHTML += `
             <div class="bottom-sheet-section">
@@ -196,6 +197,10 @@ const App = (function () {
                     <div class="bs-stat-item"><div class="bs-stat-value" id="bsCargoCount">--</div><div class="bs-stat-label" data-i18n="vessel.cargo">貨船</div></div>
                     <div class="bs-stat-item"><div class="bs-stat-value alert" id="bsSuspCount">--</div><div class="bs-stat-label" data-i18n="idx.suspicious">可疑</div></div>
                 </div>
+            </div>
+            <div class="bottom-sheet-section">
+                <div class="bottom-sheet-title">⛽ LNG/Gas 船隻</div>
+                <div id="bsLngList" class="bs-lng-list"><span style="color:var(--text-secondary);font-size:13px">載入中...</span></div>
             </div>
             <div class="bottom-sheet-section">
                 <div class="bottom-sheet-title" data-i18n="bs.suspicious">可疑船隻</div>
@@ -260,6 +265,7 @@ const App = (function () {
                     if (vc) vc.textContent = result.stats.total;
                     updateVesselList();
                     updateBottomSheetStats(result.stats);
+                    updateBottomSheetLng();
                 }
             });
         }
@@ -340,6 +346,31 @@ const App = (function () {
                 <span class="risk-badge risk-${sv.risk_level}">${sv.risk_level}</span>
             </div>`;
         }).join('');
+    }
+
+    /**
+     * Update bottom sheet LNG vessel list
+     */
+    function updateBottomSheetLng() {
+        const list = document.getElementById('bsLngList');
+        if (!list) return;
+
+        const lngVessels = Array.from(vessels.values()).filter(v =>
+            v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '')
+        );
+
+        if (lngVessels.length === 0) {
+            list.innerHTML = '<span style="color:var(--text-secondary);font-size:13px">目前無 LNG/Gas 船隻</span>';
+            return;
+        }
+
+        list.innerHTML = lngVessels.slice(0, 5).map((v, i) =>
+            '<div class="bs-lng-item" onclick="App.focusVessel(\'' + v.mmsi + '\')">' +
+                '<span class="bs-lng-num">' + (i + 1) + '</span>' +
+                '<span class="bs-lng-name">' + (v.name || 'Unknown').substring(0, 18) + '</span>' +
+                '<span class="bs-lng-speed">' + (v.speed || 0).toFixed(1) + ' kn</span>' +
+            '</div>'
+        ).join('');
     }
 
     /**
@@ -559,6 +590,7 @@ const App = (function () {
 
                 updateVesselList();
                 updateBottomSheetStats(result.stats);
+                updateBottomSheetLng();
 
                 setDataStatus(typeof i18n !== 'undefined' ? i18n.t('app.ais_sat_loaded') : '✅ AIS + 衛星資料已載入', true);
             } else if (data.vessel_monitoring) {
