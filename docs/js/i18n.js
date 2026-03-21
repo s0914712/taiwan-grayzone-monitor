@@ -310,6 +310,7 @@ const i18n = (function () {
         'app.mmsi':              { zh: 'MMSI:', en: 'MMSI:' },
         'app.type':              { zh: '類型:', en: 'Type:' },
         'app.speed':             { zh: '航速:', en: 'Speed:' },
+        'app.destination':       { zh: '目的地:', en: 'Destination:' },
         'app.risk':              { zh: '風險:', en: 'Risk:' },
         'app.score':             { zh: '分數:', en: 'Score:' },
         'app.show_track':        { zh: '📍 查詢航跡', en: '📍 Show Track' },

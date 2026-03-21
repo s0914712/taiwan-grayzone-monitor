@@ -69,6 +69,7 @@ const MapModule = (function() {
         fishing: '#00ff88',
         cargo: '#00f5ff',
         tanker: '#ff6b35',
+        lng: '#f0e130',       // Yellow for LNG/gas vessels
         other: '#ff3366',
         unknown: '#888888'
     };
@@ -295,7 +296,8 @@ const MapModule = (function() {
             stats.total++;
 
             const isSuspicious = v.suspicious;
-            const color = isSuspicious ? '#ff3366' : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
+            const isLng = v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '');
+            const color = isSuspicious ? '#ff3366' : isLng ? VESSEL_COLORS.lng : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
 
             // Add glow effect for suspicious vessels
             if (isSuspicious) {
@@ -310,8 +312,20 @@ const MapModule = (function() {
                 }).addTo(layers.vessels);
             }
 
+            // Add glow for LNG vessels
+            if (isLng) {
+                L.circleMarker([v.lat, v.lon], {
+                    radius: 14,
+                    fillColor: VESSEL_COLORS.lng,
+                    color: VESSEL_COLORS.lng,
+                    weight: 1,
+                    opacity: 0.25,
+                    fillOpacity: 0.10
+                }).addTo(layers.vessels);
+            }
+
             const heading = v.heading !== undefined && v.heading !== null ? v.heading : null;
-            const icon = createVesselIcon(color, isSuspicious, heading);
+            const icon = createVesselIcon(color, isSuspicious || isLng, heading);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(layers.vessels);
 
             const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
@@ -323,6 +337,12 @@ const MapModule = (function() {
             const sanctionInfo = sanctionHit
                 ? `<br><span class="sanction-warning">${t('app.sanctioned')} (${t('app.sanction_res')} ${sanctionHit.resolution || '1718'})</span>`
                 : '';
+            const destInfo = v.destination
+                ? '<br>' + t('app.destination') + ' ' + v.destination
+                : '';
+            const lngBadge = isLng
+                ? '<br><b style="color:' + VESSEL_COLORS.lng + '">⛽ LNG/Gas Carrier</b>'
+                : '';
 
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
 
@@ -331,7 +351,7 @@ const MapModule = (function() {
                 ${t('app.mmsi')} ${v.mmsi}<br>
                 ${t('app.type')} ${v.type_name || t('common.unknown')}<br>
                 ${t('app.speed')} ${(v.speed || 0).toFixed(1)} kn<br>
-                航向: ${headingText}${suspiciousInfo}${sanctionInfo}${routeLink}
+                航向: ${headingText}${lngBadge}${destInfo}${suspiciousInfo}${sanctionInfo}${routeLink}
             `);
 
             vesselMarkers[v.mmsi] = marker;
