@@ -201,6 +201,17 @@ const MapModule = (function() {
         });
     }
 
+    // AIS navigational status codes → human-readable labels
+    var _NAV_STATUS = {
+        '0': '航行中(主機)', '1': '錨泊', '2': '失控', '3': '操縱受限',
+        '4': '吃水受限', '5': '繫泊', '6': '擱淺', '7': '捕魚中',
+        '8': '帆行中', '11': '拖帶中', '12': '推頂中', '14': 'AIS-SART', '15': ''
+    };
+    function _decodeNavStatus(code) {
+        if (code === undefined || code === null || code === '') return '';
+        return _NAV_STATUS[String(code)] || '';
+    }
+
     /**
      * Create a MarineTraffic-style triangle SVG icon
      */
@@ -338,20 +349,27 @@ const MapModule = (function() {
                 ? `<br><span class="sanction-warning">${t('app.sanctioned')} (${t('app.sanction_res')} ${sanctionHit.resolution || '1718'})</span>`
                 : '';
             const destInfo = v.destination
-                ? '<br>' + t('app.destination') + ' ' + v.destination
+                ? '<br>📍 Dest: ' + v.destination
                 : '';
+            const navLabel = _decodeNavStatus(v.nav_status);
+            const navInfo = navLabel ? '<br>狀態: ' + navLabel : '';
+            const imoInfo = v.imo && v.imo !== '0' ? '<br>IMO: ' + v.imo : '';
             const lngBadge = isLng
                 ? '<br><b style="color:' + VESSEL_COLORS.lng + '">⛽ LNG/Gas Carrier</b>'
                 : '';
+
+            // External lookup: MarineTraffic by MMSI for from/destination details
+            const mtLink = '<br><a class="mt-lookup-link" href="https://www.marinetraffic.com/en/ais/details/ships/mmsi:' +
+                v.mmsi + '" target="_blank" rel="noopener">🔎 From / Dest 查詢</a>';
 
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
 
             marker.bindPopup(`
                 <b>${v.name || 'Unknown'}</b><br>
-                ${t('app.mmsi')} ${v.mmsi}<br>
+                ${t('app.mmsi')} ${v.mmsi}${imoInfo}<br>
                 ${t('app.type')} ${v.type_name || t('common.unknown')}<br>
                 ${t('app.speed')} ${(v.speed || 0).toFixed(1)} kn<br>
-                航向: ${headingText}${lngBadge}${destInfo}${suspiciousInfo}${sanctionInfo}${routeLink}
+                航向: ${headingText}${navInfo}${lngBadge}${destInfo}${suspiciousInfo}${sanctionInfo}${routeLink}${mtLink}
             `);
 
             vesselMarkers[v.mmsi] = marker;
@@ -480,14 +498,20 @@ const MapModule = (function() {
             var sanctionInfo2 = sanctionHit2
                 ? '<br><span class="sanction-warning">' + t('app.sanctioned') + ' (' + t('app.sanction_res') + ' ' + (sanctionHit2.resolution || '1718') + ')</span>'
                 : '';
+            var destInfo2 = v.destination ? '<br>📍 Dest: ' + v.destination : '';
+            var navInfo2 = _decodeNavStatus(v.nav_status);
+            navInfo2 = navInfo2 ? '<br>狀態: ' + navInfo2 : '';
+            var imoInfo2 = v.imo && v.imo !== '0' ? '<br>IMO: ' + v.imo : '';
+            var mtLink2 = '<br><a class="mt-lookup-link" href="https://www.marinetraffic.com/en/ais/details/ships/mmsi:' +
+                v.mmsi + '" target="_blank" rel="noopener">🔎 From / Dest 查詢</a>';
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
 
             marker.bindPopup(
                 '<b>' + (v.name || 'Unknown') + '</b><br>' +
-                t('app.mmsi') + ' ' + v.mmsi + '<br>' +
+                t('app.mmsi') + ' ' + v.mmsi + imoInfo2 + '<br>' +
                 t('app.type') + ' ' + (v.type_name || t('common.unknown')) + '<br>' +
                 t('app.speed') + ' ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
-                '航向: ' + headingText + suspiciousInfo + sanctionInfo2 + routeLink
+                '航向: ' + headingText + navInfo2 + destInfo2 + suspiciousInfo + sanctionInfo2 + routeLink + mtLink2
             );
 
             vesselMarkers[v.mmsi] = marker;
