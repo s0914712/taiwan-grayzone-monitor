@@ -355,7 +355,9 @@ const App = (function () {
         const list = document.getElementById('bsLngList');
         if (!list) return;
 
-        const lngVessels = Array.from(vessels.values()).filter(v =>
+        // Use rawVesselList (full array) instead of vessels Map,
+        // because in cluster mode (low zoom) the Map may be empty
+        const lngVessels = rawVesselList.filter(v =>
             v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '')
         );
 
@@ -365,7 +367,7 @@ const App = (function () {
         }
 
         list.innerHTML = lngVessels.slice(0, 5).map((v, i) =>
-            '<div class="bs-lng-item" onclick="App.focusVessel(\'' + v.mmsi + '\')">' +
+            '<div class="bs-lng-item" onclick="App.focusLngVessel(' + v.lat + ',' + v.lon + ',\'' + v.mmsi + '\')">' +
                 '<span class="bs-lng-num">' + (i + 1) + '</span>' +
                 '<span class="bs-lng-name">' + (v.name || 'Unknown').substring(0, 18) + '</span>' +
                 '<span class="bs-lng-speed">' + (v.speed || 0).toFixed(1) + ' kn</span>' +
@@ -684,6 +686,18 @@ const App = (function () {
     }
 
     /**
+     * Focus on an LNG vessel — zoom to level 13 so cluster mode exits,
+     * then open the popup once the map finishes rendering individual markers.
+     */
+    function focusLngVessel(lat, lon, mmsi) {
+        MapModule.focusPosition(lat, lon, 13);
+        // After zoom triggers re-render (cluster→individual), open popup
+        setTimeout(function () {
+            MapModule.focusVessel(mmsi, vessels);
+        }, 600);
+    }
+
+    /**
      * Focus on a suspicious vessel position
      */
     function focusSuspicious(lat, lon) {
@@ -797,6 +811,7 @@ const App = (function () {
         toggleSidebar,
         toggleLayer,
         focusVessel,
+        focusLngVessel,
         focusSuspicious,
         loadData,
         shareToTwitter,
