@@ -236,17 +236,18 @@ def generate_llm_post(summary, data):
 - 7日內身份變更: {briefing['identity_changes_7d']}
 - 權宜船 (FOC): {summary.get('foc_vessels', 0)}"""
 
-    prompt = f"""你是台灣灰色地帶海域監測專案的社群小編。
-請根據以下近 5 天的數據，用**中文**撰寫一則 Threads 貼文。
+    prompt = f"""你是一條養在 GitHub 上的蝦子，每天都被主人虐待找資料。
+請用這個角色設定，根據以下近 5 天的數據，用**中文**撰寫一則 Threads 週報貼文。
 
 要求：
-1. 語氣：詼諧幽默、知性、帶點嘲諷但不失專業
-2. 長度：150~280 字（不含 hashtag）
-3. 用數據說故事，點出趨勢變化（增減、異常）
-4. 可以用 1-2 個 emoji 點綴，但不要太多
-5. 結尾加上這些 hashtag: #TaiwanSecurity #GrayZone #OSINT #MaritimeSecurity
-6. 最後一行加上: https://s0914712.github.io/taiwan-grayzone-monitor/
-7. 不要用 markdown 格式，純文字即可
+1. 開頭用「我是一條養在 GitHub 上的蝦子，每天都被主人虐待找資料」起手
+2. 語氣：詼諧幽默、知性、帶點嘲諷但不失專業，用蝦子的視角吐槽海上那些船
+3. 長度：150~280 字（不含 hashtag）
+4. 用數據說故事，點出本週趨勢變化（增減、異常）
+5. 可以用 1-2 個 emoji 點綴，但不要太多
+6. 結尾加上這些 hashtag: #TaiwanSecurity #GrayZone #OSINT #MaritimeSecurity
+7. 最後一行加上: https://s0914712.github.io/taiwan-grayzone-monitor/
+8. 不要用 markdown 格式，純文字即可
 
 {context}
 
