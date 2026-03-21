@@ -1024,6 +1024,52 @@ const MapModule = (function() {
      * Locate and zoom to vessels of a specific type
      * @param {string} type - 'fishing', 'cargo', 'tanker', 'lng', 'suspicious', 'other'
      */
+    /**
+     * Show a floating vessel list panel near the legend.
+     * Clicking an item zooms to that vessel and opens its popup.
+     */
+    function showVesselListPanel(vessels, color) {
+        // Remove any existing panel
+        dismissVesselListPanel();
+
+        const panel = document.createElement('div');
+        panel.className = 'vessel-list-panel';
+        panel.innerHTML = '<div class="vlp-title">⛽ LNG/Gas (' + vessels.length + ')</div>';
+
+        vessels.slice(0, 5).forEach((v, i) => {
+            const row = document.createElement('div');
+            row.className = 'vlp-item';
+            row.innerHTML = '<span class="vlp-num">' + (i + 1) + '</span>' +
+                '<span class="vlp-name">' + (v.name || 'Unknown') + '</span>' +
+                '<span class="vlp-speed">' + (v.speed || 0).toFixed(1) + ' kn</span>';
+            row.addEventListener('click', function () {
+                map.setView([v.lat, v.lon], 13);
+                if (vesselMarkers[v.mmsi]) {
+                    vesselMarkers[v.mmsi].openPopup();
+                }
+                // Flash this vessel
+                var flash = L.circleMarker([v.lat, v.lon], {
+                    radius: 22, fillColor: color, color: color,
+                    weight: 2, opacity: 0.9, fillOpacity: 0.35
+                }).addTo(layers.vessels);
+                setTimeout(function () { layers.vessels.removeLayer(flash); }, 2500);
+            });
+            panel.appendChild(row);
+        });
+
+        document.querySelector('.map-legend').appendChild(panel);
+
+        // Close panel when clicking elsewhere on the map
+        setTimeout(function () {
+            map.once('click', dismissVesselListPanel);
+        }, 100);
+    }
+
+    function dismissVesselListPanel() {
+        var old = document.querySelector('.vessel-list-panel');
+        if (old) old.remove();
+    }
+
     function locateVesselType(type) {
         if (!map || cachedVesselList.length === 0) return;
 
@@ -1043,6 +1089,12 @@ const MapModule = (function() {
 
         if (matched.length === 0) return;
 
+        // LNG: show a clickable list panel instead of just zooming
+        if (type === 'lng') {
+            showVesselListPanel(matched, VESSEL_COLORS.lng);
+            return;
+        }
+
         // If only one vessel, zoom to it directly
         if (matched.length === 1) {
             map.setView([matched[0].lat, matched[0].lon], 12);
@@ -1059,7 +1111,6 @@ const MapModule = (function() {
 
         // Flash matching markers briefly
         const color = type === 'suspicious' ? '#ff3366'
-            : type === 'lng' ? VESSEL_COLORS.lng
             : (VESSEL_COLORS[type] || VESSEL_COLORS.other);
 
         const flashMarkers = matched.map(v => {
