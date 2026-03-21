@@ -201,6 +201,25 @@ def get_proxy_list():
     ]
 
 
+# --- LNG / 天然氣船偵測 ---
+
+_LNG_NAME_KEYWORDS = re.compile(
+    r'\bLNG\b|\bLPG\b|\bFSRU\b|\bMETHANE\b|\bGAS\b', re.I
+)
+
+# AIS type 84 = tanker carrying DG/HS/HNS (often LNG/LPG)
+_LNG_TYPE_CODES = {84}
+
+
+def _is_lng_vessel(name, type_code):
+    """判斷是否為 LNG/天然氣相關船舶"""
+    if name and _LNG_NAME_KEYWORDS.search(name):
+        return True
+    if type_code is not None and int(type_code) in _LNG_TYPE_CODES:
+        return True
+    return False
+
+
 # --- 資料收集 ---
 
 def collect_ais_data():
@@ -277,6 +296,7 @@ def collect_ais_data():
         sog = props.get("SOG", 0.0) or 0.0
         cog = props.get("COG", 0.0) or 0.0
         record_time = props.get("Record_Time", "")
+        destination = str(props.get("Destination", "")).strip()
 
         # 區域判定
         fishing_hotspot = next(
@@ -287,6 +307,9 @@ def collect_ais_data():
 
         # 可疑判定已停用（原 CSIS 方法論），改由 analyze_suspicious.py 綜合分析
         suspicious = False
+
+        # LNG / 天然氣船偵測
+        is_lng = _is_lng_vessel(ship_name, type_code)
 
         vessels[mmsi] = {
             'mmsi': mmsi,
@@ -300,6 +323,8 @@ def collect_ais_data():
             'speed': float(sog),
             'heading': float(cog),
             'nav_status': str(props.get("Navigational_Status", "")),
+            'destination': destination,
+            'is_lng': is_lng,
             'in_fishing_hotspot': fishing_hotspot,
             'suspicious': suspicious,
             'record_time': record_time,
