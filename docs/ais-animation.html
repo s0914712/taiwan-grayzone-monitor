@@ -594,21 +594,6 @@
         <div class="timeline-labels" id="timelineLabels"></div>
     </div>
 
-    <!-- Stats -->
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="value alert" id="statSuspicious">--</div>
-            <div class="label" data-i18n="ais_anim.suspicious">可疑船</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statTotal">--</div>
-            <div class="label" data-i18n="ais_anim.total_track">追蹤船隻</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statChange">--</div>
-            <div class="label" data-i18n="anim.change">較上次變化</div>
-        </div>
-    </div>
 
     <div class="main-content">
         <!-- Map -->
@@ -616,8 +601,8 @@
             <div class="panel-title" data-i18n="ais_anim.map_title">📍 可疑船隻 AIS 軌跡動畫</div>
             <div id="map"></div>
             <div class="map-legend-inline">
-                <div class="legend-chip"><svg width="10" height="10" style="flex-shrink:0"><polygon points="5,0 10,10 0,10" fill="#ff3366" opacity="0.85"/></svg><span data-i18n="ais_anim.suspicious">可疑船</span></div>
-                <div class="legend-chip"><svg width="10" height="10" style="flex-shrink:0"><polygon points="5,0 10,10 0,10" fill="#00f5ff" opacity="0.6"/></svg><span>一般船隻</span></div>
+                <div class="legend-chip"><svg width="7" height="16" style="flex-shrink:0" viewBox="0 0 7 16"><polygon points="3.5,0 7,16 3.5,11.2 0,16" fill="#ff3366" opacity="0.85"/></svg><span data-i18n="ais_anim.suspicious">可疑船</span></div>
+                <div class="legend-chip"><svg width="7" height="16" style="flex-shrink:0" viewBox="0 0 7 16"><polygon points="3.5,0 7,16 3.5,11.2 0,16" fill="#00f5ff" opacity="0.7"/></svg><span>一般船隻</span></div>
                 <div class="legend-chip"><span class="dot" style="background:rgba(0,255,136,0.3)"></span><span>漁撈熱點</span></div>
                 <div class="legend-chip"><span class="dot" style="background:#ffa500"></span><span data-i18n="ais_anim.detect_loiter">滯留</span></div>
                 <div class="legend-chip"><span class="dot" style="background:#ff66ff"></span><span data-i18n="ais_anim.detect_zigzag">Z字型</span></div>
@@ -1264,28 +1249,32 @@
         return null; // unknown heading
     }
 
-    // Create triangle SVG icon for vessel marker
+    // Create MarineTraffic-style arrow SVG icon for vessel marker
     function createVesselIcon(color, isSuspicious, heading) {
-        const size = isSuspicious ? 16 : 12;
-        const half = size / 2;
+        const w = isSuspicious ? 10 : 7;
+        const h = isSuspicious ? 20 : 16;
         const rotation = heading !== null ? heading : 0;
-        const opacity = isSuspicious ? 0.85 : 0.6;
+        const opacity = isSuspicious ? 0.85 : 0.7;
+        const sw = isSuspicious ? 1.5 : 0.8;
 
-        // If no heading data, show a diamond instead of triangle
         let shape;
         if (heading !== null) {
-            // Triangle pointing up (north=0°), rotated by heading
-            shape = '<polygon points="' + half + ',1 ' + (size - 1) + ',' + (size - 1) + ' 1,' + (size - 1) + '" ' +
+            // Narrow arrow with notch — shows heading direction clearly
+            const cx = w / 2;
+            const notch = h * 0.7;
+            shape = '<polygon points="' + cx + ',0 ' + w + ',' + h + ' ' + cx + ',' + notch + ' 0,' + h + '" ' +
                     'fill="' + color + '" fill-opacity="' + opacity + '" ' +
-                    'stroke="' + color + '" stroke-width="' + (isSuspicious ? 1.5 : 0.8) + '" stroke-opacity="0.9"/>';
+                    'stroke="' + color + '" stroke-width="' + sw + '" stroke-opacity="0.9"/>';
         } else {
             // Diamond for unknown heading
-            shape = '<polygon points="' + half + ',1 ' + (size - 1) + ',' + half + ' ' + half + ',' + (size - 1) + ' 1,' + half + '" ' +
+            const cx = w / 2;
+            const cy = h / 2;
+            shape = '<polygon points="' + cx + ',0 ' + w + ',' + cy + ' ' + cx + ',' + h + ' 0,' + cy + '" ' +
                     'fill="' + color + '" fill-opacity="' + opacity + '" ' +
-                    'stroke="' + color + '" stroke-width="' + (isSuspicious ? 1.5 : 0.8) + '" stroke-opacity="0.9"/>';
+                    'stroke="' + color + '" stroke-width="' + sw + '" stroke-opacity="0.9"/>';
         }
 
-        const svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" ' +
+        const svg = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" ' +
                     'xmlns="http://www.w3.org/2000/svg" ' +
                     'style="transform:rotate(' + rotation + 'deg)">' +
                     shape + '</svg>';
@@ -1293,9 +1282,9 @@
         return L.divIcon({
             html: svg,
             className: 'vessel-icon',
-            iconSize: [size, size],
-            iconAnchor: [half, half],
-            popupAnchor: [0, -half]
+            iconSize: [w, h],
+            iconAnchor: [w / 2, h / 2],
+            popupAnchor: [0, -h / 2]
         });
     }
 
@@ -1396,23 +1385,7 @@
     }
 
     function updateStatCards(frame, idx) {
-        const allVessels = frame.vessels || [];
-        const filtered = filterVessels(allVessels);
-        const suspicious = filtered.filter(v => v.suspicious).length;
-        const total = filtered.length;
-        document.getElementById('statSuspicious').textContent = suspicious;
-        document.getElementById('statTotal').textContent = total;
-
-        const changeEl = document.getElementById('statChange');
-        if (idx > 0) {
-            const prev = Anim.filteredFrames[idx - 1].suspicious_count || 0;
-            const diff = suspicious - prev;
-            changeEl.textContent = (diff >= 0 ? '+' : '') + diff;
-            changeEl.className = 'value ' + (diff > 0 ? 'alert' : diff < 0 ? 'trend-down' : '');
-        } else {
-            changeEl.textContent = '--';
-            changeEl.className = 'value';
-        }
+        // Stats banner removed — function kept as no-op for compatibility
     }
 
     function updateVesselTable(vessels) {
