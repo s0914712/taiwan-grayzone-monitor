@@ -1020,6 +1020,64 @@ const MapModule = (function() {
         filterFocEnabled = enabled;
     }
 
+    /**
+     * Locate and zoom to vessels of a specific type
+     * @param {string} type - 'fishing', 'cargo', 'tanker', 'lng', 'suspicious', 'other'
+     */
+    function locateVesselType(type) {
+        if (!map || cachedVesselList.length === 0) return;
+
+        const matched = cachedVesselList.filter(v => {
+            if (type === 'lng') {
+                return v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '');
+            }
+            if (type === 'suspicious') {
+                return v.suspicious;
+            }
+            if (type === 'other') {
+                const isLng = v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '');
+                return !isLng && !v.suspicious && !['fishing', 'cargo', 'tanker'].includes(v.type_name);
+            }
+            return v.type_name === type;
+        });
+
+        if (matched.length === 0) return;
+
+        // If only one vessel, zoom to it directly
+        if (matched.length === 1) {
+            map.setView([matched[0].lat, matched[0].lon], 12);
+            // Open popup if marker exists
+            if (vesselMarkers[matched[0].mmsi]) {
+                vesselMarkers[matched[0].mmsi].openPopup();
+            }
+            return;
+        }
+
+        // Fit bounds to show all matching vessels
+        const bounds = L.latLngBounds(matched.map(v => [v.lat, v.lon]));
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+
+        // Flash matching markers briefly
+        const color = type === 'suspicious' ? '#ff3366'
+            : type === 'lng' ? VESSEL_COLORS.lng
+            : (VESSEL_COLORS[type] || VESSEL_COLORS.other);
+
+        const flashMarkers = matched.map(v => {
+            return L.circleMarker([v.lat, v.lon], {
+                radius: 18,
+                fillColor: color,
+                color: color,
+                weight: 2,
+                opacity: 0.8,
+                fillOpacity: 0.3
+            }).addTo(layers.vessels);
+        });
+
+        setTimeout(() => {
+            flashMarkers.forEach(m => layers.vessels.removeLayer(m));
+        }, 2000);
+    }
+
     return {
         init,
         drawFishingHotspots,
@@ -1038,6 +1096,7 @@ const MapModule = (function() {
         searchVesselRoute,
         snapshotMap,
         setFilterFoc,
+        locateVesselType,
         FISHING_HOTSPOTS,
         VESSEL_COLORS,
         REGION_COLORS,
