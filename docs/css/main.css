@@ -416,6 +416,50 @@ body {
 .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
 .legend-line { width: 14px; height: 2px; border-radius: 1px; }
 
+/* Vessel list panel (LNG locate) */
+.vessel-list-panel {
+    margin-top: 6px;
+    padding: 6px 0 2px;
+    border-top: 1px solid var(--border-glow);
+}
+.vlp-title {
+    font-size: 8px;
+    color: #f0e130;
+    font-weight: bold;
+    margin-bottom: 4px;
+    padding: 0 2px;
+}
+.vlp-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 8px;
+}
+.vlp-item:hover {
+    background: rgba(240, 225, 48, 0.15);
+}
+.vlp-num {
+    color: #f0e130;
+    font-weight: bold;
+    min-width: 10px;
+}
+.vlp-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 110px;
+}
+.vlp-speed {
+    color: var(--text-secondary);
+    font-size: 7px;
+    white-space: nowrap;
+}
+
 /* =============================================================================
    Layer Toggles
    ============================================================================= */
