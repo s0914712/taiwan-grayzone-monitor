@@ -62,7 +62,11 @@ def main():
                 'ais_data': ais_raw.get('statistics', {}),
                 'vessels': ais_raw.get('vessels', [])
             }
-            print(f"📡 已載入 AIS 快照: {len(ais_snapshot['vessels'])} 艘船")
+            if not ais_snapshot['vessels']:
+                print("⚠️ AIS 快照為空 (0 艘船)，跳過以保留前次有效資料")
+                ais_snapshot = None
+            else:
+                print(f"📡 已載入 AIS 快照: {len(ais_snapshot['vessels'])} 艘船")
         except (json.JSONDecodeError, IOError) as e:
             print(f"⚠️ 讀取 ais_snapshot.json 失敗: {e}")
     else:

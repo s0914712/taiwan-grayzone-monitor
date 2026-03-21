@@ -58,6 +58,14 @@ const App = (function () {
             });
         }
 
+        // Legend item click -> locate vessel type on map
+        document.querySelectorAll('.legend-clickable').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.getAttribute('data-vessel-type');
+                if (type) MapModule.locateVesselType(type);
+            });
+        });
+
         // FOC commercial vessel filter
         const focCheckbox = document.getElementById('filterFocVessels');
         if (focCheckbox) {

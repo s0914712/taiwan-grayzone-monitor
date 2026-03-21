@@ -45,6 +45,12 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          # 如果 AIS 快照為空 (0 艘船)，還原以保留上次有效資料
+          VESSEL_COUNT=$(python3 -c "import json; d=json.load(open('data/ais_snapshot.json')); print(len(d.get('vessels',[])))" 2>/dev/null || echo "0")
+          if [ "$VESSEL_COUNT" = "0" ]; then
+            echo "⚠️ AIS snapshot has 0 vessels, restoring previous version"
+            git checkout -- data/ais_snapshot.json docs/data.json 2>/dev/null || true
+          fi
           git add data/ docs/
           git diff --staged --quiet || git commit -m "📡 AIS update $(date +'%Y-%m-%d %H:%M') UTC"
           git pull --rebase -X theirs origin main || {
