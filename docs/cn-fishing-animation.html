@@ -1275,9 +1275,9 @@
                 const color = trail.color || '#9370db';
                 L.polyline(trail.points, {
                     color: color,
-                    weight: 1.5,
-                    opacity: 0.4,
-                    dashArray: '3,3'
+                    weight: 0.8,
+                    opacity: 0.25,
+                    dashArray: '4,6'
                 }).addTo(Anim.trailLayer);
             });
         }
@@ -1301,7 +1301,7 @@
                 }).addTo(Anim.markerLayer);
             }
 
-            const icon = createVesselIcon(color, true, heading); // always use larger size for visibility
+            const icon = createVesselIcon(color, isSuspicious, heading);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(Anim.markerLayer);
 
             const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
