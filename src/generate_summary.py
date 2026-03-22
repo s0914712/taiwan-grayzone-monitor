@@ -67,6 +67,10 @@ def compute_daily_summary(data):
     foc_count = sum(1 for v in vessels if v.get("flag", "") in foc_flags)
     summary["foc_vessels"] = foc_count
 
+    # LNG / Gas vessels
+    lng_count = sum(1 for v in vessels if v.get("is_lng"))
+    summary["lng_vessels"] = lng_count
+
     # Dark vessels (SAR)
     dark = data.get("dark_vessels", {})
     summary["dark_vessels_total"] = dark.get("overall", {}).get("dark_vessels", 0)
@@ -151,6 +155,11 @@ def format_text_report(summary):
     if summary.get("foc_vessels"):
         pct = round(summary["foc_vessels"] / max(summary["ais_total"], 1) * 100, 1)
         lines.append(f"  FOC Vessels: {summary['foc_vessels']} ({pct}%)")
+
+    # LNG vessels
+    lng = summary.get("lng_vessels", 0)
+    if lng > 0:
+        lines.append(f"  LNG/Gas Carriers: {lng}")
 
     # Top types
     top_types = list(summary.get("ais_by_type", {}).items())[:4]

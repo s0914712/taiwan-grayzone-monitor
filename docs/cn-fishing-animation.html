@@ -1286,7 +1286,7 @@
         vessels.forEach(v => {
             const color = getProvinceColor(v);
             const provName = getProvinceName(v);
-            const heading = computeHeading(v.mmsi, v.lat, v.lon);
+            const heading = computeHeading(v.mmsi, v.lat, v.lon) ?? (v.heading !== undefined ? v.heading : null);
             const isSuspicious = v.suspicious;
 
             // Glow for suspicious vessels

@@ -78,11 +78,13 @@ def generate_chart(summary, output_path):
         ("AIS Vessels", f"{summary.get('ais_total', 0):,}", "#00f5ff"),
         ("Dark Vessels", f"{summary.get('dark_vessels_total', 0)}", "#ff6b6b"),
         ("Suspicious", f"{summary.get('suspicious_count', 0)}", "#ffd93d"),
+        ("LNG/Gas", f"{summary.get('lng_vessels', 0)}", "#f0e130"),
         ("ID Changes", f"{summary.get('identity_changes_24h', 0)}", "#ff8800"),
     ]
 
+    n = len(metrics)
     for i, (label, value, color) in enumerate(metrics):
-        x = 0.125 + i * 0.25
+        x = (i + 0.5) / n
         # Value
         ax.text(x, 0.55, value, transform=ax.transAxes,
                 fontsize=28, fontweight='bold', color=color,
@@ -195,12 +197,17 @@ def collect_5day_briefing(data):
     dark = data.get("dark_vessels", {})
     identity = data.get("identity_events", {})
 
+    # LNG vessels from current snapshot
+    vessels = data.get("ais_snapshot", {}).get("vessels", [])
+    lng_count = sum(1 for v in vessels if v.get("is_lng"))
+
     return {
         "days": days_summary,
         "current_suspicious_count": susp_analysis.get("summary", {}).get("suspicious_count", 0),
         "dark_vessels_total": dark.get("overall", {}).get("dark_vessels", 0),
         "identity_changes_24h": identity.get("summary", {}).get("count_24h", 0),
         "identity_changes_7d": identity.get("summary", {}).get("count_7d", 0),
+        "lng_vessels": lng_count,
     }
 
 
@@ -232,6 +239,7 @@ def generate_llm_post(summary, data):
 - AIS 船隻總數: {summary.get('ais_total', 0)}
 - SAR 暗船: {briefing['dark_vessels_total']}
 - 可疑船隻 (CSIS 方法): {briefing['current_suspicious_count']}
+- LNG/天然氣船: {summary.get('lng_vessels', 0)}
 - 24h 內 AIS 身份變更: {briefing['identity_changes_24h']}
 - 7日內身份變更: {briefing['identity_changes_7d']}
 - 權宜船 (FOC): {summary.get('foc_vessels', 0)}"""
@@ -365,7 +373,7 @@ def main():
     print("📊 Generating summary...")
     summary, data = generate_summary(args.mode)
     print(f"  AIS: {summary['ais_total']} | Dark: {summary.get('dark_vessels_total', 0)} | "
-          f"Suspicious: {summary.get('suspicious_count', 0)}")
+          f"Suspicious: {summary.get('suspicious_count', 0)} | LNG: {summary.get('lng_vessels', 0)}")
 
     # 2. Generate chart
     chart_path = os.path.join(args.chart_dir, CHART_FILENAME)
