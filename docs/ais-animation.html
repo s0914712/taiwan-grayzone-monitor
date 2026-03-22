@@ -1331,7 +1331,7 @@
             if (hasDetection) {
                 color = tags[0].color; // use primary detection color
             }
-            const heading = computeHeading(v.mmsi, v.lat, v.lon);
+            const heading = computeHeading(v.mmsi, v.lat, v.lon) ?? (v.heading !== undefined ? v.heading : null);
 
             // Glow effect FIRST (behind main marker)
             if (isSuspicious || hasDetection) {
