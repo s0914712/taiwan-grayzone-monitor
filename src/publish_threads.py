@@ -380,7 +380,7 @@ def main():
     print("🎨 Generating chart...")
     chart_result = generate_chart(summary, chart_path)
 
-    # 3. Compose post text (LLM-powered if ANTHROPIC_API_KEY is set)
+    # 3. Compose post text (LLM-powered if GEMINI_API_KEY is set)
     post_text = compose_post_text(summary, data)
     print("\n📝 Post content:")
     print("─" * 40)
