@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Threads 社群媒體自動發布腳本 — Taiwan Gray Zone Monitor
-從 data.json 讀取最新監測數據，產生摘要圖表，並發布到 Threads。
+從 data.json 讀取最新監測數據，產生摘要圖表與可疑船隻航跡圖，
+並以 Carousel 格式發布到 Threads。
 
 環境變數:
   THREADS_USER_ID       — Threads 用戶 ID
@@ -17,6 +18,7 @@ import base64
 import hashlib
 import hmac
 import json
+import math
 import os
 import sys
 import time
@@ -27,6 +29,7 @@ import requests
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DOCS_DIR = BASE_DIR / "docs"
+DATA_DIR = BASE_DIR / "data"
 SRC_DIR = BASE_DIR / "src"
 
 REPO_OWNER = "s0914712"
@@ -36,6 +39,244 @@ CHART_FILENAME = "threads_summary.png"
 CHART_REPO_PATH = f"{CHART_DIR}/{CHART_FILENAME}"
 
 TW_TZ = timezone(timedelta(hours=8))
+
+# ── 台灣本島簡化輪廓座標 (lat, lon) ─────────────────────────
+TAIWAN_COASTLINE = [
+    (25.29, 121.57), (25.17, 121.74), (25.03, 121.96),
+    (24.98, 121.98), (24.83, 121.84), (24.59, 121.60),
+    (24.32, 121.51), (24.08, 121.59), (23.76, 121.48),
+    (23.47, 121.35), (23.09, 121.17), (22.76, 121.07),
+    (22.52, 120.75), (22.37, 120.59), (22.00, 120.70),
+    (22.35, 120.30), (22.59, 120.27), (22.92, 120.26),
+    (23.28, 120.18), (23.56, 120.21), (23.93, 120.30),
+    (24.25, 120.47), (24.64, 120.68), (24.84, 120.85),
+    (25.10, 121.25), (25.29, 121.57),
+]
+
+MIN_TRACK_POINTS = 15
+
+
+def _haversine_km(lat1, lon1, lat2, lon2):
+    """兩點間距離（公里）"""
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * \
+        math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
+    return R * 2 * math.asin(math.sqrt(a))
+
+
+def _point_near_any_cable(lat, lon, cable_segments, threshold_km=5.0):
+    """Check if a point is within threshold_km of any cable segment."""
+    for cable in cable_segments:
+        pts = cable['points']
+        for i in range(len(pts) - 1):
+            # Simple point-to-segment check using projection
+            lat1, lon1 = pts[i]
+            lat2, lon2 = pts[i + 1]
+            dx, dy = lat2 - lat1, lon2 - lon1
+            if dx == 0 and dy == 0:
+                dist = _haversine_km(lat, lon, lat1, lon1)
+            else:
+                t = max(0, min(1, ((lat - lat1) * dx + (lon - lon1) * dy) / (dx * dx + dy * dy)))
+                dist = _haversine_km(lat, lon, lat1 + t * dx, lon1 + t * dy)
+            if dist < threshold_km:
+                return True
+    return False
+
+
+def _load_cable_segments():
+    """載入海纜 GeoJSON，提取台灣周邊的線段座標"""
+    cable_file = DATA_DIR / "cable-geo.json"
+    if not cable_file.exists():
+        return []
+
+    with open(cable_file, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    segments = []
+    for feat in data.get('features', []):
+        slug = feat.get('properties', {}).get('slug', '')
+        coords = feat.get('geometry', {}).get('coordinates', [])
+        for segment in coords:
+            tw_points = []
+            for lon, lat in segment:
+                if 19 <= lat <= 28 and 115 <= lon <= 130:
+                    tw_points.append((lat, lon))
+            if len(tw_points) >= 2:
+                segments.append({'slug': slug, 'points': tw_points})
+    return segments
+
+
+def select_top_suspicious_vessels(n=2):
+    """Select top N suspicious vessels with available track data for visualization."""
+    susp_file = DATA_DIR / "suspicious_vessels.json"
+    if not susp_file.exists():
+        print("⚠️ suspicious_vessels.json not found")
+        return []
+
+    with open(susp_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    vessels = data.get("suspicious_vessels", [])
+    if not vessels:
+        return []
+
+    # Score each vessel beyond the base risk_score
+    scored = []
+    for v in vessels:
+        score = v.get("risk_score", 0)
+        if v.get("cable_loitering"):
+            score += 3
+        if v.get("zigzag_pattern"):
+            score += 2
+        if len(v.get("names", [])) >= 5:
+            score += 2
+        if v.get("total_snapshots", 0) >= 50:
+            score += 1
+
+        # Check that route file exists and has enough points
+        route_file = DOCS_DIR / "vessel_routes" / f"{v['mmsi']}.json"
+        if not route_file.exists():
+            continue
+        try:
+            with open(route_file, encoding="utf-8") as rf:
+                route = json.load(rf)
+            track = route.get("track", [])
+            if len(track) < MIN_TRACK_POINTS:
+                continue
+        except (json.JSONDecodeError, IOError):
+            continue
+
+        scored.append((score, v, track))
+
+    scored.sort(key=lambda x: -x[0])
+    results = []
+    for score, vessel, track in scored[:n]:
+        results.append({**vessel, "_track": track})
+    return results
+
+
+def generate_track_map(vessel, output_path):
+    """Generate a dark-themed vessel track map image with cable routes."""
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from matplotlib.collections import LineCollection
+    except ImportError:
+        print("⚠️ matplotlib not available, skipping track map generation")
+        return None
+
+    track = vessel.get("_track", [])
+    if len(track) < MIN_TRACK_POINTS:
+        return None
+
+    cable_segments = _load_cable_segments()
+
+    lats = [p["lat"] for p in track]
+    lons = [p["lon"] for p in track]
+    pad = 0.3
+    lat_min, lat_max = min(lats) - pad, max(lats) + pad
+    lon_min, lon_max = min(lons) - pad, max(lons) + pad
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    fig.patch.set_facecolor('#0a1628')
+    ax.set_facecolor('#0a1628')
+
+    # Taiwan coastline
+    tw_lats = [p[0] for p in TAIWAN_COASTLINE]
+    tw_lons = [p[1] for p in TAIWAN_COASTLINE]
+    ax.fill(tw_lons, tw_lats, facecolor='#1a2640', edgecolor='#2a3a5a', linewidth=1, zorder=1)
+
+    # Cable routes within bounding box
+    for cable in cable_segments:
+        pts = cable['points']
+        clats = [p[0] for p in pts]
+        clons = [p[1] for p in pts]
+        # Filter to visible area
+        visible = any(lat_min - 0.5 <= la <= lat_max + 0.5 and
+                       lon_min - 0.5 <= lo <= lon_max + 0.5
+                       for la, lo in zip(clats, clons))
+        if visible:
+            ax.plot(clons, clats, color='#00f5ff', alpha=0.25, linewidth=0.8,
+                    linestyle='--', zorder=2)
+
+    # Vessel track with per-segment coloring
+    segments = []
+    colors = []
+    for i in range(len(track) - 1):
+        p1, p2 = track[i], track[i + 1]
+        segments.append([(p1["lon"], p1["lat"]), (p2["lon"], p2["lat"])])
+
+        heading_change = abs(p2.get("heading", 0) - p1.get("heading", 0))
+        if heading_change > 180:
+            heading_change = 360 - heading_change
+        is_slow = p1.get("speed", 99) < 8.0
+        is_near_cable = _point_near_any_cable(p1["lat"], p1["lon"], cable_segments)
+        is_suspicious = (is_slow and is_near_cable) or heading_change > 45
+        colors.append('#ff3366' if is_suspicious else '#00ff88')
+
+    lc = LineCollection(segments, colors=colors, linewidths=1.8, zorder=3)
+    ax.add_collection(lc)
+
+    # Start / end markers
+    ax.plot(track[0]["lon"], track[0]["lat"], 'o', color='#00ff88',
+            markersize=8, zorder=4, markeredgecolor='white', markeredgewidth=0.5)
+    ax.plot(track[-1]["lon"], track[-1]["lat"], 's', color='#ff3366',
+            markersize=8, zorder=4, markeredgecolor='white', markeredgewidth=0.5)
+
+    # Annotation box
+    name_raw = vessel.get("names", ["Unknown"])[0]
+    name = name_raw.split("--")[0]  # Strip AIS confidence suffix
+    mmsi = vessel.get("mmsi", "?")
+    cable_det = vessel.get("cable_details", {})
+    zigzag_det = vessel.get("zigzag_details", {})
+    loiter_h = round(cable_det.get("loiter_slow_hours", 0))
+    turns = zigzag_det.get("turn_count", 0)
+    n_names = len(vessel.get("names", []))
+
+    info_lines = [
+        f"{name}  (MMSI: {mmsi})",
+        f"Risk: {vessel.get('risk_level', '?').upper()} ({vessel.get('risk_score', '?')}/15)",
+        f"Turns: {turns} | Cable loiter: {loiter_h}h | Names: {n_names}",
+    ]
+    if track:
+        t_start = track[0].get("t", "")[:10]
+        t_end = track[-1].get("t", "")[:10]
+        info_lines.append(f"Track: {t_start} → {t_end}  ({len(track)} pts)")
+
+    info_text = "\n".join(info_lines)
+    ax.text(0.02, 0.98, info_text, transform=ax.transAxes, fontsize=8,
+            color='#e8eef7', verticalalignment='top',
+            bbox=dict(boxstyle='round,pad=0.5', facecolor='#141e32', alpha=0.9,
+                      edgecolor='#2a3a5a'),
+            zorder=5)
+
+    # Legend
+    ax.plot([], [], color='#ff3366', linewidth=2, label='Suspicious (slow near cable / zigzag)')
+    ax.plot([], [], color='#00ff88', linewidth=2, label='Normal transit')
+    ax.plot([], [], '--', color='#00f5ff', alpha=0.5, linewidth=1, label='Submarine cables')
+    ax.legend(loc='lower right', fontsize=7, facecolor='#141e32', edgecolor='#2a3a5a',
+              labelcolor='#8aa4c8')
+
+    # Grid
+    ax.set_xlim(lon_min, lon_max)
+    ax.set_ylim(lat_min, lat_max)
+    ax.tick_params(colors='#2a3a5a', labelsize=7)
+    ax.grid(True, color='#1a2a40', linewidth=0.5, alpha=0.5)
+    for spine in ax.spines.values():
+        spine.set_color('#2a3a5a')
+
+    ax.set_aspect('equal')
+    ax.set_xlabel('Longitude', color='#445566', fontsize=8)
+    ax.set_ylabel('Latitude', color='#445566', fontsize=8)
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    fig.savefig(output_path, dpi=200, bbox_inches='tight', facecolor='#0a1628')
+    plt.close(fig)
+    print(f"✅ Track map saved: {output_path}")
+    return output_path
 
 
 def generate_summary(mode="daily"):
@@ -112,9 +353,9 @@ def generate_chart(summary, output_path):
     return output_path
 
 
-def upload_chart_to_github(local_path, github_token):
-    """Upload chart image to GitHub repo, return raw URL."""
-    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{CHART_REPO_PATH}"
+def _upload_single_file_to_github(local_path, repo_path, github_token):
+    """Upload a single file to GitHub repo, return raw URL."""
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{repo_path}"
     headers = {
         "Authorization": f"Bearer {github_token}",
         "Accept": "application/vnd.github.v3+json",
@@ -123,7 +364,6 @@ def upload_chart_to_github(local_path, github_token):
     with open(local_path, "rb") as f:
         content_b64 = base64.b64encode(f.read()).decode()
 
-    # Check if file already exists (need sha to update)
     sha = None
     resp = requests.get(url, headers=headers)
     if resp.status_code == 200:
@@ -139,15 +379,29 @@ def upload_chart_to_github(local_path, github_token):
 
     resp = requests.put(url, headers=headers, json=payload)
     if resp.status_code not in (200, 201):
-        print(f"❌ GitHub upload failed: {resp.status_code} {resp.text}")
+        print(f"❌ GitHub upload failed for {repo_path}: {resp.status_code} {resp.text}")
         return None
 
+    cache_bust = int(datetime.now().timestamp())
     raw_url = (
         f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}"
-        f"/main/{CHART_REPO_PATH}?t={int(datetime.now().timestamp())}"
+        f"/main/{repo_path}?t={cache_bust}"
     )
-    print(f"✅ Chart uploaded: {raw_url}")
+    print(f"✅ Uploaded: {raw_url}")
     return raw_url
+
+
+def upload_charts_to_github(chart_files, github_token):
+    """Upload multiple chart images to GitHub. Returns list of raw URLs.
+
+    chart_files: list of (local_path, repo_path) tuples
+    """
+    urls = []
+    for local_path, repo_path in chart_files:
+        url = _upload_single_file_to_github(local_path, repo_path, github_token)
+        if url:
+            urls.append(url)
+    return urls
 
 
 def collect_5day_briefing(data):
@@ -211,7 +465,7 @@ def collect_5day_briefing(data):
     }
 
 
-def generate_llm_post(summary, data):
+def generate_llm_post(summary, data, top_vessels=None):
     """Use Gemini API to generate a witty, informative 5-day briefing for Threads."""
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -244,20 +498,44 @@ def generate_llm_post(summary, data):
 - 7日內身份變更: {briefing['identity_changes_7d']}
 - 權宜船 (FOC): {summary.get('foc_vessels', 0)}"""
 
+    # Add suspicious vessel context if available
+    vessel_context = ""
+    if top_vessels:
+        vessel_lines = []
+        for v in top_vessels:
+            name_raw = v.get("names", ["Unknown"])[0]
+            name = name_raw.split("--")[0]
+            cable_det = v.get("cable_details", {})
+            zigzag_det = v.get("zigzag_details", {})
+            cables_nearby = cable_det.get("cables_nearby", [])
+            vessel_lines.append(
+                f"- MMSI: {v['mmsi']} | 名稱: {name} (使用 {len(v.get('names', []))} 個不同船名)\n"
+                f"  風險等級: {v.get('risk_level', '?')} | 分數: {v.get('risk_score', '?')}/15\n"
+                f"  行為: 在海纜附近低速徘徊 {round(cable_det.get('loiter_slow_hours', 0))} 小時, "
+                f"Z字型移動 {zigzag_det.get('turn_count', 0)} 次大幅轉向\n"
+                f"  靠近海纜: {', '.join(cables_nearby[:3]) if cables_nearby else 'N/A'}"
+            )
+        vessel_context = "\n\n本週最可疑船隻：\n" + "\n".join(vessel_lines)
+
+    has_vessel_images = bool(top_vessels)
+
     prompt = f"""你是一條養在 GitHub 上的蝦子，每天都被主人虐待找資料。
 請用這個角色設定，根據以下近 5 天的數據，用**中文**撰寫一則 Threads 週報貼文。
 
 要求：
 1. 開頭用「我是一條養在 GitHub 上的蝦子，每天都被主人虐待找資料」起手
-2. 語氣：詼諧幽默、知性、帶點嘲諷但不失專業，用蝦子的視角吐槽海上那些船
-3. 長度：150~280 字（不含 hashtag）
-4. 用數據說故事，點出本週趨勢變化（增減、異常）
-5. 可以用 1-2 個 emoji 點綴，但不要太多
-6. 結尾加上這些 hashtag: #TaiwanSecurity #GrayZone #OSINT #MaritimeSecurity
-7. 最後一行加上: https://s0914712.github.io/taiwan-grayzone-monitor/
-8. 不要用 markdown 格式，純文字即可
+2. 先給出威脅評估：本週有沒有立即性危險？（用蝦子的視角，例如「各位蝦友，我覺得有點不妙...」或「今週海面算平靜，蝦可以安心睡覺」）
+3. {"點名本週最可疑的船，說它做了什麼可疑的事，語氣像在八卦鄰居" if has_vessel_images else "用數據說故事，點出本週趨勢變化"}
+4. {"提到附圖是這艘船的航跡，紅色的部分就是牠在幹壞事的時候" if has_vessel_images else "點出異常數據"}
+5. 用數據說故事，點出本週趨勢變化（增減、異常）
+6. 語氣：詼諧幽默、知性、帶點嘲諷但不失專業
+7. 長度：{"180~350" if has_vessel_images else "150~280"} 字（不含 hashtag）
+8. 可以用 1-2 個 emoji 點綴，但不要太多
+9. 結尾加上這些 hashtag: #TaiwanSecurity #GrayZone #OSINT #MaritimeSecurity
+10. 最後一行加上: https://s0914712.github.io/taiwan-grayzone-monitor/
+11. 不要用 markdown 格式，純文字即可
 
-{context}
+{context}{vessel_context}
 
 直接輸出貼文內容，不要加任何前言或解釋。"""
 
@@ -290,11 +568,10 @@ def generate_llm_post(summary, data):
         return None
 
 
-def compose_post_text(summary, data=None):
+def compose_post_text(summary, data=None, top_vessels=None):
     """Compose Threads post text — try LLM first, fall back to template."""
-    # Try LLM-powered witty post
     if data:
-        llm_text = generate_llm_post(summary, data)
+        llm_text = generate_llm_post(summary, data, top_vessels=top_vessels)
         if llm_text:
             return llm_text
 
@@ -314,21 +591,73 @@ def _make_appsecret_proof(access_token, app_secret):
     ).hexdigest()
 
 
-def publish_to_threads(text, image_url, user_id, access_token, app_secret):
-    """Publish to Threads via Graph API (two-step: create container → publish)."""
+def publish_to_threads(text, image_urls, user_id, access_token, app_secret):
+    """Publish to Threads. Uses CAROUSEL if multiple images, IMAGE/TEXT if one or none."""
     base_url = "https://graph.threads.net/v1.0"
-
-    # appsecret_proof prevents "Failed to decrypt" error (code 190)
     proof = _make_appsecret_proof(access_token, app_secret) if app_secret else None
 
-    # Step 1: Create media container
+    def _auth_params():
+        params = {"access_token": access_token}
+        if proof:
+            params["appsecret_proof"] = proof
+        return params
+
+    if len(image_urls) >= 2:
+        # ── Carousel flow ────────────────────────────────────
+        print(f"📎 Creating carousel with {len(image_urls)} images...")
+        child_ids = []
+        for url in image_urls:
+            resp = requests.post(f"{base_url}/{user_id}/threads", data={
+                "media_type": "IMAGE",
+                "image_url": url,
+                "is_carousel_item": "true",
+                **_auth_params(),
+            })
+            if resp.status_code != 200:
+                print(f"⚠️ Child container failed: {resp.status_code} {resp.text}")
+                continue
+            child_ids.append(resp.json()["id"])
+            print(f"  ✅ Child container: {resp.json()['id']}")
+
+        if len(child_ids) < 2:
+            # Not enough children for carousel — fall back to single image
+            print("⚠️ Not enough carousel items, falling back to single image")
+            image_urls = image_urls[:1]
+        else:
+            resp = requests.post(f"{base_url}/{user_id}/threads", data={
+                "media_type": "CAROUSEL",
+                "children": ",".join(child_ids),
+                "text": text,
+                **_auth_params(),
+            })
+            if resp.status_code != 200:
+                print(f"⚠️ Carousel container failed: {resp.status_code} {resp.text}")
+                print("⚠️ Falling back to single image post")
+                image_urls = image_urls[:1]
+            else:
+                container_id = resp.json()["id"]
+                print(f"✅ Carousel container created: {container_id}")
+                print("⏳ Waiting 45s for Threads to process carousel...")
+                time.sleep(45)
+
+                resp = requests.post(f"{base_url}/{user_id}/threads_publish", data={
+                    "creation_id": container_id,
+                    **_auth_params(),
+                })
+                if resp.status_code != 200:
+                    print(f"❌ Carousel publish failed: {resp.status_code} {resp.text}")
+                    sys.exit(1)
+                result = resp.json()
+                print(f"✅ Carousel published! Post ID: {result.get('id')}")
+                return result
+
+    # ── Single image or text-only flow ────────────────────
+    image_url = image_urls[0] if image_urls else None
     create_params = {
         "media_type": "IMAGE" if image_url else "TEXT",
         "text": text,
-        "access_token": access_token,
+        **_auth_params(),
     }
-    if proof:
-        create_params["appsecret_proof"] = proof
     if image_url:
         create_params["image_url"] = image_url
 
@@ -340,18 +669,11 @@ def publish_to_threads(text, image_url, user_id, access_token, app_secret):
     container_id = resp.json().get("id")
     print(f"✅ Media container created: {container_id}")
 
-    # Wait for server processing
     wait_sec = 30 if image_url else 5
     print(f"⏳ Waiting {wait_sec}s for Threads to process...")
     time.sleep(wait_sec)
 
-    # Step 2: Publish
-    publish_params = {
-        "creation_id": container_id,
-        "access_token": access_token,
-    }
-    if proof:
-        publish_params["appsecret_proof"] = proof
+    publish_params = {"creation_id": container_id, **_auth_params()}
     resp = requests.post(f"{base_url}/{user_id}/threads_publish", data=publish_params)
     if resp.status_code != 200:
         print(f"❌ Publish failed: {resp.status_code} {resp.text}")
@@ -375,13 +697,31 @@ def main():
     print(f"  AIS: {summary['ais_total']} | Dark: {summary.get('dark_vessels_total', 0)} | "
           f"Suspicious: {summary.get('suspicious_count', 0)} | LNG: {summary.get('lng_vessels', 0)}")
 
-    # 2. Generate chart
+    # 2. Select top suspicious vessels
+    print("🔍 Selecting top suspicious vessels...")
+    top_vessels = select_top_suspicious_vessels(n=2)
+    for v in top_vessels:
+        name = v.get("names", ["?"])[0].split("--")[0]
+        print(f"  → {name} (MMSI: {v['mmsi']}, score: {v.get('risk_score', '?')}, "
+              f"track: {len(v.get('_track', []))} pts)")
+
+    # 3. Generate summary chart
     chart_path = os.path.join(args.chart_dir, CHART_FILENAME)
-    print("🎨 Generating chart...")
+    print("🎨 Generating summary chart...")
     chart_result = generate_chart(summary, chart_path)
 
-    # 3. Compose post text (LLM-powered if GEMINI_API_KEY is set)
-    post_text = compose_post_text(summary, data)
+    # 4. Generate track maps for top vessels
+    track_map_results = []
+    for v in top_vessels:
+        mmsi = v["mmsi"]
+        map_path = os.path.join(args.chart_dir, f"threads_track_{mmsi}.png")
+        print(f"🗺️  Generating track map for {mmsi}...")
+        result = generate_track_map(v, map_path)
+        if result:
+            track_map_results.append((result, f"{CHART_DIR}/threads_track_{mmsi}.png"))
+
+    # 5. Compose post text (LLM-powered with vessel context)
+    post_text = compose_post_text(summary, data, top_vessels=top_vessels or None)
     print("\n📝 Post content:")
     print("─" * 40)
     print(post_text)
@@ -391,16 +731,22 @@ def main():
         print("\n🏁 Dry-run mode — not publishing")
         return
 
-    # 4. Upload chart to GitHub
-    image_url = None
+    # 6. Upload all charts to GitHub
+    image_urls = []
     github_token = os.environ.get("GITHUB_TOKEN")
-    if chart_result and github_token:
-        print("📤 Uploading chart to GitHub...")
-        image_url = upload_chart_to_github(chart_path, github_token)
-    elif not github_token:
+    if github_token:
+        chart_files = []
+        if chart_result:
+            chart_files.append((chart_path, CHART_REPO_PATH))
+        chart_files.extend(track_map_results)
+
+        if chart_files:
+            print(f"📤 Uploading {len(chart_files)} chart(s) to GitHub...")
+            image_urls = upload_charts_to_github(chart_files, github_token)
+    else:
         print("⚠️ GITHUB_TOKEN not set, skipping chart upload")
 
-    # 5. Publish to Threads
+    # 7. Publish to Threads (carousel if multiple images)
     user_id = os.environ.get("THREADS_USER_ID")
     access_token = os.environ.get("THREADS_ACCESS_TOKEN")
     app_secret = os.environ.get("THREADS_APP_SECRET")
@@ -409,8 +755,8 @@ def main():
         print("❌ Missing Threads API env vars (THREADS_USER_ID, THREADS_ACCESS_TOKEN, THREADS_APP_SECRET)")
         sys.exit(1)
 
-    print("📤 Publishing to Threads...")
-    publish_to_threads(post_text, image_url, user_id, access_token, app_secret)
+    print(f"📤 Publishing to Threads ({len(image_urls)} image(s))...")
+    publish_to_threads(post_text, image_urls, user_id, access_token, app_secret)
     print("\n🎉 Done!")
 
 
