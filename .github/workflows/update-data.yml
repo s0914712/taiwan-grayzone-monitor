@@ -56,6 +56,11 @@ jobs:
           python src/fetch_weekly_dark_vessels.py
         continue-on-error: true
 
+      - name: Detect ship-to-ship transfers
+        run: |
+          python src/detect_ship_transfers.py
+        continue-on-error: true
+
       - name: Generate dashboard data
         run: |
           python src/generate_dashboard.py

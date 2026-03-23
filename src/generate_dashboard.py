@@ -179,6 +179,12 @@ def main():
         shutil.copy2(sanctions_path, DOCS_DIR / 'un_sanctions_vessels.json')
         print(f"🚫 已複製 UN 制裁清單至 docs/un_sanctions_vessels.json")
 
+    # 複製旁靠偵測資料至 docs（供旁靠偵測頁面使用）
+    transfers_path = DATA_DIR / 'ship_transfers.json'
+    if transfers_path.exists():
+        shutil.copy2(transfers_path, DOCS_DIR / 'ship_transfers.json')
+        print(f"🚢 已複製旁靠偵測資料至 docs/ship_transfers.json")
+
 
 if __name__ == "__main__":
     main()

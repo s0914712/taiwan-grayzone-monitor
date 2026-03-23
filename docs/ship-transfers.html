@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>旁靠偵測 | Ship-to-Ship Transfer Detection - Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="偵測台灣海域船舶海上旁靠事件（距離 < 50 公尺），區分雙拖作業與可疑物資傳遞">
+    <meta name="keywords" content="旁靠,ship-to-ship transfer,STS,雙拖,pair trawling,走私,台灣海峽,maritime surveillance">
+    <meta name="author" content="Taiwan Gray Zone Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/ship-transfers.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="旁靠偵測 | Ship-to-Ship Transfer Detection">
+    <meta property="og:description" content="偵測台灣海域船舶海上旁靠事件，區分雙拖作業與可疑物資傳遞">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/ship-transfers.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="旁靠偵測 | Ship-to-Ship Transfer Detection">
+    <meta name="twitter:description" content="偵測台灣海域船舶海上旁靠事件，區分雙拖作業與可疑物資傳遞">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/main.css">
+
+    <style>
+        body { overflow-y: auto; }
+        #map { height: 420px; border-radius: 0 0 6px 6px; }
+
+        .filter-tabs {
+            display: flex; gap: 6px; padding: 10px 16px;
+            background: var(--bg-secondary); border-radius: 6px 6px 0 0;
+        }
+        .filter-tabs button {
+            padding: 5px 14px; border-radius: 4px; cursor: pointer;
+            font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 600;
+            border: 1px solid var(--accent-cyan); color: var(--text-secondary);
+            background: transparent; transition: all 0.2s;
+        }
+        .filter-tabs button.active {
+            background: var(--accent-cyan); color: var(--bg-primary);
+        }
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 3px;
+            font-size: 10px; font-weight: 600; font-family: 'JetBrains Mono', monospace;
+        }
+        .badge-suspicious { background: rgba(255,51,102,0.2); color: #ff3366; }
+        .badge-normal { background: rgba(255,215,0,0.2); color: #ffd700; }
+        .badge-pair_trawling { background: rgba(0,255,136,0.2); color: #00ff88; }
+
+        .transfer-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .transfer-table th {
+            text-align: left; padding: 8px 6px; color: var(--accent-cyan);
+            border-bottom: 1px solid rgba(0,245,255,0.2); font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .transfer-table td {
+            padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-primary);
+        }
+        .transfer-table tr:hover td { background: rgba(0,245,255,0.05); }
+        .vessel-pair { display: flex; flex-direction: column; gap: 2px; }
+        .vessel-pair span { white-space: nowrap; }
+        .vessel-name { color: var(--accent-cyan); font-weight: 500; }
+        .vessel-type { color: var(--text-secondary); font-size: 9px; }
+
+        @media (max-width: 900px) {
+            #map { height: calc(100vh - 44px - 56px - 20px); max-height: 350px; min-height: 200px; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px; }
+            .stat-card { padding: 12px; }
+            .stat-card .value { font-size: 22px; }
+            .stat-card .label { font-size: 12px; }
+            .main-content { padding-bottom: 72px; }
+            .transfer-table { font-size: 10px; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <header class="header">
+        <h1 data-i18n="title.transfers">🚢 旁靠偵測 Ship-to-Ship Transfer</h1>
+        <div class="header-nav">
+            <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
+            <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
+            <a href="ship-transfers.html" class="active" data-i18n="nav.transfers">旁靠偵測</a>
+            <a href="weekly-animation.html" data-i18n="nav.animation">暗船動畫</a>
+            <a href="ais-animation.html" data-i18n="nav.ais_anim">船位動畫</a>
+            <a href="cn-fishing-animation.html" data-i18n="nav.cn_fishing">大陸漁船</a>
+            <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
+        </div>
+    </header>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="value" id="statActive">--</div>
+            <div class="label" data-i18n="sts.active">進行中旁靠</div>
+        </div>
+        <div class="stat-card">
+            <div class="value alert" id="statSuspicious">--</div>
+            <div class="label" data-i18n="sts.suspicious">可疑旁靠 (14日)</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statTrawling">--</div>
+            <div class="label" data-i18n="sts.pair_trawling">雙拖作業 (14日)</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statVessels">--</div>
+            <div class="label" data-i18n="sts.unique_vessels">涉及船隻數</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="panel map-panel">
+            <div class="panel-title" data-i18n="sts.map_title">📍 旁靠事件位置分布（距離 < 50m、持續 ≥ 1 小時、排除港內）</div>
+            <div id="map"></div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-title" data-i18n="sts.chart_title">📊 每日旁靠事件統計</div>
+            <div class="chart-container">
+                <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title" data-i18n="sts.table_title">📋 旁靠事件列表</div>
+            <div class="filter-tabs" id="filterTabs">
+                <button class="active" data-filter="all" data-i18n="sts.filter_all">全部</button>
+                <button data-filter="suspicious" data-i18n="sts.filter_suspicious">可疑</button>
+                <button data-filter="pair_trawling" data-i18n="sts.filter_trawling">雙拖</button>
+            </div>
+            <div class="panel-body" style="overflow-x:auto">
+                <table class="transfer-table" id="transferTable">
+                    <thead>
+                        <tr>
+                            <th data-i18n="sts.th_class">分類</th>
+                            <th data-i18n="sts.th_vessels">船舶</th>
+                            <th data-i18n="sts.th_dist">距離</th>
+                            <th data-i18n="sts.th_duration">時長</th>
+                            <th data-i18n="sts.th_risk">風險</th>
+                            <th data-i18n="sts.th_time">時間</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transferTableBody">
+                        <tr><td colspan="6" class="empty-state" data-i18n="common.loading">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="js/i18n.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/charts.js"></script>
+    <script>
+        let map;
+        let allTransfers = [];
+        let markers = [];
+
+        const CLASS_COLORS = {
+            suspicious: '#ff3366',
+            normal: '#ffd700',
+            pair_trawling: '#00ff88'
+        };
+
+        const CLASS_LABELS = {
+            suspicious: { zh: '可疑旁靠', en: 'Suspicious' },
+            normal: { zh: '一般旁靠', en: 'Normal' },
+            pair_trawling: { zh: '雙拖作業', en: 'Pair Trawling' }
+        };
+
+        function initMap() {
+            map = L.map('map', {
+                center: [24.0, 121.0],
+                zoom: 6,
+                zoomControl: true,
+                attributionControl: false
+            });
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 18,
+                opacity: 0.9
+            }).addTo(map);
+
+            // Taiwan outline
+            const taiwanOutline = [
+                [25.3, 121.0], [25.13, 121.5], [24.85, 121.82], [24.5, 121.8],
+                [24.0, 121.5], [23.5, 121.3], [23.0, 121.0], [22.5, 120.85],
+                [22.0, 120.75], [21.9, 120.85], [22.0, 120.45], [22.3, 120.25],
+                [22.6, 120.3], [23.0, 120.1], [23.5, 120.05], [24.0, 120.2],
+                [24.5, 120.5], [25.0, 121.0], [25.3, 121.0]
+            ];
+            L.polygon(taiwanOutline, {
+                color: '#4a90d9', weight: 2, opacity: 0.5,
+                fillColor: '#1a3a5c', fillOpacity: 0.3
+            }).addTo(map);
+        }
+
+        function plotTransfers(transfers) {
+            // Clear existing markers
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            transfers.forEach(t => {
+                const loc = t.location;
+                if (!loc || !loc.lat || !loc.lon) return;
+
+                const color = CLASS_COLORS[t.classification] || '#ffd700';
+                const lang = (typeof i18n !== 'undefined' && i18n.lang === 'en') ? 'en' : 'zh';
+                const classLabel = CLASS_LABELS[t.classification] ? CLASS_LABELS[t.classification][lang] : t.classification;
+
+                // Main marker
+                const marker = L.circleMarker([loc.lat, loc.lon], {
+                    radius: t.classification === 'suspicious' ? 7 : 5,
+                    fillColor: color,
+                    color: color,
+                    weight: 2,
+                    opacity: 0.9,
+                    fillOpacity: 0.5
+                }).addTo(map);
+
+                // Draw line between vessel pair
+                if (t.vessel1.lat && t.vessel1.lon && t.vessel2.lat && t.vessel2.lon) {
+                    const line = L.polyline(
+                        [[t.vessel1.lat, t.vessel1.lon], [t.vessel2.lat, t.vessel2.lon]],
+                        { color: color, weight: 2, opacity: 0.6, dashArray: '4,4' }
+                    ).addTo(map);
+                    markers.push(line);
+                }
+
+                marker.bindPopup(`
+                    <b style="color:${color}">${classLabel}</b>
+                    <span class="badge badge-${t.classification}" style="margin-left:4px">${t.risk_score}</span><br>
+                    🚢 ${t.vessel1.name || t.vessel1.mmsi} <span style="color:#888">(${t.vessel1.type_name})</span><br>
+                    🚢 ${t.vessel2.name || t.vessel2.mmsi} <span style="color:#888">(${t.vessel2.type_name})</span><br>
+                    📏 ${t.min_distance_m.toFixed(0)}m &nbsp; ⏱ ${t.duration_hours}h<br>
+                    📍 ${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}<br>
+                    🕐 ${t.first_seen ? new Date(t.first_seen).toLocaleString() : '--'}
+                    ${t.risk_factors && t.risk_factors.length ? '<br>⚠️ ' + t.risk_factors.join(', ') : ''}
+                `);
+                markers.push(marker);
+            });
+        }
+
+        function renderTable(transfers) {
+            const tbody = document.getElementById('transferTableBody');
+            const lang = (typeof i18n !== 'undefined' && i18n.lang === 'en') ? 'en' : 'zh';
+
+            if (!transfers.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${i18n.t('common.no_data')}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = transfers.map(t => {
+                const classLabel = CLASS_LABELS[t.classification] ? CLASS_LABELS[t.classification][lang] : t.classification;
+                const time = t.first_seen ? new Date(t.first_seen).toLocaleString() : '--';
+                return `
+                <tr>
+                    <td><span class="badge badge-${t.classification}">${classLabel}</span></td>
+                    <td>
+                        <div class="vessel-pair">
+                            <span><span class="vessel-name">${t.vessel1.name || t.vessel1.mmsi}</span> <span class="vessel-type">${t.vessel1.type_name}</span></span>
+                            <span><span class="vessel-name">${t.vessel2.name || t.vessel2.mmsi}</span> <span class="vessel-type">${t.vessel2.type_name}</span></span>
+                        </div>
+                    </td>
+                    <td style="font-family:'JetBrains Mono',monospace">${t.min_distance_m.toFixed(0)}m</td>
+                    <td style="font-family:'JetBrains Mono',monospace">${t.duration_hours}h</td>
+                    <td style="font-family:'JetBrains Mono',monospace;color:${CLASS_COLORS[t.classification]}">${t.risk_score}</td>
+                    <td style="font-size:10px">${time}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderDailyChart(transfers) {
+            const byDate = {};
+            transfers.forEach(t => {
+                const date = t.first_seen ? t.first_seen.substring(0, 10) : null;
+                if (!date) return;
+                if (!byDate[date]) byDate[date] = { suspicious: 0, normal: 0, pair_trawling: 0 };
+                byDate[date][t.classification] = (byDate[date][t.classification] || 0) + 1;
+            });
+
+            const dates = Object.keys(byDate).sort();
+            if (!dates.length) return;
+
+            const ctx = document.getElementById('dailyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: i18n.t('sts.suspicious'),
+                            data: dates.map(d => byDate[d].suspicious || 0),
+                            backgroundColor: 'rgba(255,51,102,0.7)',
+                            stack: 'stack0'
+                        },
+                        {
+                            label: i18n.t('sts.normal_label'),
+                            data: dates.map(d => byDate[d].normal || 0),
+                            backgroundColor: 'rgba(255,215,0,0.7)',
+                            stack: 'stack0'
+                        },
+                        {
+                            label: i18n.t('sts.pair_trawling'),
+                            data: dates.map(d => byDate[d].pair_trawling || 0),
+                            backgroundColor: 'rgba(0,255,136,0.7)',
+                            stack: 'stack0'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#8aa4c8', font: { size: 10 } } }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: { color: '#8aa4c8', font: { size: 9 }, maxRotation: 45 },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        y: {
+                            stacked: true,
+                            ticks: { color: '#8aa4c8', font: { size: 10 }, stepSize: 1 },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function applyFilter(filter) {
+            const filtered = filter === 'all' ? allTransfers : allTransfers.filter(t => t.classification === filter);
+            plotTransfers(filtered);
+            renderTable(filtered);
+        }
+
+        // Filter tab handlers
+        document.getElementById('filterTabs').addEventListener('click', e => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            document.querySelectorAll('#filterTabs button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyFilter(btn.dataset.filter);
+        });
+
+        async function loadData() {
+            try {
+                const res = await fetch('ship_transfers.json?' + Date.now());
+                if (!res.ok) {
+                    document.getElementById('dataStatus').textContent = i18n.t('sts.no_data');
+                    document.getElementById('transferTableBody').innerHTML =
+                        `<tr><td colspan="6" class="empty-state">${i18n.t('sts.no_data')}</td></tr>`;
+                    return;
+                }
+                const data = await res.json();
+                const summary = data.summary || {};
+
+                // Stats
+                document.getElementById('statActive').textContent = (summary.active_count || 0).toLocaleString();
+                document.getElementById('statSuspicious').textContent = (summary.suspicious_count || 0).toLocaleString();
+                document.getElementById('statTrawling').textContent = (summary.pair_trawling_count || 0).toLocaleString();
+                document.getElementById('statVessels').textContent = (summary.unique_vessels || 0).toLocaleString();
+
+                // Merge active + history for display
+                allTransfers = [
+                    ...(data.active_transfers || []),
+                    ...(data.history || [])
+                ];
+
+                plotTransfers(allTransfers);
+                renderTable(allTransfers);
+                renderDailyChart(allTransfers);
+
+                // Status
+                document.getElementById('dataStatus').textContent =
+                    `✅ ${allTransfers.length} ` + i18n.t('sts.events_found');
+                document.getElementById('updateInfo').textContent =
+                    i18n.t('common.updated') + ' ' + new Date(data.updated_at).toLocaleString();
+
+            } catch (e) {
+                console.error('Load failed:', e);
+                document.getElementById('dataStatus').textContent = i18n.t('common.error_load');
+            }
+        }
+
+        // Initialize
+        initMap();
+        loadData();
+    </script>
+    <script src="js/mobile-nav.js"></script>
+</body>
+
+</html>
