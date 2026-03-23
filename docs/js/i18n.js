@@ -31,6 +31,8 @@ const i18n = (function () {
         'nav.mob_tools':         { zh: '工具', en: 'Tools' },
         'nav.identity':          { zh: '身分追蹤', en: 'Identity' },
         'nav.mob_identity':      { zh: '身分', en: 'ID' },
+        'nav.transfers':         { zh: '旁靠偵測', en: 'STS Transfer' },
+        'nav.mob_transfers':     { zh: '旁靠', en: 'STS' },
 
         // ── Bottom Sheet ──
         'bs.route_search':       { zh: '航跡查詢', en: 'Route Search' },
@@ -52,6 +54,28 @@ const i18n = (function () {
         'title.stats':           { zh: '📊 統計分析 Statistics', en: '📊 Statistical Analysis' },
         'title.anim':            { zh: '🎬 暗船動畫 Dark Vessel Animation', en: '🎬 Dark Vessel Animation' },
         'title.identity':        { zh: '🔄 AIS 身分變更追蹤', en: '🔄 AIS Identity Tracking' },
+        'title.transfers':       { zh: '🚢 旁靠偵測 Ship-to-Ship Transfer', en: '🚢 Ship-to-Ship Transfer Detection' },
+
+        // ── 旁靠偵測 Ship-to-Ship Transfer ──
+        'sts.active':            { zh: '進行中旁靠', en: 'Active Transfers' },
+        'sts.suspicious':        { zh: '可疑旁靠 (14日)', en: 'Suspicious (14d)' },
+        'sts.pair_trawling':     { zh: '雙拖作業 (14日)', en: 'Pair Trawling (14d)' },
+        'sts.unique_vessels':    { zh: '涉及船隻數', en: 'Unique Vessels' },
+        'sts.map_title':         { zh: '📍 旁靠事件位置分布（距離 < 50m、持續 ≥ 1 小時、排除港內）', en: '📍 Transfer Locations (< 50m, ≥ 1h, excl. ports)' },
+        'sts.chart_title':       { zh: '📊 每日旁靠事件統計', en: '📊 Daily Transfer Events' },
+        'sts.table_title':       { zh: '📋 旁靠事件列表', en: '📋 Transfer Event List' },
+        'sts.filter_all':        { zh: '全部', en: 'All' },
+        'sts.filter_suspicious': { zh: '可疑', en: 'Suspicious' },
+        'sts.filter_trawling':   { zh: '雙拖', en: 'Trawling' },
+        'sts.th_class':          { zh: '分類', en: 'Class' },
+        'sts.th_vessels':        { zh: '船舶', en: 'Vessels' },
+        'sts.th_dist':           { zh: '距離', en: 'Dist.' },
+        'sts.th_duration':       { zh: '時長', en: 'Duration' },
+        'sts.th_risk':           { zh: '風險', en: 'Risk' },
+        'sts.th_time':           { zh: '時間', en: 'Time' },
+        'sts.events_found':      { zh: '筆旁靠事件', en: 'transfer events' },
+        'sts.no_data':           { zh: '尚無旁靠資料', en: 'No transfer data available' },
+        'sts.normal_label':      { zh: '一般旁靠', en: 'Normal' },
 
         // ── 區域名稱 Region Names ──
         'region.taiwan_strait':  { zh: '台灣海峽', en: 'Taiwan Strait' },

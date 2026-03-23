@@ -12,7 +12,7 @@
         if (document.querySelector('.mobile-bottom-nav')) return;
 
         const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-        const animPages = ['weekly-animation.html', 'ais-animation.html', 'cn-fishing-animation.html', 'identity-history.html'];
+        const animPages = ['weekly-animation.html', 'ais-animation.html', 'cn-fishing-animation.html', 'identity-history.html', 'ship-transfers.html'];
         const isAnimPage = animPages.includes(currentPage);
 
         // --- Bottom Nav (5 tabs) ---
@@ -61,6 +61,10 @@
             <a href="identity-history.html" ${currentPage === 'identity-history.html' ? 'class="active"' : ''}>
                 <span class="pop-icon">🔄</span>
                 <span data-i18n="nav.identity">身分追蹤</span>
+            </a>
+            <a href="ship-transfers.html" ${currentPage === 'ship-transfers.html' ? 'class="active"' : ''}>
+                <span class="pop-icon">🚢</span>
+                <span data-i18n="nav.transfers">旁靠偵測</span>
             </a>
         `;
         document.body.appendChild(popover);

@@ -8,7 +8,7 @@ Threads 社群媒體自動發布腳本 — Taiwan Gray Zone Monitor
   THREADS_ACCESS_TOKEN  — Threads API 存取權杖
   THREADS_APP_SECRET    — Threads App Secret
   GITHUB_TOKEN          — GitHub API token（圖片上傳用）
-  ANTHROPIC_API_KEY     — Claude API key（LLM 產生貼文用，選填）
+  GEMINI_API_KEY        — Google Gemini API key（LLM 產生貼文用，選填）
 
 Usage: python publish_threads.py [--dry-run] [--mode daily|weekly]
 """
@@ -212,10 +212,10 @@ def collect_5day_briefing(data):
 
 
 def generate_llm_post(summary, data):
-    """Use Claude API to generate a witty, informative 5-day briefing for Threads."""
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    """Use Gemini API to generate a witty, informative 5-day briefing for Threads."""
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        print("⚠️ ANTHROPIC_API_KEY not set, falling back to template text")
+        print("⚠️ GEMINI_API_KEY not set, falling back to template text")
         return None
 
     briefing = collect_5day_briefing(data)
@@ -263,30 +263,30 @@ def generate_llm_post(summary, data):
 
     try:
         resp = requests.post(
-            "https://api.anthropic.com/v1/messages",
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}",
             headers={
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
                 "content-type": "application/json",
             },
             json={
-                "model": "claude-haiku-4-5-20251001",
-                "max_tokens": 512,
-                "messages": [{"role": "user", "content": prompt}],
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "maxOutputTokens": 512,
+                    "temperature": 0.9,
+                },
             },
             timeout=30,
         )
         if resp.status_code != 200:
-            print(f"⚠️ Claude API error: {resp.status_code} {resp.text[:200]}")
+            print(f"⚠️ Gemini API error: {resp.status_code} {resp.text[:200]}")
             return None
 
         result = resp.json()
-        text = result["content"][0]["text"].strip()
+        text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
         print(f"✅ LLM generated post ({len(text)} chars)")
         return text
 
     except Exception as e:
-        print(f"⚠️ Claude API call failed: {e}")
+        print(f"⚠️ Gemini API call failed: {e}")
         return None
 
 

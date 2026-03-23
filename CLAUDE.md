@@ -93,7 +93,7 @@ python3 src/publish_threads.py --dry-run       # Test Threads post
 ## Required Secrets (GitHub Actions)
 - `GFW_API_TOKEN` — Global Fishing Watch API (required)
 - `THREADS_USER_ID`, `THREADS_ACCESS_TOKEN`, `THREADS_APP_SECRET` — Threads posting (optional)
-- `ANTHROPIC_API_KEY` — LLM captions for Threads (optional)
+- `GEMINI_API_KEY` — Google Gemini LLM captions for Threads (optional)
 
 ## Architecture Notes
 - No build step. Frontend is plain static files.
