@@ -13,7 +13,8 @@ const MapModule = (function() {
         suspiciousVessels: null,
         darkVessels: null,
         submarineCables: null,
-        vesselRoutes: null
+        vesselRoutes: null,
+        territorialBaseline: null
     };
     let vesselMarkers = {};
 
@@ -132,6 +133,7 @@ const MapModule = (function() {
         layers.darkVessels = L.layerGroup().addTo(map);
         layers.submarineCables = L.layerGroup();
         layers.vesselRoutes = L.layerGroup().addTo(map);
+        layers.territorialBaseline = L.layerGroup();
 
         // Draw Taiwan outline
         drawTaiwanOutline();
@@ -179,6 +181,83 @@ const MapModule = (function() {
             fillColor: '#1a3a5c',
             fillOpacity: 0.3
         }).addTo(map);
+    }
+
+    // ── 領海基點 Territorial Sea Basepoints (內政部公告) ─────────
+    var TERRITORIAL_BASEPOINTS = {
+        taiwan: [
+            { id: 'T1',  name: '三貂角',   nameE: 'Sandiaojiao',    lon: 122.0078, lat: 25.0083 },
+            { id: 'T2',  name: '棉花嶼',   nameE: 'Mianhuayu',      lon: 122.1091, lat: 25.4839 },
+            { id: 'T3',  name: '彭佳嶼1',  nameE: 'Pengjiayu I',    lon: 122.086,  lat: 25.6299 },
+            { id: 'T4',  name: '彭佳嶼2',  nameE: 'Pengjiayu II',   lon: 122.0734, lat: 25.6326 },
+            { id: 'T5',  name: '麟山鼻',   nameE: 'Linshanbi',      lon: 121.5094, lat: 25.2915 },
+            { id: 'T6',  name: '大崛溪',   nameE: 'Dajuexi',        lon: 121.0982, lat: 25.0682 },
+            { id: 'T7',  name: '大潭',     nameE: 'Datan',          lon: 121.0329, lat: 25.0326 },
+            { id: 'T8',  name: '翁公石',   nameE: 'Wenggongshi',    lon: 119.5409, lat: 23.7876 },
+            { id: 'T9',  name: '花嶼1',    nameE: 'Huayu I',        lon: 119.3186, lat: 23.4119 },
+            { id: 'T10', name: '花嶼3',    nameE: 'Huayu III',      lon: 119.3145, lat: 23.4035 },
+            { id: 'T11', name: '花嶼2',    nameE: 'Huayu II',       lon: 119.3136, lat: 23.3993 },
+            { id: 'T12', name: '貓嶼',     nameE: 'Maoyu',          lon: 119.3183, lat: 23.3247 },
+            { id: 'T13', name: '七美嶼',   nameE: 'Qimeiyu',        lon: 119.4161, lat: 23.1933 },
+            { id: 'T14', name: '琉球嶼',   nameE: 'Liuqiuyu',       lon: 120.3536, lat: 22.3238 },
+            { id: 'T15', name: '七星岩',   nameE: 'Qixingyan',      lon: 120.8264, lat: 21.7563 },
+            { id: 'T16', name: '小蘭嶼1',  nameE: 'Xiaolanyu I',    lon: 121.6135, lat: 21.9384 },
+            { id: 'T17', name: '小蘭嶼2',  nameE: 'Xiaolanyu II',   lon: 121.6173, lat: 21.9497 },
+            { id: 'T18', name: '飛岩',     nameE: 'Feiyan',         lon: 121.5225, lat: 22.6854 },
+            { id: 'T19', name: '石梯鼻',   nameE: 'Shitibi',        lon: 121.5166, lat: 23.4833 },
+            { id: 'T20', name: '烏石鼻',   nameE: 'Wushibi',        lon: 121.8621, lat: 24.4805 },
+            { id: 'T21', name: '米島',     nameE: 'Midao',          lon: 121.9031, lat: 24.5994 },
+            { id: 'T22', name: '龜頭岸',   nameE: "Guitou'an",      lon: 121.9647, lat: 24.8395 }
+        ],
+        dongsha: [
+            { id: 'D1', name: '西北角',   nameE: 'Xibeijiao',       lon: 116.7655, lat: 20.7678 },
+            { id: 'D2', name: '東沙北角', nameE: 'Dongshabeijiao',  lon: 116.7102, lat: 20.7344 },
+            { id: 'D3', name: '東沙南角', nameE: 'Dongshananjiao',  lon: 116.6963, lat: 20.6987 },
+            { id: 'D4', name: '西南角',   nameE: 'Xinanjiao',       lon: 116.7547, lat: 20.5948 }
+        ]
+    };
+
+    /**
+     * Draw territorial sea baseline (領海基線)
+     */
+    function drawTerritorialBaseline() {
+        var layer = layers.territorialBaseline;
+        layer.clearLayers();
+
+        var lang = (typeof i18n !== 'undefined' && i18n.lang === 'en') ? 'en' : 'zh';
+
+        ['taiwan', 'dongsha'].forEach(function(region) {
+            var pts = TERRITORIAL_BASEPOINTS[region];
+            // Closed polyline: connect last point back to first
+            var latlngs = pts.map(function(p) { return [p.lat, p.lon]; });
+            latlngs.push(latlngs[0]);
+
+            L.polyline(latlngs, {
+                color: '#e040fb',
+                weight: 2,
+                opacity: 0.7,
+                dashArray: '8,5'
+            }).addTo(layer).bindTooltip(
+                lang === 'en'
+                    ? (region === 'taiwan' ? 'Territorial Baseline — Taiwan' : 'Territorial Baseline — Dongsha')
+                    : (region === 'taiwan' ? '領海基線 — 台灣本島及附屬島嶼' : '領海基線 — 東沙群島'),
+                { sticky: true }
+            );
+
+            // Basepoint markers
+            pts.forEach(function(p) {
+                L.circleMarker([p.lat, p.lon], {
+                    radius: 3.5,
+                    fillColor: '#e040fb',
+                    color: '#fff',
+                    weight: 1,
+                    fillOpacity: 0.9
+                }).addTo(layer).bindTooltip(
+                    p.id + ' ' + (lang === 'en' ? p.nameE : p.name),
+                    { permanent: false, direction: 'top', offset: [0, -6] }
+                );
+            });
+        });
     }
 
     /**
@@ -1172,6 +1251,7 @@ const MapModule = (function() {
         snapshotMap,
         setFilterFoc,
         locateVesselType,
+        drawTerritorialBaseline,
         FISHING_HOTSPOTS,
         VESSEL_COLORS,
         REGION_COLORS,
