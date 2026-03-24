@@ -106,7 +106,7 @@ const i18n = (function () {
         'idx.suspicious':        { zh: '可疑船隻', en: 'Suspicious' },
         'idx.layer_fishing':     { zh: '漁撈熱點', en: 'Fishing Hotspots' },
         'idx.layer_vessels':     { zh: '船隻', en: 'Vessels' },
-        'idx.layer_baseline':    { zh: '領海基線', en: 'Territorial Baseline' },
+        'idx.layer_baseline':    { zh: '領海基線/領海/鄰接區', en: 'Baseline / Territorial Sea / CZ' },
         'idx.filter_foc':        { zh: '過濾權宜船', en: 'Hide FOC Merchant' },
         'idx.legend_type':       { zh: '船隻類型', en: 'Vessel Types' },
         'idx.legend_sat':        { zh: '衛星偵測', en: 'Satellite Detection' },
