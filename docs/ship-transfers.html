@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>旁靠偵測 | Ship-to-Ship Transfer Detection - Taiwan Gray Zone Monitor</title>
-    <meta name="description" content="偵測台灣海域船舶海上旁靠事件（距離 < 50 公尺），區分雙拖作業與可疑物資傳遞">
+    <meta name="description" content="偵測台灣海域船舶海上旁靠事件（距離 < 10 公尺），區分雙拖作業與可疑物資傳遞">
     <meta name="keywords" content="旁靠,ship-to-ship transfer,STS,雙拖,pair trawling,走私,台灣海峽,maritime surveillance">
     <meta name="author" content="Taiwan Gray Zone Monitor">
     <meta name="robots" content="index, follow">
@@ -90,6 +90,26 @@
         .vessel-name { color: var(--accent-cyan); font-weight: 500; }
         .vessel-type { color: var(--text-secondary); font-size: 9px; }
 
+        .track-btn {
+            display: inline-block; margin: 2px 4px 0 0; padding: 2px 8px;
+            font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 600;
+            color: #ffd700; background: rgba(255,215,0,0.12); border: 1px solid rgba(255,215,0,0.4);
+            border-radius: 3px; cursor: pointer; transition: all 0.2s;
+        }
+        .track-btn:hover { background: rgba(255,215,0,0.3); }
+        .track-info-bar {
+            position: absolute; bottom: 8px; left: 8px; right: 8px; z-index: 800;
+            padding: 6px 12px; border-radius: 4px;
+            background: rgba(20,30,50,0.92); backdrop-filter: blur(6px);
+            color: var(--text-primary); font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            display: none; align-items: center; gap: 8px;
+        }
+        .track-info-bar .close-btn {
+            margin-left: auto; color: var(--accent-cyan); cursor: pointer;
+            background: none; border: none; font-size: 13px; font-weight: bold;
+        }
+
         @media (max-width: 900px) {
             #map { height: calc(100vh - 44px - 56px - 20px); max-height: 350px; min-height: 200px; }
             .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px; }
@@ -145,8 +165,13 @@
 
     <div class="main-content">
         <div class="panel map-panel">
-            <div class="panel-title" data-i18n="sts.map_title">📍 旁靠事件位置分布（距離 < 50m、持續 ≥ 1 小時、排除港內）</div>
-            <div id="map"></div>
+            <div class="panel-title" data-i18n="sts.map_title">📍 旁靠事件位置分布（距離 < 10m、持續 ≥ 1 小時、排除港內）</div>
+            <div id="map" style="position:relative">
+                <div class="track-info-bar" id="trackInfoBar">
+                    <span id="trackInfoText"></span>
+                    <button class="close-btn" onclick="clearTrack()" title="清除航跡">✕</button>
+                </div>
+            </div>
         </div>
 
         <div class="panel chart-panel">
@@ -197,6 +222,8 @@
         let map;
         let allTransfers = [];
         let markers = [];
+        let trackLayer;
+        let cachedTrackHistory = null;
 
         const CLASS_COLORS = {
             suspicious: '#ff3366',
@@ -222,6 +249,8 @@
                 maxZoom: 18,
                 opacity: 0.9
             }).addTo(map);
+
+            trackLayer = L.layerGroup().addTo(map);
 
             // Taiwan outline
             const taiwanOutline = [
@@ -269,15 +298,21 @@
                     markers.push(line);
                 }
 
+                const v1name = t.vessel1.name || t.vessel1.mmsi;
+                const v2name = t.vessel2.name || t.vessel2.mmsi;
+                const v1mmsi = t.vessel1.mmsi;
+                const v2mmsi = t.vessel2.mmsi;
                 marker.bindPopup(`
                     <b style="color:${color}">${classLabel}</b>
                     <span class="badge badge-${t.classification}" style="margin-left:4px">${t.risk_score}</span><br>
-                    🚢 ${t.vessel1.name || t.vessel1.mmsi} <span style="color:#888">(${t.vessel1.type_name})</span><br>
-                    🚢 ${t.vessel2.name || t.vessel2.mmsi} <span style="color:#888">(${t.vessel2.type_name})</span><br>
+                    🚢 ${v1name} <span style="color:#888">(${t.vessel1.type_name})</span><br>
+                    🚢 ${v2name} <span style="color:#888">(${t.vessel2.type_name})</span><br>
                     📏 ${t.min_distance_m.toFixed(0)}m &nbsp; ⏱ ${t.duration_hours}h<br>
                     📍 ${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}<br>
                     🕐 ${t.first_seen ? new Date(t.first_seen).toLocaleString() : '--'}
                     ${t.risk_factors && t.risk_factors.length ? '<br>⚠️ ' + t.risk_factors.join(', ') : ''}
+                    <br><button class="track-btn" onclick="loadTrack('${v1mmsi}','${v1name.replace(/'/g, "\\'")}')">📡 ${v1name} 航跡</button>
+                    <button class="track-btn" onclick="loadTrack('${v2mmsi}','${v2name.replace(/'/g, "\\'")}')">📡 ${v2name} 航跡</button>
                 `);
                 markers.push(marker);
             });
@@ -376,6 +411,107 @@
             const filtered = filter === 'all' ? allTransfers : allTransfers.filter(t => t.classification === filter);
             plotTransfers(filtered);
             renderTable(filtered);
+        }
+
+        async function loadTrack(mmsi, label) {
+            trackLayer.clearLayers();
+            const infoBar = document.getElementById('trackInfoBar');
+            const infoText = document.getElementById('trackInfoText');
+            infoBar.style.display = 'flex';
+            infoText.textContent = `載入 ${label} 航跡...`;
+
+            try {
+                let data = null;
+
+                // Try pre-generated route file
+                const res = await fetch('vessel_routes/' + mmsi + '.json?' + Date.now());
+                if (res.ok) {
+                    data = await res.json();
+                    if (!data.track || data.track.length === 0) data = null;
+                }
+
+                // Fallback: extract from ais_track_history.json
+                if (!data) {
+                    if (!cachedTrackHistory) {
+                        const hres = await fetch('ais_track_history.json?' + Date.now());
+                        if (hres.ok) cachedTrackHistory = await hres.json();
+                    }
+                    if (Array.isArray(cachedTrackHistory)) {
+                        const track = [];
+                        let vName = '', vType = '';
+                        for (const snap of cachedTrackHistory) {
+                            for (const v of (snap.vessels || [])) {
+                                if (String(v.mmsi) === String(mmsi)) {
+                                    if (!vName && v.name) vName = v.name;
+                                    if (!vType && v.type_name) vType = v.type_name;
+                                    track.push({ t: snap.timestamp, lat: v.lat, lon: v.lon });
+                                }
+                            }
+                        }
+                        if (track.length >= 2) {
+                            track.sort((a, b) => new Date(a.t) - new Date(b.t));
+                            const deduped = [track[0]];
+                            for (let k = 1; k < track.length; k++) {
+                                if (track[k].lat !== deduped[deduped.length - 1].lat ||
+                                    track[k].lon !== deduped[deduped.length - 1].lon) {
+                                    deduped.push(track[k]);
+                                } else if (k === track.length - 1) {
+                                    deduped.push(track[k]);
+                                }
+                            }
+                            if (deduped.length >= 2) {
+                                data = { mmsi, name: vName || label, type: vType, track: deduped };
+                            }
+                        }
+                    }
+                }
+
+                if (!data || !data.track || data.track.length < 2) {
+                    infoText.textContent = `無航跡資料 (MMSI ${mmsi})`;
+                    setTimeout(() => { infoBar.style.display = 'none'; }, 3000);
+                    return;
+                }
+
+                // Render track
+                const points = data.track.map(p => [p.lat, p.lon]);
+                L.polyline(points, {
+                    color: '#ffd700', weight: 2.5, opacity: 0.7, dashArray: '6,4'
+                }).addTo(trackLayer).bindTooltip(data.name + ' 歷史航跡', { sticky: true });
+
+                // Start marker (green)
+                const first = data.track[0];
+                L.circleMarker([first.lat, first.lon], {
+                    radius: 5, fillColor: '#00ff88', color: '#fff', weight: 1.5, fillOpacity: 0.9
+                }).addTo(trackLayer).bindTooltip('起點 ' + new Date(first.t).toLocaleDateString());
+
+                // End marker (red)
+                const last = data.track[data.track.length - 1];
+                L.circleMarker([last.lat, last.lon], {
+                    radius: 5, fillColor: '#ff3366', color: '#fff', weight: 1.5, fillOpacity: 0.9
+                }).addTo(trackLayer).bindTooltip('終點 ' + new Date(last.t).toLocaleDateString());
+
+                // Intermediate markers (~1/day)
+                data.track.forEach((p, i) => {
+                    if (i > 0 && i < data.track.length - 1 && i % 12 === 0) {
+                        L.circleMarker([p.lat, p.lon], {
+                            radius: 3, fillColor: '#ffd700', color: '#ffd700', weight: 1, fillOpacity: 0.6
+                        }).addTo(trackLayer).bindTooltip(new Date(p.t).toLocaleDateString());
+                    }
+                });
+
+                map.fitBounds(L.polyline(points).getBounds().pad(0.2));
+                infoText.textContent = `${data.name} (MMSI ${mmsi}) — ${data.track.length} 點`;
+
+            } catch (e) {
+                console.error('Track load failed:', e);
+                infoText.textContent = '航跡載入失敗';
+                setTimeout(() => { infoBar.style.display = 'none'; }, 3000);
+            }
+        }
+
+        function clearTrack() {
+            trackLayer.clearLayers();
+            document.getElementById('trackInfoBar').style.display = 'none';
         }
 
         // Filter tab handlers
