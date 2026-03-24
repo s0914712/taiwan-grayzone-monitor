@@ -58,6 +58,19 @@ const App = (function () {
             });
         }
 
+        // Territorial baseline layer toggle (lazy-draw on first enable)
+        const baselineCheckbox = document.getElementById('showTerritorialBaseline');
+        if (baselineCheckbox) {
+            let baselineDrawn = false;
+            baselineCheckbox.addEventListener('change', () => {
+                if (baselineCheckbox.checked && !baselineDrawn) {
+                    MapModule.drawTerritorialBaseline();
+                    baselineDrawn = true;
+                }
+                MapModule.toggleLayer('territorialBaseline', baselineCheckbox.checked);
+            });
+        }
+
         // Legend item click -> locate vessel type on map
         document.querySelectorAll('.legend-clickable').forEach(item => {
             item.addEventListener('click', () => {
@@ -255,6 +268,10 @@ const App = (function () {
                 MapModule.toggleLayer('submarineCables', checked);
             });
             syncCheckbox('bsShowVesselRoutes', 'showVesselRoutes', layer => MapModule.toggleLayer('vesselRoutes', layer));
+            syncCheckbox('bsShowTerritorialBaseline', 'showTerritorialBaseline', checked => {
+                if (checked) MapModule.drawTerritorialBaseline();
+                MapModule.toggleLayer('territorialBaseline', checked);
+            });
             syncCheckbox('bsFilterFocVessels', 'filterFocVessels', checked => {
                 MapModule.setFilterFoc(checked);
                 if (rawVesselList.length > 0) {
