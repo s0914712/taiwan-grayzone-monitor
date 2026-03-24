@@ -119,6 +119,35 @@
             .main-content { padding-bottom: 72px; }
             .transfer-table { font-size: 10px; }
         }
+
+        /* Vessel-type legend (bottom-left of map) */
+        .sts-legend {
+            position: absolute; bottom: 10px; left: 10px; z-index: 1000;
+            background: rgba(25,35,60,0.92); backdrop-filter: blur(6px);
+            border: 1px solid rgba(0,245,255,0.15); border-radius: 5px;
+            padding: 6px 10px; font-size: 9px;
+            font-family: 'JetBrains Mono', monospace; color: var(--text-primary);
+            pointer-events: auto;
+        }
+        .sts-legend .legend-title {
+            font-size: 7px; color: var(--text-secondary);
+            margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .sts-legend .legend-item {
+            display: flex; align-items: center; gap: 5px; margin: 2px 0;
+            cursor: pointer; padding: 1px 4px; border-radius: 3px; transition: all 0.2s;
+            user-select: none;
+        }
+        .sts-legend .legend-item:hover { background: rgba(255,255,255,0.08); }
+        .sts-legend .legend-item.disabled {
+            opacity: 0.28; text-decoration: line-through;
+        }
+        .sts-legend .legend-dot {
+            width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+        }
+        .sts-legend .legend-count {
+            margin-left: auto; color: var(--text-secondary); font-size: 8px;
+        }
     </style>
 </head>
 
@@ -170,6 +199,39 @@
                 <div class="track-info-bar" id="trackInfoBar">
                     <span id="trackInfoText"></span>
                     <button class="close-btn" onclick="clearTrack()" title="清除航跡">✕</button>
+                </div>
+                <div class="sts-legend" id="vesselTypeLegend">
+                    <div class="legend-title" data-i18n="idx.legend_type">船隻類型</div>
+                    <div class="legend-item" data-vessel-type="fishing">
+                        <div class="legend-dot" style="background:#00ff88"></div>
+                        <span data-i18n="vessel.fishing">漁船</span>
+                        <span class="legend-count" data-type-count="fishing"></span>
+                    </div>
+                    <div class="legend-item" data-vessel-type="cargo">
+                        <div class="legend-dot" style="background:#00f5ff"></div>
+                        <span data-i18n="vessel.cargo">貨船</span>
+                        <span class="legend-count" data-type-count="cargo"></span>
+                    </div>
+                    <div class="legend-item" data-vessel-type="tanker">
+                        <div class="legend-dot" style="background:#ff6b35"></div>
+                        <span data-i18n="vessel.tanker">油輪</span>
+                        <span class="legend-count" data-type-count="tanker"></span>
+                    </div>
+                    <div class="legend-item" data-vessel-type="lng">
+                        <div class="legend-dot" style="background:#f0e130"></div>
+                        <span>LNG / Gas</span>
+                        <span class="legend-count" data-type-count="lng"></span>
+                    </div>
+                    <div class="legend-item" data-vessel-type="other">
+                        <div class="legend-dot" style="background:#ff3366"></div>
+                        <span data-i18n="vessel.other">其他</span>
+                        <span class="legend-count" data-type-count="other"></span>
+                    </div>
+                    <div class="legend-item" data-vessel-type="unknown">
+                        <div class="legend-dot" style="background:#888888"></div>
+                        <span data-i18n="vessel.unknown">未知</span>
+                        <span class="legend-count" data-type-count="unknown"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -236,6 +298,31 @@
             normal: { zh: '一般旁靠', en: 'Normal' },
             pair_trawling: { zh: '雙拖作業', en: 'Pair Trawling' }
         };
+
+        const VESSEL_TYPE_COLORS = {
+            fishing: '#00ff88', cargo: '#00f5ff', tanker: '#ff6b35',
+            lng: '#f0e130', other: '#ff3366', unknown: '#888888'
+        };
+
+        let hiddenVesselTypes = new Set();
+
+        function normalizeVesselType(typeName) {
+            if (!typeName) return 'unknown';
+            const t = typeName.toLowerCase();
+            if (t === 'fishing') return 'fishing';
+            if (t === 'cargo') return 'cargo';
+            if (t === 'tanker') return 'tanker';
+            if (t === 'lng' || t.includes('gas') || t.includes('lpg')) return 'lng';
+            if (t === 'unknown' || t === '') return 'unknown';
+            return 'other';
+        }
+
+        function isTransferHiddenByType(t) {
+            if (hiddenVesselTypes.size === 0) return false;
+            const t1 = normalizeVesselType(t.vessel1.type_name);
+            const t2 = normalizeVesselType(t.vessel2.type_name);
+            return hiddenVesselTypes.has(t1) && hiddenVesselTypes.has(t2);
+        }
 
         function initMap() {
             map = L.map('map', {
@@ -408,9 +495,31 @@
         }
 
         function applyFilter(filter) {
-            const filtered = filter === 'all' ? allTransfers : allTransfers.filter(t => t.classification === filter);
+            if (filter === undefined) {
+                // Re-apply current active classification filter
+                const activeBtn = document.querySelector('#filterTabs button.active');
+                filter = activeBtn ? activeBtn.dataset.filter : 'all';
+            }
+            let filtered = filter === 'all' ? allTransfers : allTransfers.filter(t => t.classification === filter);
+            // Apply vessel type exclusion
+            if (hiddenVesselTypes.size > 0) {
+                filtered = filtered.filter(t => !isTransferHiddenByType(t));
+            }
             plotTransfers(filtered);
             renderTable(filtered);
+            updateLegendCounts(filtered);
+        }
+
+        function updateLegendCounts(transfers) {
+            const counts = { fishing: 0, cargo: 0, tanker: 0, lng: 0, other: 0, unknown: 0 };
+            transfers.forEach(t => {
+                counts[normalizeVesselType(t.vessel1.type_name)]++;
+                counts[normalizeVesselType(t.vessel2.type_name)]++;
+            });
+            Object.keys(counts).forEach(type => {
+                const el = document.querySelector(`[data-type-count="${type}"]`);
+                if (el) el.textContent = counts[type] || '';
+            });
         }
 
         async function loadTrack(mmsi, label) {
@@ -523,6 +632,22 @@
             applyFilter(btn.dataset.filter);
         });
 
+        // Vessel type legend click handler
+        document.getElementById('vesselTypeLegend').addEventListener('click', e => {
+            const item = e.target.closest('.legend-item');
+            if (!item) return;
+            const type = item.dataset.vesselType;
+            if (!type) return;
+            if (hiddenVesselTypes.has(type)) {
+                hiddenVesselTypes.delete(type);
+                item.classList.remove('disabled');
+            } else {
+                hiddenVesselTypes.add(type);
+                item.classList.add('disabled');
+            }
+            applyFilter(); // re-apply current filter with updated type exclusions
+        });
+
         async function loadData() {
             try {
                 const res = await fetch('ship_transfers.json?' + Date.now());
@@ -550,6 +675,7 @@
                 plotTransfers(allTransfers);
                 renderTable(allTransfers);
                 renderDailyChart(allTransfers);
+                updateLegendCounts(allTransfers);
 
                 // Status
                 document.getElementById('dataStatus').textContent =

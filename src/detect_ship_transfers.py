@@ -182,12 +182,16 @@ def find_pairs_in_snapshot(vessels):
     """
     pairs = []
     n = len(vessels)
-    # 建立索引（排除港內船隻與無效座標）
+    # 建立索引（排除港內船隻、無效座標、浮標/漁具）
     valid = []
     for v in vessels:
         lat = v.get("lat")
         lon = v.get("lon")
         if lat is None or lon is None:
+            continue
+        # 排除浮標與漁具（名稱含 % 或 BUOY）
+        vname = v.get("name", "") or ""
+        if "%" in vname or "BUOY" in vname.upper():
             continue
         speed = v.get("speed", 0) or 0
         if speed > MAX_SPEED_KN:
