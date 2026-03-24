@@ -89,6 +89,7 @@ const i18n = (function () {
         'vessel.cargo':          { zh: '貨船', en: 'Cargo' },
         'vessel.tanker':         { zh: '油輪', en: 'Tanker' },
         'vessel.other':          { zh: '其他', en: 'Other' },
+        'vessel.unknown':        { zh: '未知', en: 'Unknown' },
         'vessel.suspicious':     { zh: '可疑', en: 'Suspicious' },
 
         // ── 暗船通用標籤 Dark Vessel Labels ──
