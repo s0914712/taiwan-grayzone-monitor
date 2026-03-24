@@ -2,7 +2,7 @@
 """
 ================================================================================
 海上旁靠偵測 — Ship-to-Ship Transfer Detection
-Detect vessels alongside each other (< 50m) for 1+ hour, excluding ports.
+Detect vessels alongside each other (< 10m) for 1+ hour, excluding ports.
 Classify as pair trawling vs. suspicious transfer.
 ================================================================================
 """
@@ -18,7 +18,7 @@ SNAPSHOT_FILE = DATA_DIR / "ais_snapshot.json"
 OUTPUT_FILE = DATA_DIR / "ship_transfers.json"
 
 # ── 門檻設定 ────────────────────────────────────────────
-ALONGSIDE_DISTANCE_KM = 0.05       # 50 公尺
+ALONGSIDE_DISTANCE_KM = 0.01       # 10 公尺
 MAX_SPEED_KN = 5.0                 # 旁靠時速度 < 5 knots
 PORT_EXCLUSION_KM = 2.0            # 港口排除半徑 2 公里
 MIN_DURATION_HOURS = 1.0           # 至少旁靠 1 小時
@@ -177,7 +177,7 @@ def classify_transfer(v1, v2, duration_hours, in_hotspot):
 
 def find_pairs_in_snapshot(vessels):
     """
-    在單一快照中找出所有距離 < 50m 且速度 < 5kn 的船對
+    在單一快照中找出所有距離 < 10m 且速度 < 5kn 的船對
     使用 bounding box 預篩加速
     """
     pairs = []

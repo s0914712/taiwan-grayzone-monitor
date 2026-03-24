@@ -61,7 +61,7 @@ const i18n = (function () {
         'sts.suspicious':        { zh: '可疑旁靠 (14日)', en: 'Suspicious (14d)' },
         'sts.pair_trawling':     { zh: '雙拖作業 (14日)', en: 'Pair Trawling (14d)' },
         'sts.unique_vessels':    { zh: '涉及船隻數', en: 'Unique Vessels' },
-        'sts.map_title':         { zh: '📍 旁靠事件位置分布（距離 < 50m、持續 ≥ 1 小時、排除港內）', en: '📍 Transfer Locations (< 50m, ≥ 1h, excl. ports)' },
+        'sts.map_title':         { zh: '📍 旁靠事件位置分布（距離 < 10m、持續 ≥ 1 小時、排除港內）', en: '📍 Transfer Locations (< 10m, ≥ 1h, excl. ports)' },
         'sts.chart_title':       { zh: '📊 每日旁靠事件統計', en: '📊 Daily Transfer Events' },
         'sts.table_title':       { zh: '📋 旁靠事件列表', en: '📋 Transfer Event List' },
         'sts.filter_all':        { zh: '全部', en: 'All' },
