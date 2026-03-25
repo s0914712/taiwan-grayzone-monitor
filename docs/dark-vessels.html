@@ -60,12 +60,18 @@
         }
 
         @media (max-width: 900px) {
-            #map { height: calc(100vh - 44px - 56px - 20px); max-height: 350px; min-height: 200px; }
-            .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px; }
-            .stat-card { padding: 12px; }
+            #map { height: calc(100vh - 48px - 56px - 20px); max-height: 350px; min-height: 200px; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px 10px; }
+            .stat-card { padding: 10px 8px; }
             .stat-card .value { font-size: 22px; }
-            .stat-card .label { font-size: 12px; }
+            .stat-card .label { font-size: 11px; }
             .main-content { padding-bottom: 72px; }
+        }
+        @media (max-width: 600px) {
+            .stats-row { gap: 6px; padding: 6px 8px; }
+            .stat-card { padding: 8px 6px; }
+            .stat-card .value { font-size: 20px; }
+            .stat-card .label { font-size: 10px; }
         }
     </style>
 </head>
