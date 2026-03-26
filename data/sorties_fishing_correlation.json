@@ -1,0 +1,616 @@
+{
+  "updated_at": "2026-03-26T22:12:39.541929Z",
+  "description": "共機架次 vs 漁船數量相關性分析 (PLA Sorties vs Fishing Vessels)",
+  "data_range": {
+    "start": "2026-03-01",
+    "end": "2026-03-26"
+  },
+  "sample_size": 21,
+  "caveat": "樣本僅 21 天 (2026年3月)。結果為探索性分析，不具統計結論性。需要更長時間序列驗證。",
+  "correlations": {
+    "northeast_fishing": {
+      "label": "東北角漁船",
+      "pearson_r": 0.5282,
+      "pearson_p": 0.0138,
+      "spearman_r": 0.3024,
+      "spearman_p": 0.1827,
+      "n": 21,
+      "significant_pearson": true,
+      "significant_spearman": false
+    },
+    "fishing_vessels": {
+      "label": "總漁船數",
+      "pearson_r": 0.3268,
+      "pearson_p": 0.1482,
+      "spearman_r": 0.0685,
+      "spearman_p": 0.7681,
+      "n": 21,
+      "significant_pearson": false,
+      "significant_spearman": false
+    },
+    "total_vessels": {
+      "label": "總船隻數",
+      "pearson_r": 0.3255,
+      "pearson_p": 0.1499,
+      "spearman_r": 0.0319,
+      "spearman_p": 0.8908,
+      "n": 21,
+      "significant_pearson": false,
+      "significant_spearman": false
+    },
+    "drill_zone_total": {
+      "label": "演習區內船隻",
+      "pearson_r": -0.3923,
+      "pearson_p": 0.0786,
+      "spearman_r": -0.5491,
+      "spearman_p": 0.0099,
+      "n": 21,
+      "significant_pearson": false,
+      "significant_spearman": true
+    },
+    "taiwan_bank_fishing": {
+      "label": "台灣灘漁船",
+      "pearson_r": 0.4053,
+      "pearson_p": 0.0683,
+      "spearman_r": 0.226,
+      "spearman_p": 0.3245,
+      "n": 21,
+      "significant_pearson": false,
+      "significant_spearman": false
+    },
+    "penghu_fishing": {
+      "label": "澎湖漁船",
+      "pearson_r": 0.395,
+      "pearson_p": 0.0763,
+      "spearman_r": 0.2133,
+      "spearman_p": 0.3531,
+      "n": 21,
+      "significant_pearson": false,
+      "significant_spearman": false
+    },
+    "kuroshio_east_fishing": {
+      "label": "黑潮東側漁船",
+      "pearson_r": 0.3469,
+      "pearson_p": 0.1233,
+      "spearman_r": 0.1648,
+      "spearman_p": 0.4752,
+      "n": 21,
+      "significant_pearson": false,
+      "significant_spearman": false
+    },
+    "southwest_fishing": {
+      "label": "西南漁船",
+      "pearson_r": -0.1079,
+      "pearson_p": 0.6417,
+      "spearman_r": -0.1236,
+      "spearman_p": 0.5934,
+      "n": 21,
+      "significant_pearson": false,
+      "significant_spearman": false
+    }
+  },
+  "lagged_correlations": {
+    "northeast_fishing": {
+      "label": "東北角漁船",
+      "best_lag": {
+        "lag": 0,
+        "correlation": 0.5282
+      },
+      "lags": [
+        {
+          "lag": -7,
+          "correlation": -0.0632
+        },
+        {
+          "lag": -6,
+          "correlation": -0.4796
+        },
+        {
+          "lag": -5,
+          "correlation": -0.2259
+        },
+        {
+          "lag": -4,
+          "correlation": 0.093
+        },
+        {
+          "lag": -3,
+          "correlation": 0.2404
+        },
+        {
+          "lag": -2,
+          "correlation": 0.2799
+        },
+        {
+          "lag": -1,
+          "correlation": 0.3452
+        },
+        {
+          "lag": 0,
+          "correlation": 0.5282
+        },
+        {
+          "lag": 1,
+          "correlation": 0.2884
+        },
+        {
+          "lag": 2,
+          "correlation": 0.3383
+        },
+        {
+          "lag": 3,
+          "correlation": 0.4024
+        },
+        {
+          "lag": 4,
+          "correlation": 0.2045
+        },
+        {
+          "lag": 5,
+          "correlation": -0.0614
+        },
+        {
+          "lag": 6,
+          "correlation": -0.2693
+        },
+        {
+          "lag": 7,
+          "correlation": -0.328
+        }
+      ]
+    },
+    "fishing_vessels": {
+      "label": "總漁船數",
+      "best_lag": {
+        "lag": -6,
+        "correlation": -0.5462
+      },
+      "lags": [
+        {
+          "lag": -7,
+          "correlation": -0.1643
+        },
+        {
+          "lag": -6,
+          "correlation": -0.5462
+        },
+        {
+          "lag": -5,
+          "correlation": -0.3179
+        },
+        {
+          "lag": -4,
+          "correlation": 0.0282
+        },
+        {
+          "lag": -3,
+          "correlation": 0.1693
+        },
+        {
+          "lag": -2,
+          "correlation": 0.2302
+        },
+        {
+          "lag": -1,
+          "correlation": 0.308
+        },
+        {
+          "lag": 0,
+          "correlation": 0.3268
+        },
+        {
+          "lag": 1,
+          "correlation": 0.121
+        },
+        {
+          "lag": 2,
+          "correlation": 0.0673
+        },
+        {
+          "lag": 3,
+          "correlation": 0.3845
+        },
+        {
+          "lag": 4,
+          "correlation": 0.4114
+        },
+        {
+          "lag": 5,
+          "correlation": 0.0857
+        },
+        {
+          "lag": 6,
+          "correlation": 0.0007
+        },
+        {
+          "lag": 7,
+          "correlation": -0.0822
+        }
+      ]
+    }
+  },
+  "high_sortie_events": {
+    "threshold": 10,
+    "event_window_days": 3,
+    "events": [
+      {
+        "date": "2026-03-15",
+        "sorties": 26.0,
+        "northeast_fishing_on_day": 689.6,
+        "total_fishing_on_day": 2070.8,
+        "window_avg_northeast": 606.3,
+        "overall_avg_northeast": 533.5,
+        "northeast_anomaly_pct": 13.6,
+        "before_avg_northeast": 462.3,
+        "after_avg_northeast": 722.5,
+        "window_data": [
+          {
+            "date": "2026-03-12",
+            "sorties": 5.0,
+            "northeast_fishing": 401.2,
+            "fishing_vessels": 1086.2
+          },
+          {
+            "date": "2026-03-13",
+            "sorties": 3.0,
+            "northeast_fishing": 442.8,
+            "fishing_vessels": 1273.8
+          },
+          {
+            "date": "2026-03-14",
+            "sorties": 3.0,
+            "northeast_fishing": 543.0,
+            "fishing_vessels": 1741.2
+          },
+          {
+            "date": "2026-03-15",
+            "sorties": 26.0,
+            "northeast_fishing": 689.6,
+            "fishing_vessels": 2070.8
+          },
+          {
+            "date": "2026-03-16",
+            "sorties": 2.0,
+            "northeast_fishing": 698.8,
+            "fishing_vessels": 2125.4
+          },
+          {
+            "date": "2026-03-17",
+            "sorties": 2.0,
+            "northeast_fishing": 668.5,
+            "fishing_vessels": 2036.6
+          },
+          {
+            "date": "2026-03-18",
+            "sorties": 36.0,
+            "northeast_fishing": 800.2,
+            "fishing_vessels": 2407.9
+          }
+        ]
+      },
+      {
+        "date": "2026-03-18",
+        "sorties": 36.0,
+        "northeast_fishing_on_day": 800.2,
+        "total_fishing_on_day": 2407.9,
+        "window_avg_northeast": 652.3,
+        "overall_avg_northeast": 533.5,
+        "northeast_anomaly_pct": 22.3,
+        "before_avg_northeast": 685.6,
+        "after_avg_northeast": 569.7,
+        "window_data": [
+          {
+            "date": "2026-03-15",
+            "sorties": 26.0,
+            "northeast_fishing": 689.6,
+            "fishing_vessels": 2070.8
+          },
+          {
+            "date": "2026-03-16",
+            "sorties": 2.0,
+            "northeast_fishing": 698.8,
+            "fishing_vessels": 2125.4
+          },
+          {
+            "date": "2026-03-17",
+            "sorties": 2.0,
+            "northeast_fishing": 668.5,
+            "fishing_vessels": 2036.6
+          },
+          {
+            "date": "2026-03-18",
+            "sorties": 36.0,
+            "northeast_fishing": 800.2,
+            "fishing_vessels": 2407.9
+          },
+          {
+            "date": "2026-03-19",
+            "sorties": 12.0,
+            "northeast_fishing": 564.1,
+            "fishing_vessels": 1642.0
+          },
+          {
+            "date": "2026-03-20",
+            "sorties": 6.0,
+            "northeast_fishing": 612.3,
+            "fishing_vessels": 1438.1
+          },
+          {
+            "date": "2026-03-21",
+            "sorties": 2.0,
+            "northeast_fishing": 532.7,
+            "fishing_vessels": 1622.8
+          }
+        ]
+      },
+      {
+        "date": "2026-03-19",
+        "sorties": 12.0,
+        "northeast_fishing_on_day": 564.1,
+        "total_fishing_on_day": 1642.0,
+        "window_avg_northeast": 646.3,
+        "overall_avg_northeast": 533.5,
+        "northeast_anomaly_pct": 21.1,
+        "before_avg_northeast": 722.5,
+        "after_avg_northeast": 597.4,
+        "window_data": [
+          {
+            "date": "2026-03-16",
+            "sorties": 2.0,
+            "northeast_fishing": 698.8,
+            "fishing_vessels": 2125.4
+          },
+          {
+            "date": "2026-03-17",
+            "sorties": 2.0,
+            "northeast_fishing": 668.5,
+            "fishing_vessels": 2036.6
+          },
+          {
+            "date": "2026-03-18",
+            "sorties": 36.0,
+            "northeast_fishing": 800.2,
+            "fishing_vessels": 2407.9
+          },
+          {
+            "date": "2026-03-19",
+            "sorties": 12.0,
+            "northeast_fishing": 564.1,
+            "fishing_vessels": 1642.0
+          },
+          {
+            "date": "2026-03-20",
+            "sorties": 6.0,
+            "northeast_fishing": 612.3,
+            "fishing_vessels": 1438.1
+          },
+          {
+            "date": "2026-03-21",
+            "sorties": 2.0,
+            "northeast_fishing": 532.7,
+            "fishing_vessels": 1622.8
+          },
+          {
+            "date": "2026-03-22",
+            "sorties": 0.0,
+            "northeast_fishing": 647.2,
+            "fishing_vessels": 2347.8
+          }
+        ]
+      },
+      {
+        "date": "2026-03-25",
+        "sorties": 16.0,
+        "northeast_fishing_on_day": 442.5,
+        "total_fishing_on_day": 1513.6,
+        "window_avg_northeast": 535.3,
+        "overall_avg_northeast": 533.5,
+        "northeast_anomaly_pct": 0.3,
+        "before_avg_northeast": 565.3,
+        "after_avg_northeast": 538.3,
+        "window_data": [
+          {
+            "date": "2026-03-22",
+            "sorties": 0.0,
+            "northeast_fishing": 647.2,
+            "fishing_vessels": 2347.8
+          },
+          {
+            "date": "2026-03-23",
+            "sorties": 0.0,
+            "northeast_fishing": 542.9,
+            "fishing_vessels": 2116.4
+          },
+          {
+            "date": "2026-03-24",
+            "sorties": 3.0,
+            "northeast_fishing": 505.8,
+            "fishing_vessels": 2004.5
+          },
+          {
+            "date": "2026-03-25",
+            "sorties": 16.0,
+            "northeast_fishing": 442.5,
+            "fishing_vessels": 1513.6
+          },
+          {
+            "date": "2026-03-26",
+            "sorties": 4.0,
+            "northeast_fishing": 538.3,
+            "fishing_vessels": 1727.8
+          }
+        ]
+      }
+    ]
+  },
+  "daily_data": [
+    {
+      "date": "2026-03-01",
+      "sorties": 0.0,
+      "northeast_fishing": 505.0,
+      "fishing_vessels": 2214.0,
+      "total_vessels": 6508.0,
+      "drill_zone_total": 1604.0
+    },
+    {
+      "date": "2026-03-07",
+      "sorties": 2.0,
+      "northeast_fishing": 346.0,
+      "fishing_vessels": 1079.0,
+      "total_vessels": 4100.5,
+      "drill_zone_total": 961.8
+    },
+    {
+      "date": "2026-03-08",
+      "sorties": 0.0,
+      "northeast_fishing": 359.2,
+      "fishing_vessels": 1251.5,
+      "total_vessels": 4990.0,
+      "drill_zone_total": 1481.8
+    },
+    {
+      "date": "2026-03-09",
+      "sorties": 0.0,
+      "northeast_fishing": 348.7,
+      "fishing_vessels": 1053.0,
+      "total_vessels": 4086.3,
+      "drill_zone_total": 1022.3
+    },
+    {
+      "date": "2026-03-10",
+      "sorties": 0.0,
+      "northeast_fishing": 453.3,
+      "fishing_vessels": 1494.7,
+      "total_vessels": 5577.0,
+      "drill_zone_total": 1597.3
+    },
+    {
+      "date": "2026-03-11",
+      "sorties": 0.0,
+      "northeast_fishing": 562.0,
+      "fishing_vessels": 1541.8,
+      "total_vessels": 5469.2,
+      "drill_zone_total": 1282.0
+    },
+    {
+      "date": "2026-03-12",
+      "sorties": 5.0,
+      "northeast_fishing": 401.2,
+      "fishing_vessels": 1086.2,
+      "total_vessels": 4435.8,
+      "drill_zone_total": 1082.4
+    },
+    {
+      "date": "2026-03-13",
+      "sorties": 3.0,
+      "northeast_fishing": 442.8,
+      "fishing_vessels": 1273.8,
+      "total_vessels": 4797.8,
+      "drill_zone_total": 701.6
+    },
+    {
+      "date": "2026-03-14",
+      "sorties": 3.0,
+      "northeast_fishing": 543.0,
+      "fishing_vessels": 1741.2,
+      "total_vessels": 5864.9,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-15",
+      "sorties": 26.0,
+      "northeast_fishing": 689.6,
+      "fishing_vessels": 2070.8,
+      "total_vessels": 6635.2,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-16",
+      "sorties": 2.0,
+      "northeast_fishing": 698.8,
+      "fishing_vessels": 2125.4,
+      "total_vessels": 6625.2,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-17",
+      "sorties": 2.0,
+      "northeast_fishing": 668.5,
+      "fishing_vessels": 2036.6,
+      "total_vessels": 6045.2,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-18",
+      "sorties": 36.0,
+      "northeast_fishing": 800.2,
+      "fishing_vessels": 2407.9,
+      "total_vessels": 7172.0,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-19",
+      "sorties": 12.0,
+      "northeast_fishing": 564.1,
+      "fishing_vessels": 1642.0,
+      "total_vessels": 5430.7,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-20",
+      "sorties": 6.0,
+      "northeast_fishing": 612.3,
+      "fishing_vessels": 1438.1,
+      "total_vessels": 4820.8,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-21",
+      "sorties": 2.0,
+      "northeast_fishing": 532.7,
+      "fishing_vessels": 1622.8,
+      "total_vessels": 5006.2,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-22",
+      "sorties": 0.0,
+      "northeast_fishing": 647.2,
+      "fishing_vessels": 2347.8,
+      "total_vessels": 6820.2,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-23",
+      "sorties": 0.0,
+      "northeast_fishing": 542.9,
+      "fishing_vessels": 2116.4,
+      "total_vessels": 6767.7,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-24",
+      "sorties": 3.0,
+      "northeast_fishing": 505.8,
+      "fishing_vessels": 2004.5,
+      "total_vessels": 6545.0,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-25",
+      "sorties": 16.0,
+      "northeast_fishing": 442.5,
+      "fishing_vessels": 1513.6,
+      "total_vessels": 5083.4,
+      "drill_zone_total": 0.0
+    },
+    {
+      "date": "2026-03-26",
+      "sorties": 4.0,
+      "northeast_fishing": 538.3,
+      "fishing_vessels": 1727.8,
+      "total_vessels": 5844.2,
+      "drill_zone_total": 0.0
+    }
+  ]
+}
