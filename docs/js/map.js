@@ -202,111 +202,48 @@ const MapModule = (function() {
 
     /**
      * Offset a closed polygon outward by a given distance in nautical miles.
-     * Uses edge-normal offset with miter joins for accurate geographic buffering.
+     * Uses radial offset from a reference center point to avoid artifacts
+     * with highly concave polygons (like Taiwan's baseline wrapping around the island).
+     * Each point is pushed exactly `nm` nautical miles further from the center.
      * @param {Array} pts - Array of {lat, lon} objects forming a closed polygon
      * @param {number} nm - Offset distance in nautical miles
+     * @param {number} [refLat] - Reference center latitude (auto-computed if omitted)
+     * @param {number} [refLon] - Reference center longitude (auto-computed if omitted)
      * @returns {Array} Array of [lat, lon] pairs (closed)
      */
-    function offsetPolygonNm(pts, nm) {
+    function offsetPolygonNm(pts, nm, refLat, refLon) {
         var n = pts.length;
         if (n < 3) return [];
 
         var kmPerNm = 1.852;
         var distKm = nm * kmPerNm;
 
-        // Compute polygon centroid to determine outward direction
-        var cLat = 0, cLon = 0;
-        for (var i = 0; i < n; i++) { cLat += pts[i].lat; cLon += pts[i].lon; }
-        cLat /= n; cLon /= n;
-
-        // Determine polygon winding (CW vs CCW) relative to outward = away from centroid
-        // We'll compute cross products to check winding, then pick correct normal direction
-        var crossSum = 0;
-        for (var i = 0; i < n; i++) {
-            var j = (i + 1) % n;
-            crossSum += (pts[j].lon - pts[i].lon) * (pts[j].lat + pts[i].lat);
-        }
-        // crossSum > 0 means clockwise in lon/lat space
-        var normalSign = crossSum > 0 ? 1 : -1;
-
-        // For each edge, compute outward normal unit vector (in km-scaled space)
-        var edgeNormals = [];
-        for (var i = 0; i < n; i++) {
-            var j = (i + 1) % n;
-            var cosLat = Math.cos((pts[i].lat + pts[j].lat) / 2 * Math.PI / 180);
-            // Edge vector in km
-            var dx = (pts[j].lon - pts[i].lon) * cosLat * 111.32;
-            var dy = (pts[j].lat - pts[i].lat) * 111.32;
-            var len = Math.sqrt(dx * dx + dy * dy);
-            if (len < 1e-9) len = 1e-9;
-            // Outward normal: rotate edge 90° (right-hand = CW outward)
-            var nx = normalSign * dy / len;
-            var ny = normalSign * (-dx) / len;
-            edgeNormals.push({ nx: nx, ny: ny });
+        // Use provided reference center or compute centroid
+        if (refLat === undefined || refLon === undefined) {
+            refLat = 0; refLon = 0;
+            for (var i = 0; i < n; i++) { refLat += pts[i].lat; refLon += pts[i].lon; }
+            refLat /= n; refLon /= n;
         }
 
-        // For each vertex, compute offset point using miter of adjacent edge normals
         var result = [];
         for (var i = 0; i < n; i++) {
-            var prev = (i - 1 + n) % n;
-            var n1 = edgeNormals[prev];
-            var n2 = edgeNormals[i];
-
-            // Average normal direction
-            var ax = n1.nx + n2.nx;
-            var ay = n1.ny + n2.ny;
-            var aLen = Math.sqrt(ax * ax + ay * ay);
-            if (aLen < 1e-9) { ax = n1.nx; ay = n1.ny; aLen = 1; }
-            ax /= aLen; ay /= aLen;
-
-            // Miter scale: distKm / cos(half-angle between normals)
-            var dot = n1.nx * n2.nx + n1.ny * n2.ny;
-            if (dot < -0.9) dot = -0.9; // Clamp for very sharp angles
-            var miterScale = distKm / Math.sqrt((1 + dot) / 2);
-            // Cap miter to avoid extreme spikes
-            if (miterScale > distKm * 3) miterScale = distKm * 3;
-
             var cosLat = Math.cos(pts[i].lat * Math.PI / 180);
-            var offsetLat = pts[i].lat + (ay * miterScale) / 111.32;
-            var offsetLon = pts[i].lon + (ax * miterScale) / (111.32 * cosLat);
+            var dx = (pts[i].lon - refLon) * cosLat * 111.32;
+            var dy = (pts[i].lat - refLat) * 111.32;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 0.1) {
+                result.push([pts[i].lat, pts[i].lon]);
+                continue;
+            }
+            // Unit direction from center to this point
+            var ux = dx / dist;
+            var uy = dy / dist;
+            // Push outward by distKm
+            var offsetLat = pts[i].lat + (uy * distKm) / 111.32;
+            var offsetLon = pts[i].lon + (ux * distKm) / (111.32 * cosLat);
             result.push([offsetLat, offsetLon]);
         }
         result.push(result[0]); // Close polygon
-        return result;
-    }
-
-    /**
-     * Smooth a closed polygon by inserting interpolated arc points at each vertex.
-     * Produces rounder offset boundaries similar to proper geodetic buffers.
-     * @param {Array} pts - Array of [lat, lon] (closed, first == last)
-     * @param {number} segments - Number of interpolation points per corner
-     * @returns {Array} Smoothed [lat, lon] array (closed)
-     */
-    function smoothOffsetPolygon(pts, segments) {
-        if (pts.length < 4 || segments < 1) return pts;
-        var n = pts.length - 1; // Exclude closing duplicate
-        var result = [];
-        for (var i = 0; i < n; i++) {
-            var prev = (i - 1 + n) % n;
-            var next = (i + 1) % n;
-            // Insert arc around vertex pts[i]
-            var pLat = pts[prev][0], pLon = pts[prev][1];
-            var cLat = pts[i][0],    cLon = pts[i][1];
-            var nLat = pts[next][0], nLon = pts[next][1];
-            // Midpoints of adjacent edges (for arc interpolation)
-            var mPrevLat = (pLat + cLat) / 2, mPrevLon = (pLon + cLon) / 2;
-            var mNextLat = (cLat + nLat) / 2, mNextLon = (cLon + nLon) / 2;
-            result.push([mPrevLat, mPrevLon]);
-            for (var s = 1; s <= segments; s++) {
-                var t = s / (segments + 1);
-                // Quadratic Bezier: midPrev -> vertex -> midNext
-                var u = 1 - t;
-                var bLat = u * u * mPrevLat + 2 * u * t * cLat + t * t * mNextLat;
-                var bLon = u * u * mPrevLon + 2 * u * t * cLon + t * t * mNextLon;
-                result.push([bLat, bLon]);
-            }
-        }
-        result.push(result[0]);
         return result;
     }
 
@@ -336,6 +273,12 @@ const MapModule = (function() {
         }
     }
 
+    // Reference center points for radial offset (approximate geographic center)
+    var REGION_CENTERS = {
+        taiwan:  { lat: 23.65, lon: 120.90 },  // Central Taiwan
+        dongsha: { lat: 20.70, lon: 116.72 }   // Dongsha Atoll center
+    };
+
     /**
      * Draw baseline layers using detailed SHP coordinates
      */
@@ -345,12 +288,13 @@ const MapModule = (function() {
         ['taiwan', 'dongsha'].forEach(function(region) {
             var markers = TERRITORIAL_BASEPOINT_MARKERS[region];
             var detailed = TERRITORIAL_BASELINE_DETAILED[region];
+            var center = REGION_CENTERS[region];
             var regionLabel = lang === 'en'
                 ? (region === 'taiwan' ? 'Taiwan' : 'Dongsha')
                 : (region === 'taiwan' ? '台灣本島及附屬島嶼' : '東沙群島');
 
             // ── 1. Baseline 領海基線 (purple dashed) — from detailed SHP data ──
-            var baseLatLngs = detailed.map(function(p) { return [p[1], p[0]]; }); // [lon,lat] → [lat,lon]
+            var baseLatLngs = detailed.map(function(p) { return [p[1], p[0]]; });
 
             L.polyline(baseLatLngs, {
                 color: '#e040fb',
@@ -362,7 +306,7 @@ const MapModule = (function() {
                 { sticky: true }
             );
 
-            // Basepoint markers (still show the official basepoint labels)
+            // Basepoint markers
             markers.forEach(function(p) {
                 L.circleMarker([p.lat, p.lon], {
                     radius: 3.5,
@@ -376,17 +320,12 @@ const MapModule = (function() {
                 );
             });
 
-            // Convert detailed coords to {lat, lon} for offset functions
-            var detailedPts = detailed.map(function(p) { return { lat: p[1], lon: p[0] }; });
-            // Remove closing duplicate if present
-            if (detailedPts.length > 1 &&
-                detailedPts[0].lat === detailedPts[detailedPts.length - 1].lat &&
-                detailedPts[0].lon === detailedPts[detailedPts.length - 1].lon) {
-                detailedPts = detailedPts.slice(0, -1);
-            }
+            // Use basepoint markers for offset (uniform spacing, avoids
+            // 125-point Pengjia cluster skewing the offset calculation)
+            var offsetPts = markers.map(function(p) { return { lat: p.lat, lon: p.lon }; });
 
             // ── 2. Territorial Sea Limit 領海外界線 12nm (cyan dashed) ──
-            var ts12 = offsetPolygonNm(detailedPts, 12);
+            var ts12 = offsetPolygonNm(offsetPts, 12, center.lat, center.lon);
             if (ts12.length > 0) {
                 L.polyline(ts12, {
                     color: '#00f5ff',
@@ -400,7 +339,7 @@ const MapModule = (function() {
             }
 
             // ── 3. Contiguous Zone Limit 鄰接區外界線 24nm (yellow dashed) ──
-            var cz24 = offsetPolygonNm(detailedPts, 24);
+            var cz24 = offsetPolygonNm(offsetPts, 24, center.lat, center.lon);
             if (cz24.length > 0) {
                 L.polyline(cz24, {
                     color: '#ffd700',
@@ -423,6 +362,7 @@ const MapModule = (function() {
 
         ['taiwan', 'dongsha'].forEach(function(region) {
             var pts = TERRITORIAL_BASEPOINT_MARKERS[region];
+            var center = REGION_CENTERS[region];
             var regionLabel = lang === 'en'
                 ? (region === 'taiwan' ? 'Taiwan' : 'Dongsha')
                 : (region === 'taiwan' ? '台灣本島及附屬島嶼' : '東沙群島');
@@ -446,15 +386,15 @@ const MapModule = (function() {
                 );
             });
 
-            var ts12 = offsetPolygonNm(pts, 12);
+            var ts12 = offsetPolygonNm(pts, 12, center.lat, center.lon);
             if (ts12.length > 0) {
-                L.polyline(smoothOffsetPolygon(ts12, 3), {
+                L.polyline(ts12, {
                     color: '#00f5ff', weight: 1.8, opacity: 0.6, dashArray: '12,6'
                 }).addTo(layer);
             }
-            var cz24 = offsetPolygonNm(pts, 24);
+            var cz24 = offsetPolygonNm(pts, 24, center.lat, center.lon);
             if (cz24.length > 0) {
-                L.polyline(smoothOffsetPolygon(cz24, 3), {
+                L.polyline(cz24, {
                     color: '#ffd700', weight: 1.5, opacity: 0.45, dashArray: '10,8'
                 }).addTo(layer);
             }
