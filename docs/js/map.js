@@ -136,7 +136,7 @@ const MapModule = (function() {
         layers.territorialBaseline = L.layerGroup();
 
         // Draw Taiwan outline
-        drawTaiwanOutline();
+
 
         // Zoom/move events for cluster <-> detail transitions
         map.on('zoomend', () => {
@@ -162,29 +162,9 @@ const MapModule = (function() {
         return map;
     }
 
-    /**
-     * Draw Taiwan island outline
-     */
-    function drawTaiwanOutline() {
-        const taiwanOutline = [
-            [25.3, 121.0], [25.13, 121.5], [24.85, 121.82], [24.5, 121.8],
-            [24.0, 121.5], [23.5, 121.3], [23.0, 121.0], [22.5, 120.85],
-            [22.0, 120.75], [21.9, 120.85], [22.0, 120.45], [22.3, 120.25],
-            [22.6, 120.3], [23.0, 120.1], [23.5, 120.05], [24.0, 120.2],
-            [24.5, 120.5], [25.0, 121.0], [25.3, 121.0]
-        ];
 
-        L.polygon(taiwanOutline, {
-            color: '#4a90d9',
-            weight: 2,
-            opacity: 0.5,
-            fillColor: '#1a3a5c',
-            fillOpacity: 0.3
-        }).addTo(map);
-    }
-
-    // ── 領海基點 Territorial Sea Basepoints (內政部公告) ─────────
-    var TERRITORIAL_BASEPOINTS = {
+    // ── 領海基點標記 Territorial Sea Basepoint markers (內政部公告) ─────────
+    var TERRITORIAL_BASEPOINT_MARKERS = {
         taiwan: [
             { id: 'T1',  name: '三貂角',   nameE: 'Sandiaojiao',    lon: 122.0078, lat: 25.0083 },
             { id: 'T2',  name: '棉花嶼',   nameE: 'Mianhuayu',      lon: 122.1091, lat: 25.4839 },
@@ -216,6 +196,9 @@ const MapModule = (function() {
             { id: 'D4', name: '西南角',   nameE: 'Xinanjiao',       lon: 116.7547, lat: 20.5948 }
         ]
     };
+
+    // ── 詳細領海基線座標（從內政部 SHP 檔案轉換，存於 data/territorial_baseline.json）──
+    var TERRITORIAL_BASELINE_DETAILED = null; // Loaded async
 
     /**
      * Offset a closed polygon outward by a given distance in nautical miles.
@@ -330,22 +313,44 @@ const MapModule = (function() {
     /**
      * Draw territorial sea baseline, 12nm territorial sea limit,
      * and 24nm contiguous zone limit (領海基線 + 領海外界線 + 鄰接區外界線)
+     * Uses detailed baseline from SHP data (territorial_baseline.json)
      */
     function drawTerritorialBaseline() {
         var layer = layers.territorialBaseline;
         layer.clearLayers();
 
+        // Load detailed baseline from SHP-derived JSON, then draw
+        if (TERRITORIAL_BASELINE_DETAILED) {
+            _drawBaselineLayers(layer);
+        } else {
+            fetch('data/territorial_baseline.json')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    TERRITORIAL_BASELINE_DETAILED = data;
+                    _drawBaselineLayers(layer);
+                })
+                .catch(function(err) {
+                    console.warn('Failed to load territorial_baseline.json, using basepoints:', err);
+                    _drawBaselineFromPoints(layer);
+                });
+        }
+    }
+
+    /**
+     * Draw baseline layers using detailed SHP coordinates
+     */
+    function _drawBaselineLayers(layer) {
         var lang = (typeof i18n !== 'undefined' && i18n.lang === 'en') ? 'en' : 'zh';
 
         ['taiwan', 'dongsha'].forEach(function(region) {
-            var pts = TERRITORIAL_BASEPOINTS[region];
+            var markers = TERRITORIAL_BASEPOINT_MARKERS[region];
+            var detailed = TERRITORIAL_BASELINE_DETAILED[region];
             var regionLabel = lang === 'en'
                 ? (region === 'taiwan' ? 'Taiwan' : 'Dongsha')
                 : (region === 'taiwan' ? '台灣本島及附屬島嶼' : '東沙群島');
 
-            // ── 1. Baseline 領海基線 (purple dashed) ──
-            var baseLatLngs = pts.map(function(p) { return [p.lat, p.lon]; });
-            baseLatLngs.push(baseLatLngs[0]);
+            // ── 1. Baseline 領海基線 (purple dashed) — from detailed SHP data ──
+            var baseLatLngs = detailed.map(function(p) { return [p[1], p[0]]; }); // [lon,lat] → [lat,lon]
 
             L.polyline(baseLatLngs, {
                 color: '#e040fb',
@@ -357,8 +362,8 @@ const MapModule = (function() {
                 { sticky: true }
             );
 
-            // Basepoint markers
-            pts.forEach(function(p) {
+            // Basepoint markers (still show the official basepoint labels)
+            markers.forEach(function(p) {
                 L.circleMarker([p.lat, p.lon], {
                     radius: 3.5,
                     fillColor: '#e040fb',
@@ -371,11 +376,19 @@ const MapModule = (function() {
                 );
             });
 
-            // ── 2. Territorial Sea Limit 領海外界線 12nm (cyan solid) ──
-            var ts12 = offsetPolygonNm(pts, 12);
+            // Convert detailed coords to {lat, lon} for offset functions
+            var detailedPts = detailed.map(function(p) { return { lat: p[1], lon: p[0] }; });
+            // Remove closing duplicate if present
+            if (detailedPts.length > 1 &&
+                detailedPts[0].lat === detailedPts[detailedPts.length - 1].lat &&
+                detailedPts[0].lon === detailedPts[detailedPts.length - 1].lon) {
+                detailedPts = detailedPts.slice(0, -1);
+            }
+
+            // ── 2. Territorial Sea Limit 領海外界線 12nm (cyan dashed) ──
+            var ts12 = offsetPolygonNm(detailedPts, 12);
             if (ts12.length > 0) {
-                var ts12smooth = smoothOffsetPolygon(ts12, 3);
-                L.polyline(ts12smooth, {
+                L.polyline(ts12, {
                     color: '#00f5ff',
                     weight: 1.8,
                     opacity: 0.6,
@@ -387,10 +400,9 @@ const MapModule = (function() {
             }
 
             // ── 3. Contiguous Zone Limit 鄰接區外界線 24nm (yellow dashed) ──
-            var cz24 = offsetPolygonNm(pts, 24);
+            var cz24 = offsetPolygonNm(detailedPts, 24);
             if (cz24.length > 0) {
-                var cz24smooth = smoothOffsetPolygon(cz24, 3);
-                L.polyline(cz24smooth, {
+                L.polyline(cz24, {
                     color: '#ffd700',
                     weight: 1.5,
                     opacity: 0.45,
@@ -401,7 +413,52 @@ const MapModule = (function() {
                 );
             }
         });
+    }
 
+    /**
+     * Fallback: draw baseline from basepoints only (if JSON load fails)
+     */
+    function _drawBaselineFromPoints(layer) {
+        var lang = (typeof i18n !== 'undefined' && i18n.lang === 'en') ? 'en' : 'zh';
+
+        ['taiwan', 'dongsha'].forEach(function(region) {
+            var pts = TERRITORIAL_BASEPOINT_MARKERS[region];
+            var regionLabel = lang === 'en'
+                ? (region === 'taiwan' ? 'Taiwan' : 'Dongsha')
+                : (region === 'taiwan' ? '台灣本島及附屬島嶼' : '東沙群島');
+
+            var baseLatLngs = pts.map(function(p) { return [p.lat, p.lon]; });
+            baseLatLngs.push(baseLatLngs[0]);
+
+            L.polyline(baseLatLngs, {
+                color: '#e040fb', weight: 2, opacity: 0.8, dashArray: '8,5'
+            }).addTo(layer).bindTooltip(
+                (lang === 'en' ? 'Territorial Baseline — ' : '領海基線 — ') + regionLabel,
+                { sticky: true }
+            );
+
+            pts.forEach(function(p) {
+                L.circleMarker([p.lat, p.lon], {
+                    radius: 3.5, fillColor: '#e040fb', color: '#fff', weight: 1, fillOpacity: 0.9
+                }).addTo(layer).bindTooltip(
+                    p.id + ' ' + (lang === 'en' ? p.nameE : p.name),
+                    { permanent: false, direction: 'top', offset: [0, -6] }
+                );
+            });
+
+            var ts12 = offsetPolygonNm(pts, 12);
+            if (ts12.length > 0) {
+                L.polyline(smoothOffsetPolygon(ts12, 3), {
+                    color: '#00f5ff', weight: 1.8, opacity: 0.6, dashArray: '12,6'
+                }).addTo(layer);
+            }
+            var cz24 = offsetPolygonNm(pts, 24);
+            if (cz24.length > 0) {
+                L.polyline(smoothOffsetPolygon(cz24, 3), {
+                    color: '#ffd700', weight: 1.5, opacity: 0.45, dashArray: '10,8'
+                }).addTo(layer);
+            }
+        });
     }
 
     /**
