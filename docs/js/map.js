@@ -136,7 +136,7 @@ const MapModule = (function() {
         layers.territorialBaseline = L.layerGroup();
 
         // Draw Taiwan outline
-        drawTaiwanOutline();
+
 
         // Zoom/move events for cluster <-> detail transitions
         map.on('zoomend', () => {
@@ -162,26 +162,6 @@ const MapModule = (function() {
         return map;
     }
 
-    /**
-     * Draw Taiwan island outline
-     */
-    function drawTaiwanOutline() {
-        const taiwanOutline = [
-            [25.3, 121.0], [25.13, 121.5], [24.85, 121.82], [24.5, 121.8],
-            [24.0, 121.5], [23.5, 121.3], [23.0, 121.0], [22.5, 120.85],
-            [22.0, 120.75], [21.9, 120.85], [22.0, 120.45], [22.3, 120.25],
-            [22.6, 120.3], [23.0, 120.1], [23.5, 120.05], [24.0, 120.2],
-            [24.5, 120.5], [25.0, 121.0], [25.3, 121.0]
-        ];
-
-        L.polygon(taiwanOutline, {
-            color: '#4a90d9',
-            weight: 2,
-            opacity: 0.5,
-            fillColor: '#1a3a5c',
-            fillOpacity: 0.3
-        }).addTo(map);
-    }
 
     // ── 領海基點標記 Territorial Sea Basepoint markers (內政部公告) ─────────
     var TERRITORIAL_BASEPOINT_MARKERS = {
