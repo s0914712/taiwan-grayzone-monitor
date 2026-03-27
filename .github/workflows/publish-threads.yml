@@ -31,6 +31,20 @@ jobs:
         run: |
           pip install requests matplotlib
 
+      # --- 新增的 Token 檢查區塊 ---
+      - name: Debug Token Format
+        env:
+          TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+        run: |
+          echo "Checking token length and format..."
+          echo "Length of token: ${#TOKEN}"
+          if [[ "$TOKEN" == " "* ]]; then echo "CRITICAL: Token starts with a space!"; fi
+          if [[ "$TOKEN" == *" " ]]; then echo "CRITICAL: Token ends with a space!"; fi
+          if [[ "$TOKEN" == *$'\r'* ]]; then echo "CRITICAL: Token contains carriage return (CR)!"; fi
+          if [[ "$TOKEN" == *$'\n'* ]]; then echo "CRITICAL: Token contains newline (LF)!"; fi
+          echo "Token format check complete."
+      # -----------------------------
+
       - name: Generate and publish weekly summary
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
