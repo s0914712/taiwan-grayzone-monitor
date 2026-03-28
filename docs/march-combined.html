@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>三月綜合態勢 | March Combined Dashboard - Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="2026年3月台灣周邊大陸漁船AIS動態與共機架次綜合態勢圖">
+    <meta name="keywords" content="大陸漁船,共機,三月態勢,台灣海峽,PLA aircraft,Chinese fishing vessels">
+    <meta name="author" content="Taiwan Gray Zone Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/march-combined.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="三月綜合態勢 | March Combined Dashboard">
+    <meta property="og:description" content="2026年3月台灣周邊大陸漁船AIS動態與共機架次綜合態勢圖">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/march-combined.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="三月綜合態勢 | March Combined Dashboard">
+    <meta name="twitter:description" content="2026年3月台灣周邊大陸漁船AIS動態與共機架次綜合態勢圖">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/main.css">
+
+    <style>
+        body {
+            overflow-y: auto;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 0 0 6px 6px;
+        }
+
+        /* Animation controls */
+        .anim-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            margin: 12px 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .anim-btn {
+            padding: 5px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        .anim-btn:hover,
+        .anim-btn.active {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            background: rgba(0, 245, 255, 0.1);
+        }
+
+        .anim-btn:disabled,
+        .anim-btn[disabled] {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .anim-btn.play-btn {
+            font-size: 16px;
+            padding: 5px 16px;
+            min-width: 44px;
+            text-align: center;
+        }
+
+        .anim-btn.play-btn.playing {
+            color: var(--accent-red);
+            border-color: var(--accent-red);
+            background: rgba(255, 51, 102, 0.1);
+        }
+
+        .anim-label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .day-indicator {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--accent-cyan);
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .day-indicator .date-text {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .day-indicator .frame-text {
+            font-size: 9px;
+            color: var(--text-secondary);
+        }
+
+        /* Timeline slider */
+        .timeline-panel {
+            padding: 8px 16px 12px;
+            margin: 0 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glow);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+        }
+
+        .day-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: var(--bg-card);
+            border-radius: 3px;
+            outline: none;
+            margin: 6px 0;
+            cursor: pointer;
+        }
+
+        .day-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
+        }
+
+        .day-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
+        }
+
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            padding: 12px 16px;
+        }
+
+        .stat-card.zone-card {
+            border-color: rgba(255, 215, 0, 0.4);
+        }
+
+        .stat-card .value.zone {
+            color: #ffd700;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .stat-card .value.alert {
+            color: var(--accent-red);
+        }
+
+        .stat-card .label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Main content */
+        .main-content {
+            padding: 0 16px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-title {
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--accent-cyan);
+            border-bottom: 1px solid var(--border-glow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-body {
+            padding: 10px 12px;
+        }
+
+        .chart-container {
+            padding: 10px;
+            height: 220px;
+        }
+
+        /* Map legend */
+        .map-legend-inline {
+            display: flex;
+            gap: 14px;
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-glow);
+            flex-wrap: wrap;
+        }
+
+        .legend-chip {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+            color: var(--text-secondary);
+        }
+
+        .legend-chip .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .update-info {
+            text-align: center;
+            padding: 10px;
+            font-size: 9px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* Trail toggle */
+        .trail-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .trail-toggle input {
+            accent-color: var(--accent-cyan);
+        }
+
+        /* Vessel icon */
+        .vessel-icon {
+            background: none !important;
+            border: none !important;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 28, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border-glow);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--accent-cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .loading-subtext {
+            margin-top: 6px;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        /* Sorties chart highlight */
+        .sorties-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #ff6347;
+        }
+
+        /* Map stats overlay */
+        .map-stats-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: rgba(10, 15, 28, 0.85);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-secondary);
+            min-width: 140px;
+        }
+
+        .map-stats-overlay .stat-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+        }
+
+        .map-stats-overlay .stat-val {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .map-stats-overlay .stat-val.alert {
+            color: #ff3366;
+        }
+
+        /* Footer */
+        .site-footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 9px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-glow);
+        }
+
+        .site-footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                padding: 8px;
+            }
+            .stat-card { padding: 12px; }
+            .stat-card .value { font-size: 22px; }
+            .stat-card .label { font-size: 12px; }
+            .anim-controls { margin: 8px 8px 0; gap: 6px; }
+            .playback-controls {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 6px;
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            .anim-btn { min-height: 44px; min-width: 44px; font-size: 12px; padding: 8px 10px; }
+            .anim-label { display: none; }
+            .day-indicator { margin-left: 0; width: 100%; text-align: center; font-size: 13px; }
+            #map { height: calc(100vh - 44px - 56px - 120px); max-height: 400px; min-height: 250px; }
+            .main-content { padding: 0 8px 72px; }
+            .timeline-panel { margin: 0 8px; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">載入中...</div>
+        <div class="loading-subtext" id="loadingDetail">正在載入三月綜合資料...</div>
+    </div>
+
+    <header class="header">
+        <h1>🗓️ 三月綜合態勢 March Combined Dashboard</h1>
+        <div class="header-nav">
+            <a href="index.html">灰色地帶監測</a>
+            <a href="cn-fishing-animation.html">大陸漁船</a>
+            <a href="ais-animation.html">船位動畫</a>
+            <a href="march-combined.html" class="active">三月態勢</a>
+            <span class="data-status" id="dataStatus">載入中...</span>
+        </div>
+    </header>
+
+    <!-- Animation controls -->
+    <div class="anim-controls" id="animControls">
+        <div class="playback-controls">
+            <button class="anim-btn" onclick="stepBackward()" title="上一天">⏮</button>
+            <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" title="播放/暫停">▶</button>
+            <button class="anim-btn" onclick="stepForward()" title="下一天">⏭</button>
+            <span class="anim-label">速度</span>
+            <button class="anim-btn active" data-speed="1" onclick="setSpeed(1)">1x</button>
+            <button class="anim-btn" data-speed="2" onclick="setSpeed(2)">2x</button>
+            <button class="anim-btn" data-speed="4" onclick="setSpeed(4)">4x</button>
+        </div>
+        <div class="playback-controls">
+            <label class="trail-toggle">
+                <input type="checkbox" id="showTrails" checked onchange="toggleTrails()">
+                <span>顯示軌跡</span>
+            </label>
+        </div>
+        <div class="day-indicator" id="dayIndicator">
+            <div class="date-text">2026-03-01</div>
+            <div class="frame-text">載入中...</div>
+        </div>
+    </div>
+
+    <!-- Timeline slider -->
+    <div class="timeline-panel">
+        <input type="range" class="day-slider" id="daySlider" min="0" max="27" value="0">
+        <div class="timeline-labels" id="timelineLabels"></div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="stats-row" id="statsRow">
+        <div class="stat-card">
+            <div class="value" id="statFishing">--</div>
+            <div class="label">🐟 漁船數</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statSuspicious">--</div>
+            <div class="label">⚠️ 可疑船</div>
+        </div>
+        <div class="stat-card">
+            <div class="value alert" id="statSorties">--</div>
+            <div class="label">✈️ 共機架次</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statNaval">--</div>
+            <div class="label">🚢 共艦架次</div>
+        </div>
+        <div class="stat-card zone-card">
+            <div class="value zone" id="statZone">--</div>
+            <div class="label">📍 監控區漁船</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Map -->
+        <div class="panel map-panel" style="position:relative">
+            <div class="panel-title">
+                <span>🇨🇳 大陸漁船 AIS 逐日動態</span>
+                <span id="mapDateLabel" style="font-family:'Orbitron',sans-serif;font-size:13px;color:var(--accent-cyan)">--</span>
+            </div>
+            <div id="map"></div>
+            <div class="map-legend-inline">
+                <div class="legend-chip"><span class="dot" style="background:#ff6347"></span><span>福建</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#4169e1"></span><span>浙江</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ffa500"></span><span>廣東</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#32cd32"></span><span>山東</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ff69b4"></span><span>海南</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#9370db"></span><span>其他</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ffd700;border:1px dashed #ffd700"></span><span>📍 監控區</span></div>
+            </div>
+        </div>
+
+        <!-- PLA Aircraft Sorties Chart -->
+        <div class="panel chart-panel">
+            <div class="panel-title">
+                <span>✈️ 三月共機每日架次 PLA Aircraft Sorties (March 2026)</span>
+                <span class="sorties-value" id="sortiesValue">--</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="sortiesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="update-info" id="updateInfo">資料來源: AIS History + JapanandBattleship.csv</div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+
+    <script src="js/i18n.js"></script>
+    <script>
+    // =========================================================================
+    // Constants
+    // =========================================================================
+    const MARCH_DAYS = 28; // March 1-28, 2026
+    const MARCH_DATES = [];
+    for (let d = 1; d <= MARCH_DAYS; d++) {
+        MARCH_DATES.push('2026-03-' + String(d).padStart(2, '0'));
+    }
+
+    const CSV_URL = 'https://raw.githubusercontent.com/s0914712/pla-data-dashboard/main/data/JapanandBattleship.csv';
+
+    // Monitoring zone: northeast of Taiwan
+    const MONITOR_ZONE = {
+        name: '監控區',
+        south: 25.4, north: 26.1,
+        west: 121.5, east: 122.5
+    };
+
+    // Province detection patterns
+    const PROVINCE_PATTERNS = {
+        fujian:    { patterns: [/^MIN/i, /^闽/i, /^閩/i], name: '福建', color: '#ff6347' },
+        zhejiang:  { patterns: [/^ZHE/i, /^浙/i], name: '浙江', color: '#4169e1' },
+        guangdong: { patterns: [/^YUE/i, /^粤/i, /^粵/i], name: '廣東', color: '#ffa500' },
+        shandong:  { patterns: [/^LU\s?YU/i, /^鲁/i, /^魯/i], name: '山東', color: '#32cd32' },
+        hainan:    { patterns: [/^QIONG/i, /^琼/i, /^瓊/i], name: '海南', color: '#ff69b4' },
+        jiangsu:   { patterns: [/^SU\s?YU/i, /^苏/i, /^蘇/i], name: '江蘇', color: '#00ced1' },
+        guangxi:   { patterns: [/^GUI/i, /^桂/i], name: '廣西', color: '#daa520' },
+        hunan:     { patterns: [/^XIANG/i, /^湘/i], name: '湖南', color: '#6b8e23' },
+        tianjin:   { patterns: [/^JIN\s?YU/i, /^津/i], name: '天津', color: '#708090' },
+        liaoning:  { patterns: [/^LIAO/i, /^辽/i, /^遼/i], name: '遼寧', color: '#b0c4de' },
+    };
+
+    // =========================================================================
+    // State
+    // =========================================================================
+    const State = {
+        currentDay: 0,        // 0-indexed (0 = March 1)
+        playing: false,
+        speed: 1,
+        intervalId: null,
+        showTrails: true,
+
+        // Data
+        aisDaily: {},         // date -> { stats, suspicious_vessels }
+        trackDaily: {},       // date -> [{ vessels: [...] }]  (aggregated frames)
+        sortiesDaily: {},     // date -> number
+        navalDaily: {},       // date -> number
+
+        // Map layers
+        markerLayer: null,
+        trailLayer: null,
+        vesselTrails: {},     // mmsi -> { points, color }
+
+        // Chart
+        sortiesChart: null
+    };
+
+    let map;
+
+    // =========================================================================
+    // Province helpers
+    // =========================================================================
+    function getProvince(name) {
+        const n = (name || '').toUpperCase();
+        for (const [key, prov] of Object.entries(PROVINCE_PATTERNS)) {
+            if (prov.patterns.some(p => p.test(n))) return key;
+        }
+        return null;
+    }
+
+    function isCnFishingVessel(v) {
+        const name = (v.name || '').toUpperCase();
+        if (getProvince(name)) return true;
+        if (/YU[.\s]*\d/i.test(name)) return true;
+        return false;
+    }
+
+    function getProvinceColor(v) {
+        const prov = getProvince(v.name);
+        if (prov && PROVINCE_PATTERNS[prov]) return PROVINCE_PATTERNS[prov].color;
+        return '#9370db';
+    }
+
+    function getProvinceName(v) {
+        const prov = getProvince(v.name);
+        if (prov && PROVINCE_PATTERNS[prov]) return PROVINCE_PATTERNS[prov].name;
+        return '其他';
+    }
+
+    // =========================================================================
+    // Map init
+    // =========================================================================
+    function initMap() {
+        map = L.map('map', {
+            center: [24.0, 120.0],
+            zoom: 7,
+            zoomControl: true,
+            attributionControl: false,
+            preferCanvas: true,
+            maxBounds: [[18, 114], [30, 128]],
+            minZoom: 5
+        });
+
+        // Fit to Taiwan-centered bounds
+        map.fitBounds([[21.5, 117.0], [26.5, 123.5]]);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 18,
+            opacity: 0.9
+        }).addTo(map);
+
+        // Taiwan outline
+        const taiwanOutline = [
+            [25.3, 121.0], [25.13, 121.5], [24.85, 121.82], [24.5, 121.8],
+            [24.0, 121.5], [23.5, 121.3], [23.0, 121.0], [22.5, 120.85],
+            [22.0, 120.75], [21.9, 120.85], [22.0, 120.45], [22.3, 120.25],
+            [22.6, 120.3], [23.0, 120.1], [23.5, 120.05], [24.0, 120.2],
+            [24.5, 120.5], [25.0, 121.0], [25.3, 121.0]
+        ];
+        L.polygon(taiwanOutline, {
+            color: '#4a90d9', weight: 2, opacity: 0.5,
+            fillColor: '#1a3a5c', fillOpacity: 0.3
+        }).addTo(map);
+
+        // Median line
+        L.polyline([
+            [27.0, 120.5], [24.0, 118.5], [22.0, 117.5]
+        ], {
+            color: '#ffffff', weight: 1, opacity: 0.15,
+            dashArray: '8,8'
+        }).addTo(map);
+
+        // Monitoring zone rectangle - rendered on overlayPane for visibility
+        const zoneBounds = [
+            [MONITOR_ZONE.south, MONITOR_ZONE.west],
+            [MONITOR_ZONE.north, MONITOR_ZONE.east]
+        ];
+        const zoneRect = L.rectangle(zoneBounds, {
+            color: '#ffd700',
+            weight: 3,
+            opacity: 0.9,
+            fillColor: '#ffd700',
+            fillOpacity: 0.12,
+            dashArray: '8,5',
+            pane: 'overlayPane'
+        }).addTo(map);
+
+        zoneRect.bindTooltip(
+            '<b style="color:#ffd700">📍 監控區</b><br>' +
+            MONITOR_ZONE.south + '°N ~ ' + MONITOR_ZONE.north + '°N<br>' +
+            MONITOR_ZONE.west + '°E ~ ' + MONITOR_ZONE.east + '°E',
+            { permanent: true, direction: 'center', className: 'zone-tooltip',
+              offset: [0, 0] }
+        );
+
+        State.markerLayer = L.layerGroup().addTo(map);
+        State.trailLayer = L.layerGroup().addTo(map);
+    }
+
+    // =========================================================================
+    // Vessel icon
+    // =========================================================================
+    function createVesselIcon(color, heading) {
+        if (heading !== null) {
+            // Ship-shaped arrow with heading
+            const w = 10, h = 18;
+            const cx = w / 2;
+            const notch = h * 0.65;
+            // Sleek boat shape: pointed bow, wider stern with keel notch
+            const shape =
+                '<polygon points="' +
+                cx + ',0 ' +           // bow (top center)
+                (w * 0.85) + ',' + (h * 0.45) + ' ' +  // right shoulder
+                w + ',' + h + ' ' +    // right stern
+                cx + ',' + notch + ' ' + // keel notch
+                '0,' + h + ' ' +       // left stern
+                (w * 0.15) + ',' + (h * 0.45) + // left shoulder
+                '" ' +
+                'fill="' + color + '" fill-opacity="0.8" ' +
+                'stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>';
+
+            const svg = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" ' +
+                        'xmlns="http://www.w3.org/2000/svg" ' +
+                        'style="transform:rotate(' + heading + 'deg);filter:drop-shadow(0 0 2px ' + color + ')">' +
+                        shape + '</svg>';
+
+            return L.divIcon({
+                html: svg,
+                className: 'vessel-icon',
+                iconSize: [w, h],
+                iconAnchor: [w / 2, h / 2],
+                popupAnchor: [0, -h / 2]
+            });
+        } else {
+            // No heading: glowing filled circle
+            const s = 8;
+            const svg = '<svg width="' + s + '" height="' + s + '" viewBox="0 0 ' + s + ' ' + s + '" ' +
+                        'xmlns="http://www.w3.org/2000/svg">' +
+                        '<circle cx="' + (s/2) + '" cy="' + (s/2) + '" r="' + (s/2 - 0.5) + '" ' +
+                        'fill="' + color + '" fill-opacity="0.7" ' +
+                        'stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>' +
+                        '</svg>';
+
+            return L.divIcon({
+                html: '<div style="filter:drop-shadow(0 0 3px ' + color + ')">' + svg + '</div>',
+                className: 'vessel-icon',
+                iconSize: [s, s],
+                iconAnchor: [s / 2, s / 2],
+                popupAnchor: [0, -s / 2]
+            });
+        }
+    }
+
+    // =========================================================================
+    // Data loading
+    // =========================================================================
+    function hideLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            overlay.classList.add('hidden');
+            setTimeout(() => overlay.style.display = 'none', 300);
+        }
+    }
+
+    async function loadAllData() {
+        try {
+            document.getElementById('loadingDetail').textContent = '正在下載 AIS 每日統計...';
+
+            // Load all data in parallel
+            const [aisRes, trackRes, csvRes] = await Promise.all([
+                fetch('ais_history.json?' + Date.now()),
+                fetch('ais_track_history.json?' + Date.now()),
+                fetch(CSV_URL)
+            ]);
+
+            // 1. Parse ais_history.json (daily stats)
+            document.getElementById('loadingDetail').textContent = '解析每日統計資料...';
+            if (aisRes.ok) {
+                const aisData = await aisRes.json();
+                aisData.forEach(entry => {
+                    const date = entry.date;
+                    if (date && date.startsWith('2026-03')) {
+                        State.aisDaily[date] = {
+                            stats: entry.stats || {},
+                            suspicious_vessels: entry.suspicious_vessels || []
+                        };
+                    }
+                });
+            }
+
+            // 2. Parse ais_track_history.json (vessel positions)
+            document.getElementById('loadingDetail').textContent = '解析船隻軌跡資料...';
+            if (trackRes.ok) {
+                const trackData = await trackRes.json();
+                // Group frames by date
+                trackData.forEach(frame => {
+                    if (!frame.timestamp) return;
+                    const date = frame.timestamp.slice(0, 10);
+                    if (!date.startsWith('2026-03')) return;
+                    if (!State.trackDaily[date]) State.trackDaily[date] = [];
+                    State.trackDaily[date].push(frame);
+                });
+            }
+
+            // 3. Parse CSV (PLA sorties)
+            document.getElementById('loadingDetail').textContent = '解析共機架次資料...';
+            if (csvRes.ok) {
+                const csvText = await csvRes.text();
+                parseCSV(csvText);
+            }
+
+            document.getElementById('loadingDetail').textContent = '渲染頁面...';
+            await new Promise(r => setTimeout(r, 50));
+
+            // Initialize UI
+            buildTimeline();
+            buildSortiesChart();
+
+            // Fix map size (container might not have been visible during init)
+            setTimeout(() => {
+                map.invalidateSize();
+                map.fitBounds([[21.5, 117.0], [26.5, 123.5]]);
+            }, 200);
+
+            renderDay(0);
+
+            // Status
+            const aisCount = Object.keys(State.aisDaily).length;
+            const trackCount = Object.keys(State.trackDaily).length;
+            document.getElementById('dataStatus').textContent =
+                '✅ AIS ' + aisCount + '天 | 軌跡 ' + trackCount + '天';
+
+            hideLoading();
+
+        } catch (e) {
+            console.error('載入失敗:', e);
+            hideLoading();
+            document.getElementById('dataStatus').textContent = '❌ 載入失敗';
+        }
+    }
+
+    function parseCSV(text) {
+        const lines = text.split('\n');
+        if (lines.length < 2) return;
+
+        // Find header columns
+        const header = lines[0].replace(/^\uFEFF/, '').split(',');
+        const dateIdx = header.indexOf('date');
+        const sortiesIdx = header.indexOf('pla_aircraft_sorties');
+        const navalIdx = header.indexOf('plan_vessel_sorties');
+
+        if (dateIdx < 0 || sortiesIdx < 0) {
+            console.error('CSV header missing expected columns');
+            return;
+        }
+
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            if (cols.length <= sortiesIdx) continue;
+
+            const rawDate = (cols[dateIdx] || '').trim();
+            if (!rawDate.startsWith('2026/03')) continue;
+
+            // Convert 2026/03/01 -> 2026-03-01
+            const date = rawDate.replace(/\//g, '-');
+            const sorties = parseFloat(cols[sortiesIdx]) || 0;
+            const naval = navalIdx >= 0 ? (parseFloat(cols[navalIdx]) || 0) : 0;
+
+            State.sortiesDaily[date] = sorties;
+            State.navalDaily[date] = naval;
+        }
+    }
+
+    // =========================================================================
+    // Timeline
+    // =========================================================================
+    function buildTimeline() {
+        const labels = document.getElementById('timelineLabels');
+        const labelHtml = [];
+        for (let i = 0; i < MARCH_DAYS; i++) {
+            if (i === 0 || i === MARCH_DAYS - 1 || i % 7 === 0) {
+                labelHtml.push('<span>3/' + (i + 1) + '</span>');
+            }
+        }
+        labels.innerHTML = labelHtml.join('');
+    }
+
+    // =========================================================================
+    // Sorties Chart
+    // =========================================================================
+    function buildSortiesChart() {
+        const ctx = document.getElementById('sortiesChart').getContext('2d');
+
+        const labels = MARCH_DATES.map(d => d.slice(8)); // "01", "02", ...
+        const data = MARCH_DATES.map(d => State.sortiesDaily[d] || 0);
+        const maxSorties = Math.max(...data, 1);
+
+        State.sortiesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '共機架次',
+                    data: data,
+                    backgroundColor: data.map((v, i) => {
+                        if (i === State.currentDay) return 'rgba(255, 99, 71, 0.9)';
+                        if (v >= 20) return 'rgba(255, 51, 102, 0.7)';
+                        if (v >= 10) return 'rgba(255, 165, 0, 0.6)';
+                        if (v > 0)  return 'rgba(0, 245, 255, 0.5)';
+                        return 'rgba(100, 120, 160, 0.2)';
+                    }),
+                    borderColor: data.map((v, i) =>
+                        i === State.currentDay ? '#ff6347' : 'rgba(0, 245, 255, 0.3)'
+                    ),
+                    borderWidth: data.map((_, i) => i === State.currentDay ? 2 : 1),
+                    borderRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (items) => '3月' + items[0].label + '日',
+                            label: (item) => '共機架次: ' + item.raw
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: '#8aa4c8',
+                            font: { size: 9, family: 'JetBrains Mono' }
+                        },
+                        grid: { color: 'rgba(0,245,255,0.05)' },
+                        title: {
+                            display: true,
+                            text: '三月 March',
+                            color: '#8aa4c8',
+                            font: { size: 10, family: 'Noto Sans TC' }
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#8aa4c8',
+                            font: { size: 9, family: 'JetBrains Mono' }
+                        },
+                        grid: { color: 'rgba(0,245,255,0.05)' },
+                        title: {
+                            display: true,
+                            text: '架次 Sorties',
+                            color: '#8aa4c8',
+                            font: { size: 10, family: 'Noto Sans TC' }
+                        }
+                    }
+                },
+                onClick: (e, elements) => {
+                    if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        pause();
+                        renderDay(idx);
+                    }
+                }
+            }
+        });
+    }
+
+    function highlightSortiesBar(dayIdx) {
+        if (!State.sortiesChart) return;
+        const dataset = State.sortiesChart.data.datasets[0];
+        const data = dataset.data;
+
+        dataset.backgroundColor = data.map((v, i) => {
+            if (i === dayIdx) return 'rgba(255, 99, 71, 0.9)';
+            if (v >= 20) return 'rgba(255, 51, 102, 0.7)';
+            if (v >= 10) return 'rgba(255, 165, 0, 0.6)';
+            if (v > 0)  return 'rgba(0, 245, 255, 0.5)';
+            return 'rgba(100, 120, 160, 0.2)';
+        });
+        dataset.borderColor = data.map((v, i) =>
+            i === dayIdx ? '#ff6347' : 'rgba(0, 245, 255, 0.3)'
+        );
+        dataset.borderWidth = data.map((_, i) => i === dayIdx ? 2 : 1);
+
+        State.sortiesChart.update('none');
+    }
+
+    // =========================================================================
+    // Build trails up to day
+    // =========================================================================
+    function buildTrails(upToDayIdx) {
+        State.vesselTrails = {};
+        for (let d = 0; d <= upToDayIdx; d++) {
+            const date = MARCH_DATES[d];
+            const frames = State.trackDaily[date];
+            if (!frames) continue;
+            frames.forEach(frame => {
+                if (!frame.vessels) return;
+                frame.vessels.forEach(v => {
+                    if (!isCnFishingVessel(v)) return;
+                    if (!State.vesselTrails[v.mmsi]) {
+                        State.vesselTrails[v.mmsi] = {
+                            points: [],
+                            color: getProvinceColor(v)
+                        };
+                    }
+                    State.vesselTrails[v.mmsi].points.push([v.lat, v.lon]);
+                });
+            });
+        }
+    }
+
+    // =========================================================================
+    // Day rendering
+    // =========================================================================
+    function renderDay(dayIdx) {
+        if (dayIdx < 0 || dayIdx >= MARCH_DAYS) return;
+        State.currentDay = dayIdx;
+
+        const date = MARCH_DATES[dayIdx];
+        const aisEntry = State.aisDaily[date];
+        const trackFrames = State.trackDaily[date] || [];
+        const sorties = State.sortiesDaily[date] || 0;
+        const naval = State.navalDaily[date] || 0;
+
+        // Clear map
+        State.markerLayer.clearLayers();
+        State.trailLayer.clearLayers();
+
+        // Get best frame for this day (most vessels)
+        let bestFrame = null;
+        let maxVessels = 0;
+        trackFrames.forEach(frame => {
+            const count = (frame.vessels || []).length;
+            if (count > maxVessels) {
+                maxVessels = count;
+                bestFrame = frame;
+            }
+        });
+
+        // Build trails
+        buildTrails(dayIdx);
+
+        // Draw trails if enabled
+        if (State.showTrails) {
+            Object.entries(State.vesselTrails).forEach(([mmsi, trail]) => {
+                if (trail.points.length < 2) return;
+                L.polyline(trail.points, {
+                    color: trail.color,
+                    weight: 0.8,
+                    opacity: 0.2,
+                    dashArray: '4,6'
+                }).addTo(State.trailLayer);
+            });
+        }
+
+        // Plot vessel markers for best frame
+        let cnFishingCount = 0;
+        let zoneCount = 0;
+        if (bestFrame && bestFrame.vessels) {
+            const cnVessels = bestFrame.vessels.filter(v => isCnFishingVessel(v));
+            cnFishingCount = cnVessels.length;
+
+            cnVessels.forEach(v => {
+                const color = getProvinceColor(v);
+                const heading = v.heading !== undefined && v.heading !== null && v.heading !== 360 ? v.heading : null;
+                const icon = createVesselIcon(color, heading);
+                const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(State.markerLayer);
+
+                // Check if vessel is inside monitoring zone
+                const inZone = v.lat >= MONITOR_ZONE.south && v.lat <= MONITOR_ZONE.north &&
+                               v.lon >= MONITOR_ZONE.west && v.lon <= MONITOR_ZONE.east;
+                if (inZone) zoneCount++;
+
+                const provName = getProvinceName(v);
+                marker.bindPopup(
+                    '<div style="font-size:13px;line-height:1.6;min-width:160px">' +
+                    '<b style="color:' + color + '">' + (v.name || v.mmsi) + '</b><br>' +
+                    '<span style="color:' + color + ';font-weight:600">省份: ' + provName + '</span><br>' +
+                    'MMSI: ' + v.mmsi + '<br>' +
+                    '航速: ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
+                    '航向: ' + (heading !== null ? heading.toFixed(0) + '°' : 'N/A') +
+                    (inZone ? '<br><span style="color:#ffd700;font-weight:600">📍 監控區內</span>' : '') +
+                    '</div>'
+                );
+            });
+        }
+
+        // Also plot suspicious vessels from ais_history (for days with no track data)
+        if (!bestFrame && aisEntry && aisEntry.suspicious_vessels) {
+            aisEntry.suspicious_vessels.forEach(v => {
+                if (!isCnFishingVessel(v)) return;
+                const color = getProvinceColor(v);
+                const icon = createVesselIcon(color, null);
+                L.marker([v.lat, v.lon], { icon: icon }).addTo(State.markerLayer)
+                    .bindPopup(
+                        '<div style="font-size:13px">' +
+                        '<b style="color:' + color + '">' + (v.name || v.mmsi) + '</b><br>' +
+                        'MMSI: ' + v.mmsi + '<br>' +
+                        '航速: ' + (v.speed || 0).toFixed(1) + ' kn' +
+                        '</div>'
+                    );
+            });
+        }
+
+        // Update stats
+        const fishingCount = aisEntry ? (aisEntry.stats.fishing_vessels || 0) : cnFishingCount;
+        const suspCount = aisEntry ? (aisEntry.stats.suspicious_count || 0) : 0;
+
+        document.getElementById('statFishing').textContent = fishingCount;
+        document.getElementById('statSuspicious').textContent = suspCount;
+        document.getElementById('statSuspicious').className = suspCount > 0 ? 'value alert' : 'value';
+        document.getElementById('statSorties').textContent = sorties;
+        document.getElementById('statSorties').className = sorties >= 20 ? 'value alert' : 'value';
+        document.getElementById('statNaval').textContent = naval;
+        document.getElementById('statZone').textContent = zoneCount;
+        document.getElementById('statZone').className = zoneCount > 50 ? 'value zone alert' : 'value zone';
+
+        // Update day indicator
+        const dayNum = dayIdx + 1;
+        const dateLabel = '2026-03-' + String(dayNum).padStart(2, '0');
+        document.getElementById('dayIndicator').innerHTML =
+            '<div class="date-text">' + dateLabel + '</div>' +
+            '<div class="frame-text">Day ' + dayNum + ' / ' + MARCH_DAYS +
+            (bestFrame ? ' (' + maxVessels + ' vessels)' : ' (stats only)') + '</div>';
+
+        document.getElementById('mapDateLabel').textContent = '3/' + dayNum;
+        document.getElementById('sortiesValue').textContent = sorties > 0 ? sorties + ' 架次' : '0';
+
+        // Update slider
+        document.getElementById('daySlider').value = dayIdx;
+
+        // Highlight chart
+        highlightSortiesBar(dayIdx);
+    }
+
+    // =========================================================================
+    // Playback controls
+    // =========================================================================
+    function play() {
+        if (State.playing) return;
+        if (State.currentDay >= MARCH_DAYS - 1) {
+            State.currentDay = -1;
+        }
+        State.playing = true;
+        const btn = document.getElementById('playBtn');
+        btn.classList.add('playing');
+        btn.textContent = '⏸';
+
+        const baseInterval = 1500;
+        const interval = baseInterval / State.speed;
+
+        State.intervalId = setInterval(() => {
+            const next = State.currentDay + 1;
+            if (next >= MARCH_DAYS) {
+                pause();
+                return;
+            }
+            renderDay(next);
+        }, interval);
+    }
+
+    function pause() {
+        State.playing = false;
+        clearInterval(State.intervalId);
+        const btn = document.getElementById('playBtn');
+        btn.classList.remove('playing');
+        btn.textContent = '▶';
+    }
+
+    function togglePlay() {
+        State.playing ? pause() : play();
+    }
+
+    function stepForward() {
+        pause();
+        renderDay(Math.min(State.currentDay + 1, MARCH_DAYS - 1));
+    }
+
+    function stepBackward() {
+        pause();
+        renderDay(Math.max(State.currentDay - 1, 0));
+    }
+
+    function setSpeed(speed) {
+        State.speed = speed;
+        document.querySelectorAll('[data-speed]').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.speed) === speed);
+        });
+        if (State.playing) {
+            pause();
+            play();
+        }
+    }
+
+    function toggleTrails() {
+        State.showTrails = document.getElementById('showTrails').checked;
+        renderDay(State.currentDay);
+    }
+
+    // =========================================================================
+    // Slider
+    // =========================================================================
+    document.getElementById('daySlider').addEventListener('input', function() {
+        pause();
+        renderDay(parseInt(this.value));
+    });
+
+    // =========================================================================
+    // Keyboard shortcuts
+    // =========================================================================
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT') return;
+        switch (e.key) {
+            case ' ':
+                e.preventDefault();
+                togglePlay();
+                break;
+            case 'ArrowRight':
+                stepForward();
+                break;
+            case 'ArrowLeft':
+                stepBackward();
+                break;
+        }
+    });
+
+    // =========================================================================
+    // Initialize
+    // =========================================================================
+    initMap();
+    loadAllData();
+    </script>
+    <script src="js/mobile-nav.js"></script>
+</body>
+
+</html>
