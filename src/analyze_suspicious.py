@@ -525,39 +525,55 @@ def classify_vessel(profile, track_points, identity_events=None,
             f'⚠️ UN 制裁船舶 (UNSCR {res}: {measures})'
         )
 
+    # ── 漁網/魚標偵測（船名尾部含 % 或含 BUOY）──
+    all_names = profile.get('names_seen', [])
+    is_gear = any(
+        ('%' in n) or ('BUOY' in (n or '').upper())
+        for n in all_names if n
+    )
+    classification['is_fishing_gear'] = is_gear
+
     # ── 風險計分 ──
     score = 0
-    # 海纜鄰近 + Z字型 = 強烈可疑（可能拖錨破壞）
-    if classification['cable_proximity']:
-        score += 3
-    if classification['cable_loitering']:
-        score += 2  # 海纜低速徘徊 >3hr <8kn
-    if classification['zigzag_pattern']:
-        score += 2
-    # 海纜鄰近 + Z字型組合加分
-    if classification['cable_proximity'] and classification['zigzag_pattern']:
-        score += 2
-    if classification['depth_200m_activity']:
-        score += 1
-    if classification['non_top10_flag']:
-        score += 1  # 非前十大船旗國
-    if classification['sanctioned']:
-        score += 5  # UN 制裁船舶 — 最高優先
-    for a in anomalies:
-        if a['severity'] == 'high':
+
+    if is_gear:
+        # 漁網/魚標/浮標：直接標記為 normal，不參與威脅計分
+        classification['risk_level'] = 'normal'
+        classification['risk_score'] = 0
+        classification['suspicious'] = False
+        classification['flags'] = [f'漁網/魚標（{all_names[0] if all_names else mmsi}）— 排除']
+    else:
+        # 海纜鄰近 + Z字型 = 強烈可疑（可能拖錨破壞）
+        if classification['cable_proximity']:
+            score += 3
+        if classification['cable_loitering']:
+            score += 2  # 海纜低速徘徊 >3hr <8kn
+        if classification['zigzag_pattern']:
             score += 2
-        else:
+        # 海纜鄰近 + Z字型組合加分
+        if classification['cable_proximity'] and classification['zigzag_pattern']:
+            score += 2
+        if classification['depth_200m_activity']:
             score += 1
+        if classification['non_top10_flag']:
+            score += 1  # 非前十大船旗國
+        if classification['sanctioned']:
+            score += 5  # UN 制裁船舶 — 最高優先
+        for a in anomalies:
+            if a['severity'] == 'high':
+                score += 2
+            else:
+                score += 1
 
-    if score >= 7:
-        classification['risk_level'] = 'critical'
-    elif score >= 4:
-        classification['risk_level'] = 'high'
-    elif score >= 2:
-        classification['risk_level'] = 'medium'
+        if score >= 7:
+            classification['risk_level'] = 'critical'
+        elif score >= 4:
+            classification['risk_level'] = 'high'
+        elif score >= 2:
+            classification['risk_level'] = 'medium'
 
-    classification['risk_score'] = score
-    classification['suspicious'] = score >= 4
+        classification['risk_score'] = score
+        classification['suspicious'] = score >= 4
 
     # 附加位置資訊
     if track_points:
