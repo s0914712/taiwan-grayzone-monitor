@@ -35,112 +35,190 @@
 
         #container { width: 100vw; height: 100vh; position: relative; }
 
+        /* ── Controls Panel ── */
         .controls {
             position: absolute;
-            top: 16px;
-            left: 16px;
+            top: 12px;
+            left: 12px;
             z-index: 10;
-            background: rgba(10, 15, 28, 0.85);
+            background: rgba(10, 15, 28, 0.88);
             border: 1px solid rgba(0, 245, 255, 0.2);
             border-radius: 8px;
-            padding: 16px;
-            min-width: 280px;
-            backdrop-filter: blur(8px);
+            padding: 12px 14px;
+            min-width: 260px;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
         }
 
-        .controls h2 {
-            font-size: 14px;
+        .controls-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .controls-header h2 {
+            font-size: 13px;
             color: #00f5ff;
-            margin-bottom: 10px;
             font-weight: 600;
+            margin: 0;
+        }
+
+        .collapse-btn {
+            background: none;
+            border: none;
+            color: #8aa4c8;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0 2px;
+            line-height: 1;
+            transition: transform 0.3s;
+        }
+
+        .controls.collapsed .collapse-btn { transform: rotate(180deg); }
+        .controls.collapsed .controls-body { display: none; }
+
+        .controls-body {
+            margin-top: 8px;
         }
 
         .controls label {
-            font-size: 11px;
+            font-size: 10px;
             color: #8aa4c8;
             display: block;
-            margin-top: 8px;
+            margin-top: 6px;
         }
 
         .controls input[type="range"] {
             width: 100%;
-            margin: 4px 0;
+            margin: 3px 0;
             accent-color: #00f5ff;
+            height: 4px;
         }
 
         .controls .row {
             display: flex;
-            gap: 6px;
-            margin-top: 8px;
+            gap: 4px;
+            margin-top: 6px;
+            flex-wrap: wrap;
         }
 
         .btn {
-            background: rgba(0, 245, 255, 0.1);
-            border: 1px solid rgba(0, 245, 255, 0.3);
+            background: rgba(0, 245, 255, 0.08);
+            border: 1px solid rgba(0, 245, 255, 0.25);
             color: #00f5ff;
-            padding: 6px 14px;
+            padding: 4px 10px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
             transition: all 0.2s;
+            white-space: nowrap;
         }
 
-        .btn:hover { background: rgba(0, 245, 255, 0.2); }
+        .btn:hover { background: rgba(0, 245, 255, 0.18); }
         .btn.active { background: rgba(0, 245, 255, 0.3); border-color: #00f5ff; }
-        .btn.play { font-size: 16px; padding: 6px 18px; }
+        .btn.play { font-size: 14px; padding: 4px 14px; }
         .btn.play.playing { color: #ff3366; border-color: #ff3366; background: rgba(255,51,102,0.1); }
 
         .time-display {
             font-family: 'Courier New', monospace;
-            font-size: 13px;
+            font-size: 12px;
             color: #00f5ff;
-            margin-top: 6px;
-            letter-spacing: 1px;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
         }
 
         .stat-line {
-            font-size: 10px;
+            font-size: 9px;
             color: #8aa4c8;
+            margin-top: 2px;
+        }
+
+        .section-label {
+            font-size: 9px;
+            color: #5a7a9c;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(0, 245, 255, 0.08);
+        }
+
+        .range-row {
+            display: flex;
+            gap: 3px;
             margin-top: 4px;
         }
 
-        .legend {
-            position: absolute;
-            bottom: 16px;
-            left: 16px;
-            z-index: 10;
-            background: rgba(10, 15, 28, 0.85);
+        .range-btn {
+            flex: 1;
+            background: rgba(0, 245, 255, 0.06);
             border: 1px solid rgba(0, 245, 255, 0.15);
-            border-radius: 6px;
-            padding: 10px 14px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            backdrop-filter: blur(8px);
+            color: #6a8aaa;
+            padding: 3px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            text-align: center;
+            transition: all 0.2s;
         }
 
-        .legend-item {
+        .range-btn:hover { background: rgba(0, 245, 255, 0.12); color: #8aa4c8; }
+        .range-btn.active { background: rgba(0, 245, 255, 0.2); border-color: #00f5ff; color: #00f5ff; }
+
+        .filter-label {
             display: flex;
             align-items: center;
             gap: 5px;
             font-size: 10px;
             color: #8aa4c8;
+            margin-top: 6px;
+            cursor: pointer;
+        }
+
+        .filter-label input { accent-color: #00f5ff; }
+
+        /* ── Legend ── */
+        .legend {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 10;
+            background: rgba(10, 15, 28, 0.85);
+            border: 1px solid rgba(0, 245, 255, 0.12);
+            border-radius: 6px;
+            padding: 6px 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            backdrop-filter: blur(8px);
+            max-width: calc(100vw - 20px);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+            color: #8aa4c8;
         }
 
         .legend-dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
             box-shadow: 0 0 6px currentColor;
         }
 
         .credit {
             position: absolute;
-            bottom: 16px;
-            right: 16px;
+            bottom: 10px;
+            right: 10px;
             z-index: 10;
-            font-size: 9px;
-            color: #4a6080;
+            font-size: 8px;
+            color: #3a5070;
         }
 
         #loading {
@@ -151,6 +229,7 @@
             z-index: 20;
             color: #00f5ff;
             font-size: 14px;
+            text-align: center;
         }
 
         #loading .spinner {
@@ -164,6 +243,27 @@
         }
 
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Mobile: auto-collapse, smaller panel ── */
+        @media (max-width: 600px) {
+            .controls {
+                top: 8px;
+                left: 8px;
+                right: 8px;
+                min-width: unset;
+                max-width: unset;
+                padding: 10px 12px;
+            }
+            .controls.auto-collapsed .controls-body { display: none; }
+            .controls.auto-collapsed .collapse-btn { transform: rotate(180deg); }
+
+            .legend {
+                bottom: 6px;
+                left: 6px;
+                padding: 5px 8px;
+                gap: 6px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -176,31 +276,50 @@
 </div>
 
 <div class="controls" id="controls" style="display:none">
-    <h2>🛰️ AIS 軌跡光跡動畫</h2>
-
-    <label>時間軸 Timeline</label>
-    <input type="range" id="timeSlider" min="0" max="1000" value="0">
-    <div class="time-display" id="timeDisplay">—</div>
-    <div class="stat-line" id="statLine">—</div>
-
-    <div class="row">
-        <button class="btn play" id="playBtn" onclick="togglePlay()">▶</button>
-        <button class="btn" onclick="setSpeed(1)">1×</button>
-        <button class="btn active" onclick="setSpeed(2)">2×</button>
-        <button class="btn" onclick="setSpeed(4)">4×</button>
+    <div class="controls-header" onclick="toggleCollapse()">
+        <h2>AIS 軌跡光跡動畫</h2>
+        <button class="collapse-btn" title="收合">▼</button>
     </div>
 
-    <label>軌跡長度 Trail Length</label>
-    <input type="range" id="trailSlider" min="1" max="60" value="15"
-           oninput="updateTrailLength(this.value)">
+    <div class="controls-body">
+        <!-- Time range -->
+        <div class="section-label">時間範圍 Time Range</div>
+        <div class="range-row" id="rangeRow">
+            <button class="range-btn" data-range="1" onclick="setRange(1)">1天</button>
+            <button class="range-btn" data-range="3" onclick="setRange(3)">3天</button>
+            <button class="range-btn" data-range="7" onclick="setRange(7)">1週</button>
+            <button class="range-btn active" data-range="0" onclick="setRange(0)">全部</button>
+        </div>
 
-    <label>發光寬度 Trail Width</label>
-    <input type="range" id="widthSlider" min="1" max="10" value="3"
-           oninput="updateTrailWidth(this.value)">
+        <!-- Timeline -->
+        <label>時間軸 Timeline</label>
+        <input type="range" id="timeSlider" min="0" max="1000" value="0">
+        <div class="time-display" id="timeDisplay">—</div>
+        <div class="stat-line" id="statLine">—</div>
 
-    <label>
-        <input type="checkbox" id="filterCN" onchange="toggleFilter()"> 僅顯示大陸漁船
-    </label>
+        <!-- Playback -->
+        <div class="row">
+            <button class="btn play" id="playBtn" onclick="togglePlay()">▶</button>
+            <button class="btn speed-btn" data-speed="1" onclick="setSpeed(1)">1×</button>
+            <button class="btn speed-btn active" data-speed="2" onclick="setSpeed(2)">2×</button>
+            <button class="btn speed-btn" data-speed="4" onclick="setSpeed(4)">4×</button>
+        </div>
+
+        <!-- Visual tweaks -->
+        <div class="section-label">視覺調整 Visual</div>
+
+        <label>軌跡長度 Trail Length</label>
+        <input type="range" id="trailSlider" min="1" max="120" value="30"
+               oninput="updateTrailLength(this.value)">
+
+        <label>發光寬度 Trail Width</label>
+        <input type="range" id="widthSlider" min="1" max="12" value="4"
+               oninput="updateTrailWidth(this.value)">
+
+        <label class="filter-label">
+            <input type="checkbox" id="filterCN" onchange="toggleFilter()"> 僅顯示大陸漁船
+        </label>
+    </div>
 </div>
 
 <div class="legend" id="legend" style="display:none">
@@ -259,29 +378,35 @@ function isCnFishing(v) {
 // =========================================================================
 // State
 // =========================================================================
-let tripData = [];          // Processed trip objects for deck.gl
-let allTripData = [];       // Unfiltered
-let cnTripData = [];        // CN fishing only
+let tripData = [];
+let allTripData = [];
+let cnTripData = [];
 let currentTime = 0;
-let loopLength = 1000;      // Will be set after data load
-let trailLength = 15;
-let trailWidth = 3;
+let loopLength = 1000;
+let trailLength = 30;
+let trailWidth = 4;
 let playing = false;
 let speed = 2;
-let intervalId = null;
 let deckgl = null;
 let filterCN = false;
-let timestamps = [];        // Sorted unique timestamps
+let timestamps = [];
+let globalTMin = 0;
+let globalTMax = 0;
+let rangeStartMs = 0;    // 0 = full range
+let rangeDays = 0;        // 0 = all
+
+// Store all processed data before range filtering
+let allProcessedTrips = [];
+let cnProcessedTrips = [];
 
 // =========================================================================
-// Data processing: convert AIS frames to trip format
+// Data processing
 // =========================================================================
 function processData(frames) {
-    // Build per-vessel tracks: mmsi -> [{lat, lon, timestamp_idx, color, ...}]
     const vesselTracks = {};
     const tsSet = new Set();
 
-    frames.forEach((frame, frameIdx) => {
+    frames.forEach(frame => {
         const ts = new Date(frame.timestamp).getTime();
         tsSet.add(ts);
 
@@ -303,21 +428,15 @@ function processData(frames) {
         });
     });
 
-    // Sort timestamps
     timestamps = Array.from(tsSet).sort((a, b) => a - b);
-    const tMin = timestamps[0];
-    const tMax = timestamps[timestamps.length - 1];
-    loopLength = tMax - tMin;
+    globalTMin = timestamps[0];
+    globalTMax = timestamps[timestamps.length - 1];
 
-    // Convert to deck.gl trip format
     const trips = [];
     for (const [mmsi, track] of Object.entries(vesselTracks)) {
         if (track.path.length < 2) continue;
-
-        // Sort by timestamp
         track.path.sort((a, b) => a.timestamp - b.timestamp);
 
-        // Deduplicate consecutive identical positions
         const deduped = [track.path[0]];
         for (let i = 1; i < track.path.length; i++) {
             const prev = deduped[deduped.length - 1];
@@ -330,48 +449,106 @@ function processData(frames) {
         if (deduped.length < 2) continue;
 
         trips.push({
-            mmsi: mmsi,
-            name: track.name,
-            type: track.type,
-            isCN: track.isCN,
-            color: track.color,
-            path: deduped.map(p => ({
+            mmsi, name: track.name, type: track.type,
+            isCN: track.isCN, color: track.color,
+            path: deduped
+        });
+    }
+
+    allProcessedTrips = trips;
+    cnProcessedTrips = trips.filter(t => t.isCN);
+
+    applyRangeFilter();
+    return { tMin: globalTMin, tMax: globalTMax };
+}
+
+function applyRangeFilter() {
+    let tMin, tMax;
+    if (rangeDays === 0) {
+        tMin = globalTMin;
+        tMax = globalTMax;
+    } else {
+        tMax = globalTMax;
+        tMin = tMax - rangeDays * 86400000;
+    }
+
+    rangeStartMs = tMin;
+    loopLength = tMax - tMin;
+
+    const sourceTrips = filterCN ? cnProcessedTrips : allProcessedTrips;
+
+    // Filter and clip trips to time range
+    const filtered = [];
+    for (const trip of sourceTrips) {
+        const clipped = trip.path.filter(p => p.timestamp >= tMin && p.timestamp <= tMax);
+        if (clipped.length < 2) continue;
+        filtered.push({
+            ...trip,
+            path: clipped.map(p => ({
                 coordinates: p.coordinates,
-                timestamp: p.timestamp - tMin  // Normalize to 0-based
+                timestamp: p.timestamp - tMin
             }))
         });
     }
 
-    loopLength = tMax - tMin;
-
-    allTripData = trips;
-    cnTripData = trips.filter(t => t.isCN);
-    tripData = filterCN ? cnTripData : allTripData;
-
-    return { tMin, tMax };
+    tripData = filtered;
 }
 
 // =========================================================================
-// deck.gl rendering
+// deck.gl rendering — multi-layer glow effect
 // =========================================================================
-function createDeckLayer() {
-    return new deck.TripsLayer({
-        id: 'trips',
-        data: tripData,
-        getPath: d => d.path.map(p => p.coordinates),
-        getTimestamps: d => d.path.map(p => p.timestamp),
-        getColor: d => d.color,
-        opacity: 0.8,
-        widthMinPixels: trailWidth,
-        jointRounded: true,
-        capRounded: true,
-        trailLength: trailLength * 60 * 1000, // Convert minutes to ms
-        currentTime: currentTime,
-        shadowEnabled: false
-    });
+function createDeckLayers() {
+    // 3-layer glow: outer soft glow → middle → bright core
+    return [
+        // Layer 1: Wide soft outer glow
+        new deck.TripsLayer({
+            id: 'trips-glow-outer',
+            data: tripData,
+            getPath: d => d.path.map(p => p.coordinates),
+            getTimestamps: d => d.path.map(p => p.timestamp),
+            getColor: d => [...d.color, 40],
+            opacity: 0.3,
+            widthMinPixels: trailWidth * 4,
+            jointRounded: true,
+            capRounded: true,
+            trailLength: trailLength * 60 * 1000,
+            currentTime: currentTime,
+            shadowEnabled: false
+        }),
+        // Layer 2: Medium glow
+        new deck.TripsLayer({
+            id: 'trips-glow-mid',
+            data: tripData,
+            getPath: d => d.path.map(p => p.coordinates),
+            getTimestamps: d => d.path.map(p => p.timestamp),
+            getColor: d => [...d.color, 100],
+            opacity: 0.5,
+            widthMinPixels: trailWidth * 2,
+            jointRounded: true,
+            capRounded: true,
+            trailLength: trailLength * 60 * 1000,
+            currentTime: currentTime,
+            shadowEnabled: false
+        }),
+        // Layer 3: Bright core
+        new deck.TripsLayer({
+            id: 'trips-core',
+            data: tripData,
+            getPath: d => d.path.map(p => p.coordinates),
+            getTimestamps: d => d.path.map(p => p.timestamp),
+            getColor: d => [...d.color, 230],
+            opacity: 0.9,
+            widthMinPixels: trailWidth,
+            jointRounded: true,
+            capRounded: true,
+            trailLength: trailLength * 60 * 1000,
+            currentTime: currentTime,
+            shadowEnabled: false
+        })
+    ];
 }
 
-function initDeck(tMin, tMax) {
+function initDeck() {
     deckgl = new deck.DeckGL({
         container: 'container',
         mapStyle: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
@@ -385,7 +562,7 @@ function initDeck(tMin, tMax) {
             minZoom: 4
         },
         controller: true,
-        layers: [createDeckLayer()],
+        layers: createDeckLayers(),
         getTooltip: ({object}) => {
             if (!object) return null;
             return {
@@ -404,9 +581,33 @@ function initDeck(tMin, tMax) {
 
 function updateLayers() {
     if (!deckgl) return;
-    deckgl.setProps({
-        layers: [createDeckLayer()]
-    });
+    deckgl.setProps({ layers: createDeckLayers() });
+}
+
+// =========================================================================
+// Collapse / Expand
+// =========================================================================
+function toggleCollapse() {
+    const ctrl = document.getElementById('controls');
+    ctrl.classList.toggle('collapsed');
+    ctrl.classList.remove('auto-collapsed');
+}
+
+// =========================================================================
+// Time Range
+// =========================================================================
+function setRange(days) {
+    rangeDays = days;
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.range-btn[data-range="${days}"]`).classList.add('active');
+
+    applyRangeFilter();
+
+    // Reset playback to start of new range
+    currentTime = 0;
+    document.getElementById('timeSlider').value = 0;
+    updateTimeDisplay();
+    updateLayers();
 }
 
 // =========================================================================
@@ -415,7 +616,7 @@ function updateLayers() {
 function animate() {
     if (!playing) return;
 
-    const step = (loopLength / 500) * speed;
+    const step = (loopLength / 600) * speed;
     currentTime += step;
 
     if (currentTime > loopLength) {
@@ -445,13 +646,13 @@ function togglePlay() {
 
 function setSpeed(s) {
     speed = s;
-    document.querySelectorAll('.btn:not(.play)').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.speed-btn[data-speed="${s}"]`).classList.add('active');
 }
 
 function updateTimeDisplay() {
     if (timestamps.length === 0) return;
-    const tMin = timestamps[0];
+    const tMin = rangeDays === 0 ? globalTMin : globalTMax - rangeDays * 86400000;
     const actualTime = new Date(tMin + currentTime);
     const dateStr = actualTime.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
     document.getElementById('timeDisplay').textContent = dateStr;
@@ -477,7 +678,7 @@ function updateTrailWidth(val) {
 
 function toggleFilter() {
     filterCN = document.getElementById('filterCN').checked;
-    tripData = filterCN ? cnTripData : allTripData;
+    applyRangeFilter();
     updateLayers();
 }
 
@@ -490,7 +691,6 @@ document.getElementById('timeSlider').addEventListener('input', function() {
     updateLayers();
 });
 
-// Keyboard
 document.addEventListener('keydown', e => {
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
 });
@@ -509,15 +709,21 @@ async function init() {
 
         await new Promise(r => setTimeout(r, 50));
 
-        const { tMin, tMax } = processData(data);
+        processData(data);
 
         document.getElementById('loading').style.display = 'none';
         document.getElementById('controls').style.display = '';
         document.getElementById('legend').style.display = '';
 
-        initDeck(tMin, tMax);
+        // Auto-collapse on mobile after short delay so user sees the map
+        if (window.innerWidth <= 600) {
+            setTimeout(() => {
+                document.getElementById('controls').classList.add('auto-collapsed');
+            }, 2000);
+        }
 
-        // Auto-play
+        initDeck();
+
         currentTime = 0;
         updateTimeDisplay();
         togglePlay();
