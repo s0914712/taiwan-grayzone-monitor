@@ -48,7 +48,7 @@
         popover.innerHTML = `
             <a href="weekly-animation.html" ${currentPage === 'weekly-animation.html' ? 'class="active"' : ''}>
                 <span class="pop-icon">🎬</span>
-                <span data-i18n="nav.animation">暗船動畫</span>
+                <span data-i18n="nav.animation">軌跡動畫</span>
             </a>
             <a href="ais-animation.html" ${currentPage === 'ais-animation.html' ? 'class="active"' : ''}>
                 <span class="pop-icon">📡</span>

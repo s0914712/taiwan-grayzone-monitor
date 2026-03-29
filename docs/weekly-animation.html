@@ -1,991 +1,535 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>暗船動畫 | Dark Vessel Animation - Taiwan Gray Zone Monitor</title>
-    <meta name="description" content="台灣周邊暗船偵測動畫播放，依實際 SAR 衛星偵測日逐日呈現暗船位置變化">
-    <meta name="keywords" content="暗船動畫,dark vessel animation,SAR,台灣海峽,Taiwan Strait,衛星偵測,maritime surveillance">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIS 軌跡光跡動畫 | Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="台灣周邊 AIS 船舶軌跡光跡動畫，以 deck.gl TripsLayer 呈現即時船舶動態">
+    <meta name="keywords" content="AIS軌跡動畫,vessel animation,deck.gl,台灣海峽,Taiwan Strait,maritime surveillance">
     <meta name="author" content="Taiwan Gray Zone Monitor">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-animation.html">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="暗船動畫 | Dark Vessel Animation">
-    <meta property="og:description" content="台灣周邊暗船偵測動畫播放，依實際 SAR 衛星偵測日逐日呈現暗船位置變化">
+    <meta property="og:title" content="AIS 軌跡光跡動畫 | Vessel Trail Animation">
+    <meta property="og:description" content="台灣周邊 AIS 船舶軌跡光跡動畫，以 deck.gl TripsLayer 呈現即時船舶動態">
     <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-animation.html">
     <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
     <meta property="og:locale" content="zh_TW">
 
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="暗船動畫 | Dark Vessel Animation">
-    <meta name="twitter:description" content="台灣周邊暗船偵測動畫播放，依實際 SAR 衛星偵測日逐日呈現暗船位置變化">
-
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
-    <!-- End Google Tag Manager -->
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
-        rel="stylesheet">
-
-    <!-- Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-    <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="css/main.css">
+    <!-- deck.gl + dependencies -->
+    <script src="https://unpkg.com/deck.gl@8.9.35/dist.min.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
 
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            overflow-y: auto;
-        }
-
-        #map {
-            height: 500px;
-            border-radius: 0 0 6px 6px;
-        }
-
-        /* Animation controls */
-        .anim-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-glow);
-            border-radius: 6px;
-            margin: 12px 16px 0;
-            flex-wrap: wrap;
-        }
-
-        .anim-btn {
-            padding: 5px 12px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-glow);
-            border-radius: 4px;
-            color: var(--text-secondary);
-            font-size: 10px;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-family: 'Noto Sans TC', sans-serif;
-        }
-
-        .anim-btn:hover,
-        .anim-btn.active {
-            color: var(--accent-cyan);
-            border-color: var(--accent-cyan);
-            background: rgba(0, 245, 255, 0.1);
-        }
-
-        .anim-btn:disabled,
-        .anim-btn[disabled] {
-            opacity: 0.3;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .anim-btn.play-btn {
-            font-size: 16px;
-            padding: 5px 16px;
-            min-width: 44px;
-            text-align: center;
-        }
-
-        .anim-btn.play-btn.playing {
-            color: var(--accent-red);
-            border-color: var(--accent-red);
-            background: rgba(255, 51, 102, 0.1);
-        }
-
-        .anim-separator {
-            width: 1px;
-            height: 20px;
-            background: var(--border-glow);
-        }
-
-        .anim-label {
-            font-size: 9px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .day-indicator {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: var(--accent-cyan);
-            margin-left: auto;
-            text-align: right;
-        }
-
-        .day-indicator .date-text {
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .day-indicator .frame-text {
-            font-size: 9px;
-            color: var(--text-secondary);
-        }
-
-        /* Timeline slider */
-        .timeline-panel {
-            padding: 8px 16px 12px;
-            margin: 0 16px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-glow);
-            border-top: none;
-            border-radius: 0 0 6px 6px;
-        }
-
-        .day-slider {
-            width: 100%;
-            -webkit-appearance: none;
-            appearance: none;
-            height: 6px;
-            background: var(--bg-card);
-            border-radius: 3px;
-            outline: none;
-            margin: 6px 0;
-            cursor: pointer;
-        }
-
-        .day-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--accent-cyan);
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
-        }
-
-        .day-slider::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--accent-cyan);
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
-        }
-
-        .timeline-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 7px;
-            color: var(--text-secondary);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Stats row */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            padding: 12px 16px;
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-glow);
-            border-radius: 6px;
-            padding: 10px;
-            text-align: center;
-        }
-
-        .stat-card .value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--accent-cyan);
-        }
-
-        .stat-card .value.alert {
-            color: var(--accent-red);
-        }
-
-        .stat-card .value.trend-up {
-            color: var(--accent-red);
-        }
-
-        .stat-card .value.trend-down {
-            color: var(--accent-green);
-        }
-
-        .stat-card .label {
-            font-size: 9px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        /* Main content */
-        .main-content {
-            padding: 0 16px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .panel {
-            background: var(--bg-card);
-            border: 1px solid var(--border-glow);
-            border-radius: 6px;
+            background: #000;
+            color: #e8eef7;
+            font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
         }
 
-        .panel-title {
-            padding: 8px 12px;
+        #container { width: 100vw; height: 100vh; position: relative; }
+
+        .controls {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            z-index: 10;
+            background: rgba(10, 15, 28, 0.85);
+            border: 1px solid rgba(0, 245, 255, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            min-width: 280px;
+            backdrop-filter: blur(8px);
+        }
+
+        .controls h2 {
+            font-size: 14px;
+            color: #00f5ff;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .controls label {
             font-size: 11px;
-            font-weight: 500;
-            color: var(--accent-cyan);
-            border-bottom: 1px solid var(--border-glow);
+            color: #8aa4c8;
+            display: block;
+            margin-top: 8px;
         }
 
-        .panel-body {
-            padding: 10px 12px;
-        }
-
-        .chart-container {
-            padding: 10px;
-            height: 200px;
-        }
-
-        /* Region table */
-        .region-table {
+        .controls input[type="range"] {
             width: 100%;
-            border-collapse: collapse;
-            font-size: 10px;
+            margin: 4px 0;
+            accent-color: #00f5ff;
         }
 
-        .region-table th {
-            text-align: left;
-            padding: 6px 8px;
-            color: var(--text-secondary);
-            font-weight: 500;
-            font-size: 9px;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border-glow);
-        }
-
-        .region-table td {
-            padding: 6px 8px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-        }
-
-        .region-table tr:hover {
-            background: rgba(0, 245, 255, 0.03);
-        }
-
-        /* Map legend (inline) */
-        .map-legend-inline {
+        .controls .row {
             display: flex;
-            gap: 14px;
-            padding: 6px 12px;
-            background: var(--bg-secondary);
-            border-top: 1px solid var(--border-glow);
-            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
         }
 
-        .legend-chip {
+        .btn {
+            background: rgba(0, 245, 255, 0.1);
+            border: 1px solid rgba(0, 245, 255, 0.3);
+            color: #00f5ff;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { background: rgba(0, 245, 255, 0.2); }
+        .btn.active { background: rgba(0, 245, 255, 0.3); border-color: #00f5ff; }
+        .btn.play { font-size: 16px; padding: 6px 18px; }
+        .btn.play.playing { color: #ff3366; border-color: #ff3366; background: rgba(255,51,102,0.1); }
+
+        .time-display {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #00f5ff;
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+
+        .stat-line {
+            font-size: 10px;
+            color: #8aa4c8;
+            margin-top: 4px;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            z-index: 10;
+            background: rgba(10, 15, 28, 0.85);
+            border: 1px solid rgba(0, 245, 255, 0.15);
+            border-radius: 6px;
+            padding: 10px 14px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            backdrop-filter: blur(8px);
+        }
+
+        .legend-item {
             display: flex;
             align-items: center;
-            gap: 4px;
-            font-size: 9px;
-            color: var(--text-secondary);
+            gap: 5px;
+            font-size: 10px;
+            color: #8aa4c8;
         }
 
-        .legend-chip .dot {
+        .legend-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
+            box-shadow: 0 0 6px currentColor;
         }
 
-        .update-info {
-            text-align: center;
-            padding: 10px;
+        .credit {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            z-index: 10;
             font-size: 9px;
-            color: var(--text-secondary);
-            font-family: 'JetBrains Mono', monospace;
+            color: #4a6080;
         }
 
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-secondary);
-            font-size: 12px;
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            color: #00f5ff;
+            font-size: 14px;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .stats-row {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-                padding: 8px;
-            }
-            .stat-card { padding: 12px; }
-            .stat-card .value { font-size: 22px; }
-            .stat-card .label { font-size: 12px; }
-
-            .anim-controls {
-                margin: 8px 8px 0;
-                gap: 6px;
-            }
-            .range-selector {
-                display: flex;
-                justify-content: center;
-                gap: 4px;
-                width: 100%;
-            }
-            .playback-controls {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                gap: 6px;
-                width: 100%;
-            }
-            .anim-btn {
-                min-height: 44px;
-                min-width: 44px;
-                font-size: 12px;
-                padding: 8px 10px;
-            }
-            .anim-label { display: none; }
-            .anim-separator { display: none; }
-
-            .day-indicator {
-                margin-left: 0;
-                width: 100%;
-                text-align: center;
-                font-size: 13px;
-            }
-
-            #map {
-                height: calc(100vh - 44px - 56px - 120px);
-                max-height: 350px;
-                min-height: 200px;
-            }
-
-            .main-content {
-                padding: 0 8px 72px;
-            }
-
-            .timeline-panel {
-                margin: 0 8px;
-            }
+        #loading .spinner {
+            border: 3px solid rgba(0,245,255,0.1);
+            border-top: 3px solid #00f5ff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
         }
 
-        /* Footer */
-        .site-footer {
-            text-align: center;
-            padding: 16px;
-            font-size: 9px;
-            color: var(--text-secondary);
-            border-top: 1px solid var(--border-glow);
-        }
-
-        .site-footer a {
-            color: var(--accent-cyan);
-            text-decoration: none;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-
 <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
 
-    <header class="header">
-        <h1 data-i18n="title.anim">🎬 暗船動畫 Dark Vessel Animation</h1>
-        <div class="header-nav">
-            <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
-            <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
-            <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
-            <a href="weekly-animation.html" class="active" data-i18n="nav.animation">暗船動畫</a>
-            <a href="ais-animation.html" data-i18n="nav.ais_anim">船位動畫</a>
-            <a href="cn-fishing-animation.html" data-i18n="nav.cn_fishing">大陸漁船</a>
-            <a href="ship-transfers.html" data-i18n="nav.transfers">旁靠偵測</a>
-            <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
-            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
-            <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
-        </div>
-    </header>
+<div id="container"></div>
 
-    <!-- Animation controls -->
-    <div class="anim-controls" id="animControls">
-        <div class="range-selector">
-            <span class="anim-label" data-i18n="anim.range">範圍</span>
-            <button class="anim-btn" data-range="7" onclick="setRange(7)">7天</button>
-            <button class="anim-btn" data-range="14" onclick="setRange(14)">14天</button>
-            <button class="anim-btn" data-range="30" onclick="setRange(30)" data-i18n="anim.days_30">30天</button>
-            <button class="anim-btn active" data-range="60" onclick="setRange(60)" data-i18n="anim.days_60">60天</button>
-            <button class="anim-btn" data-range="90" onclick="setRange(90)" data-i18n="anim.days_90">90天</button>
-        </div>
-        <div class="playback-controls">
-            <button class="anim-btn" onclick="stepBackward()" data-i18n-title="anim.prev" title="上一天">⏮</button>
-            <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" data-i18n-title="anim.play" title="播放/暫停">▶</button>
-            <button class="anim-btn" onclick="stepForward()" data-i18n-title="anim.next" title="下一天">⏭</button>
-            <span class="anim-label" data-i18n="anim.speed">速度</span>
-            <button class="anim-btn active" data-speed="1" onclick="setSpeed(1)">1x</button>
-            <button class="anim-btn" data-speed="2" onclick="setSpeed(2)">2x</button>
-            <button class="anim-btn" data-speed="4" onclick="setSpeed(4)">4x</button>
-        </div>
-        <div class="day-indicator" id="dayIndicator">
-            <div class="date-text">--</div>
-            <div class="frame-text" data-i18n="common.loading">載入中...</div>
-        </div>
+<div id="loading">
+    <div class="spinner"></div>
+    <div>載入 AIS 軌跡資料...</div>
+</div>
+
+<div class="controls" id="controls" style="display:none">
+    <h2>🛰️ AIS 軌跡光跡動畫</h2>
+
+    <label>時間軸 Timeline</label>
+    <input type="range" id="timeSlider" min="0" max="1000" value="0">
+    <div class="time-display" id="timeDisplay">—</div>
+    <div class="stat-line" id="statLine">—</div>
+
+    <div class="row">
+        <button class="btn play" id="playBtn" onclick="togglePlay()">▶</button>
+        <button class="btn" onclick="setSpeed(1)">1×</button>
+        <button class="btn active" onclick="setSpeed(2)">2×</button>
+        <button class="btn" onclick="setSpeed(4)">4×</button>
     </div>
 
-    <!-- Timeline slider -->
-    <div class="timeline-panel">
-        <input type="range" class="day-slider" id="daySlider" min="0" max="0" value="0">
-        <div class="timeline-labels" id="timelineLabels"></div>
-    </div>
+    <label>軌跡長度 Trail Length</label>
+    <input type="range" id="trailSlider" min="1" max="60" value="15"
+           oninput="updateTrailLength(this.value)">
 
-    <!-- Stats -->
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="value alert" id="statDark">--</div>
-            <div class="label" data-i18n="dark.count">暗船數量</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statTotal">--</div>
-            <div class="label" data-i18n="dark.total_detect_s">SAR 總偵測</div>
-        </div>
-        <div class="stat-card">
-            <div class="value alert" id="statRatio">--%</div>
-            <div class="label" data-i18n="dark.ratio">暗船比例</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statChange">--</div>
-            <div class="label" data-i18n="anim.change">較上次變化</div>
-        </div>
-    </div>
+    <label>發光寬度 Trail Width</label>
+    <input type="range" id="widthSlider" min="1" max="10" value="3"
+           oninput="updateTrailWidth(this.value)">
 
-    <div class="main-content">
-        <!-- Map -->
-        <div class="panel map-panel">
-            <div class="panel-title" data-i18n="anim.map_title">📍 暗船位置動畫（SAR 衛星偵測 / 每偵測日一幀）</div>
-            <div id="map"></div>
-            <div class="map-legend-inline">
-                <div class="legend-chip"><span class="dot" style="background:#ff3366"></span><span data-i18n="region.taiwan_strait">台灣海峽</span></div>
-                <div class="legend-chip"><span class="dot" style="background:#ff6b35"></span><span data-i18n="region.east_taiwan_s">台灣東部</span></div>
-                <div class="legend-chip"><span class="dot" style="background:#ffd700"></span><span data-i18n="region.south_china_sea">南海北部</span></div>
-                <div class="legend-chip"><span class="dot" style="background:#9b59b6"></span><span data-i18n="region.east_china_sea">東海</span></div>
-            </div>
-        </div>
+    <label>
+        <input type="checkbox" id="filterCN" onchange="toggleFilter()"> 僅顯示大陸漁船
+    </label>
+</div>
 
-        <!-- Daily trend chart -->
-        <div class="panel chart-panel">
-            <div class="panel-title" data-i18n="anim.chart_title">📊 各偵測日暗船數量</div>
-            <div class="chart-container">
-                <canvas id="dailyChart"></canvas>
-            </div>
-        </div>
+<div class="legend" id="legend" style="display:none">
+    <div class="legend-item"><div class="legend-dot" style="color:#ff6347"></div>福建</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#4169e1"></div>浙江</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#ffa500"></div>廣東</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#32cd32"></div>山東</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#ff69b4"></div>海南</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#00f5ff"></div>貨輪</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#ff6b35"></div>油輪</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#9370db"></div>其他</div>
+</div>
 
-        <!-- Region breakdown -->
-        <div class="panel">
-            <div class="panel-title" data-i18n="anim.region_title">🗺️ 本日各區域分布</div>
-            <div class="panel-body">
-                <table class="region-table">
-                    <thead>
-                        <tr>
-                            <th data-i18n="th.region">區域</th>
-                            <th data-i18n="th.total">總偵測</th>
-                            <th data-i18n="th.dark">暗船</th>
-                            <th data-i18n="th.coords">座標點</th>
-                        </tr>
-                    </thead>
-                    <tbody id="regionTableBody">
-                        <tr><td colspan="4" class="empty-state" data-i18n="common.loading">載入中...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+<div class="credit">deck.gl TripsLayer | Taiwan Gray Zone Monitor</div>
 
-    <div class="update-info" id="updateInfo">資料更新時間: --</div>
+<script>
+// =========================================================================
+// Province detection
+// =========================================================================
+const PROVINCE_PATTERNS = {
+    fujian:    { patterns: [/^MIN/i, /^闽/i, /^閩/i], color: [255, 99, 71] },
+    zhejiang:  { patterns: [/^ZHE/i, /^浙/i],         color: [65, 105, 225] },
+    guangdong: { patterns: [/^YUE/i, /^粤/i, /^粵/i], color: [255, 165, 0] },
+    shandong:  { patterns: [/^LU\s?YU/i, /^鲁/i, /^魯/i], color: [50, 205, 50] },
+    hainan:    { patterns: [/^QIONG/i, /^琼/i, /^瓊/i], color: [255, 105, 180] },
+    jiangsu:   { patterns: [/^SU\s?YU/i, /^苏/i, /^蘇/i], color: [0, 206, 209] },
+    guangxi:   { patterns: [/^GUI/i, /^桂/i],         color: [218, 165, 32] },
+};
 
-    <footer class="site-footer">
-        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
-    </footer>
+const TYPE_COLORS = {
+    fishing: [0, 255, 136],
+    cargo:   [0, 245, 255],
+    tanker:  [255, 107, 53],
+    lng:     [240, 225, 48],
+    other:   [147, 112, 219],
+    unknown: [136, 136, 136]
+};
 
-    <script src="js/i18n.js"></script>
-    <script>
-    // =========================================================================
-    // Region colors (same as map.js MapModule)
-    // =========================================================================
-    const REGION_COLORS = {
-        taiwan_strait: '#ff3366',
-        east_taiwan: '#ff6b35',
-        south_china_sea: '#ffd700',
-        east_china_sea: '#9b59b6'
-    };
-
-    const REGION_BOUNDS = {
-        taiwan_strait: [[23.5, 118.0], [23.5, 122.0], [26.5, 122.0], [26.5, 118.0]],
-        east_taiwan:   [[22.0, 121.5], [22.0, 124.0], [25.5, 124.0], [25.5, 121.5]],
-        south_china_sea: [[18.0, 110.0], [18.0, 118.0], [23.0, 118.0], [23.0, 110.0]],
-        east_china_sea:  [[26.0, 122.0], [26.0, 130.5], [34.0, 130.5], [34.0, 122.0]]
-    };
-
-    // =========================================================================
-    // Animation state
-    // =========================================================================
-    const Anim = {
-        allDays: [],         // all days from JSON
-        filteredDays: [],    // days filtered by selected range
-        currentIdx: 0,
-        playing: false,
-        speed: 1,            // 1x=1500ms, 2x=750ms, 4x=375ms
-        intervalId: null,
-        selectedRange: 60,
-        markerLayer: null,
-        chart: null
-    };
-
-    let map;
-
-    // =========================================================================
-    // Map initialization
-    // =========================================================================
-    function initMap() {
-        map = L.map('map', {
-            center: [26.0, 123.0],
-            zoom: 5,
-            zoomControl: true,
-            attributionControl: false,
-            preferCanvas: true
-        });
-
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 18,
-            opacity: 0.9
-        }).addTo(map);
-
-        // Region boundaries
-        Object.entries(REGION_BOUNDS).forEach(([key, coords]) => {
-            L.polygon(coords, {
-                color: REGION_COLORS[key] || '#00f5ff',
-                weight: 1.5,
-                opacity: 0.4,
-                fillOpacity: 0.02,
-                dashArray: '6,4'
-            }).addTo(map);
-        });
-
-        // Marker layer for animation
-        Anim.markerLayer = L.layerGroup().addTo(map);
+function getVesselColor(v) {
+    const name = (v.name || '').toUpperCase();
+    for (const [, prov] of Object.entries(PROVINCE_PATTERNS)) {
+        if (prov.patterns.some(p => p.test(name))) return prov.color;
     }
+    const type = v.type_name || 'unknown';
+    return TYPE_COLORS[type] || TYPE_COLORS.unknown;
+}
 
-    // =========================================================================
-    // Data loading
-    // =========================================================================
-    async function loadData() {
-        try {
-            const res = await fetch('weekly_dark_vessels.json?' + Date.now());
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
+function isCnFishing(v) {
+    const name = (v.name || '').toUpperCase();
+    for (const [, prov] of Object.entries(PROVINCE_PATTERNS)) {
+        if (prov.patterns.some(p => p.test(name))) return true;
+    }
+    return /YU[.\s]*\d/i.test(name);
+}
 
-            Anim.allDays = data.days || [];
+// =========================================================================
+// State
+// =========================================================================
+let tripData = [];          // Processed trip objects for deck.gl
+let allTripData = [];       // Unfiltered
+let cnTripData = [];        // CN fishing only
+let currentTime = 0;
+let loopLength = 1000;      // Will be set after data load
+let trailLength = 15;
+let trailWidth = 3;
+let playing = false;
+let speed = 2;
+let intervalId = null;
+let deckgl = null;
+let filterCN = false;
+let timestamps = [];        // Sorted unique timestamps
 
-            if (Anim.allDays.length === 0) {
-                document.getElementById('dataStatus').textContent = i18n.t('anim.no_data');
-                document.getElementById('regionTableBody').innerHTML =
-                    `<tr><td colspan="4" class="empty-state">${i18n.t('anim.no_data_msg')}</td></tr>`;
-                return;
+// =========================================================================
+// Data processing: convert AIS frames to trip format
+// =========================================================================
+function processData(frames) {
+    // Build per-vessel tracks: mmsi -> [{lat, lon, timestamp_idx, color, ...}]
+    const vesselTracks = {};
+    const tsSet = new Set();
+
+    frames.forEach((frame, frameIdx) => {
+        const ts = new Date(frame.timestamp).getTime();
+        tsSet.add(ts);
+
+        (frame.vessels || []).forEach(v => {
+            if (!v.lat || !v.lon) return;
+            if (!vesselTracks[v.mmsi]) {
+                vesselTracks[v.mmsi] = {
+                    path: [],
+                    color: getVesselColor(v),
+                    isCN: isCnFishing(v),
+                    name: v.name || v.mmsi,
+                    type: v.type_name || 'unknown'
+                };
             }
-
-            // Apply default range filter
-            updateRangeButtons();
-            applyRangeFilter(Anim.selectedRange);
-
-            // Update status
-            document.getElementById('dataStatus').textContent =
-                `✅ ${data.date_range.start} ~ ${data.date_range.end}`;
-            document.getElementById('updateInfo').textContent =
-                i18n.t('common.updated') + ' ' + new Date(data.updated_at).toLocaleString();
-
-        } catch (e) {
-            console.error('載入失敗:', e);
-            document.getElementById('dataStatus').textContent = i18n.t('anim.load_fail');
-            document.getElementById('regionTableBody').innerHTML =
-                `<tr><td colspan="4" class="empty-state">${i18n.t('anim.load_fail_msg')}</td></tr>`;
-        }
-    }
-
-    // =========================================================================
-    // Range filtering
-    // =========================================================================
-    function applyRangeFilter(days) {
-        Anim.selectedRange = days;
-
-        // Filter to last N days
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - days);
-        const cutoffStr = cutoff.toISOString().slice(0, 10);
-
-        Anim.filteredDays = Anim.allDays.filter(d => d.date >= cutoffStr);
-
-        if (Anim.filteredDays.length === 0) {
-            Anim.filteredDays = Anim.allDays; // fallback to all data
-        }
-
-        Anim.currentIdx = 0;
-        pause();
-
-        updateSlider();
-        updateChart();
-        renderFrame(0);
-    }
-
-    function setRange(days) {
-        // Update button styles
-        document.querySelectorAll('[data-range]').forEach(btn => {
-            btn.classList.toggle('active', parseInt(btn.dataset.range) === days);
-        });
-        applyRangeFilter(days);
-    }
-
-    /** 資料載入後，檢查每個時間範圍按鈕是否有對應資料，無資料則 disabled */
-    function updateRangeButtons() {
-        if (!Anim.allDays || Anim.allDays.length === 0) return;
-        const now = new Date();
-        document.querySelectorAll('[data-range]').forEach(btn => {
-            const days = parseInt(btn.dataset.range);
-            const cutoff = new Date(now);
-            cutoff.setDate(cutoff.getDate() - days);
-            const cutoffStr = cutoff.toISOString().slice(0, 10);
-            const hasData = Anim.allDays.some(d => d.date >= cutoffStr);
-            btn.disabled = !hasData;
-            if (btn.disabled && btn.classList.contains('active')) {
-                btn.classList.remove('active');
-            }
-        });
-        const activeBtn = document.querySelector('[data-range].active:not([disabled])');
-        if (!activeBtn) {
-            const available = [...document.querySelectorAll('[data-range]:not([disabled])')];
-            if (available.length > 0) {
-                const largest = available.reduce((a, b) =>
-                    parseInt(a.dataset.range) > parseInt(b.dataset.range) ? a : b);
-                setRange(parseInt(largest.dataset.range));
-            }
-        }
-    }
-
-    // =========================================================================
-    // Frame rendering
-    // =========================================================================
-    function renderFrame(idx) {
-        if (idx < 0 || idx >= Anim.filteredDays.length) return;
-        Anim.currentIdx = idx;
-
-        const day = Anim.filteredDays[idx];
-
-        // Clear markers
-        Anim.markerLayer.clearLayers();
-
-        // Plot dark vessel points
-        const regions = day.regions || {};
-        Object.entries(regions).forEach(([regionId, regionData]) => {
-            const color = REGION_COLORS[regionId] || '#ff3366';
-            const points = regionData.points || [];
-
-            points.forEach(pt => {
-                const radius = Math.min(3 + Math.log2(pt.detections || 1) * 2, 10);
-
-                L.circleMarker([pt.lat, pt.lon], {
-                    radius: radius,
-                    fillColor: color,
-                    color: color,
-                    weight: 1,
-                    opacity: 0.7,
-                    fillOpacity: 0.5
-                }).addTo(Anim.markerLayer).bindPopup(
-                    `<b style="color:${color}">${i18n.t('dv.popup_title')}</b><br>` +
-                    `${i18n.t('dv.popup_region')} ${regionData.name || regionId}<br>` +
-                    `${i18n.t('dv.popup_date')} ${day.date}<br>` +
-                    `${i18n.t('dv.popup_det')} ${pt.detections || 1}<br>` +
-                    `${i18n.t('dv.popup_pos')} ${pt.lat}, ${pt.lon}`
-                );
+            vesselTracks[v.mmsi].path.push({
+                coordinates: [v.lon, v.lat],
+                timestamp: ts
             });
         });
-
-        // Update UI
-        updateDayIndicator(day, idx);
-        updateStatCards(day, idx);
-        updateRegionTable(day);
-        updateSliderPosition(idx);
-        highlightChartBar(idx);
-    }
-
-    // =========================================================================
-    // UI updates
-    // =========================================================================
-    function updateDayIndicator(day, idx) {
-        const indicator = document.getElementById('dayIndicator');
-        indicator.innerHTML = `
-            <div class="date-text">${day.date}</div>
-            <div class="frame-text">${i18n.t('anim.frame', idx + 1, Anim.filteredDays.length)}</div>
-        `;
-    }
-
-    function updateStatCards(day, idx) {
-        const s = day.summary;
-        document.getElementById('statDark').textContent = (s.dark_vessels || 0).toLocaleString();
-        document.getElementById('statTotal').textContent = (s.total_detections || 0).toLocaleString();
-        document.getElementById('statRatio').textContent = (s.dark_ratio || 0) + '%';
-
-        // Change from previous day
-        const changeEl = document.getElementById('statChange');
-        if (idx > 0) {
-            const prevDark = Anim.filteredDays[idx - 1].summary.dark_vessels || 0;
-            const currDark = s.dark_vessels || 0;
-            const diff = currDark - prevDark;
-            const pct = prevDark > 0 ? ((diff / prevDark) * 100).toFixed(0) : '--';
-
-            changeEl.textContent = (diff >= 0 ? '+' : '') + pct + '%';
-            changeEl.className = 'value ' + (diff > 0 ? 'trend-up' : diff < 0 ? 'trend-down' : '');
-        } else {
-            changeEl.textContent = '--';
-            changeEl.className = 'value';
-        }
-    }
-
-    function updateRegionTable(day) {
-        const tbody = document.getElementById('regionTableBody');
-        const regions = day.regions || {};
-        const regionOrder = ['taiwan_strait', 'east_taiwan', 'south_china_sea', 'east_china_sea'];
-
-        const rows = regionOrder
-            .filter(key => regions[key])
-            .map(key => {
-                const r = regions[key];
-                const color = REGION_COLORS[key] || '#ff3366';
-                return `<tr>
-                    <td style="color:${color};font-weight:500">${r.name || key}</td>
-                    <td>${r.total_count || 0}</td>
-                    <td style="color:var(--accent-red);font-weight:600">${r.dark_count || 0}</td>
-                    <td>${(r.points || []).length} pts</td>
-                </tr>`;
-            });
-
-        tbody.innerHTML = rows.join('') || `<tr><td colspan="4" class="empty-state">${i18n.t('anim.no_detect')}</td></tr>`;
-    }
-
-    // =========================================================================
-    // Slider
-    // =========================================================================
-    function updateSlider() {
-        const slider = document.getElementById('daySlider');
-        slider.min = 0;
-        slider.max = Math.max(0, Anim.filteredDays.length - 1);
-        slider.value = 0;
-
-        // Timeline labels
-        const labels = document.getElementById('timelineLabels');
-        const days = Anim.filteredDays;
-        if (days.length <= 1) {
-            labels.innerHTML = days.length === 1 ? `<span>${days[0].date.slice(5)}</span>` : '';
-            return;
-        }
-
-        // Show ~6 evenly spaced labels
-        const step = Math.max(1, Math.floor(days.length / 5));
-        const labelHtml = [];
-        for (let i = 0; i < days.length; i++) {
-            if (i === 0 || i === days.length - 1 || i % step === 0) {
-                labelHtml.push(`<span>${days[i].date.slice(5)}</span>`);
-            }
-        }
-        labels.innerHTML = labelHtml.join('');
-    }
-
-    function updateSliderPosition(idx) {
-        document.getElementById('daySlider').value = idx;
-    }
-
-    document.getElementById('daySlider').addEventListener('input', function () {
-        pause();
-        renderFrame(parseInt(this.value));
     });
 
-    // =========================================================================
-    // Chart
-    // =========================================================================
-    function updateChart() {
-        const ctx = document.getElementById('dailyChart').getContext('2d');
+    // Sort timestamps
+    timestamps = Array.from(tsSet).sort((a, b) => a - b);
+    const tMin = timestamps[0];
+    const tMax = timestamps[timestamps.length - 1];
+    loopLength = tMax - tMin;
 
-        if (Anim.chart) {
-            Anim.chart.destroy();
+    // Convert to deck.gl trip format
+    const trips = [];
+    for (const [mmsi, track] of Object.entries(vesselTracks)) {
+        if (track.path.length < 2) continue;
+
+        // Sort by timestamp
+        track.path.sort((a, b) => a.timestamp - b.timestamp);
+
+        // Deduplicate consecutive identical positions
+        const deduped = [track.path[0]];
+        for (let i = 1; i < track.path.length; i++) {
+            const prev = deduped[deduped.length - 1];
+            const cur = track.path[i];
+            if (cur.coordinates[0] !== prev.coordinates[0] ||
+                cur.coordinates[1] !== prev.coordinates[1]) {
+                deduped.push(cur);
+            }
         }
+        if (deduped.length < 2) continue;
 
-        const labels = Anim.filteredDays.map(d => d.date.slice(5));
-        const data = Anim.filteredDays.map(d => d.summary.dark_vessels || 0);
+        trips.push({
+            mmsi: mmsi,
+            name: track.name,
+            type: track.type,
+            isCN: track.isCN,
+            color: track.color,
+            path: deduped.map(p => ({
+                coordinates: p.coordinates,
+                timestamp: p.timestamp - tMin  // Normalize to 0-based
+            }))
+        });
+    }
 
-        Anim.chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: i18n.t('dark.count'),
-                    data: data,
-                    backgroundColor: data.map((_, i) =>
-                        i === Anim.currentIdx ? 'rgba(0, 245, 255, 0.8)' : 'rgba(255, 51, 102, 0.5)'
-                    ),
-                    borderColor: data.map((_, i) =>
-                        i === Anim.currentIdx ? '#00f5ff' : '#ff3366'
-                    ),
-                    borderWidth: 1,
-                    borderRadius: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    x: {
-                        ticks: { color: '#8aa4c8', font: { size: 8, family: 'JetBrains Mono' }, maxRotation: 45 },
-                        grid: { color: 'rgba(0,245,255,0.05)' }
-                    },
-                    y: {
-                        ticks: { color: '#8aa4c8', font: { size: 9, family: 'JetBrains Mono' } },
-                        grid: { color: 'rgba(0,245,255,0.05)' }
-                    }
+    loopLength = tMax - tMin;
+
+    allTripData = trips;
+    cnTripData = trips.filter(t => t.isCN);
+    tripData = filterCN ? cnTripData : allTripData;
+
+    return { tMin, tMax };
+}
+
+// =========================================================================
+// deck.gl rendering
+// =========================================================================
+function createDeckLayer() {
+    return new deck.TripsLayer({
+        id: 'trips',
+        data: tripData,
+        getPath: d => d.path.map(p => p.coordinates),
+        getTimestamps: d => d.path.map(p => p.timestamp),
+        getColor: d => d.color,
+        opacity: 0.8,
+        widthMinPixels: trailWidth,
+        jointRounded: true,
+        capRounded: true,
+        trailLength: trailLength * 60 * 1000, // Convert minutes to ms
+        currentTime: currentTime,
+        shadowEnabled: false
+    });
+}
+
+function initDeck(tMin, tMax) {
+    deckgl = new deck.DeckGL({
+        container: 'container',
+        mapStyle: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+        initialViewState: {
+            longitude: 121.0,
+            latitude: 24.0,
+            zoom: 6.5,
+            pitch: 0,
+            bearing: 0,
+            maxZoom: 14,
+            minZoom: 4
+        },
+        controller: true,
+        layers: [createDeckLayer()],
+        getTooltip: ({object}) => {
+            if (!object) return null;
+            return {
+                html: `<div style="font-size:12px"><b>${object.name}</b><br>MMSI: ${object.mmsi}<br>Type: ${object.type}</div>`,
+                style: {
+                    background: 'rgba(10,15,28,0.9)',
+                    color: '#e8eef7',
+                    border: '1px solid rgba(0,245,255,0.3)',
+                    borderRadius: '4px',
+                    padding: '6px 10px'
                 }
-            }
-        });
-    }
-
-    function highlightChartBar(idx) {
-        if (!Anim.chart) return;
-        const dataset = Anim.chart.data.datasets[0];
-        dataset.backgroundColor = dataset.data.map((_, i) =>
-            i === idx ? 'rgba(0, 245, 255, 0.8)' : 'rgba(255, 51, 102, 0.5)'
-        );
-        dataset.borderColor = dataset.data.map((_, i) =>
-            i === idx ? '#00f5ff' : '#ff3366'
-        );
-        Anim.chart.update('none');
-    }
-
-    // =========================================================================
-    // Playback controls
-    // =========================================================================
-    function play() {
-        if (Anim.playing) return;
-        if (Anim.filteredDays.length === 0) return;
-
-        // If at the end, restart from beginning
-        if (Anim.currentIdx >= Anim.filteredDays.length - 1) {
-            Anim.currentIdx = -1;
-        }
-
-        Anim.playing = true;
-        const btn = document.getElementById('playBtn');
-        btn.classList.add('playing');
-        btn.textContent = '⏸';
-
-        const baseInterval = 1500;
-        const interval = baseInterval / Anim.speed;
-
-        Anim.intervalId = setInterval(() => {
-            const nextIdx = Anim.currentIdx + 1;
-            if (nextIdx >= Anim.filteredDays.length) {
-                pause();
-                return;
-            }
-            renderFrame(nextIdx);
-        }, interval);
-    }
-
-    function pause() {
-        Anim.playing = false;
-        clearInterval(Anim.intervalId);
-        const btn = document.getElementById('playBtn');
-        btn.classList.remove('playing');
-        btn.textContent = '▶';
-    }
-
-    function togglePlay() {
-        if (Anim.playing) {
-            pause();
-        } else {
-            play();
-        }
-    }
-
-    function stepForward() {
-        pause();
-        const nextIdx = Math.min(Anim.currentIdx + 1, Anim.filteredDays.length - 1);
-        renderFrame(nextIdx);
-    }
-
-    function stepBackward() {
-        pause();
-        const prevIdx = Math.max(Anim.currentIdx - 1, 0);
-        renderFrame(prevIdx);
-    }
-
-    function setSpeed(speed) {
-        Anim.speed = speed;
-        document.querySelectorAll('[data-speed]').forEach(btn => {
-            btn.classList.toggle('active', parseInt(btn.dataset.speed) === speed);
-        });
-        if (Anim.playing) {
-            pause();
-            play();
-        }
-    }
-
-    // =========================================================================
-    // Keyboard shortcuts
-    // =========================================================================
-    document.addEventListener('keydown', function (e) {
-        if (e.target.tagName === 'INPUT') return;
-        switch (e.key) {
-            case ' ':
-                e.preventDefault();
-                togglePlay();
-                break;
-            case 'ArrowRight':
-                stepForward();
-                break;
-            case 'ArrowLeft':
-                stepBackward();
-                break;
+            };
         }
     });
+}
 
-    // =========================================================================
-    // Initialize
-    // =========================================================================
-    initMap();
-    loadData();
-    </script>
-    <script src="js/mobile-nav.js"></script>
+function updateLayers() {
+    if (!deckgl) return;
+    deckgl.setProps({
+        layers: [createDeckLayer()]
+    });
+}
+
+// =========================================================================
+// Playback
+// =========================================================================
+function animate() {
+    if (!playing) return;
+
+    const step = (loopLength / 500) * speed;
+    currentTime += step;
+
+    if (currentTime > loopLength) {
+        currentTime = 0;
+    }
+
+    document.getElementById('timeSlider').value =
+        Math.round((currentTime / loopLength) * 1000);
+
+    updateTimeDisplay();
+    updateLayers();
+    requestAnimationFrame(animate);
+}
+
+function togglePlay() {
+    playing = !playing;
+    const btn = document.getElementById('playBtn');
+    if (playing) {
+        btn.textContent = '⏸';
+        btn.classList.add('playing');
+        requestAnimationFrame(animate);
+    } else {
+        btn.textContent = '▶';
+        btn.classList.remove('playing');
+    }
+}
+
+function setSpeed(s) {
+    speed = s;
+    document.querySelectorAll('.btn:not(.play)').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function updateTimeDisplay() {
+    if (timestamps.length === 0) return;
+    const tMin = timestamps[0];
+    const actualTime = new Date(tMin + currentTime);
+    const dateStr = actualTime.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+    document.getElementById('timeDisplay').textContent = dateStr;
+
+    const activeCount = tripData.filter(t => {
+        const lastTs = t.path[t.path.length - 1].timestamp;
+        const firstTs = t.path[0].timestamp;
+        return currentTime >= firstTs && currentTime <= lastTs + trailLength * 60000;
+    }).length;
+    document.getElementById('statLine').textContent =
+        '可見軌跡: ' + activeCount + ' / 總計: ' + tripData.length;
+}
+
+function updateTrailLength(val) {
+    trailLength = parseInt(val);
+    updateLayers();
+}
+
+function updateTrailWidth(val) {
+    trailWidth = parseInt(val);
+    updateLayers();
+}
+
+function toggleFilter() {
+    filterCN = document.getElementById('filterCN').checked;
+    tripData = filterCN ? cnTripData : allTripData;
+    updateLayers();
+}
+
+// =========================================================================
+// Slider interaction
+// =========================================================================
+document.getElementById('timeSlider').addEventListener('input', function() {
+    currentTime = (this.value / 1000) * loopLength;
+    updateTimeDisplay();
+    updateLayers();
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+});
+
+// =========================================================================
+// Initialize
+// =========================================================================
+async function init() {
+    try {
+        const res = await fetch('ais_track_history.json?' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+
+        document.getElementById('loading').querySelector('div:last-child').textContent =
+            '處理 ' + data.length + ' 幀資料...';
+
+        await new Promise(r => setTimeout(r, 50));
+
+        const { tMin, tMax } = processData(data);
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('controls').style.display = '';
+        document.getElementById('legend').style.display = '';
+
+        initDeck(tMin, tMax);
+
+        // Auto-play
+        currentTime = 0;
+        updateTimeDisplay();
+        togglePlay();
+
+    } catch (e) {
+        console.error('Failed to load:', e);
+        document.getElementById('loading').innerHTML =
+            '<div style="color:#ff3366">載入失敗: ' + e.message + '</div>';
+    }
+}
+
+init();
+</script>
 </body>
-
 </html>
