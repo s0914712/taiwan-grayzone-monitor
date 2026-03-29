@@ -142,6 +142,33 @@
             color: var(--text-secondary);
         }
 
+        /* Stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            padding: 8px 16px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+        }
+        .stat-card .value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+        .stat-card .value.alert { color: var(--accent-red); }
+        .stat-card .label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
         /* Timeline slider */
         .timeline-panel {
             padding: 8px 16px 12px;
@@ -558,6 +585,22 @@
         <div class="timeline-labels" id="timelineLabels"></div>
     </div>
 
+    <!-- PLA Sorties Stats (shown when CSV data available) -->
+    <div class="stats-row" id="sortiesStats" style="display:none">
+        <div class="stat-card">
+            <div class="value" id="statSorties">—</div>
+            <div class="label">軍機架次 Aircraft Sorties</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statNaval">—</div>
+            <div class="label">軍艦架次 Naval Sorties</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statZone">—</div>
+            <div class="label">監控區漁船 Zone Fishing</div>
+        </div>
+    </div>
+
     <div class="main-content">
         <!-- Map -->
         <div class="panel map-panel">
@@ -578,6 +621,14 @@
             <div class="panel-title">📊 各時段大陸漁船數量</div>
             <div class="chart-container">
                 <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- PLA Sorties chart (hidden until data loaded) -->
+        <div class="panel chart-panel" id="sortiesChartPanel" style="display:none">
+            <div class="panel-title">✈️ 共機/軍艦每日架次 PLA Daily Sorties</div>
+            <div class="chart-container">
+                <canvas id="sortiesChart"></canvas>
             </div>
         </div>
 
@@ -623,6 +674,16 @@
     };
 
     // =========================================================================
+    // PLA Sorties & Monitoring Zone
+    // =========================================================================
+    const CSV_URL = 'https://raw.githubusercontent.com/s0914712/pla-data-dashboard/main/data/JapanandBattleship.csv';
+    const MONITOR_ZONE = {
+        name: '監控區',
+        south: 25.4, north: 26.1,
+        west: 121.5, east: 122.5
+    };
+
+    // =========================================================================
     // Animation state
     // =========================================================================
     const Anim = {
@@ -638,7 +699,10 @@
         showTrails: true,
         vesselFilter: 'all',  // 'all', 'cn_fishing', 'suspicious'
         chart: null,
-        vesselTrails: {}  // mmsi -> [{lat, lon, timestamp}, ...]
+        vesselTrails: {},  // mmsi -> [{lat, lon, timestamp}, ...]
+        sortiesDaily: {},  // date -> number (PLA aircraft sorties)
+        navalDaily: {},    // date -> number (PLA naval sorties)
+        sortiesChart: null // Chart.js instance for sorties
     };
 
     let map;
@@ -1044,6 +1108,16 @@
             }).addTo(map).bindTooltip(spot.name, { permanent: false, direction: 'center' });
         });
 
+        // Monitoring zone rectangle (NE Taiwan)
+        L.rectangle([
+            [MONITOR_ZONE.south, MONITOR_ZONE.west],
+            [MONITOR_ZONE.north, MONITOR_ZONE.east]
+        ], {
+            color: '#ffd700', weight: 2, opacity: 0.7,
+            fillColor: '#ffd700', fillOpacity: 0.08,
+            dashArray: '8,5'
+        }).addTo(map).bindTooltip(MONITOR_ZONE.name, { permanent: false, direction: 'center' });
+
         Anim.markerLayer = L.layerGroup().addTo(map);
         Anim.trailLayer = L.layerGroup().addTo(map);
     }
@@ -1059,13 +1133,101 @@
         }
     }
 
+    function parseCSV(text) {
+        const lines = text.split('\n');
+        if (lines.length < 2) return;
+        const header = lines[0].replace(/^\uFEFF/, '').split(',');
+        const dateIdx = header.indexOf('date');
+        const sortiesIdx = header.indexOf('pla_aircraft_sorties');
+        const navalIdx = header.indexOf('plan_vessel_sorties');
+        if (dateIdx < 0 || sortiesIdx < 0) return;
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            if (cols.length <= sortiesIdx) continue;
+            const rawDate = (cols[dateIdx] || '').trim();
+            if (!rawDate) continue;
+            const date = rawDate.replace(/\//g, '-');
+            const sorties = parseFloat(cols[sortiesIdx]) || 0;
+            const naval = navalIdx >= 0 ? (parseFloat(cols[navalIdx]) || 0) : 0;
+            Anim.sortiesDaily[date] = sorties;
+            Anim.navalDaily[date] = naval;
+        }
+    }
+
+    function buildSortiesChart() {
+        const dates = Object.keys(Anim.sortiesDaily).sort();
+        if (dates.length === 0) return;
+
+        // Show the panels
+        document.getElementById('sortiesStats').style.display = 'grid';
+        document.getElementById('sortiesChartPanel').style.display = '';
+
+        const labels = dates.map(d => d.slice(5)); // "03-01" etc
+        const data = dates.map(d => Anim.sortiesDaily[d] || 0);
+
+        const ctx = document.getElementById('sortiesChart').getContext('2d');
+        Anim.sortiesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '共機架次',
+                    data: data,
+                    backgroundColor: data.map(v => {
+                        if (v >= 20) return 'rgba(255, 51, 102, 0.7)';
+                        if (v >= 10) return 'rgba(255, 165, 0, 0.6)';
+                        if (v > 0)  return 'rgba(0, 245, 255, 0.5)';
+                        return 'rgba(100, 120, 160, 0.2)';
+                    }),
+                    borderColor: 'rgba(0, 245, 255, 0.3)',
+                    borderWidth: 1,
+                    borderRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: items => items[0].label,
+                            label: item => '共機架次: ' + item.raw
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#8aa4c8', font: { size: 8, family: 'JetBrains Mono' } },
+                        grid: { color: 'rgba(0,245,255,0.05)' }
+                    },
+                    y: {
+                        ticks: { color: '#8aa4c8', font: { size: 9, family: 'JetBrains Mono' } },
+                        grid: { color: 'rgba(0,245,255,0.05)' },
+                        title: { display: true, text: '架次', color: '#8aa4c8', font: { size: 10 } }
+                    }
+                }
+            }
+        });
+    }
+
     async function loadData() {
         try {
             document.getElementById('loadingDetail').textContent =
                 '正在下載 AIS 軌跡資料...';
 
-            const res = await fetch('ais_track_history.json?' + Date.now());
+            // Load AIS data and PLA CSV in parallel
+            const [res, csvRes] = await Promise.all([
+                fetch('ais_track_history.json?' + Date.now()),
+                fetch(CSV_URL).catch(() => null)
+            ]);
             if (!res.ok) throw new Error('HTTP ' + res.status);
+
+            // Parse CSV sorties data
+            if (csvRes && csvRes.ok) {
+                const csvText = await csvRes.text();
+                parseCSV(csvText);
+            }
 
             document.getElementById('loadingDetail').textContent =
                 '正在解析資料，請稍候...';
@@ -1088,6 +1250,7 @@
             await new Promise(r => setTimeout(r, 50));
             updateRangeButtons();
             applyRangeFilter(Anim.selectedRange);
+            buildSortiesChart();
 
             const first = data[0].timestamp || '';
             const last = data[data.length - 1].timestamp || '';
@@ -1314,7 +1477,34 @@
     }
 
     function updateStatCards(frame, idx) {
-        // Stats cards removed from UI – keep function as no-op
+        // Update PLA sorties stats if data available
+        if (Object.keys(Anim.sortiesDaily).length === 0) return;
+        const ts = (frame.timestamp || '').slice(0, 10);
+        const sorties = Anim.sortiesDaily[ts] || 0;
+        const naval = Anim.navalDaily[ts] || 0;
+
+        // Count vessels in monitoring zone
+        const vessels = frame.vessels || [];
+        let zoneCount = 0;
+        vessels.forEach(v => {
+            if (v.lat >= MONITOR_ZONE.south && v.lat <= MONITOR_ZONE.north &&
+                v.lon >= MONITOR_ZONE.west && v.lon <= MONITOR_ZONE.east) {
+                zoneCount++;
+            }
+        });
+
+        const elSorties = document.getElementById('statSorties');
+        const elNaval = document.getElementById('statNaval');
+        const elZone = document.getElementById('statZone');
+        if (elSorties) {
+            elSorties.textContent = sorties;
+            elSorties.className = sorties >= 20 ? 'value alert' : 'value';
+        }
+        if (elNaval) elNaval.textContent = naval;
+        if (elZone) {
+            elZone.textContent = zoneCount;
+            elZone.className = zoneCount > 50 ? 'value alert' : 'value';
+        }
     }
 
     function updateVesselTable(vessels) {
