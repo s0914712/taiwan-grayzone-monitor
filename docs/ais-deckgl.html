@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIS 軌跡光跡動畫 | deck.gl TripsLayer Prototype</title>
+
+    <!-- deck.gl + dependencies -->
+    <script src="https://unpkg.com/deck.gl@8.9.35/dist.min.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            color: #e8eef7;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        #container { width: 100vw; height: 100vh; position: relative; }
+
+        .controls {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            z-index: 10;
+            background: rgba(10, 15, 28, 0.85);
+            border: 1px solid rgba(0, 245, 255, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            min-width: 280px;
+            backdrop-filter: blur(8px);
+        }
+
+        .controls h2 {
+            font-size: 14px;
+            color: #00f5ff;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .controls label {
+            font-size: 11px;
+            color: #8aa4c8;
+            display: block;
+            margin-top: 8px;
+        }
+
+        .controls input[type="range"] {
+            width: 100%;
+            margin: 4px 0;
+            accent-color: #00f5ff;
+        }
+
+        .controls .row {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .btn {
+            background: rgba(0, 245, 255, 0.1);
+            border: 1px solid rgba(0, 245, 255, 0.3);
+            color: #00f5ff;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { background: rgba(0, 245, 255, 0.2); }
+        .btn.active { background: rgba(0, 245, 255, 0.3); border-color: #00f5ff; }
+        .btn.play { font-size: 16px; padding: 6px 18px; }
+        .btn.play.playing { color: #ff3366; border-color: #ff3366; background: rgba(255,51,102,0.1); }
+
+        .time-display {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #00f5ff;
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+
+        .stat-line {
+            font-size: 10px;
+            color: #8aa4c8;
+            margin-top: 4px;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            z-index: 10;
+            background: rgba(10, 15, 28, 0.85);
+            border: 1px solid rgba(0, 245, 255, 0.15);
+            border-radius: 6px;
+            padding: 10px 14px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            backdrop-filter: blur(8px);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: #8aa4c8;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            box-shadow: 0 0 6px currentColor;
+        }
+
+        .credit {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            z-index: 10;
+            font-size: 9px;
+            color: #4a6080;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            color: #00f5ff;
+            font-size: 14px;
+        }
+
+        #loading .spinner {
+            border: 3px solid rgba(0,245,255,0.1);
+            border-top: 3px solid #00f5ff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div id="container"></div>
+
+<div id="loading">
+    <div class="spinner"></div>
+    <div>載入 AIS 軌跡資料...</div>
+</div>
+
+<div class="controls" id="controls" style="display:none">
+    <h2>🛰️ AIS 軌跡光跡動畫</h2>
+
+    <label>時間軸 Timeline</label>
+    <input type="range" id="timeSlider" min="0" max="1000" value="0">
+    <div class="time-display" id="timeDisplay">—</div>
+    <div class="stat-line" id="statLine">—</div>
+
+    <div class="row">
+        <button class="btn play" id="playBtn" onclick="togglePlay()">▶</button>
+        <button class="btn" onclick="setSpeed(1)">1×</button>
+        <button class="btn active" onclick="setSpeed(2)">2×</button>
+        <button class="btn" onclick="setSpeed(4)">4×</button>
+    </div>
+
+    <label>軌跡長度 Trail Length</label>
+    <input type="range" id="trailSlider" min="1" max="60" value="15"
+           oninput="updateTrailLength(this.value)">
+
+    <label>發光寬度 Trail Width</label>
+    <input type="range" id="widthSlider" min="1" max="10" value="3"
+           oninput="updateTrailWidth(this.value)">
+
+    <label>
+        <input type="checkbox" id="filterCN" onchange="toggleFilter()"> 僅顯示大陸漁船
+    </label>
+</div>
+
+<div class="legend" id="legend" style="display:none">
+    <div class="legend-item"><div class="legend-dot" style="color:#ff6347"></div>福建</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#4169e1"></div>浙江</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#ffa500"></div>廣東</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#32cd32"></div>山東</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#ff69b4"></div>海南</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#00f5ff"></div>貨輪</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#ff6b35"></div>油輪</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#9370db"></div>其他</div>
+</div>
+
+<div class="credit">deck.gl TripsLayer | Taiwan Gray Zone Monitor</div>
+
+<script>
+// =========================================================================
+// Province detection
+// =========================================================================
+const PROVINCE_PATTERNS = {
+    fujian:    { patterns: [/^MIN/i, /^闽/i, /^閩/i], color: [255, 99, 71] },
+    zhejiang:  { patterns: [/^ZHE/i, /^浙/i],         color: [65, 105, 225] },
+    guangdong: { patterns: [/^YUE/i, /^粤/i, /^粵/i], color: [255, 165, 0] },
+    shandong:  { patterns: [/^LU\s?YU/i, /^鲁/i, /^魯/i], color: [50, 205, 50] },
+    hainan:    { patterns: [/^QIONG/i, /^琼/i, /^瓊/i], color: [255, 105, 180] },
+    jiangsu:   { patterns: [/^SU\s?YU/i, /^苏/i, /^蘇/i], color: [0, 206, 209] },
+    guangxi:   { patterns: [/^GUI/i, /^桂/i],         color: [218, 165, 32] },
+};
+
+const TYPE_COLORS = {
+    fishing: [0, 255, 136],
+    cargo:   [0, 245, 255],
+    tanker:  [255, 107, 53],
+    lng:     [240, 225, 48],
+    other:   [147, 112, 219],
+    unknown: [136, 136, 136]
+};
+
+function getVesselColor(v) {
+    const name = (v.name || '').toUpperCase();
+    for (const [, prov] of Object.entries(PROVINCE_PATTERNS)) {
+        if (prov.patterns.some(p => p.test(name))) return prov.color;
+    }
+    const type = v.type_name || 'unknown';
+    return TYPE_COLORS[type] || TYPE_COLORS.unknown;
+}
+
+function isCnFishing(v) {
+    const name = (v.name || '').toUpperCase();
+    for (const [, prov] of Object.entries(PROVINCE_PATTERNS)) {
+        if (prov.patterns.some(p => p.test(name))) return true;
+    }
+    return /YU[.\s]*\d/i.test(name);
+}
+
+// =========================================================================
+// State
+// =========================================================================
+let tripData = [];          // Processed trip objects for deck.gl
+let allTripData = [];       // Unfiltered
+let cnTripData = [];        // CN fishing only
+let currentTime = 0;
+let loopLength = 1000;      // Will be set after data load
+let trailLength = 15;
+let trailWidth = 3;
+let playing = false;
+let speed = 2;
+let intervalId = null;
+let deckgl = null;
+let filterCN = false;
+let timestamps = [];        // Sorted unique timestamps
+
+// =========================================================================
+// Data processing: convert AIS frames to trip format
+// =========================================================================
+function processData(frames) {
+    // Build per-vessel tracks: mmsi -> [{lat, lon, timestamp_idx, color, ...}]
+    const vesselTracks = {};
+    const tsSet = new Set();
+
+    frames.forEach((frame, frameIdx) => {
+        const ts = new Date(frame.timestamp).getTime();
+        tsSet.add(ts);
+
+        (frame.vessels || []).forEach(v => {
+            if (!v.lat || !v.lon) return;
+            if (!vesselTracks[v.mmsi]) {
+                vesselTracks[v.mmsi] = {
+                    path: [],
+                    color: getVesselColor(v),
+                    isCN: isCnFishing(v),
+                    name: v.name || v.mmsi,
+                    type: v.type_name || 'unknown'
+                };
+            }
+            vesselTracks[v.mmsi].path.push({
+                coordinates: [v.lon, v.lat],
+                timestamp: ts
+            });
+        });
+    });
+
+    // Sort timestamps
+    timestamps = Array.from(tsSet).sort((a, b) => a - b);
+    const tMin = timestamps[0];
+    const tMax = timestamps[timestamps.length - 1];
+    loopLength = tMax - tMin;
+
+    // Convert to deck.gl trip format
+    const trips = [];
+    for (const [mmsi, track] of Object.entries(vesselTracks)) {
+        if (track.path.length < 2) continue;
+
+        // Sort by timestamp
+        track.path.sort((a, b) => a.timestamp - b.timestamp);
+
+        // Deduplicate consecutive identical positions
+        const deduped = [track.path[0]];
+        for (let i = 1; i < track.path.length; i++) {
+            const prev = deduped[deduped.length - 1];
+            const cur = track.path[i];
+            if (cur.coordinates[0] !== prev.coordinates[0] ||
+                cur.coordinates[1] !== prev.coordinates[1]) {
+                deduped.push(cur);
+            }
+        }
+        if (deduped.length < 2) continue;
+
+        trips.push({
+            mmsi: mmsi,
+            name: track.name,
+            type: track.type,
+            isCN: track.isCN,
+            color: track.color,
+            path: deduped.map(p => ({
+                coordinates: p.coordinates,
+                timestamp: p.timestamp - tMin  // Normalize to 0-based
+            }))
+        });
+    }
+
+    loopLength = tMax - tMin;
+
+    allTripData = trips;
+    cnTripData = trips.filter(t => t.isCN);
+    tripData = filterCN ? cnTripData : allTripData;
+
+    return { tMin, tMax };
+}
+
+// =========================================================================
+// deck.gl rendering
+// =========================================================================
+function createDeckLayer() {
+    return new deck.TripsLayer({
+        id: 'trips',
+        data: tripData,
+        getPath: d => d.path.map(p => p.coordinates),
+        getTimestamps: d => d.path.map(p => p.timestamp),
+        getColor: d => d.color,
+        opacity: 0.8,
+        widthMinPixels: trailWidth,
+        jointRounded: true,
+        capRounded: true,
+        trailLength: trailLength * 60 * 1000, // Convert minutes to ms
+        currentTime: currentTime,
+        shadowEnabled: false
+    });
+}
+
+function initDeck(tMin, tMax) {
+    deckgl = new deck.DeckGL({
+        container: 'container',
+        mapStyle: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+        initialViewState: {
+            longitude: 121.0,
+            latitude: 24.0,
+            zoom: 6.5,
+            pitch: 0,
+            bearing: 0,
+            maxZoom: 14,
+            minZoom: 4
+        },
+        controller: true,
+        layers: [createDeckLayer()],
+        getTooltip: ({object}) => {
+            if (!object) return null;
+            return {
+                html: `<div style="font-size:12px"><b>${object.name}</b><br>MMSI: ${object.mmsi}<br>Type: ${object.type}</div>`,
+                style: {
+                    background: 'rgba(10,15,28,0.9)',
+                    color: '#e8eef7',
+                    border: '1px solid rgba(0,245,255,0.3)',
+                    borderRadius: '4px',
+                    padding: '6px 10px'
+                }
+            };
+        }
+    });
+}
+
+function updateLayers() {
+    if (!deckgl) return;
+    deckgl.setProps({
+        layers: [createDeckLayer()]
+    });
+}
+
+// =========================================================================
+// Playback
+// =========================================================================
+function animate() {
+    if (!playing) return;
+
+    const step = (loopLength / 500) * speed;
+    currentTime += step;
+
+    if (currentTime > loopLength) {
+        currentTime = 0;
+    }
+
+    document.getElementById('timeSlider').value =
+        Math.round((currentTime / loopLength) * 1000);
+
+    updateTimeDisplay();
+    updateLayers();
+    requestAnimationFrame(animate);
+}
+
+function togglePlay() {
+    playing = !playing;
+    const btn = document.getElementById('playBtn');
+    if (playing) {
+        btn.textContent = '⏸';
+        btn.classList.add('playing');
+        requestAnimationFrame(animate);
+    } else {
+        btn.textContent = '▶';
+        btn.classList.remove('playing');
+    }
+}
+
+function setSpeed(s) {
+    speed = s;
+    document.querySelectorAll('.btn:not(.play)').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function updateTimeDisplay() {
+    if (timestamps.length === 0) return;
+    const tMin = timestamps[0];
+    const actualTime = new Date(tMin + currentTime);
+    const dateStr = actualTime.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+    document.getElementById('timeDisplay').textContent = dateStr;
+
+    const activeCount = tripData.filter(t => {
+        const lastTs = t.path[t.path.length - 1].timestamp;
+        const firstTs = t.path[0].timestamp;
+        return currentTime >= firstTs && currentTime <= lastTs + trailLength * 60000;
+    }).length;
+    document.getElementById('statLine').textContent =
+        '可見軌跡: ' + activeCount + ' / 總計: ' + tripData.length;
+}
+
+function updateTrailLength(val) {
+    trailLength = parseInt(val);
+    updateLayers();
+}
+
+function updateTrailWidth(val) {
+    trailWidth = parseInt(val);
+    updateLayers();
+}
+
+function toggleFilter() {
+    filterCN = document.getElementById('filterCN').checked;
+    tripData = filterCN ? cnTripData : allTripData;
+    updateLayers();
+}
+
+// =========================================================================
+// Slider interaction
+// =========================================================================
+document.getElementById('timeSlider').addEventListener('input', function() {
+    currentTime = (this.value / 1000) * loopLength;
+    updateTimeDisplay();
+    updateLayers();
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+});
+
+// =========================================================================
+// Initialize
+// =========================================================================
+async function init() {
+    try {
+        const res = await fetch('ais_track_history.json?' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+
+        document.getElementById('loading').querySelector('div:last-child').textContent =
+            '處理 ' + data.length + ' 幀資料...';
+
+        await new Promise(r => setTimeout(r, 50));
+
+        const { tMin, tMax } = processData(data);
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('controls').style.display = '';
+        document.getElementById('legend').style.display = '';
+
+        initDeck(tMin, tMax);
+
+        // Auto-play
+        currentTime = 0;
+        updateTimeDisplay();
+        togglePlay();
+
+    } catch (e) {
+        console.error('Failed to load:', e);
+        document.getElementById('loading').innerHTML =
+            '<div style="color:#ff3366">載入失敗: ' + e.message + '</div>';
+    }
+}
+
+init();
+</script>
+</body>
+</html>
