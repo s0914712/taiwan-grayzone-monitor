@@ -1286,6 +1286,7 @@
                 '<b style="color:' + color + ';font-size:15px">' + (v.name || v.mmsi) + '</b><br>' +
                 '<span style="color:' + color + ';font-weight:600">省份: ' + provName + '</span><br>' +
                 'MMSI: ' + v.mmsi + '<br>' +
+                ((v.mmsi || '').startsWith('898') ? '<span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span><br>' : '') +
                 i18n.t('ais_anim.popup_speed') + ': ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
                 '航向: ' + headingText + '<br>' +
                 (isSuspicious ? '<span style="color:#ff3366;font-weight:600;font-size:14px">⚠ SUSPICIOUS</span>' : '') +

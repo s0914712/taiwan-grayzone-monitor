@@ -1332,6 +1332,7 @@
                 '<div style="font-size:14px;line-height:1.8;min-width:180px">' +
                 '<b style="color:' + color + ';font-size:15px">' + (v.name || v.mmsi) + '</b><br>' +
                 'MMSI: ' + v.mmsi + '<br>' +
+                ((v.mmsi || '').startsWith('898') ? '<span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span><br>' : '') +
                 i18n.t('ais_anim.popup_type') + ': ' + v.type_name + '<br>' +
                 i18n.t('ais_anim.popup_speed') + ': ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
                 '航向: ' + headingText + '<br>' +

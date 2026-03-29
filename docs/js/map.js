@@ -583,13 +583,14 @@ const MapModule = (function() {
                 v.mmsi + '" target="_blank" rel="noopener">🔎 From / Dest 查詢</a>';
 
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
+            const netMarkerNote = (v.mmsi || '').startsWith('898') ? '<br><span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span>' : '';
 
             marker.bindPopup(`
                 <b>${v.name || 'Unknown'}</b><br>
                 ${t('app.mmsi')} ${v.mmsi}${imoInfo}<br>
                 ${t('app.type')} ${v.type_name || t('common.unknown')}<br>
                 ${t('app.speed')} ${(v.speed || 0).toFixed(1)} kn<br>
-                航向: ${headingText}${navInfo}${lngBadge}${destInfo}${suspiciousInfo}${sanctionInfo}${routeLink}${mtLink}
+                航向: ${headingText}${navInfo}${lngBadge}${destInfo}${suspiciousInfo}${sanctionInfo}${routeLink}${mtLink}${netMarkerNote}
             `);
 
             vesselMarkers[v.mmsi] = marker;
@@ -725,13 +726,14 @@ const MapModule = (function() {
             var mtLink2 = '<br><a class="mt-lookup-link" href="https://www.marinetraffic.com/en/ais/details/ships/mmsi:' +
                 v.mmsi + '" target="_blank" rel="noopener">🔎 From / Dest 查詢</a>';
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
+            var netMarkerNote2 = (v.mmsi || '').startsWith('898') ? '<br><span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span>' : '';
 
             marker.bindPopup(
                 '<b>' + (v.name || 'Unknown') + '</b><br>' +
                 t('app.mmsi') + ' ' + v.mmsi + imoInfo2 + '<br>' +
                 t('app.type') + ' ' + (v.type_name || t('common.unknown')) + '<br>' +
                 t('app.speed') + ' ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
-                '航向: ' + headingText + navInfo2 + destInfo2 + suspiciousInfo + sanctionInfo2 + routeLink + mtLink2
+                '航向: ' + headingText + navInfo2 + destInfo2 + suspiciousInfo + sanctionInfo2 + routeLink + mtLink2 + netMarkerNote2
             );
 
             vesselMarkers[v.mmsi] = marker;
@@ -817,6 +819,7 @@ const MapModule = (function() {
             '<div class="track-info-header">' + (data.name || 'Unknown') + '</div>' +
             '<div class="track-info-body">' +
                 '<div>MMSI ' + data.mmsi + '</div>' +
+                ((data.mmsi || '').startsWith('898') ? '<div style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</div>' : '') +
                 '<div>' + startDate + ' ~ ' + endDate + ' (' + points + 'pts)</div>' +
             '</div>' +
             '<div class="track-action-row">' +
@@ -1135,11 +1138,12 @@ const MapModule = (function() {
                     var sanctionLine = sanctionHit
                         ? '<br><span class="sanction-warning">' + t3('app.sanctioned') + ' (' + t3('app.sanction_res') + ' ' + (sanctionHit.resolution || '1718') + ')</span>'
                         : '';
+                    var netMarkerNote3 = (sv.mmsi || '').startsWith('898') ? '<br><span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span>' : '';
                     return '<b style="color:' + (riskColors[sv.risk_level] || '#ff3366') + '">' + ((sv.names && sv.names[0]) || sv.mmsi) + '</b><br>' +
                         t3('app.mmsi') + ' ' + sv.mmsi + '<br>' +
                         '<b>' + t3('app.risk') + ' ' + sv.risk_level.toUpperCase() + '</b> (' + t3('app.score') + ' ' + sv.risk_score + ')<br>' +
                         (sv.flags || []).map(function(f) { return '- ' + f; }).join('<br>') +
-                        sanctionLine +
+                        sanctionLine + netMarkerNote3 +
                         '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + sv.mmsi + '\'); return false;">' + t3('app.show_track') + '</button>';
                 });
             }
