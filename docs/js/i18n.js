@@ -23,7 +23,7 @@ const i18n = (function () {
         'nav.grayzone':          { zh: '灰色地帶監測', en: 'Gray Zone Monitor' },
         'nav.dark_vessels':      { zh: '暗船偵測', en: 'Dark Vessels' },
         'nav.statistics':        { zh: '統計分析', en: 'Statistics' },
-        'nav.animation':         { zh: '暗船動畫', en: 'Animation' },
+        'nav.animation':         { zh: '軌跡動畫', en: 'Trail Animation' },
         'nav.mob_monitor':       { zh: '監測', en: 'Monitor' },
         'nav.mob_dark':          { zh: '暗船', en: 'Dark' },
         'nav.mob_stats':         { zh: '統計', en: 'Stats' },
