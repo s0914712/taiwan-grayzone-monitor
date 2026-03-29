@@ -714,14 +714,6 @@
             pane: 'overlayPane'
         }).addTo(map);
 
-        zoneRect.bindTooltip(
-            '<b style="color:#ffd700">📍 監控區</b><br>' +
-            MONITOR_ZONE.south + '°N ~ ' + MONITOR_ZONE.north + '°N<br>' +
-            MONITOR_ZONE.west + '°E ~ ' + MONITOR_ZONE.east + '°E',
-            { permanent: true, direction: 'center', className: 'zone-tooltip',
-              offset: [0, 0] }
-        );
-
         State.markerLayer = L.layerGroup().addTo(map);
         State.trailLayer = L.layerGroup().addTo(map);
     }
