@@ -1321,18 +1321,6 @@
             }
             const heading = computeHeading(v.mmsi, v.lat, v.lon) ?? (v.heading !== undefined ? v.heading : null);
 
-            // Glow effect FIRST (behind main marker)
-            if (isSuspicious || hasDetection) {
-                L.circleMarker([v.lat, v.lon], {
-                    radius: hasDetection ? 12 : 10,
-                    fillColor: color,
-                    color: color,
-                    weight: 0,
-                    fillOpacity: 0.15,
-                    interactive: false
-                }).addTo(Anim.markerLayer);
-            }
-
             const icon = createVesselIcon(color, isSuspicious || hasDetection, heading);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(Anim.markerLayer);
 

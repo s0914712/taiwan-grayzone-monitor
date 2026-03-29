@@ -1277,18 +1277,6 @@
             const heading = computeHeading(v.mmsi, v.lat, v.lon) ?? (v.heading !== undefined ? v.heading : null);
             const isSuspicious = v.suspicious;
 
-            // Glow for suspicious vessels
-            if (isSuspicious) {
-                L.circleMarker([v.lat, v.lon], {
-                    radius: 10,
-                    fillColor: isSuspicious ? '#ff3366' : color,
-                    color: isSuspicious ? '#ff3366' : color,
-                    weight: 0,
-                    fillOpacity: 0.15,
-                    interactive: false
-                }).addTo(Anim.markerLayer);
-            }
-
             const icon = createVesselIcon(color, isSuspicious, heading);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(Anim.markerLayer);
 
