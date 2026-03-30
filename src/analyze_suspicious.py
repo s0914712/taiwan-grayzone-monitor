@@ -20,6 +20,7 @@ Suspicious Vessel Analysis: Submarine Cable Threat Detection
 import json
 import math
 import os
+import re
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -65,6 +66,73 @@ TOP_10_FLAG_MIDS = {
     # Taiwan (ROC)
     '416',
 }
+
+# ── 排除規則 (Exclusion Rules) ──────────────────────────────
+# 符合任一規則的船隻/設備將被排除在可疑計算之外。
+# 新增規則只需在此列表加入一個 dict：
+#   id:    唯一識別碼（用於輸出 JSON 標記）
+#   label: 人類可讀的排除原因（中文）
+#   check: function(mmsi: str, names: list[str]) -> bool
+#
+# names 參數為該 MMSI 歷史上使用過的所有船名列表。
+# ───────────────────────────────────────────────────────────
+EXCLUSION_RULES = [
+    {
+        'id': 'mmsi_9xx',
+        'label': '潛水浮標/AtoN (MMSI 9開頭)',
+        'check': lambda mmsi, names: mmsi.startswith('9'),
+    },
+    {
+        'id': 'mmsi_898',
+        'label': '漁網標記 (MMSI 898開頭)',
+        'check': lambda mmsi, names: mmsi.startswith('898'),
+    },
+    {
+        'id': 'name_percent',
+        'label': '漁網/魚標信標 (名稱含%)',
+        'check': lambda mmsi, names: any('%' in n for n in names if n),
+    },
+    {
+        'id': 'name_buoy',
+        'label': '浮標 (名稱含BUOY)',
+        'check': lambda mmsi, names: any(
+            'BUOY' in (n or '').upper() for n in names if n
+        ),
+    },
+    {
+        'id': 'name_voltage_suffix',
+        'label': '漁網信標 (名稱尾部電壓值 V)',
+        'check': lambda mmsi, names: any(
+            re.search(r'\d+\.?\d*V$', (n or '').strip().upper())
+            for n in names if n
+        ),
+    },
+    {
+        'id': 'name_digit_percent_suffix',
+        'label': '漁網信標 (名稱尾部 數字%)',
+        'check': lambda mmsi, names: any(
+            re.search(r'\d+%$', (n or '').strip())
+            for n in names if n
+        ),
+    },
+]
+
+
+def check_exclusion_rules(mmsi, names):
+    """
+    檢查 MMSI / 船名是否符合任一排除規則。
+    回傳: (excluded: bool, matched_rules: list[dict])
+    每個 matched_rule = {'id': ..., 'label': ...}
+    """
+    matched = []
+    for rule in EXCLUSION_RULES:
+        try:
+            if rule['check'](mmsi, names):
+                matched.append({'id': rule['id'], 'label': rule['label']})
+        except Exception:
+            continue
+    return len(matched) > 0, matched
+
 
 # ── 台灣周邊 200m 等深線近似座標 ─────────────────────────
 # 大陸棚邊緣（西側較淺、東側急降）
@@ -525,23 +593,23 @@ def classify_vessel(profile, track_points, identity_events=None,
             f'⚠️ UN 制裁船舶 (UNSCR {res}: {measures})'
         )
 
-    # ── 漁網/魚標偵測（船名尾部含 % 或含 BUOY）──
+    # ── 排除規則檢查（漁網、浮標、信標等非船舶設備）──
     all_names = profile.get('names_seen', [])
-    is_gear = any(
-        ('%' in n) or ('BUOY' in (n or '').upper())
-        for n in all_names if n
-    )
-    classification['is_fishing_gear'] = is_gear
+    excluded, matched_rules = check_exclusion_rules(mmsi, all_names)
+    classification['excluded'] = excluded
+    if matched_rules:
+        classification['exclusion_rules'] = matched_rules
 
     # ── 風險計分 ──
     score = 0
 
-    if is_gear:
-        # 漁網/魚標/浮標：直接標記為 normal，不參與威脅計分
+    if excluded:
+        # 符合排除規則：直接標記為 normal，不參與威脅計分
+        reasons = ' + '.join(r['label'] for r in matched_rules)
         classification['risk_level'] = 'normal'
         classification['risk_score'] = 0
         classification['suspicious'] = False
-        classification['flags'] = [f'漁網/魚標（{all_names[0] if all_names else mmsi}）— 排除']
+        classification['flags'] = [f'排除: {reasons}']
     else:
         # 海纜鄰近 + Z字型 = 強烈可疑（可能拖錨破壞）
         if classification['cable_proximity']:
@@ -629,6 +697,7 @@ def main():
 
     classifications = []
     suspicious_vessels = []
+    excluded_vessels = []
 
     for mmsi in all_mmsi:
         profile = profiles.get(mmsi, {
@@ -660,13 +729,22 @@ def main():
 
         result = classify_vessel(profile, track_pts, id_events,
                                  sanctions_match=sanction_hit)
-        if result['risk_score'] > 0:
+        if result.get('excluded'):
+            excluded_vessels.append(result)
+        elif result['risk_score'] > 0:
             classifications.append(result)
         if result['suspicious']:
             suspicious_vessels.append(result)
 
     # 按風險分數排序
     suspicious_vessels.sort(key=lambda x: x['risk_score'], reverse=True)
+
+    # 排除規則統計
+    exclusion_stats = {}
+    for ev in excluded_vessels:
+        for rule in ev.get('exclusion_rules', []):
+            rid = rule['id']
+            exclusion_stats[rid] = exclusion_stats.get(rid, 0) + 1
 
     # 統計
     risk_counts = {'critical': 0, 'high': 0, 'medium': 0, 'normal': 0}
@@ -707,8 +785,13 @@ def main():
             'depth_200m_contour_km': DEPTH_200M_CONTOUR_KM,
             'name_change_threshold': NAME_CHANGE_THRESHOLD,
         },
+        'exclusion_rules': [
+            {'id': r['id'], 'label': r['label']} for r in EXCLUSION_RULES
+        ],
         'summary': {
             'total_analyzed': len(all_mmsi),
+            'excluded_count': len(excluded_vessels),
+            'exclusion_breakdown': exclusion_stats,
             'suspicious_count': len(suspicious_vessels),
             'cable_proximity_triggered': cable_count,
             'cable_loitering_triggered': loiter_count,
@@ -728,6 +811,10 @@ def main():
 
     print(f"\n📋 分析結果:")
     print(f"   分析船隻數: {len(all_mmsi)}")
+    print(f"   排除 (非船舶設備): {len(excluded_vessels)}")
+    if exclusion_stats:
+        for rid, cnt in sorted(exclusion_stats.items(), key=lambda x: -x[1]):
+            print(f"     - {rid}: {cnt}")
     print(f"   可疑船隻 (score ≥ 4): {len(suspicious_vessels)}")
     print(f"   海纜鄰近: {cable_count}")
     print(f"   海纜低速徘徊 (>3hr <8kn): {loiter_count}")
