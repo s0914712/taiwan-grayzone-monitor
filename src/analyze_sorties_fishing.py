@@ -39,7 +39,7 @@ PLA_CSV_URL = (
 )
 
 MAX_LAG = 7  # ±7 days (conservative for 21-day sample)
-HIGH_SORTIE_THRESHOLD = 10
+HIGH_SORTIE_THRESHOLD = 20
 EVENT_WINDOW = 3  # ±3 days around high-sortie events
 
 
