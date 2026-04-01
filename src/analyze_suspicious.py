@@ -35,6 +35,7 @@ CABLE_GEO_FILE = DATA_DIR / "cable-geo.json"
 IDENTITY_EVENTS_FILE = DATA_DIR / "identity_events.json"
 SANCTIONS_FILE = DATA_DIR / "un_sanctions_vessels.json"
 OUTPUT_FILE = DATA_DIR / "suspicious_vessels.json"
+ITU_MARS_CACHE = DATA_DIR / "itu_mars_cache.json"
 
 # ── 門檻設定 ────────────────────────────────────────────
 CABLE_PROXIMITY_KM = 5.0          # 海纜 5 公里內視為鄰近
@@ -716,6 +717,84 @@ def load_sanctions_list():
     return by_imo, imo_set, name_set
 
 
+def load_itu_mars_cache():
+    """
+    載入 ITU MARS 快取資料（由 lookup_itu_mars.py 建立）。
+    回傳 dict: {mmsi: {ship_name, call_sign, administration, imo_number, ...}}
+    """
+    if not ITU_MARS_CACHE.exists():
+        return {}
+    try:
+        with open(ITU_MARS_CACHE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        found = {k: v for k, v in data.items() if v.get('found')}
+        print(f"🏛️ ITU MARS 快取: {len(found)} 筆有效記錄")
+        return found
+    except Exception:
+        return {}
+
+
+def check_itu_mars_mismatch(profile, mars_record):
+    """
+    比對 AIS 回報資訊 vs ITU MARS 官方登記資料。
+    偵測船名不符、管理國/船旗不一致等身分偽造徵兆。
+    回傳: (has_mismatch, details)
+    """
+    if not mars_record or not mars_record.get('found'):
+        return False, {}
+
+    mismatches = []
+    details = {'mars_record': mars_record}
+
+    # 船名比對
+    mars_name = (mars_record.get('ship_name') or '').upper().strip()
+    ais_names = [n.upper().strip() for n in profile.get('names_seen', []) if n]
+
+    if mars_name and ais_names:
+        # 若 AIS 使用的所有船名都與 MARS 登記名不同
+        if mars_name not in ais_names:
+            mismatches.append({
+                'field': 'ship_name',
+                'mars': mars_name,
+                'ais': ais_names,
+                'description': f'船名不符：登記 {mars_name}，AIS 使用 {", ".join(ais_names[:3])}'
+            })
+
+    # 管理國 vs MMSI MID 比對
+    mars_admin = (mars_record.get('administration') or '').strip()
+    mmsi = profile.get('mmsi', '')
+    if mars_admin and len(mmsi) >= 3:
+        # MID 前三碼對應的常見管理國縮寫
+        # 簡單比對：MARS administration 應與 MMSI MID 對應的國家一致
+        # 這裡記錄供人工判讀，不自動判定是否不符
+        details['mars_administration'] = mars_admin
+
+    # IMO 比對
+    mars_imo = (mars_record.get('imo_number') or '').strip()
+    ais_imo = (profile.get('last_imo') or '').strip()
+    if mars_imo and ais_imo and mars_imo != ais_imo:
+        mismatches.append({
+            'field': 'imo_number',
+            'mars': mars_imo,
+            'ais': ais_imo,
+            'description': f'IMO不符：登記 {mars_imo}，AIS 回報 {ais_imo}'
+        })
+
+    # 呼號比對
+    mars_cs = (mars_record.get('call_sign') or '').upper().strip()
+    ais_cs = (profile.get('last_callsign') or '').upper().strip()
+    if mars_cs and ais_cs and mars_cs != ais_cs:
+        mismatches.append({
+            'field': 'call_sign',
+            'mars': mars_cs,
+            'ais': ais_cs,
+            'description': f'呼號不符：登記 {mars_cs}，AIS 回報 {ais_cs}'
+        })
+
+    details['mismatches'] = mismatches
+    return len(mismatches) > 0, details
+
+
 def load_track_history():
     """載入 ais_track_history.json，按 MMSI 組織航跡"""
     # Try docs/ first (may be more up-to-date), then data/
@@ -751,10 +830,11 @@ def load_track_history():
 
 
 def classify_vessel(profile, track_points, identity_events=None,
-                     sanctions_match=None):
+                     sanctions_match=None, mars_record=None):
     """
     綜合分類單一船隻的可疑程度
-    新標準：海纜鄰近 + Z字型 + 200m等深線 + AIS變更 + UN制裁
+    標準：海纜鄰近 + Z字型 + 200m等深線 + AIS變更 + UN制裁
+          + AIS偽訊號 + ITU MARS 登記比對
     """
     mmsi = profile['mmsi']
 
@@ -772,6 +852,7 @@ def classify_vessel(profile, track_points, identity_events=None,
         'spoof_impossible_physics': False,
         'spoof_box_pattern': False,
         'spoof_circle_pattern': False,
+        'itu_mars_mismatch': False,
         'ais_anomalies': [],
         'risk_level': 'normal',
         'flags': [],
@@ -871,6 +952,18 @@ def classify_vessel(profile, track_points, identity_events=None,
                 f'弧度{circle_details["arc_coverage_deg"]}°'
             )
 
+    # ── Criterion 8: ITU MARS 登記比對 ──
+    if mars_record:
+        has_mismatch, mars_details = check_itu_mars_mismatch(
+            profile, mars_record)
+        classification['itu_mars_mismatch'] = has_mismatch
+        classification['itu_mars_details'] = mars_details
+        if has_mismatch:
+            for m in mars_details.get('mismatches', []):
+                classification['flags'].append(
+                    f'ITU登記不符：{m["description"]}'
+                )
+
     # ── 排除規則檢查（漁網、浮標、信標等非船舶設備）──
     all_names = profile.get('names_seen', [])
     excluded, matched_rules = check_exclusion_rules(mmsi, all_names)
@@ -923,6 +1016,9 @@ def classify_vessel(profile, track_points, identity_events=None,
                     classification['spoof_circle_pattern'])
         if spoofing and classification['cable_proximity']:
             score += 2
+        # ITU MARS 登記不符
+        if classification['itu_mars_mismatch']:
+            score += 2  # 官方登記 vs AIS 不一致
 
         if score >= 7:
             classification['risk_level'] = 'critical'
@@ -976,6 +1072,9 @@ def main():
             profiles = profiles_data
     print(f"📋 船隻 profiles: {len(profiles)}")
 
+    # 載入 ITU MARS 快取（用於交叉比對船舶登記資料）
+    mars_cache = load_itu_mars_cache()
+
     # 載入航跡歷史（用於海纜鄰近、Z字型、等深線分析）
     tracks = load_track_history()
 
@@ -1018,8 +1117,10 @@ def main():
                             break
                     break
 
+        mars_rec = mars_cache.get(mmsi)
         result = classify_vessel(profile, track_pts, id_events,
-                                 sanctions_match=sanction_hit)
+                                 sanctions_match=sanction_hit,
+                                 mars_record=mars_rec)
         if result.get('excluded'):
             excluded_vessels.append(result)
         elif result['risk_score'] > 0:
@@ -1049,6 +1150,7 @@ def main():
     spoof_physics_count = 0
     spoof_box_count = 0
     spoof_circle_count = 0
+    mars_mismatch_count = 0
 
     for c in classifications:
         risk_counts[c['risk_level']] += 1
@@ -1072,6 +1174,8 @@ def main():
             spoof_box_count += 1
         if c.get('spoof_circle_pattern'):
             spoof_circle_count += 1
+        if c.get('itu_mars_mismatch'):
+            mars_mismatch_count += 1
 
     output = {
         'updated_at': datetime.now(timezone.utc).isoformat(),
@@ -1106,6 +1210,7 @@ def main():
             'spoof_impossible_physics': spoof_physics_count,
             'spoof_box_pattern': spoof_box_count,
             'spoof_circle_pattern': spoof_circle_count,
+            'itu_mars_mismatch': mars_mismatch_count,
             'risk_distribution': risk_counts,
         },
         'suspicious_vessels': suspicious_vessels[:50],
@@ -1132,6 +1237,7 @@ def main():
     print(f"   偽訊號-異常物理: {spoof_physics_count}")
     print(f"   偽訊號-方形軌跡: {spoof_box_count}")
     print(f"   偽訊號-圓形軌跡: {spoof_circle_count}")
+    print(f"   ITU MARS不符: {mars_mismatch_count}")
     print(f"   風險分布: {risk_counts}")
     print(f"\n📁 結果已輸出至: {OUTPUT_FILE}")
 
