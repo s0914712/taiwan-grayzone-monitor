@@ -5,7 +5,7 @@
 Suspicious Vessel Analysis: Submarine Cable Threat Detection
 ================================================================================
 
-偵測邏輯（針對海纜破壞威脅）：
+偵測邏輯（針對海纜破壞威脅 + AIS 偽訊號）：
   1. 海底電纜鄰近活動 (Cable Proximity)
      - 船隻航跡經過海纜路線 5 公里內
   2. Z 字型移動模式 (Zigzag Pattern)
@@ -14,6 +14,10 @@ Suspicious Vessel Analysis: Submarine Cable Threat Detection
      - 在大陸棚邊緣活動，海纜密集區
   4. AIS 身分變更 (Identity Manipulation)
      - 變更船名、呼號、IMO 等識別資訊
+  5. AIS 偽訊號偵測 (Spoofing Detection)
+     a. 不可能物理 — 瞬移、速度/航向不一致
+     b. 方形軌跡 — 多次 ~90° 轉彎 + 封閉路徑
+     c. 圓形軌跡 — 半徑 CV 極低 + 弧度覆蓋 > 270°
 ================================================================================
 """
 
@@ -41,6 +45,19 @@ ZIGZAG_MIN_TURNS = 3              # 至少 3 次轉向才算 Z 字型
 DEPTH_200M_CONTOUR_KM = 10.0      # 200m 等深線緩衝區寬度
 NAME_CHANGE_THRESHOLD = 2         # 船名變更 ≥ 2 次
 GOING_DARK_GAP_HOURS = 18         # AIS 消失 > 18 小時
+
+# ── AIS 偽訊號偵測門檻 (Spoofing Detection) ───────────────
+SPOOF_TELEPORT_KMH = 100.0         # 最大合理速度 ~54kn；超過即瞬移
+SPOOF_SPEED_MISMATCH_RATIO = 3.0   # 計算速度 / 回報速度 比值門檻
+SPOOF_BEARING_MISMATCH_DEG = 60.0  # 計算航向 vs 回報 COG 差異門檻
+SPOOF_BOX_ANGLE_TOLERANCE = 25.0   # 90° ± 25° 視為直角轉彎（65°-115°）
+SPOOF_BOX_MIN_TURNS = 3            # 至少 3 次直角轉彎
+SPOOF_BOX_CLOSURE_KM = 5.0         # 起終點 < 5km 視為封閉路徑
+SPOOF_CIRCLE_MIN_POINTS = 6        # 圓形偵測最少點數
+SPOOF_CIRCLE_RADIUS_CV = 0.25      # 半徑變異係數門檻 (std/mean < 0.25)
+SPOOF_CIRCLE_MAX_RADIUS_KM = 5.0   # 半徑 > 5km 排除（可能正常航行）
+SPOOF_CIRCLE_MIN_RADIUS_KM = 0.1   # 半徑 < 0.1km 排除（GPS 漂移）
+SPOOF_CIRCLE_MIN_ARC_DEG = 270.0   # 弧度覆蓋 > 270° 才算圓形
 
 # ── 前十大船旗國 MMSI MID（國籍非前十大視為額外可疑）────────
 # MID = MMSI 前 3 碼，對照 ITU MID 表
@@ -212,6 +229,228 @@ def point_to_segment_distance_km(plat, plon, lat1, lon1, lat2, lon2):
     proj_lat = lat1 + t * dx
     proj_lon = lon1 + t * dy
     return haversine_km(plat, plon, proj_lat, proj_lon)
+
+
+def calc_bearing(lat1, lon1, lat2, lon2):
+    """計算兩點間方位角 (0-360°)"""
+    dlon = math.radians(lon2 - lon1)
+    lat1r = math.radians(lat1)
+    lat2r = math.radians(lat2)
+    x = math.sin(dlon) * math.cos(lat2r)
+    y = math.cos(lat1r) * math.sin(lat2r) - \
+        math.sin(lat1r) * math.cos(lat2r) * math.cos(dlon)
+    return (math.degrees(math.atan2(x, y)) + 360) % 360
+
+
+def angular_diff(a, b):
+    """兩角度之間的最小差值 (0-180°)"""
+    d = abs(a - b) % 360
+    return d if d <= 180 else 360 - d
+
+
+# =========================================================================
+# AIS 偽訊號偵測 (Spoofing Detection)
+# =========================================================================
+
+def check_impossible_physics(track_points):
+    """
+    偵測不可能物理現象：
+    - 瞬移 (teleportation): 計算速度超過 SPOOF_TELEPORT_KMH
+    - 速度不一致: 計算速度 vs 回報 SOG 比值 > SPOOF_SPEED_MISMATCH_RATIO
+    - 航向不一致: 計算航向 vs 回報 COG 差異 > SPOOF_BEARING_MISMATCH_DEG
+    回傳: (is_suspicious, details)
+    """
+    if len(track_points) < 2:
+        return False, {}
+
+    teleport_count = 0
+    max_calc_speed = 0
+    speed_mismatch_count = 0
+    bearing_mismatch_count = 0
+    pairs_checked = 0
+
+    for i in range(1, len(track_points)):
+        p1 = track_points[i - 1]
+        p2 = track_points[i]
+
+        lat1, lon1 = p1.get('lat'), p1.get('lon')
+        lat2, lon2 = p2.get('lat'), p2.get('lon')
+        if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+            continue
+
+        # 計算時間差
+        try:
+            t1 = datetime.fromisoformat(p1['t'].replace('Z', '+00:00'))
+            t2 = datetime.fromisoformat(p2['t'].replace('Z', '+00:00'))
+            dt_hours = (t2 - t1).total_seconds() / 3600
+        except (ValueError, KeyError):
+            continue
+
+        if dt_hours <= 0:
+            continue
+
+        # 跳過 going-dark 間隔（已由其他偵測器處理）
+        if dt_hours > GOING_DARK_GAP_HOURS:
+            continue
+
+        pairs_checked += 1
+        dist_km = haversine_km(lat1, lon1, lat2, lon2)
+        calc_speed_kmh = dist_km / dt_hours
+
+        if calc_speed_kmh > max_calc_speed:
+            max_calc_speed = calc_speed_kmh
+
+        # 瞬移偵測
+        if calc_speed_kmh > SPOOF_TELEPORT_KMH:
+            teleport_count += 1
+
+        # 速度不一致偵測
+        reported_sog = p1.get('speed', 0)
+        reported_kmh = reported_sog * 1.852  # knots → km/h
+        if calc_speed_kmh > 5 and reported_kmh > 5:  # 避免低速噪音
+            ratio = calc_speed_kmh / reported_kmh
+            if ratio > SPOOF_SPEED_MISMATCH_RATIO or \
+               ratio < (1.0 / SPOOF_SPEED_MISMATCH_RATIO):
+                speed_mismatch_count += 1
+
+        # 航向不一致偵測
+        if dist_km >= 1.0:  # 移動距離夠大才比較航向
+            calc_brg = calc_bearing(lat1, lon1, lat2, lon2)
+            reported_hdg = p1.get('heading')
+            if reported_hdg is not None and reported_hdg > 0:
+                diff = angular_diff(calc_brg, reported_hdg)
+                if diff > SPOOF_BEARING_MISMATCH_DEG:
+                    bearing_mismatch_count += 1
+
+    is_suspicious = (teleport_count > 0 or
+                     speed_mismatch_count >= 2 or
+                     bearing_mismatch_count >= 2)
+
+    return is_suspicious, {
+        'teleport_count': teleport_count,
+        'max_calc_speed_kmh': round(max_calc_speed, 1),
+        'speed_mismatch_count': speed_mismatch_count,
+        'bearing_mismatch_count': bearing_mismatch_count,
+        'pairs_checked': pairs_checked,
+    }
+
+
+def check_box_pattern(track_points):
+    """
+    偵測方形軌跡圖案 (Box Pattern)：
+    - 多次接近 90° 的轉彎 (65°-115°)
+    - 路徑封閉或包圍面積極小
+    常見於 AIS 位置偽造（GPS spoofing）。
+    回傳: (is_box, details)
+    """
+    # 過濾有效移動點
+    moving = [p for p in track_points
+              if p.get('lat') is not None and p.get('lon') is not None
+              and p.get('speed', 0) > 0.5]
+
+    if len(moving) < 4:
+        return False, {}
+
+    # 計算連續航向
+    bearings = []
+    for i in range(1, len(moving)):
+        dist = haversine_km(moving[i-1]['lat'], moving[i-1]['lon'],
+                            moving[i]['lat'], moving[i]['lon'])
+        if dist < 0.1:  # 跳過幾乎不動的點
+            continue
+        brg = calc_bearing(moving[i-1]['lat'], moving[i-1]['lon'],
+                           moving[i]['lat'], moving[i]['lon'])
+        bearings.append((brg, i))
+
+    if len(bearings) < 4:
+        return False, {}
+
+    # 計算航向變化，統計接近 90° 的轉彎
+    right_angle_turns = 0
+    for j in range(1, len(bearings)):
+        delta = angular_diff(bearings[j][0], bearings[j-1][0])
+        if abs(delta - 90) <= SPOOF_BOX_ANGLE_TOLERANCE:
+            right_angle_turns += 1
+
+    # 檢查路徑封閉性
+    first_pt = moving[0]
+    last_pt = moving[-1]
+    closure_km = haversine_km(first_pt['lat'], first_pt['lon'],
+                              last_pt['lat'], last_pt['lon'])
+    path_closed = closure_km < SPOOF_BOX_CLOSURE_KM
+
+    # 計算 bounding box 對角線
+    lats = [p['lat'] for p in moving]
+    lons = [p['lon'] for p in moving]
+    bbox_km = haversine_km(min(lats), min(lons), max(lats), max(lons))
+
+    is_box = (right_angle_turns >= SPOOF_BOX_MIN_TURNS and
+              (path_closed or bbox_km < 5.0))
+
+    return is_box, {
+        'right_angle_turns': right_angle_turns,
+        'path_closed': path_closed,
+        'closure_distance_km': round(closure_km, 2),
+        'bounding_box_km': round(bbox_km, 2),
+    }
+
+
+def check_circle_pattern(track_points):
+    """
+    偵測圓形軌跡圖案 (Circle Pattern)：
+    - 計算所有點到質心的距離（半徑）
+    - 半徑變異係數 (CV) 極低 = 高度對稱
+    - 弧度覆蓋 > 270° = 接近完整圓
+    常見於 AIS 訊號蓄意操控偽跡。
+    回傳: (is_circle, details)
+    """
+    # 過濾有效移動點
+    moving = [p for p in track_points
+              if p.get('lat') is not None and p.get('lon') is not None
+              and p.get('speed', 0) > 0.5]
+
+    if len(moving) < SPOOF_CIRCLE_MIN_POINTS:
+        return False, {}
+
+    # 計算質心
+    clat = sum(p['lat'] for p in moving) / len(moving)
+    clon = sum(p['lon'] for p in moving) / len(moving)
+
+    # 計算每點到質心的半徑
+    radii = [haversine_km(clat, clon, p['lat'], p['lon']) for p in moving]
+    mean_r = sum(radii) / len(radii)
+
+    if mean_r < SPOOF_CIRCLE_MIN_RADIUS_KM or mean_r > SPOOF_CIRCLE_MAX_RADIUS_KM:
+        return False, {}
+
+    # 變異係數
+    variance = sum((r - mean_r) ** 2 for r in radii) / len(radii)
+    std_r = math.sqrt(variance)
+    cv = std_r / mean_r if mean_r > 0 else 999
+
+    # 計算弧度覆蓋：各點相對於質心的方位角
+    angles = sorted(calc_bearing(clat, clon, p['lat'], p['lon'])
+                    for p in moving)
+
+    # 計算最大角度間隙 → 覆蓋 = 360 - 最大間隙
+    if len(angles) < 2:
+        arc_coverage = 0
+    else:
+        gaps = [angles[i+1] - angles[i] for i in range(len(angles) - 1)]
+        gaps.append(360 - angles[-1] + angles[0])  # wrap-around gap
+        arc_coverage = 360 - max(gaps)
+
+    is_circle = (cv < SPOOF_CIRCLE_RADIUS_CV and
+                 arc_coverage >= SPOOF_CIRCLE_MIN_ARC_DEG)
+
+    return is_circle, {
+        'center_lat': round(clat, 4),
+        'center_lon': round(clon, 4),
+        'mean_radius_km': round(mean_r, 3),
+        'radius_cv': round(cv, 3),
+        'arc_coverage_deg': round(arc_coverage, 1),
+        'point_count': len(moving),
+    }
 
 
 def check_cable_proximity(track_points):
@@ -530,6 +769,9 @@ def classify_vessel(profile, track_points, identity_events=None,
         'zigzag_pattern': False,
         'depth_200m_activity': False,
         'sanctioned': False,
+        'spoof_impossible_physics': False,
+        'spoof_box_pattern': False,
+        'spoof_circle_pattern': False,
         'ais_anomalies': [],
         'risk_level': 'normal',
         'flags': [],
@@ -593,6 +835,42 @@ def classify_vessel(profile, track_points, identity_events=None,
             f'⚠️ UN 制裁船舶 (UNSCR {res}: {measures})'
         )
 
+    # ── Criterion 7: AIS 偽訊號偵測 (Spoofing) ──
+    if track_points:
+        physics, physics_details = check_impossible_physics(track_points)
+        classification['spoof_impossible_physics'] = physics
+        classification['spoof_physics_details'] = physics_details
+        if physics:
+            parts = []
+            if physics_details.get('teleport_count'):
+                parts.append(f'{physics_details["teleport_count"]}次瞬移')
+            if physics_details.get('speed_mismatch_count'):
+                parts.append(f'速度不符{physics_details["speed_mismatch_count"]}次')
+            if physics_details.get('bearing_mismatch_count'):
+                parts.append(f'航向不符{physics_details["bearing_mismatch_count"]}次')
+            classification['flags'].append(
+                f'AIS異常物理：{", ".join(parts)}'
+            )
+
+        box, box_details = check_box_pattern(track_points)
+        classification['spoof_box_pattern'] = box
+        classification['spoof_box_details'] = box_details
+        if box:
+            classification['flags'].append(
+                f'AIS方形軌跡：{box_details["right_angle_turns"]}次直角轉彎 '
+                f'(bbox {box_details["bounding_box_km"]}km)'
+            )
+
+        circle, circle_details = check_circle_pattern(track_points)
+        classification['spoof_circle_pattern'] = circle
+        classification['spoof_circle_details'] = circle_details
+        if circle:
+            classification['flags'].append(
+                f'AIS圓形軌跡：半徑{circle_details["mean_radius_km"]}km '
+                f'CV={circle_details["radius_cv"]} '
+                f'弧度{circle_details["arc_coverage_deg"]}°'
+            )
+
     # ── 排除規則檢查（漁網、浮標、信標等非船舶設備）──
     all_names = profile.get('names_seen', [])
     excluded, matched_rules = check_exclusion_rules(mmsi, all_names)
@@ -632,6 +910,19 @@ def classify_vessel(profile, track_points, identity_events=None,
                 score += 2
             else:
                 score += 1
+        # AIS 偽訊號
+        if classification['spoof_impossible_physics']:
+            score += 3
+        if classification['spoof_box_pattern']:
+            score += 3
+        if classification['spoof_circle_pattern']:
+            score += 3
+        # 偽訊號 + 海纜鄰近 = 蓄意隱匿
+        spoofing = (classification['spoof_impossible_physics'] or
+                    classification['spoof_box_pattern'] or
+                    classification['spoof_circle_pattern'])
+        if spoofing and classification['cable_proximity']:
+            score += 2
 
         if score >= 7:
             classification['risk_level'] = 'critical'
@@ -755,6 +1046,9 @@ def main():
     anomaly_count = 0
     non_top10_count = 0
     sanctioned_count = 0
+    spoof_physics_count = 0
+    spoof_box_count = 0
+    spoof_circle_count = 0
 
     for c in classifications:
         risk_counts[c['risk_level']] += 1
@@ -772,6 +1066,12 @@ def main():
             non_top10_count += 1
         if c.get('sanctioned'):
             sanctioned_count += 1
+        if c.get('spoof_impossible_physics'):
+            spoof_physics_count += 1
+        if c.get('spoof_box_pattern'):
+            spoof_box_count += 1
+        if c.get('spoof_circle_pattern'):
+            spoof_circle_count += 1
 
     output = {
         'updated_at': datetime.now(timezone.utc).isoformat(),
@@ -784,6 +1084,9 @@ def main():
             'zigzag_heading_change_deg': ZIGZAG_HEADING_CHANGE_DEG,
             'depth_200m_contour_km': DEPTH_200M_CONTOUR_KM,
             'name_change_threshold': NAME_CHANGE_THRESHOLD,
+            'spoof_teleport_kmh': SPOOF_TELEPORT_KMH,
+            'spoof_box_angle_tolerance': SPOOF_BOX_ANGLE_TOLERANCE,
+            'spoof_circle_radius_cv': SPOOF_CIRCLE_RADIUS_CV,
         },
         'exclusion_rules': [
             {'id': r['id'], 'label': r['label']} for r in EXCLUSION_RULES
@@ -800,6 +1103,9 @@ def main():
             'ais_anomaly_detected': anomaly_count,
             'non_top10_flag': non_top10_count,
             'sanctioned_vessels': sanctioned_count,
+            'spoof_impossible_physics': spoof_physics_count,
+            'spoof_box_pattern': spoof_box_count,
+            'spoof_circle_pattern': spoof_circle_count,
             'risk_distribution': risk_counts,
         },
         'suspicious_vessels': suspicious_vessels[:50],
@@ -823,6 +1129,9 @@ def main():
     print(f"   AIS 異常: {anomaly_count}")
     print(f"   非前十大船旗: {non_top10_count}")
     print(f"   UN 制裁匹配: {sanctioned_count}")
+    print(f"   偽訊號-異常物理: {spoof_physics_count}")
+    print(f"   偽訊號-方形軌跡: {spoof_box_count}")
+    print(f"   偽訊號-圓形軌跡: {spoof_circle_count}")
     print(f"   風險分布: {risk_counts}")
     print(f"\n📁 結果已輸出至: {OUTPUT_FILE}")
 
