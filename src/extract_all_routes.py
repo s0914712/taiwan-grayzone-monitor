@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Batch extract vessel routes from ais_track_history.json.
+Batch extract vessel routes from track history files.
+Reads both tier-1 (ais_track_history.json) and tier-2 (ais_track_commercial.json).
 Produces one JSON file per vessel in docs/vessel_routes/.
 Only vessels with ≥2 distinct positions get a file.
 Cleans up stale files for vessels no longer in history.
@@ -12,24 +13,17 @@ import os
 import glob
 
 
-def main():
-    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-    # Find track history file
-    history_path = os.path.join(base, 'docs', 'ais_track_history.json')
-    if not os.path.exists(history_path):
-        history_path = os.path.join(base, 'data', 'ais_track_history.json')
-    if not os.path.exists(history_path):
-        print('ais_track_history.json not found')
-        return
-
-    print(f'Reading {history_path}...')
-    with open(history_path) as f:
+def load_track_file(path, all_vessels):
+    """Load a track history JSON and accumulate vessel data."""
+    if not os.path.exists(path):
+        return 0
+    print(f'  Reading {path}...')
+    with open(path) as f:
         data = json.load(f)
+    if not isinstance(data, list):
+        return 0
 
-    # Single pass: collect all vessels
-    all_vessels = {}  # mmsi -> { name, type, track: [points] }
-
+    count = 0
     for entry in data:
         ts = entry.get('timestamp', '')
         for v in entry.get('vessels', []):
@@ -42,8 +36,8 @@ def main():
                     'type': v.get('type_name', ''),
                     'track': []
                 }
+                count += 1
             rec = all_vessels[mmsi]
-            # Update name/type if we get a better value
             if not rec['name'] and v.get('name'):
                 rec['name'] = v['name']
             if not rec['type'] and v.get('type_name'):
@@ -55,10 +49,48 @@ def main():
                 'speed': v.get('speed', 0),
                 'heading': v.get('heading', 0)
             })
+    return count
 
-    print(f'Found {len(all_vessels)} unique vessels in history')
 
-    # Deduplicate and write
+def main():
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # Track history files to read (tier-1 + tier-2)
+    track_files = [
+        # Tier 1: CN fishing + suspicious (prefer docs/ copy, fallback data/)
+        os.path.join(base, 'docs', 'ais_track_history.json'),
+        os.path.join(base, 'data', 'ais_track_history.json'),
+        # Tier 2: cargo, tanker, LNG, identity-changed
+        os.path.join(base, 'docs', 'ais_track_commercial.json'),
+        os.path.join(base, 'data', 'ais_track_commercial.json'),
+    ]
+
+    all_vessels = {}  # mmsi -> { name, type, track: [points] }
+
+    # Deduplicate paths: for each base name, prefer docs/ over data/
+    seen_basenames = set()
+    for path in track_files:
+        basename = os.path.basename(path)
+        if basename in seen_basenames:
+            if not os.path.exists(path):
+                continue
+            # data/ fallback: only load if docs/ version didn't exist
+            continue
+        if os.path.exists(path):
+            seen_basenames.add(basename)
+            load_track_file(path, all_vessels)
+        # If docs/ doesn't exist, try data/ fallback on next iteration
+
+    # Retry: load data/ versions for files not found in docs/
+    for path in track_files:
+        basename = os.path.basename(path)
+        if basename not in seen_basenames and os.path.exists(path):
+            seen_basenames.add(basename)
+            load_track_file(path, all_vessels)
+
+    print(f'Found {len(all_vessels)} unique vessels across all track files')
+
+    # Sort tracks by timestamp and deduplicate
     out_dir = os.path.join(base, 'docs', 'vessel_routes')
     os.makedirs(out_dir, exist_ok=True)
     written_mmsis = set()
@@ -67,6 +99,9 @@ def main():
         track = info['track']
         if len(track) < 2:
             continue
+
+        # Sort by timestamp
+        track.sort(key=lambda p: p.get('t', ''))
 
         # Dedup: skip consecutive identical lat/lon, always keep last point
         deduped = [track[0]]

@@ -26,6 +26,7 @@ HISTORY_FILE = os.path.join(DATA_DIR, 'vessel_history.json')
 VESSEL_PROFILES_FILE = os.path.join(DATA_DIR, 'vessel_profiles.json')
 AIS_HISTORY_FILE = os.path.join(DATA_DIR, 'ais_history.json')
 AIS_TRACK_FILE = os.path.join(DATA_DIR, 'ais_track_history.json')
+AIS_TRACK_COMMERCIAL_FILE = os.path.join(DATA_DIR, 'ais_track_commercial.json')
 DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
 IDENTITY_EVENTS_FILE = os.path.join(DATA_DIR, 'identity_events.json')
 
@@ -36,6 +37,8 @@ IDENTITY_EVENTS_MAX = 5000
 AIS_HISTORY_MAX_ENTRIES = 1080
 # AIS 軌跡歷史：保留 14 天，每 2 小時一筆 = 168 筆
 AIS_TRACK_MAX_ENTRIES = 168
+# 商船軌跡歷史：同 14 天
+AIS_TRACK_COMMERCIAL_MAX_ENTRIES = 168
 
 MPB_URL = "https://mpbais.motcmpb.gov.tw/aismpb/tools/geojsonais.ashx"
 MPB_HEADERS = {
@@ -625,6 +628,63 @@ def save_all(vessels, stats):
     with open(AIS_TRACK_FILE, 'w', encoding='utf-8') as f:
         json.dump(track_history, f, ensure_ascii=False, indent=2)
     print(f"  🎬 軌跡歷史已更新: {AIS_TRACK_FILE} ({len(track_history)} 筆, {len(track_vessels)} 艘船)")
+
+    # 2d. 商船/油輪軌跡歷史 (Tier-2: cargo, tanker, LNG, 身分變更船舶)
+    # 載入近 7 天有身分變更的 MMSI
+    identity_mmsis = set()
+    if os.path.exists(IDENTITY_EVENTS_FILE):
+        try:
+            with open(IDENTITY_EVENTS_FILE, 'r', encoding='utf-8') as f:
+                id_events = json.load(f)
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+            identity_mmsis = {
+                e['mmsi'] for e in id_events
+                if e.get('timestamp', '') >= cutoff
+            }
+        except Exception:
+            pass
+
+    # 已在 tier-1 的 MMSI
+    tier1_mmsis = {v['mmsi'] for v in track_vessels}
+
+    commercial_vessels = [
+        {
+            'mmsi': v['mmsi'],
+            'name': v['name'],
+            'lat': v['lat'],
+            'lon': v['lon'],
+            'speed': v['speed'],
+            'heading': v['heading'],
+            'type_name': v['type_name'],
+        }
+        for v in vessel_list
+        if v['mmsi'] not in tier1_mmsis
+        and (v.get('type_name') in ('cargo', 'tanker', 'lng')
+             or v['mmsi'] in identity_mmsis)
+    ]
+
+    commercial_entry = {
+        'timestamp': now_str,
+        'period_key': period_key,
+        'vessel_count': len(commercial_vessels),
+        'vessels': commercial_vessels,
+    }
+
+    commercial_history = []
+    if os.path.exists(AIS_TRACK_COMMERCIAL_FILE):
+        try:
+            with open(AIS_TRACK_COMMERCIAL_FILE, 'r', encoding='utf-8') as f:
+                commercial_history = json.load(f)
+            if not isinstance(commercial_history, list):
+                commercial_history = []
+        except Exception:
+            commercial_history = []
+
+    commercial_history.append(commercial_entry)
+    commercial_history = commercial_history[-AIS_TRACK_COMMERCIAL_MAX_ENTRIES:]
+    with open(AIS_TRACK_COMMERCIAL_FILE, 'w', encoding='utf-8') as f:
+        json.dump(commercial_history, f, ensure_ascii=False, indent=2)
+    print(f"  🚢 商船軌跡已更新: {AIS_TRACK_COMMERCIAL_FILE} ({len(commercial_history)} 筆, {len(commercial_vessels)} 艘船)")
 
     # 3. 更新 Dashboard 資料（與 generate_dashboard.py 格式一致）
     existing = {}
