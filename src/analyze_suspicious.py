@@ -989,53 +989,61 @@ def classify_vessel(profile, track_points, identity_events=None,
         classification['suspicious'] = False
         classification['flags'] = [f'排除: {reasons}']
     else:
-        # 海纜鄰近 + Z字型 = 強烈可疑（可能拖錨破壞）
+        # ── 基礎行為分（單獨不構成可疑）──
         if classification['cable_proximity']:
-            score += 3
+            score += 2  # 海纜 5km 內（台灣海峽很常見，降低權重）
         if classification['cable_loitering']:
-            score += 2  # 海纜低速徘徊 >3hr <8kn
+            score += 3  # 海纜低速徘徊 >3hr <8kn（刻意行為）
         if classification['zigzag_pattern']:
-            score += 2
-        # 海纜鄰近 + Z字型組合加分
-        if classification['cable_proximity'] and classification['zigzag_pattern']:
-            score += 2
+            score += 1  # Z字型（漁船常見，單獨權重低）
         if classification['depth_200m_activity']:
             score += 1
         if classification['non_top10_flag']:
             score += 1  # 非前十大船旗國
+
+        # ── 組合加分（多重指標交叉 = 高度可疑）──
+        if classification['cable_proximity'] and classification['zigzag_pattern']:
+            score += 3  # 海纜鄰近 + Z字型 = 可能拖錨
+        if classification['cable_proximity'] and classification['cable_loitering']:
+            score += 2  # 海纜鄰近 + 長時間徘徊
+
+        # ── 高威脅指標 ──
         if classification['sanctioned']:
-            score += 5  # UN 制裁船舶 — 最高優先
+            score += 8  # UN 制裁船舶 — 最高優先
         for a in anomalies:
             if a['severity'] == 'high':
-                score += 2
+                score += 3  # 嚴重 AIS 異常（多次船名變更等）
             else:
                 score += 1
-        # AIS 偽訊號
+
+        # ── AIS 偽訊號（每項 +4，強指標）──
         if classification['spoof_impossible_physics']:
-            score += 3
+            score += 4
         if classification['spoof_box_pattern']:
-            score += 3
+            score += 4
         if classification['spoof_circle_pattern']:
-            score += 3
+            score += 4
         # 偽訊號 + 海纜鄰近 = 蓄意隱匿
         spoofing = (classification['spoof_impossible_physics'] or
                     classification['spoof_box_pattern'] or
                     classification['spoof_circle_pattern'])
         if spoofing and classification['cable_proximity']:
-            score += 2
-        # ITU MARS 登記不符
-        if classification['itu_mars_mismatch']:
-            score += 2  # 官方登記 vs AIS 不一致
+            score += 3
 
-        if score >= 10:
+        # ── ITU MARS 登記不符 ──
+        if classification['itu_mars_mismatch']:
+            score += 3  # 官方登記 vs AIS 不一致
+
+        # ── 風險等級 ──
+        if score >= 12:
             classification['risk_level'] = 'critical'
-        elif score >= 7:
+        elif score >= 8:
             classification['risk_level'] = 'high'
-        elif score >= 4:
+        elif score >= 5:
             classification['risk_level'] = 'medium'
 
         classification['risk_score'] = score
-        classification['suspicious'] = score >= 7
+        classification['suspicious'] = score >= 8
 
     # 附加位置資訊
     if track_points:
@@ -1206,7 +1214,8 @@ def main():
             'total_analyzed': len(all_mmsi),
             'excluded_count': len(excluded_vessels),
             'exclusion_breakdown': exclusion_stats,
-            'suspicious_count': len(suspicious_vessels),
+            'suspicious_count': min(len(suspicious_vessels), 50),
+            'suspicious_total': len(suspicious_vessels),
             'cable_proximity_triggered': cable_count,
             'cable_loitering_triggered': loiter_count,
             'zigzag_pattern_detected': zigzag_count,
@@ -1233,7 +1242,7 @@ def main():
     if exclusion_stats:
         for rid, cnt in sorted(exclusion_stats.items(), key=lambda x: -x[1]):
             print(f"     - {rid}: {cnt}")
-    print(f"   可疑船隻 (score ≥ 7): {len(suspicious_vessels)}")
+    print(f"   可疑船隻 (score ≥ 8): {len(suspicious_vessels)}")
     print(f"   海纜鄰近: {cable_count}")
     print(f"   海纜低速徘徊 (>3hr <8kn): {loiter_count}")
     print(f"   Z字型移動: {zigzag_count}")
