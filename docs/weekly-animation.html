@@ -3,241 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIS 軌跡光跡動畫 | Taiwan Gray Zone Monitor</title>
-    <meta name="description" content="台灣周邊 AIS 船舶軌跡光跡動畫，以 deck.gl TripsLayer 呈現即時船舶動態">
-    <meta name="keywords" content="AIS軌跡動畫,vessel animation,deck.gl,台灣海峽,Taiwan Strait,maritime surveillance">
-    <meta name="author" content="Taiwan Gray Zone Monitor">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-animation.html">
-
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="AIS 軌跡光跡動畫 | Vessel Trail Animation">
-    <meta property="og:description" content="台灣周邊 AIS 船舶軌跡光跡動畫，以 deck.gl TripsLayer 呈現即時船舶動態">
-    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-animation.html">
-    <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
-    <meta property="og:locale" content="zh_TW">
-
-    <script src="https://unpkg.com/deck.gl@8.9.35/dist.min.js"></script>
-    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-
+    <title>AIS 軌跡動畫 | Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="台灣周邊 AIS 船舶軌跡動畫">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
-            background: #000;
+            background: #0a0f1c;
             color: #e8eef7;
             font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
         }
+        #map { width: 100vw; height: 100vh; background: #0a0f1c; }
 
-        #container { width: 100vw; height: 100vh; position: relative; }
-
-        /* ── Top bar: always visible, minimal ── */
+        /* Top bar */
         .topbar {
-            position: absolute;
+            position: fixed;
             top: 0; left: 0; right: 0;
-            z-index: 10;
-            background: rgba(10, 15, 28, 0.92);
-            border-bottom: 1px solid rgba(0, 245, 255, 0.15);
-            padding: 8px 12px;
+            z-index: 1000;
+            background: rgba(10,15,28,0.92);
+            border-bottom: 1px solid rgba(0,245,255,0.15);
+            padding: 6px 10px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            backdrop-filter: blur(10px);
+            gap: 6px;
+            backdrop-filter: blur(8px);
         }
-
         .back-btn {
             background: none;
-            border: 1px solid rgba(0, 245, 255, 0.25);
+            border: 1px solid rgba(0,245,255,0.25);
             color: #00f5ff;
             font-size: 14px;
             padding: 4px 8px;
             border-radius: 4px;
             cursor: pointer;
             text-decoration: none;
-            line-height: 1;
             flex-shrink: 0;
         }
-
-        .back-btn:hover { background: rgba(0, 245, 255, 0.12); }
-
-        .topbar-info {
-            flex: 1;
-            min-width: 0;
-        }
-
         .topbar-time {
+            flex: 1;
             font-family: 'Courier New', monospace;
-            font-size: 11px;
+            font-size: 12px;
             color: #00f5ff;
-            letter-spacing: 0.3px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
         .topbar-stat {
-            font-size: 9px;
+            font-size: 10px;
             color: #6a8aaa;
-            margin-top: 1px;
-        }
-
-        .topbar-controls {
-            display: flex;
-            gap: 4px;
-            align-items: center;
             flex-shrink: 0;
         }
-
         .btn {
-            background: rgba(0, 245, 255, 0.08);
-            border: 1px solid rgba(0, 245, 255, 0.25);
+            background: rgba(0,245,255,0.08);
+            border: 1px solid rgba(0,245,255,0.25);
             color: #00f5ff;
             padding: 4px 10px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 11px;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-        .btn:hover { background: rgba(0, 245, 255, 0.18); }
-        .btn.active { background: rgba(0, 245, 255, 0.3); border-color: #00f5ff; }
-
-        .btn-play {
-            font-size: 13px;
-            padding: 4px 12px;
-        }
-        .btn-play.playing { color: #ff3366; border-color: #ff3366; background: rgba(255,51,102,0.1); }
-
-        .expand-btn {
-            background: rgba(0, 245, 255, 0.06);
-            border: 1px solid rgba(0, 245, 255, 0.2);
-            color: #8aa4c8;
             font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
+            flex-shrink: 0;
         }
-        .expand-btn:hover { background: rgba(0, 245, 255, 0.15); color: #00f5ff; }
-        .expand-btn.open { transform: rotate(180deg); }
+        .btn:hover { background: rgba(0,245,255,0.18); }
+        .btn.active { background: rgba(0,245,255,0.3); border-color: #00f5ff; }
+        .btn.playing { color: #ff3366; border-color: #ff3366; background: rgba(255,51,102,0.1); }
 
-        /* ── Panel: expandable below topbar ── */
-        .panel {
-            position: absolute;
-            top: 46px;
-            left: 0; right: 0;
-            z-index: 10;
-            background: rgba(10, 15, 28, 0.92);
-            border-bottom: 1px solid rgba(0, 245, 255, 0.15);
-            padding: 0 12px;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease, padding 0.3s ease;
-            backdrop-filter: blur(10px);
+        /* Bottom control bar */
+        .bottombar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: rgba(10,15,28,0.92);
+            border-top: 1px solid rgba(0,245,255,0.15);
+            padding: 6px 10px 8px;
+            backdrop-filter: blur(8px);
         }
-
-        .panel.open {
-            max-height: 400px;
-            padding: 10px 12px 14px;
-        }
-
-        .panel-section {
-            margin-top: 8px;
-        }
-
-        .panel-section:first-child { margin-top: 0; }
-
-        .panel-label {
-            font-size: 9px;
-            color: #5a7a9c;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-bottom: 4px;
-        }
-
-        .panel-row {
-            display: flex;
-            gap: 4px;
-        }
-
-        .range-btn {
-            flex: 1;
-            background: rgba(0, 245, 255, 0.06);
-            border: 1px solid rgba(0, 245, 255, 0.15);
-            color: #6a8aaa;
-            padding: 5px 0;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-            text-align: center;
-            transition: all 0.2s;
-        }
-        .range-btn:hover { background: rgba(0, 245, 255, 0.12); color: #8aa4c8; }
-        .range-btn.active { background: rgba(0, 245, 255, 0.2); border-color: #00f5ff; color: #00f5ff; }
-
-        .panel input[type="range"] {
-            width: 100%;
-            margin: 3px 0;
-            accent-color: #00f5ff;
-        }
-
-        .panel label {
-            font-size: 10px;
-            color: #8aa4c8;
-            display: block;
-            margin-top: 4px;
-        }
-
-        .filter-label {
+        .slider-row {
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 10px;
-            color: #8aa4c8;
-            margin-top: 6px;
-            cursor: pointer;
+            gap: 6px;
         }
-        .filter-label input { accent-color: #00f5ff; }
-
-        /* ── Timeline slider (in topbar area, below topbar) ── */
-        .timeline-bar {
-            position: absolute;
-            top: 44px;
-            left: 0; right: 0;
-            z-index: 9;
-            padding: 0 8px;
-            height: 10px;
-        }
-
-        .panel.open ~ .timeline-bar { display: none; }
-
-        .timeline-bar input[type="range"] {
-            width: 100%;
-            margin: 0;
+        .slider-row input[type="range"] {
+            flex: 1;
             accent-color: #00f5ff;
             height: 6px;
-            opacity: 0.7;
         }
-
-        /* ── Legend ── */
-        .legend {
-            position: absolute;
-            bottom: 8px;
-            left: 8px;
-            z-index: 10;
-            background: rgba(10, 15, 28, 0.82);
-            border: 1px solid rgba(0, 245, 255, 0.1);
-            border-radius: 5px;
-            padding: 5px 8px;
+        .range-row {
             display: flex;
-            gap: 7px;
-            flex-wrap: wrap;
-            backdrop-filter: blur(6px);
-            max-width: calc(100vw - 16px);
+            gap: 4px;
+            margin-top: 5px;
+            justify-content: center;
         }
+        .range-btn {
+            background: rgba(0,245,255,0.06);
+            border: 1px solid rgba(0,245,255,0.15);
+            color: #6a8aaa;
+            padding: 3px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .range-btn:hover { color: #8aa4c8; }
+        .range-btn.active { background: rgba(0,245,255,0.2); border-color: #00f5ff; color: #00f5ff; }
 
+        /* Legend */
+        .legend {
+            position: fixed;
+            bottom: 70px; left: 8px;
+            z-index: 1000;
+            background: rgba(10,15,28,0.82);
+            border: 1px solid rgba(0,245,255,0.1);
+            border-radius: 5px;
+            padding: 4px 8px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
         .legend-item {
             display: flex;
             align-items: center;
@@ -245,142 +127,53 @@
             font-size: 9px;
             color: #8aa4c8;
         }
-
         .legend-dot {
-            width: 6px;
-            height: 6px;
+            width: 6px; height: 6px;
             border-radius: 50%;
-            box-shadow: 0 0 5px currentColor;
+            box-shadow: 0 0 4px currentColor;
         }
 
-        .credit {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            z-index: 10;
-            font-size: 8px;
-            color: #3a5070;
-        }
-
+        /* Loading */
         #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 20;
-            color: #00f5ff;
-            font-size: 14px;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            z-index: 2000;
             text-align: center;
+            color: #00f5ff;
         }
-
-        #loading .spinner {
+        .spinner {
             border: 3px solid rgba(0,245,255,0.1);
             border-top: 3px solid #00f5ff;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 30px; height: 30px;
             animation: spin 1s linear infinite;
             margin: 0 auto 10px;
         }
-
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Desktop: wider panel, side layout ── */
-        @media (min-width: 601px) {
-            .topbar {
-                left: auto; right: auto;
-                top: 12px; left: 12px;
-                width: 320px;
-                border-radius: 8px;
-                border: 1px solid rgba(0, 245, 255, 0.2);
-            }
-
-            .panel {
-                top: auto;
-                left: 12px;
-                right: auto;
-                width: 320px;
-                border-radius: 0 0 8px 8px;
-                border: 1px solid rgba(0, 245, 255, 0.2);
-                border-top: none;
-                /* Position below topbar dynamically */
-                top: 58px;
-            }
-
-            .timeline-bar {
-                top: 56px;
-                left: 12px;
-                right: auto;
-                width: 320px;
-                padding: 0 10px;
-            }
-
-            .panel.open ~ .timeline-bar { display: none; }
+        /* Hide Leaflet attribution on small screens */
+        @media (max-width: 480px) {
+            .leaflet-control-attribution { font-size: 8px; max-width: 40vw; }
         }
     </style>
 </head>
 <body>
 
-<div id="container"></div>
+<div id="map"></div>
 
 <div id="loading">
     <div class="spinner"></div>
-    <div>載入 AIS 軌跡資料...</div>
+    <div id="loadMsg">載入 AIS 軌跡資料...</div>
 </div>
 
-<!-- Always-visible top bar -->
 <div class="topbar" id="topbar" style="display:none">
-    <a href="index.html" class="back-btn" title="返回首頁">&#8592;</a>
-
-    <div class="topbar-info">
-        <div class="topbar-time" id="timeDisplay">—</div>
-        <div class="topbar-stat" id="statLine">—</div>
-    </div>
-
-    <div class="topbar-controls">
-        <button class="btn btn-play" id="playBtn" onclick="togglePlay()">&#9654;</button>
-        <button class="btn speed-btn active" data-speed="0.5" onclick="setSpeed(0.5)">0.5x</button>
-        <button class="btn speed-btn" data-speed="1" onclick="setSpeed(1)">1x</button>
-        <button class="expand-btn" id="expandBtn" onclick="togglePanel()" title="展開設定">&#9660;</button>
-    </div>
-</div>
-
-<!-- Slim timeline slider (visible when panel closed) -->
-<div class="timeline-bar" id="timelineBar" style="display:none">
-    <input type="range" id="timeSlider" min="0" max="1000" value="0">
-</div>
-
-<!-- Expandable settings panel -->
-<div class="panel" id="panel">
-    <div class="panel-section">
-        <div class="panel-label">時間範圍 Range</div>
-        <div class="panel-row">
-            <button class="range-btn" data-range="1" onclick="setRange(1)">1天</button>
-            <button class="range-btn" data-range="3" onclick="setRange(3)">3天</button>
-            <button class="range-btn" data-range="7" onclick="setRange(7)">1週</button>
-            <button class="range-btn active" data-range="0" onclick="setRange(0)">全部</button>
-        </div>
-    </div>
-
-    <div class="panel-section">
-        <div class="panel-label">時間軸 Timeline</div>
-        <input type="range" id="timeSliderPanel" min="0" max="1000" value="0">
-    </div>
-
-    <div class="panel-section">
-        <div class="panel-label">視覺調整 Visual</div>
-        <label>軌跡長度 Trail Length</label>
-        <input type="range" id="trailSlider" min="1" max="120" value="30"
-               oninput="updateTrailLength(this.value)">
-
-        <label>發光寬度 Trail Width</label>
-        <input type="range" id="widthSlider" min="1" max="12" value="4"
-               oninput="updateTrailWidth(this.value)">
-
-        <label class="filter-label">
-            <input type="checkbox" id="filterCN" onchange="toggleFilter()"> 僅顯示大陸漁船
-        </label>
-    </div>
+    <a href="index.html" class="back-btn">&#8592;</a>
+    <div class="topbar-time" id="timeDisplay">-</div>
+    <div class="topbar-stat" id="statLine">-</div>
+    <button class="btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
+    <button class="btn active" data-speed="0.5" onclick="setSpeed(0.5)">0.5x</button>
+    <button class="btn" data-speed="1" onclick="setSpeed(1)">1x</button>
 </div>
 
 <div class="legend" id="legend" style="display:none">
@@ -388,308 +181,223 @@
     <div class="legend-item"><div class="legend-dot" style="color:#4169e1"></div>浙江</div>
     <div class="legend-item"><div class="legend-dot" style="color:#ffa500"></div>廣東</div>
     <div class="legend-item"><div class="legend-dot" style="color:#32cd32"></div>山東</div>
-    <div class="legend-item"><div class="legend-dot" style="color:#ff69b4"></div>海南</div>
     <div class="legend-item"><div class="legend-dot" style="color:#00f5ff"></div>貨輪</div>
     <div class="legend-item"><div class="legend-dot" style="color:#ff6b35"></div>油輪</div>
     <div class="legend-item"><div class="legend-dot" style="color:#9370db"></div>其他</div>
 </div>
 
-<div class="credit">deck.gl TripsLayer | Taiwan Gray Zone Monitor</div>
+<div class="bottombar" id="bottombar" style="display:none">
+    <div class="slider-row">
+        <input type="range" id="timeSlider" min="0" max="1000" value="0">
+    </div>
+    <div class="range-row">
+        <button class="range-btn" data-range="1" onclick="setRange(1)">1天</button>
+        <button class="range-btn" data-range="3" onclick="setRange(3)">3天</button>
+        <button class="range-btn" data-range="7" onclick="setRange(7)">1週</button>
+        <button class="range-btn active" data-range="0" onclick="setRange(0)">全部</button>
+    </div>
+</div>
 
 <script>
 // =========================================================================
-// Province detection
+// Province & type color detection
 // =========================================================================
 const PROVINCE_PATTERNS = {
-    fujian:    { patterns: [/^MIN/i, /^闽/i, /^閩/i], color: [255, 99, 71] },
-    zhejiang:  { patterns: [/^ZHE/i, /^浙/i],         color: [65, 105, 225] },
-    guangdong: { patterns: [/^YUE/i, /^粤/i, /^粵/i], color: [255, 165, 0] },
-    shandong:  { patterns: [/^LU\s?YU/i, /^鲁/i, /^魯/i], color: [50, 205, 50] },
-    hainan:    { patterns: [/^QIONG/i, /^琼/i, /^瓊/i], color: [255, 105, 180] },
-    jiangsu:   { patterns: [/^SU\s?YU/i, /^苏/i, /^蘇/i], color: [0, 206, 209] },
-    guangxi:   { patterns: [/^GUI/i, /^桂/i],         color: [218, 165, 32] },
+    fujian:    { patterns: [/^MIN/i, /^闽/i, /^閩/i], color: '#ff6347' },
+    zhejiang:  { patterns: [/^ZHE/i, /^浙/i],         color: '#4169e1' },
+    guangdong: { patterns: [/^YUE/i, /^粤/i, /^粵/i], color: '#ffa500' },
+    shandong:  { patterns: [/^LU\s?YU/i, /^鲁/i, /^魯/i], color: '#32cd32' },
+    hainan:    { patterns: [/^QIONG/i, /^琼/i, /^瓊/i], color: '#ff69b4' },
+    jiangsu:   { patterns: [/^SU\s?YU/i, /^苏/i, /^蘇/i], color: '#00ced1' },
+    guangxi:   { patterns: [/^GUI/i, /^桂/i],         color: '#daa520' },
 };
 
 const TYPE_COLORS = {
-    fishing: [0, 255, 136],
-    cargo:   [0, 245, 255],
-    tanker:  [255, 107, 53],
-    lng:     [240, 225, 48],
-    other:   [147, 112, 219],
-    unknown: [136, 136, 136]
+    fishing: '#00ff88', cargo: '#00f5ff', tanker: '#ff6b35',
+    lng: '#f0e130', other: '#9370db', unknown: '#888'
 };
 
-function getVesselColor(v) {
+function getColor(v) {
     const name = (v.name || '').toUpperCase();
-    for (const [, prov] of Object.entries(PROVINCE_PATTERNS)) {
+    for (const prov of Object.values(PROVINCE_PATTERNS)) {
         if (prov.patterns.some(p => p.test(name))) return prov.color;
     }
     return TYPE_COLORS[v.type_name] || TYPE_COLORS.unknown;
 }
 
-function isCnFishing(v) {
-    const name = (v.name || '').toUpperCase();
-    for (const [, prov] of Object.entries(PROVINCE_PATTERNS)) {
-        if (prov.patterns.some(p => p.test(name))) return true;
-    }
-    return /YU[.\s]*\d/i.test(name);
-}
-
 // =========================================================================
 // State
 // =========================================================================
-let tripData = [];
-let currentTime = 0;
-let loopLength = 1000;
-let trailLength = 30;
-let trailWidth = 4;
-let playing = false;
-let speed = 0.5;
-let deckgl = null;
-let filterCN = false;
-let timestamps = [];
-let globalTMin = 0;
-let globalTMax = 0;
-let rangeDays = 0;
-
-let allProcessedTrips = [];
-let cnProcessedTrips = [];
+let map, playing = false, speed = 0.5, currentTime = 0;
+let loopLength = 1, rangeDays = 0;
+let globalTMin = 0, globalTMax = 0;
+let vessels = []; // processed vessel data
+let trailLayer; // Leaflet layer group for trails
+let markerLayer; // Leaflet layer group for head markers
+let animFrame = null;
 
 // =========================================================================
-// Interpolation: smooth 30-min gaps into ~5-min segments
+// Data processing — lightweight, limit to 300 vessels max
 // =========================================================================
-const INTERP_INTERVAL = 5 * 60 * 1000; // 5 minutes in ms
+const MAX_VESSELS = 300;
 
-function interpolatePath(path) {
-    if (path.length < 2) return path;
-    const result = [path[0]];
-    for (let i = 1; i < path.length; i++) {
-        const prev = path[i - 1];
-        const cur = path[i];
-        const dt = cur.timestamp - prev.timestamp;
-
-        if (dt > INTERP_INTERVAL * 1.5) {
-            const steps = Math.floor(dt / INTERP_INTERVAL);
-            for (let s = 1; s < steps; s++) {
-                const t = s / steps;
-                result.push({
-                    coordinates: [
-                        prev.coordinates[0] + (cur.coordinates[0] - prev.coordinates[0]) * t,
-                        prev.coordinates[1] + (cur.coordinates[1] - prev.coordinates[1]) * t
-                    ],
-                    timestamp: prev.timestamp + dt * t
-                });
-            }
-        }
-        result.push(cur);
-    }
-    return result;
-}
-
-// =========================================================================
-// Data processing
-// =========================================================================
 function processData(frames) {
-    const vesselTracks = {};
-    const tsSet = new Set();
+    const vesselMap = {};
+    let tMin = Infinity, tMax = -Infinity;
 
-    frames.forEach(frame => {
+    for (const frame of frames) {
         const ts = new Date(frame.timestamp).getTime();
-        tsSet.add(ts);
-
-        (frame.vessels || []).forEach(v => {
-            if (!v.lat || !v.lon) return;
-            if (!vesselTracks[v.mmsi]) {
-                vesselTracks[v.mmsi] = {
-                    path: [],
-                    color: getVesselColor(v),
-                    isCN: isCnFishing(v),
+        if (ts < tMin) tMin = ts;
+        if (ts > tMax) tMax = ts;
+        for (const v of (frame.vessels || [])) {
+            if (!v.lat || !v.lon) continue;
+            if (!vesselMap[v.mmsi]) {
+                vesselMap[v.mmsi] = {
+                    mmsi: v.mmsi,
                     name: v.name || v.mmsi,
-                    type: v.type_name || 'unknown'
+                    type_name: v.type_name || 'unknown',
+                    color: getColor(v),
+                    points: []
                 };
             }
-            vesselTracks[v.mmsi].path.push({
-                coordinates: [v.lon, v.lat],
-                timestamp: ts
-            });
-        });
-    });
+            vesselMap[v.mmsi].points.push({ lat: v.lat, lon: v.lon, t: ts });
+        }
+    }
 
-    timestamps = Array.from(tsSet).sort((a, b) => a - b);
-    globalTMin = timestamps[0];
-    globalTMax = timestamps[timestamps.length - 1];
+    globalTMin = tMin;
+    globalTMax = tMax;
 
-    const trips = [];
-    for (const [mmsi, track] of Object.entries(vesselTracks)) {
-        if (track.path.length < 2) continue;
-        track.path.sort((a, b) => a.timestamp - b.timestamp);
-
-        // Deduplicate consecutive identical positions
-        const deduped = [track.path[0]];
-        for (let i = 1; i < track.path.length; i++) {
+    // Sort each vessel's points by time, deduplicate
+    let all = Object.values(vesselMap);
+    for (const v of all) {
+        v.points.sort((a, b) => a.t - b.t);
+        const deduped = [v.points[0]];
+        for (let i = 1; i < v.points.length; i++) {
             const prev = deduped[deduped.length - 1];
-            const cur = track.path[i];
-            if (cur.coordinates[0] !== prev.coordinates[0] ||
-                cur.coordinates[1] !== prev.coordinates[1]) {
+            const cur = v.points[i];
+            if (cur.lat !== prev.lat || cur.lon !== prev.lon) {
                 deduped.push(cur);
             }
         }
-        if (deduped.length < 2) continue;
-
-        // Interpolate for smooth animation
-        const smoothPath = interpolatePath(deduped);
-
-        trips.push({
-            mmsi, name: track.name, type: track.type,
-            isCN: track.isCN, color: track.color,
-            path: smoothPath
-        });
+        v.points = deduped;
     }
 
-    allProcessedTrips = trips;
-    cnProcessedTrips = trips.filter(t => t.isCN);
+    // Filter to vessels with at least 2 points, sort by point count descending, take top N
+    all = all.filter(v => v.points.length >= 2);
+    all.sort((a, b) => b.points.length - a.points.length);
+    vessels = all.slice(0, MAX_VESSELS);
 
-    applyRangeFilter();
+    applyRange();
 }
 
-function applyRangeFilter() {
+function applyRange() {
     const tMax = globalTMax;
     const tMin = rangeDays === 0 ? globalTMin : tMax - rangeDays * 86400000;
-
     loopLength = tMax - tMin;
 
-    const sourceTrips = filterCN ? cnProcessedTrips : allProcessedTrips;
-    const filtered = [];
-    for (const trip of sourceTrips) {
-        const clipped = trip.path.filter(p => p.timestamp >= tMin && p.timestamp <= tMax);
-        if (clipped.length < 2) continue;
-        filtered.push({
-            ...trip,
-            path: clipped.map(p => ({
-                coordinates: p.coordinates,
-                timestamp: p.timestamp - tMin
-            }))
-        });
+    // Pre-compute range-clipped points for each vessel
+    for (const v of vessels) {
+        v.rangePoints = v.points.filter(p => p.t >= tMin && p.t <= tMax);
+        v.tMin = tMin;
+    }
+}
+
+// =========================================================================
+// Rendering — Leaflet polylines + circle markers
+// =========================================================================
+const TRAIL_DURATION = 30 * 60 * 1000; // 30 min trail
+
+function renderFrame() {
+    trailLayer.clearLayers();
+    markerLayer.clearLayers();
+
+    const tMin = rangeDays === 0 ? globalTMin : globalTMax - rangeDays * 86400000;
+    const absTime = tMin + currentTime;
+    let activeCount = 0;
+
+    for (const v of vessels) {
+        const pts = v.rangePoints;
+        if (!pts || pts.length < 2) continue;
+
+        // Find points within trail window
+        const trailStart = absTime - TRAIL_DURATION;
+        const trailPts = [];
+        let headPt = null;
+
+        for (let i = 0; i < pts.length; i++) {
+            if (pts[i].t > absTime) break;
+            if (pts[i].t >= trailStart) {
+                trailPts.push(pts[i]);
+            }
+            headPt = pts[i];
+        }
+
+        // Interpolate head position if between two known points
+        for (let i = 0; i < pts.length - 1; i++) {
+            if (pts[i].t <= absTime && pts[i + 1].t > absTime) {
+                const frac = (absTime - pts[i].t) / (pts[i + 1].t - pts[i].t);
+                headPt = {
+                    lat: pts[i].lat + (pts[i + 1].lat - pts[i].lat) * frac,
+                    lon: pts[i].lon + (pts[i + 1].lon - pts[i].lon) * frac,
+                    t: absTime
+                };
+                trailPts.push(headPt);
+                break;
+            }
+        }
+
+        if (trailPts.length < 1 || !headPt) continue;
+        if (headPt.t < trailStart) continue;
+
+        activeCount++;
+
+        // Draw trail polyline with gradient-like effect (2 layers)
+        if (trailPts.length >= 2) {
+            const latlngs = trailPts.map(p => [p.lat, p.lon]);
+            // Outer glow
+            L.polyline(latlngs, {
+                color: v.color, weight: 4, opacity: 0.2,
+                lineCap: 'round', lineJoin: 'round', interactive: false
+            }).addTo(trailLayer);
+            // Core line
+            L.polyline(latlngs, {
+                color: v.color, weight: 1.5, opacity: 0.7,
+                lineCap: 'round', lineJoin: 'round', interactive: false
+            }).addTo(trailLayer);
+        }
+
+        // Head marker
+        L.circleMarker([headPt.lat, headPt.lon], {
+            radius: 3, color: v.color, fillColor: v.color,
+            fillOpacity: 0.9, weight: 0, interactive: true
+        }).bindPopup(
+            '<b>' + v.name + '</b><br>MMSI: ' + v.mmsi + '<br>Type: ' + v.type_name,
+            { className: 'dark-popup' }
+        ).addTo(markerLayer);
     }
 
-    tripData = filtered;
+    // Update stat
+    document.getElementById('statLine').textContent = activeCount + '/' + vessels.length;
+
+    // Update time display
+    const d = new Date(absTime);
+    document.getElementById('timeDisplay').textContent =
+        d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
 }
 
 // =========================================================================
-// deck.gl rendering — 3-layer glow
-// =========================================================================
-function createDeckLayers() {
-    const trailMs = trailLength * 60 * 1000;
-    const common = {
-        data: tripData,
-        getPath: d => d.path.map(p => p.coordinates),
-        getTimestamps: d => d.path.map(p => p.timestamp),
-        jointRounded: true,
-        capRounded: true,
-        trailLength: trailMs,
-        currentTime: currentTime,
-        shadowEnabled: false
-    };
-
-    return [
-        new deck.TripsLayer({
-            ...common, id: 'glow-outer',
-            getColor: d => [...d.color, 35],
-            opacity: 0.25,
-            widthMinPixels: trailWidth * 5,
-        }),
-        new deck.TripsLayer({
-            ...common, id: 'glow-mid',
-            getColor: d => [...d.color, 90],
-            opacity: 0.45,
-            widthMinPixels: trailWidth * 2.5,
-        }),
-        new deck.TripsLayer({
-            ...common, id: 'core',
-            getColor: d => [...d.color, 240],
-            opacity: 0.9,
-            widthMinPixels: trailWidth,
-        })
-    ];
-}
-
-function initDeck() {
-    deckgl = new deck.DeckGL({
-        container: 'container',
-        mapStyle: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-        initialViewState: {
-            longitude: 121.0,
-            latitude: 24.0,
-            zoom: 6.5,
-            pitch: 0,
-            bearing: 0,
-            maxZoom: 14,
-            minZoom: 4
-        },
-        controller: true,
-        layers: createDeckLayers(),
-        getTooltip: ({object}) => {
-            if (!object) return null;
-            return {
-                html: `<div style="font-size:12px"><b>${object.name}</b><br>MMSI: ${object.mmsi}<br>Type: ${object.type}</div>`,
-                style: {
-                    background: 'rgba(10,15,28,0.9)',
-                    color: '#e8eef7',
-                    border: '1px solid rgba(0,245,255,0.3)',
-                    borderRadius: '4px',
-                    padding: '6px 10px'
-                }
-            };
-        }
-    });
-}
-
-function updateLayers() {
-    if (!deckgl) return;
-    deckgl.setProps({ layers: createDeckLayers() });
-}
-
-// =========================================================================
-// UI: Panel toggle
-// =========================================================================
-function togglePanel() {
-    const panel = document.getElementById('panel');
-    const btn = document.getElementById('expandBtn');
-    panel.classList.toggle('open');
-    btn.classList.toggle('open');
-}
-
-// =========================================================================
-// Time Range
-// =========================================================================
-function setRange(days) {
-    rangeDays = days;
-    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`.range-btn[data-range="${days}"]`).classList.add('active');
-
-    applyRangeFilter();
-    currentTime = 0;
-    syncSliders(0);
-    updateTimeDisplay();
-    updateLayers();
-}
-
-// =========================================================================
-// Playback
+// Animation loop
 // =========================================================================
 function animate() {
     if (!playing) return;
-
-    // Speed: at 0.5x, full loop ~120s; at 1x, ~60s
+    // At 0.5x: full loop in ~120s. At 1x: ~60s.
     const step = (loopLength / 3600) * speed;
     currentTime += step;
-
     if (currentTime > loopLength) currentTime = 0;
 
-    syncSliders(Math.round((currentTime / loopLength) * 1000));
-    updateTimeDisplay();
-    updateLayers();
-    requestAnimationFrame(animate);
+    document.getElementById('timeSlider').value = Math.round((currentTime / loopLength) * 1000);
+    renderFrame();
+    animFrame = requestAnimationFrame(animate);
 }
 
 function togglePlay() {
@@ -697,95 +405,89 @@ function togglePlay() {
     const btn = document.getElementById('playBtn');
     btn.innerHTML = playing ? '&#9646;&#9646;' : '&#9654;';
     btn.classList.toggle('playing', playing);
-    if (playing) requestAnimationFrame(animate);
+    if (playing) animFrame = requestAnimationFrame(animate);
+    else if (animFrame) cancelAnimationFrame(animFrame);
 }
 
 function setSpeed(s) {
     speed = s;
-    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`.speed-btn[data-speed="${s}"]`).classList.add('active');
+    document.querySelectorAll('[data-speed]').forEach(b => {
+        b.classList.toggle('active', parseFloat(b.dataset.speed) === s);
+    });
 }
 
-function updateTimeDisplay() {
-    if (timestamps.length === 0) return;
-    const tMin = rangeDays === 0 ? globalTMin : globalTMax - rangeDays * 86400000;
-    const actualTime = new Date(tMin + currentTime);
-    const dateStr = actualTime.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
-    document.getElementById('timeDisplay').textContent = dateStr;
-
-    const trailMs = trailLength * 60000;
-    const activeCount = tripData.filter(t => {
-        const first = t.path[0].timestamp;
-        const last = t.path[t.path.length - 1].timestamp;
-        return currentTime >= first && currentTime <= last + trailMs;
-    }).length;
-    document.getElementById('statLine').textContent =
-        activeCount + ' / ' + tripData.length + ' vessels';
+function setRange(days) {
+    rangeDays = days;
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.range-btn[data-range="' + days + '"]').classList.add('active');
+    applyRange();
+    currentTime = 0;
+    document.getElementById('timeSlider').value = 0;
+    renderFrame();
 }
 
-function updateTrailLength(val) { trailLength = parseInt(val); updateLayers(); }
-function updateTrailWidth(val) { trailWidth = parseInt(val); updateLayers(); }
-
-function toggleFilter() {
-    filterCN = document.getElementById('filterCN').checked;
-    applyRangeFilter();
-    updateLayers();
-}
-
-// =========================================================================
-// Sync both sliders (topbar + panel)
-// =========================================================================
-function syncSliders(val) {
-    document.getElementById('timeSlider').value = val;
-    document.getElementById('timeSliderPanel').value = val;
-}
-
-function onSliderInput(val) {
-    currentTime = (val / 1000) * loopLength;
-    syncSliders(val);
-    updateTimeDisplay();
-    updateLayers();
-}
-
-document.getElementById('timeSlider').addEventListener('input', function() { onSliderInput(this.value); });
-document.getElementById('timeSliderPanel').addEventListener('input', function() { onSliderInput(this.value); });
+document.getElementById('timeSlider').addEventListener('input', function() {
+    currentTime = (this.value / 1000) * loopLength;
+    renderFrame();
+});
 
 document.addEventListener('keydown', e => {
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
 });
 
 // =========================================================================
-// Initialize
+// Init
 // =========================================================================
 async function init() {
+    // Init Leaflet map
+    map = L.map('map', {
+        center: [24.0, 121.0],
+        zoom: 7,
+        minZoom: 4,
+        maxZoom: 14,
+        zoomControl: false
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19
+    }).addTo(map);
+
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    trailLayer = L.layerGroup().addTo(map);
+    markerLayer = L.layerGroup().addTo(map);
+
+    // Load data
     try {
         const res = await fetch('ais_track_history.json?' + Date.now());
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
 
-        document.getElementById('loading').querySelector('div:last-child').textContent =
-            '處理 ' + data.length + ' 幀資料...';
-        await new Promise(r => setTimeout(r, 50));
+        document.getElementById('loadMsg').textContent = '處理 ' + data.length + ' 幀...';
+        await new Promise(r => setTimeout(r, 30));
 
         processData(data);
 
         document.getElementById('loading').style.display = 'none';
         document.getElementById('topbar').style.display = '';
-        document.getElementById('timelineBar').style.display = '';
+        document.getElementById('bottombar').style.display = '';
         document.getElementById('legend').style.display = '';
 
-        initDeck();
-
-        currentTime = 0;
-        updateTimeDisplay();
+        renderFrame();
         togglePlay();
-
     } catch (e) {
-        console.error('Failed to load:', e);
-        document.getElementById('loading').innerHTML =
-            '<div style="color:#ff3366">載入失敗: ' + e.message + '</div>';
+        console.error(e);
+        document.getElementById('loadMsg').innerHTML =
+            '<span style="color:#ff3366">載入失敗: ' + e.message + '</span>';
     }
 }
+
+// Add dark popup style
+const popStyle = document.createElement('style');
+popStyle.textContent = `.dark-popup .leaflet-popup-content-wrapper{background:rgba(10,15,28,0.92);color:#e8eef7;border:1px solid rgba(0,245,255,0.2);border-radius:6px;font-size:12px}.dark-popup .leaflet-popup-tip{background:rgba(10,15,28,0.92)}`;
+document.head.appendChild(popStyle);
 
 init();
 </script>
