@@ -1027,15 +1027,15 @@ def classify_vessel(profile, track_points, identity_events=None,
         if classification['itu_mars_mismatch']:
             score += 2  # 官方登記 vs AIS 不一致
 
-        if score >= 7:
+        if score >= 10:
             classification['risk_level'] = 'critical'
-        elif score >= 4:
+        elif score >= 7:
             classification['risk_level'] = 'high'
-        elif score >= 2:
+        elif score >= 4:
             classification['risk_level'] = 'medium'
 
         classification['risk_score'] = score
-        classification['suspicious'] = score >= 4
+        classification['suspicious'] = score >= 7
 
     # 附加位置資訊
     if track_points:
@@ -1233,7 +1233,7 @@ def main():
     if exclusion_stats:
         for rid, cnt in sorted(exclusion_stats.items(), key=lambda x: -x[1]):
             print(f"     - {rid}: {cnt}")
-    print(f"   可疑船隻 (score ≥ 4): {len(suspicious_vessels)}")
+    print(f"   可疑船隻 (score ≥ 7): {len(suspicious_vessels)}")
     print(f"   海纜鄰近: {cable_count}")
     print(f"   海纜低速徘徊 (>3hr <8kn): {loiter_count}")
     print(f"   Z字型移動: {zigzag_count}")
