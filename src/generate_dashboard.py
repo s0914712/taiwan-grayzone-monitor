@@ -173,6 +173,12 @@ def main():
         shutil.copy2(ais_track_path, DOCS_DIR / 'ais_track_history.json')
         print(f"🎬 已複製 AIS 軌跡歷史至 docs/ais_track_history.json")
 
+    # 複製商船軌跡歷史至 docs（供路徑提取使用）
+    commercial_track_path = DATA_DIR / 'ais_track_commercial.json'
+    if commercial_track_path.exists():
+        shutil.copy2(commercial_track_path, DOCS_DIR / 'ais_track_commercial.json')
+        print(f"🚢 已複製商船軌跡歷史至 docs/ais_track_commercial.json")
+
     # 複製 UN 制裁清單至 docs（供前端制裁警告使用）
     sanctions_path = DATA_DIR / 'un_sanctions_vessels.json'
     if sanctions_path.exists():

@@ -31,6 +31,7 @@ from pathlib import Path
 DATA_DIR = Path("data")
 HISTORY_FILE = DATA_DIR / "vessel_profiles.json"
 TRACK_HISTORY_FILE = DATA_DIR / "ais_track_history.json"
+TRACK_COMMERCIAL_FILE = DATA_DIR / "ais_track_commercial.json"
 CABLE_GEO_FILE = DATA_DIR / "cable-geo.json"
 IDENTITY_EVENTS_FILE = DATA_DIR / "identity_events.json"
 SANCTIONS_FILE = DATA_DIR / "un_sanctions_vessels.json"
@@ -796,34 +797,40 @@ def check_itu_mars_mismatch(profile, mars_record):
 
 
 def load_track_history():
-    """載入 ais_track_history.json，按 MMSI 組織航跡"""
-    # Try docs/ first (may be more up-to-date), then data/
-    for path in [Path("docs") / "ais_track_history.json", TRACK_HISTORY_FILE]:
-        if path.exists():
-            print(f"📂 Reading track history: {path}")
-            with open(path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            break
-    else:
-        print("⚠️ ais_track_history.json not found")
-        return {}
-
+    """載入 tier-1 + tier-2 航跡，按 MMSI 組織航跡"""
     tracks = {}  # mmsi -> [points]
-    for entry in data:
-        ts = entry.get('timestamp', '')
-        for v in entry.get('vessels', []):
-            mmsi = v.get('mmsi')
-            if not mmsi:
-                continue
-            if mmsi not in tracks:
-                tracks[mmsi] = []
-            tracks[mmsi].append({
-                't': ts,
-                'lat': v.get('lat'),
-                'lon': v.get('lon'),
-                'speed': v.get('speed', 0),
-                'heading': v.get('heading'),
-            })
+
+    # Tier-1: CN fishing + suspicious
+    # Tier-2: cargo, tanker, LNG, identity-changed
+    track_sources = [
+        ("tier-1", [Path("docs") / "ais_track_history.json", TRACK_HISTORY_FILE]),
+        ("tier-2", [Path("docs") / "ais_track_commercial.json", TRACK_COMMERCIAL_FILE]),
+    ]
+
+    for tier_label, candidates in track_sources:
+        for path in candidates:
+            if path.exists():
+                print(f"📂 Reading {tier_label} track history: {path}")
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                for entry in data:
+                    ts = entry.get('timestamp', '')
+                    for v in entry.get('vessels', []):
+                        mmsi = v.get('mmsi')
+                        if not mmsi:
+                            continue
+                        if mmsi not in tracks:
+                            tracks[mmsi] = []
+                        tracks[mmsi].append({
+                            't': ts,
+                            'lat': v.get('lat'),
+                            'lon': v.get('lon'),
+                            'speed': v.get('speed', 0),
+                            'heading': v.get('heading'),
+                        })
+                break  # found this tier, skip fallback path
+        else:
+            print(f"⚠️ {tier_label} track history not found")
 
     print(f"📊 Track history: {len(tracks)} vessels")
     return tracks
