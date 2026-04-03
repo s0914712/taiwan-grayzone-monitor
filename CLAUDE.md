@@ -3,6 +3,10 @@
 ## Overview
 Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates AIS vessel data, GFW SAR satellite imagery, and CSIS threat methodology. Static site on GitHub Pages with Python data pipelines automated via GitHub Actions.
 
+**Sub-directory docs** (auto-loaded when working in those dirs):
+- `src/CLAUDE.md` — Python pipeline details, data structures, file-by-file reference
+- `docs/CLAUDE.md` — Frontend architecture, JS modules, CSS design system, z-index, i18n
+
 ## Directory Structure
 - `docs/` — Frontend (GitHub Pages root). HTML, CSS, JS, and JSON data files
 - `src/` — Python data pipeline scripts (fetch, analyze, generate)
@@ -26,35 +30,6 @@ GitHub Actions → src/fetch_ais_data.py (AIS via SOCKS5 proxy)
               → src/generate_dashboard.py (consolidate → docs/data.json)
               → GitHub Pages deploy
 ```
-
-## Key Frontend Files
-| File | Purpose |
-|------|---------|
-| `docs/index.html` | Main monitoring dashboard with live map + onboarding tour |
-| `docs/dark-vessels.html` | SAR dark vessel analysis |
-| `docs/statistics.html` | Historical statistics & charts |
-| `docs/identity-history.html` | AIS identity change timeline |
-| `docs/weekly-animation.html` | Leaflet-based vessel trail animation |
-| `docs/ais-animation.html` | AIS track animation |
-| `docs/cn-fishing-animation.html` | Chinese fishing vessel animation |
-| `docs/ship-transfers.html` | Ship-to-ship transfer detection |
-| `docs/js/app.js` | Main controller (~830 LOC) |
-| `docs/js/map.js` | Leaflet map module (~1390 LOC) |
-| `docs/js/charts.js` | Chart.js integration (~345 LOC) |
-| `docs/js/i18n.js` | Internationalization ZH/EN (~490 LOC) |
-| `docs/css/main.css` | Single stylesheet with CSS variables |
-
-## Key Backend Files
-| File | Purpose |
-|------|---------|
-| `src/fetch_ais_data.py` | Fetch AIS data, update vessel profiles, save tier-1 + tier-2 tracks |
-| `src/fetch_gfw_data.py` | Fetch GFW SAR dark vessel data |
-| `src/analyze_suspicious.py` | Core threat scoring engine (see below) |
-| `src/detect_ship_transfers.py` | Ship-to-ship transfer / pair trawling detection |
-| `src/lookup_itu_mars.py` | ITU MARS ship station registry scraper + cache |
-| `src/extract_all_routes.py` | Extract per-vessel route JSONs from track history |
-| `src/generate_dashboard.py` | Consolidate all data → docs/data.json |
-| `src/exercise_prediction.py` | PLA military sortie correlation analysis |
 
 ---
 
@@ -160,84 +135,6 @@ final_score = round(raw_behavioral_score × type_multiplier) + high_threat_indic
 - Cable proximity: O(track_points × nearby_cable_segments) instead of all cables
 
 ---
-
-## fetch_ais_data.py — AIS Data Pipeline
-
-### Vessel Profile Structure (`vessel_profiles.json`)
-```python
-{
-    "mmsi": {
-        "mmsi": "412345678",
-        "names_seen": ["SHIP A", "SHIP B"],      # all observed names
-        "types_seen": ["fishing", "cargo"],        # all observed types
-        "total_snapshots": 42,                     # times seen
-        "fishing_hotspot_snapshots": 15,           # times in hotspot
-        "last_seen_timestamps": ["2024-01-01T...", ...],  # last 50 timestamps
-    }
-}
-```
-
-### Track Storage
-- **Tier-1** (`ais_track_history.json`): CN fishing + suspicious vessels, max 336 entries (14 days × 24/day)
-- **Tier-2** (`ais_track_commercial.json`): cargo/tanker/LNG + identity-changed, max 168 entries
-- Each entry: `{timestamp, vessel_count, vessels: [{mmsi, name, lat, lon, speed, heading, type_name}]}`
-- Identity-changed vessels: loaded from `identity_events.json` last 7 days
-
-### Identity Change Detection
-- Compares current snapshot against previous for each MMSI
-- Tracked fields: name, IMO, call_sign, type_name, destination
-- Events saved to `identity_events.json` with `multi_field` flag when ≥2 fields change simultaneously
-
----
-
-## Key Conventions
-
-### Vessel Markers
-MarineTraffic-style **triangle SVG with notch** (h × 0.7). Dynamically sized and rotated by heading.
-
-### Color Scheme (CSS variables, dark theme)
-```css
---bg-primary: #0a0f1c;   --accent-cyan: #00f5ff;
---bg-secondary: #141e32; --accent-orange: #ff6b35;
---bg-card: rgba(25,35,60,0.95); --accent-red: #ff3366;
---text-primary: #e8eef7; --accent-green: #00ff88;
---text-secondary: #8aa4c8; --accent-yellow: #ffd700;
-```
-
-### Vessel Type Colors (map.js)
-`fishing: #00ff88` `cargo: #00f5ff` `tanker: #ff6b35` `lng: #f0e130` `other: #ff3366` `unknown: #888888`
-
-### i18n
-- HTML: `<span data-i18n="key">中文</span>`
-- JS: `i18n.t('key')`
-- Auto-detect browser lang; toggle ZH↔EN; saved in localStorage (`lang` key)
-- Dictionary in `docs/js/i18n.js` — keys follow `namespace.key` pattern (e.g., `nav.grayzone`, `ob.t1`)
-- Language change fires `langchange` CustomEvent on window
-
-### Onboarding Tour
-- 5-card carousel on first visit, stored in localStorage (`onboarding-seen` key)
-- CSS in `docs/css/main.css` (.onboarding-overlay, .onboarding-card)
-- JS inline in `docs/index.html` (IIFE after app.js)
-- Mobile: bottom-sheet style; Desktop: centered modal
-
-### Animation Pages
-- `weekly-animation.html`: Leaflet-based (replaced deck.gl for mobile compat), max 300 vessels, 2-layer trails
-- Other animation pages: inline JS with own Leaflet map + Chart.js + playback controls
-
-## Key Data Files
-| File | Location | Description |
-|------|----------|-------------|
-| `data.json` | docs/ | Main consolidated dataset for frontend |
-| `ais_history.json` | docs/ | 90-day AIS snapshots (1,080 entries) |
-| `ais_track_history.json` | docs/ | Tier-1: 14-day CN fishing + suspicious tracks |
-| `ais_track_commercial.json` | docs/ | Tier-2: 14-day cargo/tanker/LNG tracks |
-| `identity_events.json` | docs/ | AIS identity changes (max 5,000) |
-| `weekly_dark_vessels.json` | docs/ | 90-day SAR detections for animation |
-| `cable_status.json` | docs/ | Submarine cable status |
-| `taiwan_cables.json` | docs/ | Cable route GeoJSON |
-| `ship_transfers.json` | docs/ | STS rendezvous detection results |
-| `vessel_routes/*.json` | docs/ | 1,000+ per-vessel route files (by MMSI) |
-| `itu_mars_cache.json` | data/ | ITU MARS registry cache (30-day expiry) |
 
 ## Common Commands
 ```bash
