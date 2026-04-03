@@ -37,6 +37,7 @@ IDENTITY_EVENTS_FILE = DATA_DIR / "identity_events.json"
 SANCTIONS_FILE = DATA_DIR / "un_sanctions_vessels.json"
 OUTPUT_FILE = DATA_DIR / "suspicious_vessels.json"
 ITU_MARS_CACHE = DATA_DIR / "itu_mars_cache.json"
+SHIP_TRANSFERS_FILE = DATA_DIR / "ship_transfers.json"
 
 # ── 門檻設定 ────────────────────────────────────────────
 CABLE_PROXIMITY_KM = 5.0          # 海纜 5 公里內視為鄰近
@@ -60,6 +61,23 @@ SPOOF_CIRCLE_RADIUS_CV = 0.25      # 半徑變異係數門檻 (std/mean < 0.25)
 SPOOF_CIRCLE_MAX_RADIUS_KM = 5.0   # 半徑 > 5km 排除（可能正常航行）
 SPOOF_CIRCLE_MIN_RADIUS_KM = 0.1   # 半徑 < 0.1km 排除（GPS 漂移）
 SPOOF_CIRCLE_MIN_ARC_DEG = 270.0   # 弧度覆蓋 > 270° 才算圓形
+
+# ── 船型威脅乘數 ──────────────────────────────────────────
+# 商船（cargo/tanker/lng）錨鍊長、噸位大，對海纜威脅高 → ×1.0
+# 漁船常態作業、體積小、危險性低 → ×0.2
+# 其他/不明 → ×0.5
+VESSEL_TYPE_MULTIPLIER = {
+    'cargo': 1.0,
+    'tanker': 1.0,
+    'lng': 1.0,
+    'fishing': 0.2,
+    'other': 0.5,
+    'unknown': 0.5,
+}
+
+# ── STS 旁靠加分 ──────────────────────────────────────────
+STS_SUSPICIOUS_SCORE = 5   # 涉及可疑旁靠事件
+STS_ANY_SCORE = 2          # 涉及任何旁靠事件
 
 # ── 前十大船旗國 MMSI MID（國籍非前十大視為額外可疑）────────
 # MID = MMSI 前 3 碼，對照 ITU MID 表
@@ -718,6 +736,42 @@ def load_sanctions_list():
     return by_imo, imo_set, name_set
 
 
+def load_ship_transfers():
+    """
+    載入 ship_transfers.json，回傳 dict: {mmsi: {'count': N, 'suspicious': bool}}
+    用於可疑計分中的 STS 旁靠加分。
+    """
+    if not SHIP_TRANSFERS_FILE.exists():
+        print("⚠️ ship_transfers.json 不存在，跳過 STS 加分")
+        return {}
+
+    try:
+        with open(SHIP_TRANSFERS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception:
+        return {}
+
+    sts_map = {}  # mmsi -> {count, suspicious}
+    all_events = (data.get('active_transfers', [])
+                  + data.get('history', []))
+
+    for ev in all_events:
+        is_susp = ev.get('classification') == 'suspicious'
+        for vkey in ('vessel1', 'vessel2'):
+            mmsi = str(ev.get(vkey, {}).get('mmsi', ''))
+            if not mmsi:
+                continue
+            if mmsi not in sts_map:
+                sts_map[mmsi] = {'count': 0, 'suspicious': False}
+            sts_map[mmsi]['count'] += 1
+            if is_susp:
+                sts_map[mmsi]['suspicious'] = True
+
+    print(f"🚢 STS 旁靠紀錄: {len(sts_map)} 艘船 "
+          f"({sum(1 for v in sts_map.values() if v['suspicious'])} 艘涉及可疑旁靠)")
+    return sts_map
+
+
 def load_itu_mars_cache():
     """
     載入 ITU MARS 快取資料（由 lookup_itu_mars.py 建立）。
@@ -837,11 +891,13 @@ def load_track_history():
 
 
 def classify_vessel(profile, track_points, identity_events=None,
-                     sanctions_match=None, mars_record=None):
+                     sanctions_match=None, mars_record=None,
+                     sts_record=None):
     """
     綜合分類單一船隻的可疑程度
     標準：海纜鄰近 + Z字型 + 200m等深線 + AIS變更 + UN制裁
-          + AIS偽訊號 + ITU MARS 登記比對
+          + AIS偽訊號 + ITU MARS 登記比對 + STS旁靠
+    分數依船型乘數調整：商船 ×1.0、漁船 ×0.2、其他 ×0.5
     """
     mmsi = profile['mmsi']
 
@@ -978,8 +1034,20 @@ def classify_vessel(profile, track_points, identity_events=None,
     if matched_rules:
         classification['exclusion_rules'] = matched_rules
 
+    # ── 判定主要船型 ──
+    types_seen = profile.get('types_seen', [])
+    # 取最後一個非 unknown/other 的船型；否則 unknown
+    vessel_type = 'unknown'
+    for t in reversed(types_seen):
+        if t not in ('unknown', 'other'):
+            vessel_type = t
+            break
+    classification['vessel_type'] = vessel_type
+    type_mult = VESSEL_TYPE_MULTIPLIER.get(vessel_type, 0.5)
+    classification['type_multiplier'] = type_mult
+
     # ── 風險計分 ──
-    score = 0
+    raw_score = 0
 
     if excluded:
         # 符合排除規則：直接標記為 normal，不參與威脅計分
@@ -991,23 +1059,26 @@ def classify_vessel(profile, track_points, identity_events=None,
     else:
         # ── 基礎行為分（單獨不構成可疑）──
         if classification['cable_proximity']:
-            score += 2  # 海纜 5km 內（台灣海峽很常見，降低權重）
+            raw_score += 2  # 海纜 5km 內
         if classification['cable_loitering']:
-            score += 3  # 海纜低速徘徊 >3hr <8kn（刻意行為）
+            raw_score += 3  # 海纜低速徘徊 >3hr <8kn
         if classification['zigzag_pattern']:
-            score += 1  # Z字型（漁船常見，單獨權重低）
+            raw_score += 1  # Z字型
         if classification['depth_200m_activity']:
-            score += 1
+            raw_score += 1
         if classification['non_top10_flag']:
-            score += 1  # 非前十大船旗國
+            raw_score += 1  # 非前十大船旗國
 
         # ── 組合加分（多重指標交叉 = 高度可疑）──
         if classification['cable_proximity'] and classification['zigzag_pattern']:
-            score += 3  # 海纜鄰近 + Z字型 = 可能拖錨
+            raw_score += 3  # 海纜鄰近 + Z字型 = 可能拖錨
         if classification['cable_proximity'] and classification['cable_loitering']:
-            score += 2  # 海纜鄰近 + 長時間徘徊
+            raw_score += 2  # 海纜鄰近 + 長時間徘徊
 
-        # ── 高威脅指標 ──
+        # ── 套用船型乘數（商船 ×1.0, 漁船 ×0.2, 其他 ×0.5）──
+        score = raw_score * type_mult
+
+        # ── 高威脅指標（不受船型乘數影響）──
         if classification['sanctioned']:
             score += 8  # UN 制裁船舶 — 最高優先
         for a in anomalies:
@@ -1016,7 +1087,7 @@ def classify_vessel(profile, track_points, identity_events=None,
             else:
                 score += 1
 
-        # ── AIS 偽訊號（每項 +4，強指標）──
+        # ── AIS 偽訊號（不受船型乘數影響，每項 +4）──
         if classification['spoof_impossible_physics']:
             score += 4
         if classification['spoof_box_pattern']:
@@ -1030,9 +1101,26 @@ def classify_vessel(profile, track_points, identity_events=None,
         if spoofing and classification['cable_proximity']:
             score += 3
 
-        # ── ITU MARS 登記不符 ──
+        # ── ITU MARS 登記不符（不受船型乘數影響）──
         if classification['itu_mars_mismatch']:
-            score += 3  # 官方登記 vs AIS 不一致
+            score += 3
+
+        # ── STS 旁靠加分（不受船型乘數影響）──
+        if sts_record:
+            classification['sts_transfer'] = True
+            classification['sts_count'] = sts_record['count']
+            classification['sts_suspicious'] = sts_record['suspicious']
+            if sts_record['suspicious']:
+                score += STS_SUSPICIOUS_SCORE
+                classification['flags'].append(
+                    f'可疑旁靠 (STS)：{sts_record["count"]} 次')
+            else:
+                score += STS_ANY_SCORE
+                classification['flags'].append(
+                    f'旁靠紀錄：{sts_record["count"]} 次')
+
+        # 四捨五入為整數
+        score = round(score)
 
         # ── 風險等級 ──
         if score >= 12:
@@ -1042,6 +1130,7 @@ def classify_vessel(profile, track_points, identity_events=None,
         elif score >= 5:
             classification['risk_level'] = 'medium'
 
+        classification['raw_score'] = raw_score
         classification['risk_score'] = score
         classification['suspicious'] = score >= 8
 
@@ -1090,6 +1179,9 @@ def main():
     # 載入 ITU MARS 快取（用於交叉比對船舶登記資料）
     mars_cache = load_itu_mars_cache()
 
+    # 載入 STS 旁靠紀錄
+    sts_map = load_ship_transfers()
+
     # 載入航跡歷史（用於海纜鄰近、Z字型、等深線分析）
     tracks = load_track_history()
 
@@ -1133,9 +1225,11 @@ def main():
                     break
 
         mars_rec = mars_cache.get(mmsi)
+        sts_rec = sts_map.get(mmsi)
         result = classify_vessel(profile, track_pts, id_events,
                                  sanctions_match=sanction_hit,
-                                 mars_record=mars_rec)
+                                 mars_record=mars_rec,
+                                 sts_record=sts_rec)
         if result.get('excluded'):
             excluded_vessels.append(result)
         elif result['risk_score'] > 0:
@@ -1166,6 +1260,7 @@ def main():
     spoof_box_count = 0
     spoof_circle_count = 0
     mars_mismatch_count = 0
+    sts_transfer_count = 0
 
     for c in classifications:
         risk_counts[c['risk_level']] += 1
@@ -1191,6 +1286,8 @@ def main():
             spoof_circle_count += 1
         if c.get('itu_mars_mismatch'):
             mars_mismatch_count += 1
+        if c.get('sts_transfer'):
+            sts_transfer_count += 1
 
     output = {
         'updated_at': datetime.now(timezone.utc).isoformat(),
@@ -1206,6 +1303,9 @@ def main():
             'spoof_teleport_kmh': SPOOF_TELEPORT_KMH,
             'spoof_box_angle_tolerance': SPOOF_BOX_ANGLE_TOLERANCE,
             'spoof_circle_radius_cv': SPOOF_CIRCLE_RADIUS_CV,
+            'vessel_type_multiplier': VESSEL_TYPE_MULTIPLIER,
+            'sts_suspicious_score': STS_SUSPICIOUS_SCORE,
+            'sts_any_score': STS_ANY_SCORE,
         },
         'exclusion_rules': [
             {'id': r['id'], 'label': r['label']} for r in EXCLUSION_RULES
@@ -1227,6 +1327,7 @@ def main():
             'spoof_box_pattern': spoof_box_count,
             'spoof_circle_pattern': spoof_circle_count,
             'itu_mars_mismatch': mars_mismatch_count,
+            'sts_transfer': sts_transfer_count,
             'risk_distribution': risk_counts,
         },
         'suspicious_vessels': suspicious_vessels[:50],
@@ -1254,6 +1355,7 @@ def main():
     print(f"   偽訊號-方形軌跡: {spoof_box_count}")
     print(f"   偽訊號-圓形軌跡: {spoof_circle_count}")
     print(f"   ITU MARS不符: {mars_mismatch_count}")
+    print(f"   STS旁靠涉入: {sts_transfer_count}")
     print(f"   風險分布: {risk_counts}")
     print(f"\n📁 結果已輸出至: {OUTPUT_FILE}")
 
