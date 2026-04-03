@@ -362,6 +362,28 @@ const i18n = (function () {
         'chart.detect':          { zh: '偵測', en: 'det' },
         'chart.dark':            { zh: '暗船', en: 'dark' },
         'chart.unit_wan':        { zh: '萬', en: '0k' },
+
+        // ── Onboarding 導覽 ──
+        'ob.skip':               { zh: '跳過', en: 'Skip' },
+        'ob.next':               { zh: '下一步', en: 'Next' },
+        'ob.prev':               { zh: '上一步', en: 'Back' },
+        'ob.done':               { zh: '開始使用', en: 'Get Started' },
+        'ob.step':               { zh: '{0} / {1}', en: '{0} / {1}' },
+
+        'ob.t1':                 { zh: '歡迎使用台灣灰色地帶監測', en: 'Welcome to Taiwan Gray Zone Monitor' },
+        'ob.d1':                 { zh: '本系統整合 AIS 船舶資料與 SAR 衛星影像，即時監控台灣周邊海域的灰色地帶活動。以下快速介紹主要功能。', en: 'This system integrates AIS vessel data and SAR satellite imagery to monitor gray zone maritime activity around Taiwan in real time. Here\'s a quick tour of key features.' },
+
+        'ob.t2':                 { zh: '海纜威脅偵測', en: 'Cable Threat Detection' },
+        'ob.d2':                 { zh: '系統自動分析船隻行為：海纜鄰近活動、Z字型移動、低速徘徊、AIS 身分變更等，依船型加權計分，標記可疑船隻。商船（錨鍊長、噸位大）權重較高，漁船權重較低。', en: 'The system analyzes vessel behavior: cable proximity, zigzag movement, slow loitering, AIS identity changes, and more. Scores are weighted by vessel type — cargo/tanker (high cable risk) score higher, while fishing vessels score lower.' },
+
+        'ob.t3':                 { zh: '地圖圖層', en: 'Map Layers' },
+        'ob.d3':                 { zh: '左側圖層控制可切換顯示：漁撈熱點、AIS 船舶、SAR 暗船、海底電纜路線、領海基線等。點擊船舶標記可查看詳細資訊與航跡。', en: 'Use layer controls to toggle: fishing hotspots, AIS vessels, SAR dark vessels, submarine cable routes, baselines, and more. Click any vessel marker for details and track history.' },
+
+        'ob.t4':                 { zh: '暗船與衛星偵測', en: 'Dark Vessels & SAR' },
+        'ob.d4':                 { zh: '「暗船」指關閉 AIS 的船舶，僅能透過 SAR 衛星雷達偵測。系統整合 Global Fishing Watch 資料，顯示這些隱匿船舶的位置與活動趨勢。', en: '"Dark vessels" are ships with AIS off, detectable only via SAR satellite radar. The system integrates Global Fishing Watch data to reveal their positions and activity trends.' },
+
+        'ob.t5':                 { zh: '更多功能', en: 'More Features' },
+        'ob.d5':                 { zh: '統計頁面提供歷史趨勢圖表；軌跡動畫頁面播放船舶移動軌跡；身分追蹤頁面記錄 AIS 變更事件。使用底部導航列或頂部選單切換頁面。', en: 'Statistics page offers historical charts; Trail Animation plays vessel movement; Identity History tracks AIS changes. Use the bottom nav bar or top menu to switch between pages.' },
     };
 
     // ========================================================================

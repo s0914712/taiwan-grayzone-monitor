@@ -393,6 +393,101 @@
     <script src="js/charts.js"></script>
     <script src="js/app.js"></script>
 
+    <!-- Onboarding Tour -->
+    <script>
+    (function() {
+        const OB_KEY = 'onboarding-seen';
+        if (localStorage.getItem(OB_KEY)) return;
+
+        const steps = [
+            { icon: '🛰️', title: 'ob.t1', desc: 'ob.d1' },
+            { icon: '⚓', title: 'ob.t2', desc: 'ob.d2' },
+            { icon: '🗺️', title: 'ob.t3', desc: 'ob.d3' },
+            { icon: '👻', title: 'ob.t4', desc: 'ob.d4' },
+            { icon: '📊', title: 'ob.t5', desc: 'ob.d5' },
+        ];
+        const total = steps.length;
+        let idx = 0;
+
+        function t(key) {
+            return typeof i18n !== 'undefined' ? i18n.t(key) : key;
+        }
+
+        function render() {
+            const s = steps[idx];
+            const isLast = idx === total - 1;
+            const isFirst = idx === 0;
+
+            const dotsHtml = steps.map(function(_, i) {
+                return '<div class="ob-dot' + (i === idx ? ' active' : '') + '"></div>';
+            }).join('');
+
+            const prevBtn = isFirst
+                ? '<button class="ob-btn ob-btn-skip" id="obSkip">' + t('ob.skip') + '</button>'
+                : '<button class="ob-btn ob-btn-prev" id="obPrev">' + t('ob.prev') + '</button>';
+
+            const nextBtn = '<button class="ob-btn ob-btn-next" id="obNext">'
+                + (isLast ? t('ob.done') : t('ob.next')) + '</button>';
+
+            var card = document.getElementById('obCard');
+            if (!card) return;
+
+            card.innerHTML =
+                '<div class="ob-icon">' + s.icon + '</div>' +
+                '<div class="ob-body ob-slide-enter">' +
+                    '<h2>' + t(s.title) + '</h2>' +
+                    '<p>' + t(s.desc) + '</p>' +
+                '</div>' +
+                '<div class="ob-footer">' +
+                    '<div class="ob-dots">' + dotsHtml + '</div>' +
+                    '<div class="ob-actions">' + prevBtn + nextBtn + '</div>' +
+                '</div>';
+
+            document.getElementById('obNext').onclick = function() {
+                if (isLast) { close(); } else { idx++; render(); }
+            };
+            if (isFirst) {
+                document.getElementById('obSkip').onclick = close;
+            } else {
+                document.getElementById('obPrev').onclick = function() { idx--; render(); };
+            }
+        }
+
+        function close() {
+            localStorage.setItem(OB_KEY, '1');
+            var overlay = document.getElementById('obOverlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(function() { overlay.remove(); }, 300);
+            }
+        }
+
+        function show() {
+            var overlay = document.createElement('div');
+            overlay.id = 'obOverlay';
+            overlay.className = 'onboarding-overlay';
+            overlay.innerHTML = '<div class="onboarding-card" id="obCard"></div>';
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) close();
+            });
+            document.body.appendChild(overlay);
+            render();
+        }
+
+        // Show after a short delay so the map loads first
+        if (document.readyState === 'complete') {
+            setTimeout(show, 800);
+        } else {
+            window.addEventListener('load', function() { setTimeout(show, 800); });
+        }
+
+        // Re-render on language change
+        window.addEventListener('langchange', function() {
+            if (document.getElementById('obOverlay')) render();
+        });
+    })();
+    </script>
+
     <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
