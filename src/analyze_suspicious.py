@@ -23,7 +23,6 @@ Suspicious Vessel Analysis: Submarine Cable Threat Detection
 
 import json
 import math
-import os
 import re
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -219,9 +218,12 @@ def load_cable_segments():
                     tw_points.append((lat, lon))
 
             if len(tw_points) >= 2:
+                lats = [p[0] for p in tw_points]
+                lons = [p[1] for p in tw_points]
                 _cable_segments.append({
                     'slug': slug,
-                    'points': tw_points
+                    'points': tw_points,
+                    'bbox': (min(lats), min(lons), max(lats), max(lons)),
                 })
 
     print(f"📡 載入 {len(_cable_segments)} 條台灣周邊海纜線段")
@@ -483,19 +485,34 @@ def check_cable_proximity(track_points):
     if not cables:
         return False, {}
 
+    # 計算船隻航跡的 bounding box，用於快速排除不相關的海纜
+    valid_pts = [p for p in track_points
+                 if p.get('lat') is not None and p.get('lon') is not None]
+    if not valid_pts:
+        return False, {}
+    # CABLE_PROXIMITY_KM ≈ 0.045° buffer at equator, use 0.06° for safety
+    bbox_buf = 0.06
+    tk_lat_min = min(p['lat'] for p in valid_pts) - bbox_buf
+    tk_lat_max = max(p['lat'] for p in valid_pts) + bbox_buf
+    tk_lon_min = min(p['lon'] for p in valid_pts) - bbox_buf
+    tk_lon_max = max(p['lon'] for p in valid_pts) + bbox_buf
+
+    # 預篩選：只保留 bbox 與航跡重疊的海纜
+    nearby_cables = [c for c in cables
+                     if c['bbox'][0] <= tk_lat_max and c['bbox'][2] >= tk_lat_min
+                     and c['bbox'][1] <= tk_lon_max and c['bbox'][3] >= tk_lon_min]
+
     near_cables = set()
     min_dist = float('inf')
     near_count = 0
-    loiter_slow_count = 0  # 海纜鄰近且低速的快照數
+    loiter_slow_timestamps = []  # 海纜鄰近且低速的時間戳
 
-    for pt in track_points:
-        plat = pt.get('lat')
-        plon = pt.get('lon')
-        if plat is None or plon is None:
-            continue
+    for pt in valid_pts:
+        plat = pt['lat']
+        plon = pt['lon']
 
         is_near_cable = False
-        for cable in cables:
+        for cable in nearby_cables:
             points = cable['points']
             for i in range(len(points) - 1):
                 dist = point_to_segment_distance_km(
@@ -513,12 +530,24 @@ def check_cable_proximity(track_points):
             if is_near_cable:
                 break
 
-        # 計算低速徘徊（海纜鄰近 + 速度 < 8 knots）
+        # 記錄低速徘徊時間戳（海纜鄰近 + 速度 < 8 knots）
         if is_near_cable and pt.get('speed', 99) < CABLE_LOITER_MAX_KNOTS:
-            loiter_slow_count += 1
+            ts = pt.get('t', '')
+            if ts:
+                loiter_slow_timestamps.append(ts)
 
-    # 估算徘徊時數（每個快照間隔約 2 小時）
-    loiter_hours = loiter_slow_count * 2.0
+    # 從實際時間戳計算徘徊時數
+    loiter_hours = 0.0
+    if len(loiter_slow_timestamps) >= 2:
+        try:
+            t_first = datetime.fromisoformat(
+                loiter_slow_timestamps[0].replace('Z', '+00:00'))
+            t_last = datetime.fromisoformat(
+                loiter_slow_timestamps[-1].replace('Z', '+00:00'))
+            loiter_hours = (t_last - t_first).total_seconds() / 3600
+        except (ValueError, AttributeError):
+            # 回退：用快照數 × 平均間隔估算
+            loiter_hours = len(loiter_slow_timestamps) * 2.0
     is_loitering = loiter_hours >= CABLE_LOITER_HOURS
 
     is_near = len(near_cables) > 0
@@ -534,28 +563,33 @@ def check_cable_proximity(track_points):
 def check_zigzag_pattern(track_points):
     """
     檢測 Z 字型移動模式（頻繁大幅改變航向）
+    使用 calc_bearing() 從實際位置計算航向，避免依賴可能不準確的 AIS heading。
     回傳: (is_zigzag, details)
     """
     if len(track_points) < 4:
         return False, {}
 
-    # 計算連續航向變化
-    headings = []
-    for pt in track_points:
-        h = pt.get('heading')
-        if h is not None and pt.get('speed', 0) > 0.5:  # 排除靜止船隻
-            headings.append(h)
+    # 從連續位置計算實際航向（排除靜止點和距離過近的點）
+    bearings = []
+    for i in range(1, len(track_points)):
+        p1, p2 = track_points[i - 1], track_points[i]
+        lat1, lon1 = p1.get('lat'), p1.get('lon')
+        lat2, lon2 = p2.get('lat'), p2.get('lon')
+        if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+            continue
+        dist = haversine_km(lat1, lon1, lat2, lon2)
+        if dist < 0.1:  # 移動不足 100m，跳過
+            continue
+        bearings.append(calc_bearing(lat1, lon1, lat2, lon2))
 
-    if len(headings) < 4:
+    if len(bearings) < 4:
         return False, {}
 
     # 計算航向變化
     turns = 0
     heading_changes = []
-    for i in range(1, len(headings)):
-        delta = abs(headings[i] - headings[i-1])
-        if delta > 180:
-            delta = 360 - delta
+    for i in range(1, len(bearings)):
+        delta = angular_diff(bearings[i], bearings[i - 1])
         heading_changes.append(delta)
         if delta >= ZIGZAG_HEADING_CHANGE_DEG:
             turns += 1
@@ -632,17 +666,17 @@ def analyze_ais_anomalies(profile, identity_events=None):
         })
 
     # Going dark 偵測
-    snapshots = profile.get('snapshots', [])
+    timestamps = profile.get('last_seen_timestamps', [])
     dark_events = 0
-    if len(snapshots) >= 2:
-        for i in range(1, len(snapshots)):
+    if len(timestamps) >= 2:
+        for i in range(1, len(timestamps)):
             try:
-                t1 = datetime.fromisoformat(snapshots[i-1]['time'].replace('Z', '+00:00'))
-                t2 = datetime.fromisoformat(snapshots[i]['time'].replace('Z', '+00:00'))
+                t1 = datetime.fromisoformat(timestamps[i-1].replace('Z', '+00:00'))
+                t2 = datetime.fromisoformat(timestamps[i].replace('Z', '+00:00'))
                 gap_hours = (t2 - t1).total_seconds() / 3600
                 if gap_hours > GOING_DARK_GAP_HOURS:
                     dark_events += 1
-            except (ValueError, KeyError):
+            except (ValueError, KeyError, AttributeError):
                 continue
 
     if dark_events > 0:
@@ -904,7 +938,6 @@ def classify_vessel(profile, track_points, identity_events=None,
     classification = {
         'mmsi': mmsi,
         'names': profile.get('names_seen', []),
-        'flags_used': [],
         'total_snapshots': profile.get('total_snapshots', 0),
         'cable_proximity': False,
         'cable_loitering': False,
@@ -920,6 +953,24 @@ def classify_vessel(profile, track_points, identity_events=None,
         'risk_level': 'normal',
         'flags': [],
     }
+
+    # ── 排除規則檢查（漁網、浮標、信標等非船舶設備）──
+    # 提前檢查，避免對非船舶設備執行昂貴分析
+    all_names = profile.get('names_seen', [])
+    excluded, matched_rules = check_exclusion_rules(mmsi, all_names)
+    classification['excluded'] = excluded
+    if excluded:
+        if matched_rules:
+            classification['exclusion_rules'] = matched_rules
+        reasons = ' + '.join(r['label'] for r in matched_rules)
+        classification['risk_level'] = 'normal'
+        classification['risk_score'] = 0
+        classification['raw_score'] = 0
+        classification['suspicious'] = False
+        classification['vessel_type'] = 'unknown'
+        classification['type_multiplier'] = 0
+        classification['flags'] = [f'排除: {reasons}']
+        return classification
 
     # ── Criterion 1: 海纜鄰近活動 ──
     if track_points:
@@ -1027,13 +1078,6 @@ def classify_vessel(profile, track_points, identity_events=None,
                     f'ITU登記不符：{m["description"]}'
                 )
 
-    # ── 排除規則檢查（漁網、浮標、信標等非船舶設備）──
-    all_names = profile.get('names_seen', [])
-    excluded, matched_rules = check_exclusion_rules(mmsi, all_names)
-    classification['excluded'] = excluded
-    if matched_rules:
-        classification['exclusion_rules'] = matched_rules
-
     # ── 判定主要船型 ──
     types_seen = profile.get('types_seen', [])
     # 取最後一個非 unknown/other 的船型；否則 unknown
@@ -1049,90 +1093,82 @@ def classify_vessel(profile, track_points, identity_events=None,
     # ── 風險計分 ──
     raw_score = 0
 
-    if excluded:
-        # 符合排除規則：直接標記為 normal，不參與威脅計分
-        reasons = ' + '.join(r['label'] for r in matched_rules)
-        classification['risk_level'] = 'normal'
-        classification['risk_score'] = 0
-        classification['suspicious'] = False
-        classification['flags'] = [f'排除: {reasons}']
-    else:
-        # ── 基礎行為分（單獨不構成可疑）──
-        if classification['cable_proximity']:
-            raw_score += 2  # 海纜 5km 內
-        if classification['cable_loitering']:
-            raw_score += 3  # 海纜低速徘徊 >3hr <8kn
-        if classification['zigzag_pattern']:
-            raw_score += 1  # Z字型
-        if classification['depth_200m_activity']:
-            raw_score += 1
-        if classification['non_top10_flag']:
-            raw_score += 1  # 非前十大船旗國
+    # ── 基礎行為分（單獨不構成可疑）──
+    if classification['cable_proximity']:
+        raw_score += 2  # 海纜 5km 內
+    if classification['cable_loitering']:
+        raw_score += 3  # 海纜低速徘徊 >3hr <8kn
+    if classification['zigzag_pattern']:
+        raw_score += 1  # Z字型
+    if classification['depth_200m_activity']:
+        raw_score += 1
+    if classification['non_top10_flag']:
+        raw_score += 1  # 非前十大船旗國
 
-        # ── 組合加分（多重指標交叉 = 高度可疑）──
-        if classification['cable_proximity'] and classification['zigzag_pattern']:
-            raw_score += 3  # 海纜鄰近 + Z字型 = 可能拖錨
-        if classification['cable_proximity'] and classification['cable_loitering']:
-            raw_score += 2  # 海纜鄰近 + 長時間徘徊
+    # ── 組合加分（多重指標交叉 = 高度可疑）──
+    if classification['cable_proximity'] and classification['zigzag_pattern']:
+        raw_score += 3  # 海纜鄰近 + Z字型 = 可能拖錨
+    if classification['cable_proximity'] and classification['cable_loitering']:
+        raw_score += 2  # 海纜鄰近 + 長時間徘徊
 
-        # ── 套用船型乘數（商船 ×1.0, 漁船 ×0.2, 其他 ×0.5）──
-        score = raw_score * type_mult
+    # ── 套用船型乘數（商船 ×1.0, 漁船 ×0.2, 其他 ×0.5）──
+    score = raw_score * type_mult
 
-        # ── 高威脅指標（不受船型乘數影響）──
-        if classification['sanctioned']:
-            score += 8  # UN 制裁船舶 — 最高優先
-        for a in anomalies:
-            if a['severity'] == 'high':
-                score += 3  # 嚴重 AIS 異常（多次船名變更等）
-            else:
-                score += 1
+    # ── 高威脅指標（不受船型乘數影響）──
+    if classification['sanctioned']:
+        score += 8  # UN 制裁船舶 — 最高優先
+    for a in anomalies:
+        if a['severity'] == 'high':
+            score += 3  # 嚴重 AIS 異常（多次船名變更等）
+        else:
+            score += 1
 
-        # ── AIS 偽訊號（不受船型乘數影響，每項 +4）──
-        if classification['spoof_impossible_physics']:
-            score += 4
-        if classification['spoof_box_pattern']:
-            score += 4
-        if classification['spoof_circle_pattern']:
-            score += 4
-        # 偽訊號 + 海纜鄰近 = 蓄意隱匿
-        spoofing = (classification['spoof_impossible_physics'] or
-                    classification['spoof_box_pattern'] or
-                    classification['spoof_circle_pattern'])
-        if spoofing and classification['cable_proximity']:
-            score += 3
+    # ── AIS 偽訊號（不受船型乘數影響，每項 +4）──
+    if classification['spoof_impossible_physics']:
+        score += 4
+    if classification['spoof_box_pattern']:
+        score += 4
+    if classification['spoof_circle_pattern']:
+        score += 4
+    # 偽訊號 + 海纜鄰近 = 蓄意隱匿
+    spoofing = (classification['spoof_impossible_physics'] or
+                classification['spoof_box_pattern'] or
+                classification['spoof_circle_pattern'])
+    if spoofing and classification['cable_proximity']:
+        score += 3
 
-        # ── ITU MARS 登記不符（不受船型乘數影響）──
-        if classification['itu_mars_mismatch']:
-            score += 3
+    # ── ITU MARS 登記不符（不受船型乘數影響）──
+    if classification['itu_mars_mismatch']:
+        score += 3
 
-        # ── STS 旁靠加分（不受船型乘數影響）──
-        if sts_record:
-            classification['sts_transfer'] = True
-            classification['sts_count'] = sts_record['count']
-            classification['sts_suspicious'] = sts_record['suspicious']
-            if sts_record['suspicious']:
-                score += STS_SUSPICIOUS_SCORE
-                classification['flags'].append(
-                    f'可疑旁靠 (STS)：{sts_record["count"]} 次')
-            else:
-                score += STS_ANY_SCORE
-                classification['flags'].append(
-                    f'旁靠紀錄：{sts_record["count"]} 次')
+    # ── STS 旁靠加分（不受船型乘數影響）──
+    if sts_record:
+        classification['sts_transfer'] = True
+        classification['sts_count'] = sts_record['count']
+        classification['sts_suspicious'] = sts_record['suspicious']
+        if sts_record['suspicious']:
+            score += STS_SUSPICIOUS_SCORE
+            classification['flags'].append(
+                f'可疑旁靠 (STS)：{sts_record["count"]} 次')
+        else:
+            score += STS_ANY_SCORE
+            classification['flags'].append(
+                f'旁靠紀錄：{sts_record["count"]} 次')
 
-        # 四捨五入為整數
-        score = round(score)
+    # 四捨五入為整數
+    score = round(score)
 
-        # ── 風險等級 ──
-        if score >= 12:
-            classification['risk_level'] = 'critical'
-        elif score >= 8:
-            classification['risk_level'] = 'high'
-        elif score >= 5:
-            classification['risk_level'] = 'medium'
+    # ── 風險等級 ──
+    if score >= 12:
+        classification['risk_level'] = 'critical'
+    elif score >= 8:
+        classification['risk_level'] = 'high'
+    elif score >= 5:
+        classification['risk_level'] = 'medium'
 
-        classification['raw_score'] = raw_score
-        classification['risk_score'] = score
-        classification['suspicious'] = score >= 8
+    classification['raw_score'] = raw_score
+    classification['risk_score'] = score
+    classification['suspicious'] = score >= 8
 
     # 附加位置資訊
     if track_points:
@@ -1140,13 +1176,6 @@ def classify_vessel(profile, track_points, identity_events=None,
         classification['last_lat'] = last.get('lat')
         classification['last_lon'] = last.get('lon')
         classification['last_seen'] = last.get('t')
-    else:
-        snapshots = profile.get('snapshots', [])
-        if snapshots:
-            last = snapshots[-1]
-            classification['last_lat'] = last.get('lat')
-            classification['last_lon'] = last.get('lon')
-            classification['last_seen'] = last.get('time')
 
     return classification
 
@@ -1232,10 +1261,10 @@ def main():
                                  sts_record=sts_rec)
         if result.get('excluded'):
             excluded_vessels.append(result)
-        elif result['risk_score'] > 0:
+        else:
             classifications.append(result)
-        if result['suspicious']:
-            suspicious_vessels.append(result)
+            if result['suspicious']:
+                suspicious_vessels.append(result)
 
     # 按風險分數排序
     suspicious_vessels.sort(key=lambda x: x['risk_score'], reverse=True)
@@ -1314,8 +1343,7 @@ def main():
             'total_analyzed': len(all_mmsi),
             'excluded_count': len(excluded_vessels),
             'exclusion_breakdown': exclusion_stats,
-            'suspicious_count': min(len(suspicious_vessels), 50),
-            'suspicious_total': len(suspicious_vessels),
+            'suspicious_count': len(suspicious_vessels),
             'cable_proximity_triggered': cable_count,
             'cable_loitering_triggered': loiter_count,
             'zigzag_pattern_detected': zigzag_count,
