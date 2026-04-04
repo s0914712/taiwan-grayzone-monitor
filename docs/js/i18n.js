@@ -104,6 +104,7 @@ const i18n = (function () {
 
         // ── Index 頁面 ──
         'idx.vessel_count':      { zh: '船隻數', en: 'Vessels' },
+        'idx.top10pct':          { zh: 'Top 10% 高風險', en: 'Top 10% High Risk' },
         'idx.suspicious':        { zh: '可疑船隻', en: 'Suspicious' },
         'idx.layer_fishing':     { zh: '漁撈熱點', en: 'Fishing Hotspots' },
         'idx.layer_vessels':     { zh: '船隻', en: 'Vessels' },
