@@ -88,8 +88,7 @@ const App = (function () {
                     const result = MapModule.renderVesselsForZoom(rawVesselList, vessels);
                     vessels = result.vessels;
                     ChartsModule.updateAisStats(result.stats);
-                    const vc = document.getElementById('vesselCount');
-                    if (vc) vc.textContent = result.stats.total;
+
                     updateVesselList();
                     updateBottomSheetLng();
                 }
@@ -278,8 +277,7 @@ const App = (function () {
                     const result = MapModule.renderVesselsForZoom(rawVesselList, vessels);
                     vessels = result.vessels;
                     ChartsModule.updateAisStats(result.stats);
-                    const vc = document.getElementById('vesselCount');
-                    if (vc) vc.textContent = result.stats.total;
+
                     updateVesselList();
                     updateBottomSheetStats(result.stats);
                     updateBottomSheetLng();
@@ -580,10 +578,10 @@ const App = (function () {
                 updateSuspiciousList();
                 updateBottomSheetSuspicious();
 
-                // Update suspicious count
+                // Update top 10% high-risk count
                 const suspEl = document.getElementById('suspiciousCount');
                 if (suspEl && suspiciousData.summary) {
-                    suspEl.textContent = suspiciousData.summary.suspicious_count || 0;
+                    suspEl.textContent = suspiciousData.summary.top_10pct_count || suspiciousData.summary.suspicious_count || 0;
                 }
             }
 
@@ -600,10 +598,6 @@ const App = (function () {
                 console.log('[Monitor] AIS rendered:', result.stats);
 
                 ChartsModule.updateAisStats(result.stats);
-
-                // Update overlay cards
-                const vesselCountEl = document.getElementById('vesselCount');
-                if (vesselCountEl) vesselCountEl.textContent = result.stats.total;
 
                 updateVesselList();
                 updateBottomSheetStats(result.stats);

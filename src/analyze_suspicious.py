@@ -1268,6 +1268,14 @@ def main():
 
     # 按風險分數排序
     suspicious_vessels.sort(key=lambda x: x['risk_score'], reverse=True)
+    classifications.sort(key=lambda x: x.get('risk_score', 0), reverse=True)
+
+    # Top 10% 高風險船隻數量（排除後的船隻，取前 10%）
+    non_excluded_count = len(classifications)
+    top_10pct_cutoff = max(1, non_excluded_count // 10)
+    top_10pct_vessels = classifications[:top_10pct_cutoff]
+    # 只計算 score > 0 的（避免把大量 0 分船隻算進去）
+    top_10pct_with_score = [v for v in top_10pct_vessels if v.get('risk_score', 0) > 0]
 
     # 排除規則統計
     exclusion_stats = {}
@@ -1344,6 +1352,8 @@ def main():
             'excluded_count': len(excluded_vessels),
             'exclusion_breakdown': exclusion_stats,
             'suspicious_count': len(suspicious_vessels),
+            'top_10pct_count': len(top_10pct_with_score),
+            'top_10pct_min_score': top_10pct_with_score[-1]['risk_score'] if top_10pct_with_score else 0,
             'cable_proximity_triggered': cable_count,
             'cable_loitering_triggered': loiter_count,
             'zigzag_pattern_detected': zigzag_count,
