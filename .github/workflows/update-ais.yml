@@ -69,6 +69,9 @@ jobs:
   deploy:
     needs: update-ais
     runs-on: ubuntu-latest
+    concurrency:
+      group: github-pages-deploy
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write
@@ -90,6 +93,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: './docs'
+          overwrite: true
 
       - name: Deploy to GitHub Pages
         id: deployment
