@@ -93,28 +93,32 @@ jobs:
   deploy:
     needs: update-data
     runs-on: ubuntu-latest
+    concurrency:
+      group: github-pages-deploy
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write
-      
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-      
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: main  # 確保取得最新的 commit
-          
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
-        
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './docs'
-          
+          overwrite: true
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
