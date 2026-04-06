@@ -31,6 +31,9 @@ const MapModule = (function() {
     // Suspicious vessel data reference (set by app.js)
     let _suspiciousData = null;
 
+    // Risk level colors (used in suspicious markers + info cards)
+    const riskColors = { critical: '#ff3366', high: '#ff6b35', medium: '#ffd700' };
+
     // MMSI MID → Flag State lookup (ITU MID table)
     const MID_FLAG_TABLE = {
         '201': {en:'Albania',zh:'阿爾巴尼亞'},'211': {en:'Germany',zh:'德國'},'212': {en:'Cyprus',zh:'賽普勒斯'},
@@ -195,7 +198,7 @@ const MapModule = (function() {
         const mid = mmsi.substring(0, 3);
         const entry = MID_FLAG_TABLE[mid];
         if (!entry) return null;
-        const lang = (typeof i18n !== 'undefined' && i18n.lang) || 'zh';
+        const lang = (typeof i18n !== 'undefined' && typeof i18n.getLang === 'function') ? i18n.getLang() : 'zh';
         return entry[lang] || entry.en;
     }
 
@@ -1291,8 +1294,6 @@ const MapModule = (function() {
      * Display suspicious vessels from CSIS analysis
      */
     function displaySuspiciousVessels(suspiciousData) {
-        const riskColors = { critical: '#ff3366', high: '#ff6b35', medium: '#ffd700' };
-
         if (!suspiciousData.suspicious_vessels) return;
 
         // Clear previous suspicious markers (separate layer so they survive zoom/pan)
@@ -1567,16 +1568,57 @@ const MapModule = (function() {
      * @param {string} mmsi - vessel MMSI to look up in suspicious data
      */
     function showVesselInfoCard(mmsi) {
-        if (!_suspiciousData || !_suspiciousData.suspicious_vessels) return;
+        if (!_suspiciousData || !_suspiciousData.suspicious_vessels) {
+            _buildFallbackCard(mmsi);
+            return;
+        }
         const sv = _suspiciousData.suspicious_vessels.find(v => v.mmsi === mmsi);
-        if (!sv) {
-            // Also check all_classifications
-            const ac = (_suspiciousData.all_classifications || []).find(v => v.mmsi === mmsi);
-            if (!ac) return;
+        if (sv) {
+            _buildInfoCard(sv);
+            return;
+        }
+        // Also check all_classifications
+        const ac = (_suspiciousData.all_classifications || []).find(v => v.mmsi === mmsi);
+        if (ac) {
             _buildInfoCard(ac);
             return;
         }
-        _buildInfoCard(sv);
+        _buildFallbackCard(mmsi);
+    }
+
+    function _buildFallbackCard(mmsi) {
+        const existing = document.getElementById('vesselInfoOverlay');
+        if (existing) existing.remove();
+
+        const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+        const flagName = getMidFlag(mmsi);
+        const overlay = document.createElement('div');
+        overlay.id = 'vesselInfoOverlay';
+        overlay.className = 'vessel-info-overlay';
+        overlay.innerHTML = `
+            <div class="vessel-info-card">
+                <button class="vic-close" onclick="document.getElementById('vesselInfoOverlay').remove()" title="${t('vic.close')}">✕</button>
+                <div class="vic-header">
+                    <div class="vic-header-left">
+                        <div class="vic-vessel-name">${mmsi}</div>
+                        <div class="vic-vessel-meta">MMSI: ${mmsi}${flagName ? ' | ' + t('app.flag') + ' ' + flagName : ''}</div>
+                    </div>
+                </div>
+                <div class="vic-section">
+                    <div class="vic-empty">${t('vic.no_data')}</div>
+                </div>
+                <div class="vic-section">
+                    <div class="vic-links-row">
+                        <a class="vic-link" href="https://www.marinetraffic.com/en/ais/details/ships/mmsi:${mmsi}" target="_blank" rel="noopener">MarineTraffic</a>
+                        <button class="route-lookup-btn" onclick="MapModule.loadVesselRoute('${mmsi}'); document.getElementById('vesselInfoOverlay').remove(); return false;">${t('vic.show_track')}</button>
+                    </div>
+                </div>
+            </div>`;
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        document.body.appendChild(overlay);
+        document.addEventListener('keydown', function handler(e) {
+            if (e.key === 'Escape') { var el = document.getElementById('vesselInfoOverlay'); if (el) el.remove(); document.removeEventListener('keydown', handler); }
+        });
     }
 
     function _buildInfoCard(sv) {

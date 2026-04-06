@@ -401,6 +401,7 @@ const i18n = (function () {
         'vic.mars_flag':         { zh: '管理國', en: 'Administration' },
         'vic.mars_updated':      { zh: '登記更新', en: 'Registry Updated' },
         'vic.mismatch':          { zh: '⚠️ 不符', en: '⚠️ Mismatch' },
+        'vic.no_data':           { zh: '無已登記資訊', en: 'No registered information' },
         'vic.no_mars':           { zh: '無 ITU MARS 登記資料', en: 'No ITU MARS registry data' },
         'vic.no_anomalies':      { zh: '無異常紀錄', en: 'No anomalies recorded' },
         'vic.nearest_cable':     { zh: '最近海纜', en: 'Nearest Cable' },
