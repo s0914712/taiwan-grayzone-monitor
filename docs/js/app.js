@@ -662,13 +662,20 @@ const App = (function () {
 
             const listEl = document.getElementById('cableFaultList');
             if (listEl && faults.length > 0) {
-                listEl.innerHTML = faults.map(f =>
-                    '<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
-                    '<span style="color:#ff0000;font-weight:600">⚠ ' + f.segment + '</span> ' +
-                    '<span style="opacity:0.7">' + (f.name_zh || '') + '</span><br>' +
-                    '<span style="font-size:11px;opacity:0.5">' + f.fault_date + ' | ' + (f.location_zh || '') + '</span>' +
-                    '</div>'
-                ).join('');
+                listEl.innerHTML = faults.map(f => {
+                    const repairInfo = f.estimated_repair
+                        ? '<br><span style="font-size:10px;color:#ffd700">⏱ ' + t('cable.est_repair') + ' ' + f.estimated_repair + '</span>'
+                        : '';
+                    const altInfo = f.alt_route
+                        ? '<br><span style="font-size:10px;opacity:0.4">↔ ' + f.alt_route + '</span>'
+                        : '';
+                    return '<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+                        '<span style="color:#ff0000;font-weight:600">⚠ ' + f.segment + '</span> ' +
+                        '<span style="opacity:0.7">' + (f.name_zh || '') + '</span><br>' +
+                        '<span style="font-size:11px;opacity:0.5">' + f.fault_date + ' | ' + (f.location_zh || '') + '</span>' +
+                        repairInfo + altInfo +
+                        '</div>';
+                }).join('');
             } else if (listEl) {
                 listEl.innerHTML = '<div style="color:#00ff88;padding:8px 0" data-i18n="cable.all_normal">所有海纜正常運作</div>';
             }

@@ -23,7 +23,7 @@ jobs:
           
       - name: Install dependencies
         run: |
-          pip install requests pandas numpy websockets scipy statsmodels pysocks
+          pip install requests pandas numpy websockets scipy statsmodels pysocks beautifulsoup4
           
       - name: Fetch AIS data via SOCKS5 proxy
         env:
@@ -59,6 +59,11 @@ jobs:
       - name: Detect ship-to-ship transfers
         run: |
           python src/detect_ship_transfers.py
+        continue-on-error: true
+
+      - name: Fetch submarine cable fault status from MODA
+        run: |
+          python src/fetch_cable_status.py
         continue-on-error: true
 
       - name: Generate dashboard data
