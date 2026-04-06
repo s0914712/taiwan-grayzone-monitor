@@ -35,10 +35,10 @@ IDENTITY_EVENTS_MAX = 5000
 
 # AIS 歷史快照：每天保留 12 筆（每 2 小時一筆），共保留 90 天 = 1080 筆
 AIS_HISTORY_MAX_ENTRIES = 1080
-# AIS 軌跡歷史：保留 14 天，每 2 小時一筆 = 168 筆
-AIS_TRACK_MAX_ENTRIES = 168
-# 商船軌跡歷史：同 14 天
-AIS_TRACK_COMMERCIAL_MAX_ENTRIES = 168
+# AIS 軌跡歷史：保留 28 天，每 2 小時一筆 = 336 筆
+AIS_TRACK_MAX_ENTRIES = 336
+# 商船軌跡歷史：同 28 天
+AIS_TRACK_COMMERCIAL_MAX_ENTRIES = 336
 
 MPB_URL = "https://mpbais.motcmpb.gov.tw/aismpb/tools/geojsonais.ashx"
 MPB_HEADERS = {

@@ -28,6 +28,177 @@ const MapModule = (function() {
     var sanctionsImoSet = new Set();
     var sanctionsByName = {};  // uppercase name -> sanction entry
 
+    // Suspicious vessel data reference (set by app.js)
+    let _suspiciousData = null;
+
+    // MMSI MID → Flag State lookup (ITU MID table)
+    const MID_FLAG_TABLE = {
+        '201': {en:'Albania',zh:'阿爾巴尼亞'},'211': {en:'Germany',zh:'德國'},'212': {en:'Cyprus',zh:'賽普勒斯'},
+        '215': {en:'Malta',zh:'馬爾他'},'224': {en:'Spain',zh:'西班牙'},'225': {en:'Spain',zh:'西班牙'},
+        '226': {en:'France',zh:'法國'},'227': {en:'France',zh:'法國'},'228': {en:'France',zh:'法國'},
+        '229': {en:'Malta',zh:'馬爾他'},'230': {en:'Spain',zh:'西班牙'},'231': {en:'Spain',zh:'西班牙'},
+        '232': {en:'UK',zh:'英國'},'233': {en:'UK',zh:'英國'},'234': {en:'UK',zh:'英國'},
+        '235': {en:'UK',zh:'英國'},'236': {en:'UK',zh:'英國'},
+        '240': {en:'Greece',zh:'希臘'},'241': {en:'Greece',zh:'希臘'},
+        '244': {en:'Netherlands',zh:'荷蘭'},'245': {en:'Netherlands',zh:'荷蘭'},'246': {en:'Netherlands',zh:'荷蘭'},
+        '247': {en:'Italy',zh:'義大利'},'248': {en:'Malta',zh:'馬爾他'},'249': {en:'Malta',zh:'馬爾他'},
+        '256': {en:'Malta',zh:'馬爾他'},'259': {en:'Norway',zh:'挪威'},
+        '261': {en:'Poland',zh:'波蘭'},'271': {en:'Turkey',zh:'土耳其'},
+        '272': {en:'Ukraine',zh:'烏克蘭'},'273': {en:'Russia',zh:'俄羅斯'},
+        '303': {en:'USA',zh:'美國'},'304': {en:'Antigua & Barbuda',zh:'安地卡及巴布達'},
+        '305': {en:'Antigua & Barbuda',zh:'安地卡及巴布達'},
+        '308': {en:'Bahamas',zh:'巴哈馬'},'309': {en:'Bahamas',zh:'巴哈馬'},
+        '310': {en:'Bermuda',zh:'百慕達'},'311': {en:'Bahamas',zh:'巴哈馬'},
+        '312': {en:'Belize',zh:'貝里斯'},'314': {en:'Barbados',zh:'巴貝多'},
+        '316': {en:'Canada',zh:'加拿大'},
+        '319': {en:'Cayman Islands',zh:'開曼群島'},
+        '325': {en:'Jamaica',zh:'牙買加'},'327': {en:'Jamaica',zh:'牙買加'},
+        '330': {en:'Grenada',zh:'格瑞那達'},
+        '338': {en:'USA',zh:'美國'},'339': {en:'USA',zh:'美國'},
+        '341': {en:'St Kitts & Nevis',zh:'聖克里斯多福'},'343': {en:'St Lucia',zh:'聖露西亞'},
+        '345': {en:'Mexico',zh:'墨西哥'},'347': {en:'Martinique',zh:'馬丁尼克'},
+        '351': {en:'Panama',zh:'巴拿馬'},'352': {en:'Panama',zh:'巴拿馬'},'353': {en:'Panama',zh:'巴拿馬'},
+        '354': {en:'Panama',zh:'巴拿馬'},'355': {en:'Panama',zh:'巴拿馬'},'356': {en:'Panama',zh:'巴拿馬'},
+        '357': {en:'Panama',zh:'巴拿馬'},
+        '370': {en:'Panama',zh:'巴拿馬'},'371': {en:'Panama',zh:'巴拿馬'},'372': {en:'Panama',zh:'巴拿馬'},
+        '373': {en:'Panama',zh:'巴拿馬'},'374': {en:'Panama',zh:'巴拿馬'},
+        '375': {en:'St Vincent',zh:'聖文森'},'376': {en:'St Vincent',zh:'聯邦'},
+        '377': {en:'St Vincent',zh:'聖文森'},
+        '378': {en:'British Virgin Islands',zh:'英屬維京群島'},
+        '403': {en:'Saudi Arabia',zh:'沙烏地阿拉伯'},
+        '405': {en:'Bangladesh',zh:'孟加拉'},'412': {en:'China',zh:'中國'},
+        '413': {en:'China',zh:'中國'},'414': {en:'China',zh:'中國'},
+        '416': {en:'Taiwan',zh:'台灣'},
+        '417': {en:'Sri Lanka',zh:'斯里蘭卡'},
+        '419': {en:'India',zh:'印度'},'422': {en:'Iran',zh:'伊朗'},
+        '431': {en:'Japan',zh:'日本'},'432': {en:'Japan',zh:'日本'},
+        '440': {en:'South Korea',zh:'韓國'},'441': {en:'South Korea',zh:'韓國'},
+        '443': {en:'Palestine',zh:'巴勒斯坦'},
+        '445': {en:'North Korea',zh:'北韓'},
+        '447': {en:'Kuwait',zh:'科威特'},
+        '450': {en:'Lebanon',zh:'黎巴嫩'},
+        '455': {en:'Maldives',zh:'馬爾地夫'},
+        '457': {en:'Jordan',zh:'約旦'},
+        '459': {en:'Myanmar',zh:'緬甸'},
+        '461': {en:'Oman',zh:'阿曼'},'463': {en:'Pakistan',zh:'巴基斯坦'},
+        '466': {en:'Qatar',zh:'卡達'},
+        '468': {en:'Syria',zh:'敘利亞'},
+        '470': {en:'UAE',zh:'阿聯酋'},
+        '472': {en:'Tajikistan',zh:'塔吉克'},
+        '473': {en:'Yemen',zh:'葉門'},
+        '477': {en:'Hong Kong',zh:'香港'},
+        '478': {en:'Bosnia & Herzegovina',zh:'波赫'},
+        '501': {en:'Adelie Land',zh:'法屬南方領地'},
+        '503': {en:'Australia',zh:'澳洲'},'506': {en:'Myanmar',zh:'緬甸'},
+        '508': {en:'Brunei',zh:'汶萊'},
+        '510': {en:'Micronesia',zh:'密克羅尼西亞'},
+        '511': {en:'Palau',zh:'帛琉'},'512': {en:'New Zealand',zh:'紐西蘭'},
+        '514': {en:'Cambodia',zh:'柬埔寨'},
+        '515': {en:'Cambodia',zh:'柬埔寨'},
+        '516': {en:'Christmas Island',zh:'聖誕島'},
+        '518': {en:'Cook Islands',zh:'庫克群島'},
+        '520': {en:'Fiji',zh:'斐濟'},
+        '523': {en:'Cocos Islands',zh:'科科斯群島'},
+        '525': {en:'Indonesia',zh:'印尼'},
+        '529': {en:'Kiribati',zh:'吉里巴斯'},
+        '531': {en:'Laos',zh:'寮國'},'533': {en:'Malaysia',zh:'馬來西亞'},
+        '536': {en:'Micronesia',zh:'密克羅尼西亞'},
+        '538': {en:'Marshall Islands',zh:'馬紹爾群島'},
+        '540': {en:'New Caledonia',zh:'新喀里多尼亞'},
+        '542': {en:'Niue',zh:'紐埃'},'544': {en:'Nauru',zh:'諾魯'},
+        '546': {en:'French Polynesia',zh:'法屬玻里尼西亞'},
+        '548': {en:'Philippines',zh:'菲律賓'},
+        '553': {en:'Papua New Guinea',zh:'巴布亞紐幾內亞'},
+        '555': {en:'Pitcairn',zh:'皮特肯群島'},
+        '557': {en:'Solomon Islands',zh:'所羅門群島'},
+        '559': {en:'American Samoa',zh:'美屬薩摩亞'},
+        '561': {en:'Samoa',zh:'薩摩亞'},
+        '563': {en:'Singapore',zh:'新加坡'},'564': {en:'Singapore',zh:'新加坡'},
+        '565': {en:'Singapore',zh:'新加坡'},'566': {en:'Singapore',zh:'新加坡'},
+        '567': {en:'Thailand',zh:'泰國'},
+        '570': {en:'Tonga',zh:'東加'},
+        '572': {en:'Tuvalu',zh:'吐瓦魯'},'574': {en:'Vietnam',zh:'越南'},
+        '576': {en:'Vanuatu',zh:'萬那杜'},
+        '577': {en:'Vanuatu',zh:'萬那杜'},
+        '578': {en:'Wallis & Futuna',zh:'瓦利斯群島'},
+        '601': {en:'South Africa',zh:'南非'},
+        '603': {en:'Angola',zh:'安哥拉'},
+        '605': {en:'Algeria',zh:'阿爾及利亞'},
+        '610': {en:'Cameroon',zh:'喀麥隆'},
+        '612': {en:'Comoros',zh:'乘摩洛'},
+        '613': {en:'Comoros',zh:'葛摩'},
+        '616': {en:'Comoros',zh:'葛摩'},
+        '618': {en:'Cote d\'Ivoire',zh:'象牙海岸'},
+        '619': {en:'Cote d\'Ivoire',zh:'象牙海岸'},
+        '620': {en:'Comoros',zh:'葛摩'},
+        '621': {en:'Djibouti',zh:'吉布地'},
+        '622': {en:'Egypt',zh:'埃及'},
+        '624': {en:'Ethiopia',zh:'衣索比亞'},
+        '625': {en:'Eritrea',zh:'厄利垂亞'},
+        '626': {en:'Gabon',zh:'加彭'},
+        '627': {en:'Ghana',zh:'迦納'},
+        '629': {en:'Gambia',zh:'乘比亞'},
+        '630': {en:'Guinea-Bissau',zh:'幾內亞比索'},
+        '631': {en:'Equatorial Guinea',zh:'赤道幾內亞'},
+        '632': {en:'Guinea',zh:'幾內亞'},
+        '633': {en:'Burkina Faso',zh:'布吉納法索'},
+        '634': {en:'Kenya',zh:'肯亞'},
+        '636': {en:'Liberia',zh:'賴比瑞亞'},'637': {en:'Liberia',zh:'賴比瑞亞'},
+        '642': {en:'Libya',zh:'利比亞'},
+        '644': {en:'Lesotho',zh:'賴索托'},
+        '645': {en:'Mauritius',zh:'模里西斯'},
+        '647': {en:'Madagascar',zh:'馬達加斯加'},
+        '649': {en:'Mali',zh:'馬利'},
+        '650': {en:'Mozambique',zh:'莫三比克'},
+        '654': {en:'Mauritania',zh:'茅利塔尼亞'},
+        '655': {en:'Malawi',zh:'馬拉威'},
+        '656': {en:'Niger',zh:'尼日'},
+        '657': {en:'Nigeria',zh:'奈及利亞'},
+        '659': {en:'Namibia',zh:'納米比亞'},
+        '660': {en:'Reunion',zh:'留尼旺'},
+        '661': {en:'Rwanda',zh:'盧安達'},
+        '662': {en:'Sudan',zh:'蘇丹'},
+        '663': {en:'Senegal',zh:'塞內加爾'},
+        '664': {en:'Seychelles',zh:'塞乘爾'},
+        '665': {en:'St Helena',zh:'聖乘勒拿'},
+        '666': {en:'Somalia',zh:'索馬利亞'},
+        '667': {en:'Sierra Leone',zh:'獅子山'},
+        '668': {en:'Sao Tome',zh:'聖多美'},
+        '669': {en:'Eswatini',zh:'史瓦帝尼'},
+        '670': {en:'Chad',zh:'查德'},
+        '671': {en:'Togo',zh:'多哥'},
+        '672': {en:'Tunisia',zh:'突尼西亞'},
+        '674': {en:'Tanzania',zh:'坦尚尼亞'},
+        '675': {en:'Uganda',zh:'烏干達'},
+        '676': {en:'DR Congo',zh:'民主剛果'},
+        '677': {en:'Tanzania',zh:'坦尚尼亞'},
+        '678': {en:'Zambia',zh:'乘比亞'},
+        '679': {en:'Zimbabwe',zh:'辛巴威'},
+        '701': {en:'Argentina',zh:'阿根廷'},
+        '710': {en:'Brazil',zh:'巴西'},'720': {en:'Bolivia',zh:'玻利維亞'},
+        '725': {en:'Chile',zh:'智利'},'730': {en:'Colombia',zh:'哥倫比亞'},
+        '735': {en:'Ecuador',zh:'厄瓜多'},'740': {en:'UK (Falklands)',zh:'福克蘭群島'},
+        '745': {en:'Guiana',zh:'法屬圭亞那'},
+        '750': {en:'Guyana',zh:'蓋亞那'},
+        '755': {en:'Paraguay',zh:'巴拉圭'},'760': {en:'Peru',zh:'秘魯'},
+        '765': {en:'Suriname',zh:'蘇利南'},'770': {en:'Uruguay',zh:'烏拉圭'},
+        '775': {en:'Venezuela',zh:'委內瑞拉'},
+    };
+
+    /**
+     * Get flag state from MMSI (first 3 digits = MID)
+     * @param {string} mmsi
+     * @returns {string|null} localized flag name
+     */
+    function getMidFlag(mmsi) {
+        if (!mmsi || mmsi.length < 3) return null;
+        const mid = mmsi.substring(0, 3);
+        const entry = MID_FLAG_TABLE[mid];
+        if (!entry) return null;
+        const lang = (typeof i18n !== 'undefined' && i18n.lang) || 'zh';
+        return entry[lang] || entry.en;
+    }
+
     // Zoom threshold: <= this shows clusters, > this shows individual markers
     const CLUSTER_ZOOM_THRESHOLD = 8;
 
@@ -584,11 +755,13 @@ const MapModule = (function() {
 
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
             const netMarkerNote = (v.mmsi || '').startsWith('898') ? '<br><span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span>' : '';
+            const flagName = getMidFlag(v.mmsi);
+            const flagLine = flagName ? '<br>' + t('app.flag') + ' ' + flagName : '';
 
             marker.bindPopup(`
                 <b>${v.name || 'Unknown'}</b><br>
                 ${t('app.mmsi')} ${v.mmsi}${imoInfo}<br>
-                ${t('app.type')} ${v.type_name || t('common.unknown')}<br>
+                ${t('app.type')} ${v.type_name || t('common.unknown')}${flagLine}<br>
                 ${t('app.speed')} ${(v.speed || 0).toFixed(1)} kn<br>
                 航向: ${headingText}${navInfo}${lngBadge}${destInfo}${suspiciousInfo}${sanctionInfo}${routeLink}${mtLink}${netMarkerNote}
             `);
@@ -727,11 +900,13 @@ const MapModule = (function() {
                 v.mmsi + '" target="_blank" rel="noopener">🔎 From / Dest 查詢</a>';
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
             var netMarkerNote2 = (v.mmsi || '').startsWith('898') ? '<br><span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span>' : '';
+            var flagName2 = getMidFlag(v.mmsi);
+            var flagLine2 = flagName2 ? '<br>' + t('app.flag') + ' ' + flagName2 : '';
 
             marker.bindPopup(
                 '<b>' + (v.name || 'Unknown') + '</b><br>' +
                 t('app.mmsi') + ' ' + v.mmsi + imoInfo2 + '<br>' +
-                t('app.type') + ' ' + (v.type_name || t('common.unknown')) + '<br>' +
+                t('app.type') + ' ' + (v.type_name || t('common.unknown')) + flagLine2 + '<br>' +
                 t('app.speed') + ' ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
                 '航向: ' + headingText + navInfo2 + destInfo2 + suspiciousInfo + sanctionInfo2 + routeLink + mtLink2 + netMarkerNote2
             );
@@ -1139,12 +1314,15 @@ const MapModule = (function() {
                         ? '<br><span class="sanction-warning">' + t3('app.sanctioned') + ' (' + t3('app.sanction_res') + ' ' + (sanctionHit.resolution || '1718') + ')</span>'
                         : '';
                     var netMarkerNote3 = (sv.mmsi || '').startsWith('898') ? '<br><span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span>' : '';
+                    var flagName3 = getMidFlag(sv.mmsi);
+                    var flagLine3 = flagName3 ? '<br>' + t3('app.flag') + ' ' + flagName3 : '';
                     return '<b style="color:' + (riskColors[sv.risk_level] || '#ff3366') + '">' + ((sv.names && sv.names[0]) || sv.mmsi) + '</b><br>' +
-                        t3('app.mmsi') + ' ' + sv.mmsi + '<br>' +
+                        t3('app.mmsi') + ' ' + sv.mmsi + flagLine3 + '<br>' +
                         '<b>' + t3('app.risk') + ' ' + sv.risk_level.toUpperCase() + '</b> (' + t3('app.score') + ' ' + sv.risk_score + ')<br>' +
                         (sv.flags || []).map(function(f) { return '- ' + f; }).join('<br>') +
                         sanctionLine + netMarkerNote3 +
-                        '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + sv.mmsi + '\'); return false;">' + t3('app.show_track') + '</button>';
+                        '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + sv.mmsi + '\'); return false;">' + t3('app.show_track') + '</button>' +
+                        '<br><button class="route-lookup-btn vic-detail-btn" onclick="MapModule.showVesselInfoCard(\'' + sv.mmsi + '\'); return false;">ℹ️ ' + t3('vic.detail') + '</button>';
                 });
             }
         });
@@ -1377,6 +1555,184 @@ const MapModule = (function() {
         }, 2000);
     }
 
+    /**
+     * Set suspicious data reference for info card lookups
+     */
+    function setSuspiciousData(data) {
+        _suspiciousData = data;
+    }
+
+    /**
+     * Show vessel deep-dive info card overlay
+     * @param {string} mmsi - vessel MMSI to look up in suspicious data
+     */
+    function showVesselInfoCard(mmsi) {
+        if (!_suspiciousData || !_suspiciousData.suspicious_vessels) return;
+        const sv = _suspiciousData.suspicious_vessels.find(v => v.mmsi === mmsi);
+        if (!sv) {
+            // Also check all_classifications
+            const ac = (_suspiciousData.all_classifications || []).find(v => v.mmsi === mmsi);
+            if (!ac) return;
+            _buildInfoCard(ac);
+            return;
+        }
+        _buildInfoCard(sv);
+    }
+
+    function _buildInfoCard(sv) {
+        // Remove any existing card
+        const existing = document.getElementById('vesselInfoOverlay');
+        if (existing) existing.remove();
+
+        const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+        const flagName = getMidFlag(sv.mmsi);
+        const vesselName = (sv.names && sv.names[0]) || sv.mmsi;
+        const riskColor = riskColors[sv.risk_level] || '#ff3366';
+
+        // ── Header ──
+        const headerHtml = `
+            <div class="vic-header">
+                <div class="vic-header-left">
+                    <div class="vic-vessel-name" style="color:${riskColor}">${vesselName}</div>
+                    <div class="vic-vessel-meta">
+                        MMSI: ${sv.mmsi}
+                        ${flagName ? ' | ' + t('app.flag') + ' ' + flagName : ''}
+                        ${sv.vessel_type ? ' | ' + t('vic.vessel_type') + ': ' + sv.vessel_type : ''}
+                    </div>
+                </div>
+                <div class="vic-header-right">
+                    <span class="risk-badge risk-${sv.risk_level}" style="font-size:11px;padding:3px 8px">${(sv.risk_level || '').toUpperCase()}</span>
+                </div>
+            </div>`;
+
+        // ── ITU MARS Registry ──
+        let marsHtml = '';
+        const marsDetails = sv.itu_mars_details || {};
+        const marsRec = marsDetails.mars_record;
+        const mismatches = marsDetails.mismatches || [];
+        const mismatchFields = new Set(mismatches.map(m => m.field));
+
+        if (marsRec && marsRec.found !== false) {
+            const rows = [
+                { label: t('vic.mars_name'), value: marsRec.ship_name || '-', field: 'ship_name' },
+                { label: t('vic.mars_cs'), value: marsRec.call_sign || '-', field: 'call_sign' },
+                { label: t('vic.mars_imo'), value: marsRec.imo_number || '-', field: 'imo_number' },
+                { label: t('vic.mars_flag'), value: marsRec.administration || '-', field: 'administration' },
+                { label: t('vic.mars_updated'), value: marsRec.update_date || '-', field: null },
+            ];
+            let rowsHtml = rows.map(r => {
+                const isMismatch = r.field && mismatchFields.has(r.field);
+                const mismatchInfo = isMismatch
+                    ? mismatches.find(m => m.field === r.field)
+                    : null;
+                const mismatchNote = mismatchInfo
+                    ? `<span class="vic-mismatch">${t('vic.mismatch')}: ${t('vic.ais_vs_mars')} ${Array.isArray(mismatchInfo.ais) ? mismatchInfo.ais.join(', ') : mismatchInfo.ais}</span>`
+                    : '';
+                return `<div class="vic-row${isMismatch ? ' vic-row-warn' : ''}">
+                    <span class="vic-label">${r.label}</span>
+                    <span class="vic-value">${r.value}${mismatchNote}</span>
+                </div>`;
+            }).join('');
+            marsHtml = `<div class="vic-section">
+                <div class="vic-section-title">${t('vic.registry')}</div>
+                ${rowsHtml}
+            </div>`;
+        } else {
+            marsHtml = `<div class="vic-section">
+                <div class="vic-section-title">${t('vic.registry')}</div>
+                <div class="vic-empty">${t('vic.no_mars')}</div>
+            </div>`;
+        }
+
+        // ── Risk Score Breakdown ──
+        const score = sv.risk_score || 0;
+        const maxScore = 20;
+        const pct = Math.min(100, Math.round((score / maxScore) * 100));
+        const flagsList = (sv.flags || []).map(f => `<div class="vic-flag-item">• ${f}</div>`).join('');
+        const scoreHtml = `<div class="vic-section">
+            <div class="vic-section-title">${t('vic.risk_score')}: ${score} / ${(sv.risk_level || '').toUpperCase()}</div>
+            <div class="vic-score-bar-wrap">
+                <div class="vic-score-bar" style="width:${pct}%;background:${riskColor}"></div>
+            </div>
+            ${sv.type_multiplier != null ? `<div class="vic-row"><span class="vic-label">${t('vic.multiplier')}</span><span class="vic-value">×${sv.type_multiplier}</span></div>` : ''}
+            <div class="vic-flags-list">${flagsList || '-'}</div>
+        </div>`;
+
+        // ── AIS Anomalies ──
+        let anomaliesHtml = '';
+        const anomalies = sv.ais_anomalies || [];
+        if (anomalies.length > 0) {
+            const items = anomalies.map(a => {
+                const desc = a.description || a.type || '';
+                const severity = a.severity ? ` <span class="vic-severity-${a.severity}">[${a.severity}]</span>` : '';
+                return `<div class="vic-anomaly-item">${desc}${severity}</div>`;
+            }).join('');
+            anomaliesHtml = `<div class="vic-section">
+                <div class="vic-section-title">${t('vic.anomalies')}</div>
+                ${items}
+            </div>`;
+        } else {
+            anomaliesHtml = `<div class="vic-section">
+                <div class="vic-section-title">${t('vic.anomalies')}</div>
+                <div class="vic-empty">${t('vic.no_anomalies')}</div>
+            </div>`;
+        }
+
+        // ── Cable Activity ──
+        let cableHtml = '';
+        const cd = sv.cable_details;
+        if (cd && (sv.cable_proximity || sv.cable_loitering)) {
+            cableHtml = `<div class="vic-section">
+                <div class="vic-section-title">${t('vic.cable')}</div>
+                <div class="vic-row"><span class="vic-label">${t('vic.nearest_cable')}</span><span class="vic-value">${cd.nearest_cable || '-'}</span></div>
+                <div class="vic-row"><span class="vic-label">${t('vic.min_dist')}</span><span class="vic-value">${cd.min_distance_km != null ? cd.min_distance_km.toFixed(1) + ' km' : '-'}</span></div>
+                <div class="vic-row"><span class="vic-label">${t('vic.loiter_hrs')}</span><span class="vic-value">${cd.loiter_hours != null ? cd.loiter_hours.toFixed(1) + ' h' : '-'}</span></div>
+            </div>`;
+        }
+
+        // ── External Links ──
+        const mtUrl = 'https://www.marinetraffic.com/en/ais/details/ships/mmsi:' + sv.mmsi;
+        const linksHtml = `<div class="vic-section">
+            <div class="vic-section-title">${t('vic.links')}</div>
+            <div class="vic-links-row">
+                <a class="vic-link" href="${mtUrl}" target="_blank" rel="noopener">MarineTraffic</a>
+                <button class="route-lookup-btn" onclick="MapModule.loadVesselRoute('${sv.mmsi}'); document.getElementById('vesselInfoOverlay').remove(); return false;">${t('vic.show_track')}</button>
+            </div>
+        </div>`;
+
+        // ── Assemble card ──
+        const overlay = document.createElement('div');
+        overlay.id = 'vesselInfoOverlay';
+        overlay.className = 'vessel-info-overlay';
+        overlay.innerHTML = `
+            <div class="vessel-info-card">
+                <button class="vic-close" onclick="document.getElementById('vesselInfoOverlay').remove()" title="${t('vic.close')}">✕</button>
+                ${headerHtml}
+                ${marsHtml}
+                ${scoreHtml}
+                ${anomaliesHtml}
+                ${cableHtml}
+                ${linksHtml}
+            </div>`;
+
+        // Click overlay background to close
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) overlay.remove();
+        });
+
+        document.body.appendChild(overlay);
+
+        // ESC to close
+        const escHandler = function(e) {
+            if (e.key === 'Escape') {
+                const el = document.getElementById('vesselInfoOverlay');
+                if (el) el.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
     return {
         init,
         drawFishingHotspots,
@@ -1397,6 +1753,9 @@ const MapModule = (function() {
         setFilterFoc,
         locateVesselType,
         drawTerritorialBaseline,
+        setSuspiciousData,
+        showVesselInfoCard,
+        getMidFlag,
         FISHING_HOTSPOTS,
         VESSEL_COLORS,
         REGION_COLORS,

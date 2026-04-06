@@ -62,8 +62,8 @@ fetch_ais_data.py → fetch_gfw_data.py → detect_ship_transfers.py
 ```
 
 ### Track Tiers
-- **Tier-1** (`ais_track_history.json`): CN fishing + suspicious vessels, max 336 entries
-- **Tier-2** (`ais_track_commercial.json`): cargo/tanker/LNG + identity-changed, max 168 entries
+- **Tier-1** (`ais_track_history.json`): CN fishing + suspicious vessels, max 336 entries (28 days)
+- **Tier-2** (`ais_track_commercial.json`): cargo/tanker/LNG + identity-changed, max 336 entries (28 days)
 - Identity-changed MMSIs loaded from `identity_events.json` (last 7 days)
 
 ## Conventions

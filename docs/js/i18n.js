@@ -336,6 +336,7 @@ const i18n = (function () {
         'app.csis_suspicious':   { zh: '⚠️ 海纜威脅可疑', en: '⚠️ Cable Threat Suspect' },
         'app.mmsi':              { zh: 'MMSI:', en: 'MMSI:' },
         'app.type':              { zh: '類型:', en: 'Type:' },
+        'app.flag':              { zh: '船旗國:', en: 'Flag:' },
         'app.speed':             { zh: '航速:', en: 'Speed:' },
         'app.destination':       { zh: '目的地:', en: 'Destination:' },
         'app.risk':              { zh: '風險:', en: 'Risk:' },
@@ -385,6 +386,30 @@ const i18n = (function () {
 
         'ob.t5':                 { zh: '更多功能', en: 'More Features' },
         'ob.d5':                 { zh: '統計頁面提供歷史趨勢圖表；軌跡動畫頁面播放船舶移動軌跡；身分追蹤頁面記錄 AIS 變更事件。使用底部導航列或頂部選單切換頁面。', en: 'Statistics page offers historical charts; Trail Animation plays vessel movement; Identity History tracks AIS changes. Use the bottom nav bar or top menu to switch between pages.' },
+
+        // ── Vessel Info Card (Deep Dive) ──
+        'vic.detail':            { zh: '詳細資訊', en: 'Details' },
+        'vic.registry':          { zh: '官方登記 (ITU MARS)', en: 'Official Registry (ITU MARS)' },
+        'vic.risk_score':        { zh: '風險分數', en: 'Risk Score' },
+        'vic.anomalies':         { zh: 'AIS 異常紀錄', en: 'AIS Anomalies' },
+        'vic.cable':             { zh: '海纜活動', en: 'Cable Activity' },
+        'vic.links':             { zh: '外部連結', en: 'External Links' },
+        'vic.close':             { zh: '關閉', en: 'Close' },
+        'vic.mars_name':         { zh: '登記船名', en: 'Registered Name' },
+        'vic.mars_cs':           { zh: '呼號', en: 'Call Sign' },
+        'vic.mars_imo':          { zh: 'IMO 號碼', en: 'IMO Number' },
+        'vic.mars_flag':         { zh: '管理國', en: 'Administration' },
+        'vic.mars_updated':      { zh: '登記更新', en: 'Registry Updated' },
+        'vic.mismatch':          { zh: '⚠️ 不符', en: '⚠️ Mismatch' },
+        'vic.no_mars':           { zh: '無 ITU MARS 登記資料', en: 'No ITU MARS registry data' },
+        'vic.no_anomalies':      { zh: '無異常紀錄', en: 'No anomalies recorded' },
+        'vic.nearest_cable':     { zh: '最近海纜', en: 'Nearest Cable' },
+        'vic.min_dist':          { zh: '最近距離', en: 'Min Distance' },
+        'vic.loiter_hrs':        { zh: '徘徊時數', en: 'Loiter Hours' },
+        'vic.show_track':        { zh: '顯示航跡', en: 'Show Track' },
+        'vic.vessel_type':       { zh: '船型', en: 'Vessel Type' },
+        'vic.multiplier':        { zh: '類型係數', en: 'Type Multiplier' },
+        'vic.ais_vs_mars':       { zh: 'AIS 回報', en: 'AIS Reports' },
     };
 
     // ========================================================================

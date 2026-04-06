@@ -102,8 +102,8 @@ Each animation HTML page has **self-contained inline JS** (not shared modules). 
 |------|-------------|------------|
 | `data.json` | Main consolidated dataset (AIS snapshot + suspicious analysis + dark vessels + predictions) | `generate_dashboard.py` |
 | `ais_history.json` | 90-day AIS snapshots (max 1,080 entries) | `fetch_ais_data.py` |
-| `ais_track_history.json` | Tier-1: 14-day CN fishing + suspicious tracks | `fetch_ais_data.py` |
-| `ais_track_commercial.json` | Tier-2: 14-day cargo/tanker/LNG tracks | `fetch_ais_data.py` |
+| `ais_track_history.json` | Tier-1: 28-day CN fishing + suspicious tracks | `fetch_ais_data.py` |
+| `ais_track_commercial.json` | Tier-2: 28-day cargo/tanker/LNG tracks | `fetch_ais_data.py` |
 | `identity_events.json` | AIS identity change events (max 5,000) | `fetch_ais_data.py` |
 | `weekly_dark_vessels.json` | 90-day SAR detections for animation | `fetch_weekly_dark_vessels.py` |
 | `ship_transfers.json` | STS rendezvous events | `detect_ship_transfers.py` |

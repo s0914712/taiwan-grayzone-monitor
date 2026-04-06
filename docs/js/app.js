@@ -356,7 +356,7 @@ const App = (function () {
 
         list.innerHTML = suspiciousData.suspicious_vessels.slice(0, 5).map(sv => {
             const name = (sv.names && sv.names[0]) || sv.mmsi;
-            return `<div class="bs-suspect-item" onclick="App.focusSuspicious(${sv.last_lat}, ${sv.last_lon})">
+            return `<div class="bs-suspect-item" onclick="App.showVesselDetail('${sv.mmsi}')">
                 <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name.substring(0, 16)}</span>
                 <span class="risk-badge risk-${sv.risk_level}">${sv.risk_level}</span>
             </div>`;
@@ -444,7 +444,7 @@ const App = (function () {
             const riskClass = 'risk-' + sv.risk_level;
 
             return `
-                <div class="suspicious-item" onclick="App.focusSuspicious(${sv.last_lat}, ${sv.last_lon})">
+                <div class="suspicious-item" onclick="App.showVesselDetail('${sv.mmsi}')">
                     <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                         ${name.substring(0, 12)}
                     </span>
@@ -575,6 +575,7 @@ const App = (function () {
             // Load CSIS suspicious vessel analysis
             if (data.suspicious_analysis) {
                 suspiciousData = data.suspicious_analysis;
+                MapModule.setSuspiciousData(suspiciousData);
                 updateSuspiciousList();
                 updateBottomSheetSuspicious();
 
@@ -702,6 +703,19 @@ const App = (function () {
     }
 
     /**
+     * Show vessel detail info card + focus on map
+     */
+    function showVesselDetail(mmsi) {
+        if (suspiciousData && suspiciousData.suspicious_vessels) {
+            const sv = suspiciousData.suspicious_vessels.find(v => v.mmsi === mmsi);
+            if (sv && sv.last_lat && sv.last_lon) {
+                MapModule.focusPosition(sv.last_lat, sv.last_lon, 10);
+            }
+        }
+        MapModule.showVesselInfoCard(mmsi);
+    }
+
+    /**
      * Toggle a layer
      */
     function toggleLayer(name) {
@@ -809,6 +823,7 @@ const App = (function () {
         toggleLayer,
         focusVessel,
         focusSuspicious,
+        showVesselDetail,
         loadData,
         shareToTwitter,
         shareToLine,
