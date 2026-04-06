@@ -753,7 +753,7 @@ const MapModule = (function() {
                 : '';
 
             // External lookup: MarineTraffic by MMSI for from/destination details
-            const mtLink = '<br><a class="mt-lookup-link" href="https://www.marinetraffic.com/en/ais/details/ships/mmsi:' +
+            const mtLink = '<br><a class="mt-lookup-link" href="https://www.marinetraffic.com/en/ais/index/search/all?mmsi=' +
                 v.mmsi + '" target="_blank" rel="noopener">🔎 From / Dest 查詢</a>';
 
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
@@ -899,7 +899,7 @@ const MapModule = (function() {
             var navInfo2 = _decodeNavStatus(v.nav_status);
             navInfo2 = navInfo2 ? '<br>狀態: ' + navInfo2 : '';
             var imoInfo2 = v.imo && v.imo !== '0' ? '<br>IMO: ' + v.imo : '';
-            var mtLink2 = '<br><a class="mt-lookup-link" href="https://www.marinetraffic.com/en/ais/details/ships/mmsi:' +
+            var mtLink2 = '<br><a class="mt-lookup-link" href="https://www.marinetraffic.com/en/ais/index/search/all?mmsi=' +
                 v.mmsi + '" target="_blank" rel="noopener">🔎 From / Dest 查詢</a>';
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
             var netMarkerNote2 = (v.mmsi || '').startsWith('898') ? '<br><span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span>' : '';
@@ -1609,7 +1609,8 @@ const MapModule = (function() {
                 </div>
                 <div class="vic-section">
                     <div class="vic-links-row">
-                        <a class="vic-link" href="https://www.marinetraffic.com/en/ais/details/ships/mmsi:${mmsi}" target="_blank" rel="noopener">MarineTraffic</a>
+                        <a class="vic-link" href="https://www.marinetraffic.com/en/ais/index/search/all?mmsi=${mmsi}" target="_blank" rel="noopener">MarineTraffic</a>
+                        <a class="vic-link" href="https://www.vesselfinder.com/vessels/details/${mmsi}" target="_blank" rel="noopener">VesselFinder</a>
                         <button class="route-lookup-btn" onclick="MapModule.loadVesselRoute('${mmsi}'); document.getElementById('vesselInfoOverlay').remove(); return false;">${t('vic.show_track')}</button>
                     </div>
                 </div>
@@ -1733,11 +1734,13 @@ const MapModule = (function() {
         }
 
         // ── External Links ──
-        const mtUrl = 'https://www.marinetraffic.com/en/ais/details/ships/mmsi:' + sv.mmsi;
+        const mtUrl = 'https://www.marinetraffic.com/en/ais/index/search/all?mmsi=' + sv.mmsi;
+        const vfUrl = 'https://www.vesselfinder.com/vessels/details/' + sv.mmsi;
         const linksHtml = `<div class="vic-section">
             <div class="vic-section-title">${t('vic.links')}</div>
             <div class="vic-links-row">
                 <a class="vic-link" href="${mtUrl}" target="_blank" rel="noopener">MarineTraffic</a>
+                <a class="vic-link" href="${vfUrl}" target="_blank" rel="noopener">VesselFinder</a>
                 <button class="route-lookup-btn" onclick="MapModule.loadVesselRoute('${sv.mmsi}'); document.getElementById('vesselInfoOverlay').remove(); return false;">${t('vic.show_track')}</button>
             </div>
         </div>`;
