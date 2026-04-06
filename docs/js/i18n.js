@@ -313,6 +313,7 @@ const i18n = (function () {
         'cable.repaired':            { zh: '已修復', en: 'Repaired' },
         'cable.normal':              { zh: '正常', en: 'Normal' },
         'cable.all_normal':          { zh: '所有海纜正常運作', en: 'All cables operational' },
+        'cable.est_repair':          { zh: '預計修復:', en: 'Est. repair:' },
         'cable.source_link':         { zh: '資料來源：數位發展部', en: 'Source: MODA' },
 
         // ── Map 模組 ──
