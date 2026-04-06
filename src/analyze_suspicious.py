@@ -1077,6 +1077,9 @@ def classify_vessel(profile, track_points, identity_events=None,
                 classification['flags'].append(
                     f'ITU登記不符：{m["description"]}'
                 )
+    else:
+        classification['itu_mars_mismatch'] = False
+        classification['itu_mars_details'] = {}
 
     # ── 判定主要船型 ──
     types_seen = profile.get('types_seen', [])
