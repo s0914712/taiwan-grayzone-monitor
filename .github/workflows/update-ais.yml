@@ -30,6 +30,7 @@ jobs:
         run: python src/fetch_ais_data.py
         env:
           USE_PROXY: "true"
+          POOL: ${{ secrets.POOL }}
         continue-on-error: true
 
       - name: Analyze suspicious vessels (CSIS methodology)
@@ -90,7 +91,7 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: './docs'
           overwrite: true

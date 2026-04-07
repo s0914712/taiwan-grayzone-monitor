@@ -151,11 +151,9 @@ def is_cn_fishing_vessel(name):
 
 
 # --- SOCKS5 代理設定 ---
-# 優先從 Pool.txt 讀取代理清單（100 個 ASN 3462 HiNet 代理）
-# 也支援環境變數 PROXY_LIST 覆蓋（格式: host:port:user:pass,host:port:user:pass,...）
+# 從環境變數 POOL 或 PROXY_LIST 讀取代理清單
+# 格式: 每行一筆 host:port:user:pass（POOL 用換行分隔，PROXY_LIST 用逗號分隔）
 # 若都無法讀取，使用內建備用清單
-
-POOL_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Pool.txt')
 
 # 嘗試連線的代理數量上限
 MAX_PROXY_ATTEMPTS = 10
@@ -170,31 +168,28 @@ def _parse_proxy_line(line):
 
 
 def get_proxy_list():
-    """從 Pool.txt / 環境變數 / 備用清單取得 SOCKS5 代理列表"""
-    # 1. 環境變數覆蓋（最高優先）
+    """從環境變數 POOL / PROXY_LIST / 備用清單取得 SOCKS5 代理列表"""
+    # 1. POOL 環境變數（換行分隔，最高優先）
+    pool_val = os.environ.get('POOL', '').strip()
+    if pool_val:
+        lines = [l.strip() for l in pool_val.splitlines() if l.strip() and not l.startswith('#')]
+        proxies = [_parse_proxy_line(l) for l in lines]
+        proxies = [p for p in proxies if p]
+        if proxies:
+            print(f"  📋 從 POOL 環境變數載入代理清單 ({len(proxies)} 個)")
+            return proxies
+
+    # 2. PROXY_LIST 環境變數（逗號分隔）
     env_val = os.environ.get('PROXY_LIST', '').strip()
     if env_val:
         proxies = [_parse_proxy_line(e) for e in env_val.split(',')]
         proxies = [p for p in proxies if p]
         if proxies:
-            print(f"  📋 使用環境變數代理清單 ({len(proxies)} 個)")
+            print(f"  📋 使用 PROXY_LIST 環境變數代理清單 ({len(proxies)} 個)")
             return proxies
 
-    # 2. 從 Pool.txt 讀取
-    if os.path.exists(POOL_FILE):
-        try:
-            with open(POOL_FILE, 'r') as f:
-                lines = [l.strip() for l in f if l.strip() and not l.startswith('#')]
-            proxies = [_parse_proxy_line(l) for l in lines]
-            proxies = [p for p in proxies if p]
-            if proxies:
-                print(f"  📋 從 Pool.txt 載入代理清單 ({len(proxies)} 個)")
-                return proxies
-        except Exception as e:
-            print(f"  ⚠️ 讀取 Pool.txt 失敗: {e}")
-
     # 3. 備用清單
-    print(f"  ⚠️ Pool.txt 不存在或為空，使用備用代理清單")
+    print(f"  ⚠️ 未設定 POOL 環境變數，使用備用代理清單")
     return [
         {"host": "residential.pingproxies.com", "port": 8253, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_82K1Q977SLB9H76Q", "pass": "47yKTElrP2"},
         {"host": "residential.pingproxies.com", "port": 8901, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_AZ1PX916DV90HJFS", "pass": "47yKTElrP2"},
