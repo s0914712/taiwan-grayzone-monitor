@@ -30,6 +30,7 @@ jobs:
         run: python src/fetch_ais_data.py
         env:
           USE_PROXY: "true"
+          POOL: ${{ secrets.POOL }}
         continue-on-error: true
 
       - name: Analyze suspicious vessels (CSIS methodology)

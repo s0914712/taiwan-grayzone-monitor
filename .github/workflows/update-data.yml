@@ -28,6 +28,7 @@ jobs:
       - name: Fetch AIS data via SOCKS5 proxy
         env:
           USE_PROXY: "true"
+          POOL: ${{ secrets.POOL }}
         run: |
           python src/fetch_ais_data.py
         continue-on-error: true
