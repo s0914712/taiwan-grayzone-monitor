@@ -12,6 +12,10 @@ on:
         default: false
         type: boolean
 
+concurrency:
+  group: publish-threads
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
