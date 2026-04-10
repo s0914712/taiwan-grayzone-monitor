@@ -281,13 +281,25 @@ const ChartsModule = (function () {
      */
     function updateZoneCounts(zoneCounts, darkData = null) {
         if (darkData && darkData.regions) {
+            // New layout: single `taiwan_region` region with a `sub_zones` dict
+            // containing pre-bucketed north/east/south/west counts.
+            const taiwanRegion = darkData.regions.taiwan_region;
+            if (taiwanRegion && taiwanRegion.sub_zones) {
+                ['north', 'east', 'south', 'west'].forEach(zoneKey => {
+                    const sub = taiwanRegion.sub_zones[zoneKey];
+                    const el = document.getElementById('zone-' + zoneKey);
+                    if (el && sub) el.textContent = formatCompact(sub.dark_vessels || 0);
+                });
+                return;
+            }
+
+            // Legacy layout: four separate sub-region entries.
             const zoneMapping = {
                 north: 'east_china_sea',
                 east: 'east_taiwan',
                 south: 'south_china_sea',
                 west: 'taiwan_strait'
             };
-
             Object.entries(zoneMapping).forEach(([zoneKey, regionKey]) => {
                 const region = darkData.regions[regionKey];
                 if (region) {

@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
 ================================================================================
-GFW SAR 暗船偵測資料擷取腳本
+GFW SAR 暗船偵測資料擷取腳本 — 全區單次擷取版
 Dark Vessel SAR Data Fetcher (Global Fishing Watch v3 API)
 ================================================================================
 
 功能：
-1. 從 GFW v3 API 擷取 30 天 SAR 衛星偵測資料（4 個子區域）
-2. 按區域與日期彙總，計算暗船比例
-3. 輸出 data/dark_vessels.json，供 analyze_suspicious /
+1. 以單一矩形（TAIWAN_BBOX）呼叫 GFW v3 API 一次取回完整 SAR 偵測
+2. 依日期彙整暗船比例
+3. 額外在 `taiwan_region.sub_zones` 保留四個方位子區域的計數，
+   讓前端側邊欄（north/east/south/west）照常顯示
+4. 輸出 data/dark_vessels.json，供 analyze_suspicious /
    exercise_prediction / 前端 dark-vessels.html 使用
 
 API:
@@ -16,9 +18,10 @@ API:
   dataset: public-global-sar-presence:latest
   需設定環境變數 GFW_API_TOKEN
 
-輸出格式（與既有檔案保持一致）：
+輸出格式：
   {
     "updated_at": ISO8601,
+    "bbox": {"lat_min", "lat_max", "lon_min", "lon_max"},
     "data_range": {"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"},
     "overall": {
       "total_detections": int,
@@ -27,15 +30,21 @@ API:
       "dark_by_date": {"YYYY-MM-DD": int, ...}
     },
     "regions": {
-      "<region_id>": {
-        "name": str,
+      "taiwan_region": {
+        "name": "台灣周邊海域",
         "total_detections": int,
         "dark_vessels": int,
         "matched_vessels": int,
         "dark_ratio": float,
         "dark_by_date": {...},
         "matched_by_flag": {...},
-        "dark_details": [{"lat", "lon", "date", "detections"}, ...]
+        "dark_details": [{"lat","lon","date","detections"}, ...],
+        "sub_zones": {
+          "north": {"name","total_detections","dark_vessels","dark_ratio"},
+          "east":  {...},
+          "south": {...},
+          "west":  {...}
+        }
       }
     }
   }
@@ -65,56 +74,74 @@ OUTPUT_PATH = DATA_DIR / 'dark_vessels.json'
 # 滾動資料窗口（天）
 DATA_RANGE_DAYS = 30
 
-# 每個區域保留的暗船座標樣本上限（供前端地圖顯示）
-MAX_DETAILS_PER_REGION = 100
+# 暗船座標樣本上限（供前端地圖顯示）
+MAX_DETAILS = 400
 
 # =============================================================================
-# 區域定義（與 fetch_weekly_dark_vessels.py 同步）
-# - south_china_sea 南界由 18°N 擴展至 15°N，涵蓋更廣的南海北部海域
+# 全區 bounding box（覆蓋台灣周邊灰區、南海北部、東海）
 # =============================================================================
 
-DARK_VESSEL_REGIONS = {
-    "taiwan_strait": {
-        "name": "台灣海峽",
-        "geojson": {
-            "type": "Polygon",
-            "coordinates": [[
-                [118.0, 23.5], [122.0, 23.5], [122.0, 26.5],
-                [118.0, 26.5], [118.0, 23.5]
-            ]]
-        }
-    },
-    "east_taiwan": {
-        "name": "台灣東部海域",
-        "geojson": {
-            "type": "Polygon",
-            "coordinates": [[
-                [121.5, 22.0], [124.0, 22.0], [124.0, 25.5],
-                [121.5, 25.5], [121.5, 22.0]
-            ]]
-        }
-    },
-    "south_china_sea": {
-        "name": "南海北部",
-        "geojson": {
-            "type": "Polygon",
-            "coordinates": [[
-                [110.0, 15.0], [118.0, 15.0], [118.0, 23.0],
-                [110.0, 23.0], [110.0, 15.0]
-            ]]
-        }
-    },
-    "east_china_sea": {
-        "name": "東海",
-        "geojson": {
-            "type": "Polygon",
-            "coordinates": [[
-                [122.0, 26.0], [130.5, 26.0], [130.5, 34.0],
-                [122.0, 34.0], [122.0, 26.0]
-            ]]
-        }
-    }
+TAIWAN_BBOX = {
+    'lat_min': 15,
+    'lat_max': 35,
+    'lon_min': 110,
+    'lon_max': 128,
 }
+
+REGION_NAME = "台灣周邊海域"
+
+
+def bbox_to_geojson(bbox):
+    """將 bounding box dict 轉為 GFW API 需要的 GeoJSON Polygon"""
+    lat_min, lat_max = bbox['lat_min'], bbox['lat_max']
+    lon_min, lon_max = bbox['lon_min'], bbox['lon_max']
+    return {
+        "type": "Polygon",
+        "coordinates": [[
+            [lon_min, lat_min],
+            [lon_max, lat_min],
+            [lon_max, lat_max],
+            [lon_min, lat_max],
+            [lon_min, lat_min],
+        ]]
+    }
+
+
+# =============================================================================
+# 子區域定義（僅用於 sub_zones 統計，不觸發額外 API 請求）
+# 與前端 sidebar 的 zone-north/east/south/west 對應
+# =============================================================================
+
+SUB_ZONES = {
+    "north": {
+        "name": "東海 / 北方",
+        "lat_min": 26.0, "lat_max": 34.0,
+        "lon_min": 122.0, "lon_max": 130.5,
+    },
+    "east": {
+        "name": "台灣東部",
+        "lat_min": 22.0, "lat_max": 25.5,
+        "lon_min": 121.5, "lon_max": 124.0,
+    },
+    "south": {
+        "name": "南海北部",
+        "lat_min": 15.0, "lat_max": 23.0,
+        "lon_min": 110.0, "lon_max": 118.0,
+    },
+    "west": {
+        "name": "台灣海峽",
+        "lat_min": 23.5, "lat_max": 26.5,
+        "lon_min": 118.0, "lon_max": 122.0,
+    },
+}
+
+
+def point_in_zone(lat, lon, zone):
+    return (
+        zone['lat_min'] <= lat <= zone['lat_max']
+        and zone['lon_min'] <= lon <= zone['lon_max']
+    )
+
 
 # =============================================================================
 # GFW API
@@ -123,14 +150,14 @@ DARK_VESSEL_REGIONS = {
 def get_headers():
     return {
         "Authorization": f"Bearer {API_TOKEN}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
 
 def fetch_sar_data(region_geojson, start_date, end_date):
     """呼叫 GFW /v3/4wings/report 取得 SAR 偵測記錄
 
-    回傳：扁平化後的 record 列表（每筆 dict 包含 lat/lon/date/detections/vesselId 等）
+    回傳：扁平化後的 record 列表；None 表示請求失敗
     """
     params = {
         "datasets[0]": "public-global-sar-presence:latest",
@@ -138,7 +165,7 @@ def fetch_sar_data(region_geojson, start_date, end_date):
         "temporal-resolution": "DAILY",
         "spatial-resolution": "HIGH",
         "spatial-aggregation": "false",
-        "format": "JSON"
+        "format": "JSON",
     }
 
     try:
@@ -147,14 +174,14 @@ def fetch_sar_data(region_geojson, start_date, end_date):
             params=params,
             json={"geojson": region_geojson},
             headers=get_headers(),
-            timeout=180
+            timeout=300,
         )
     except requests.RequestException as e:
         print(f"   ❌ 請求失敗: {e}")
-        return None  # None 表示請求失敗（非 0 筆記錄）
+        return None
 
     if resp.status_code != 200:
-        print(f"   ❌ API 錯誤 {resp.status_code}: {resp.text[:200]}")
+        print(f"   ❌ API 錯誤 {resp.status_code}: {resp.text[:300]}")
         return None
 
     try:
@@ -176,8 +203,8 @@ def fetch_sar_data(region_geojson, start_date, end_date):
 # 彙整
 # =============================================================================
 
-def summarize_region(records):
-    """彙整單一區域的 SAR 記錄為輸出 schema"""
+def build_region_summary(records):
+    """把扁平化 SAR records 彙整成單一 taiwan_region 結構"""
     total = 0
     dark = 0
     matched = 0
@@ -185,26 +212,46 @@ def summarize_region(records):
     matched_by_flag = defaultdict(int)
     dark_details = []
 
+    # 子區域計數
+    sub_counts = {
+        zone_id: {'total': 0, 'dark': 0}
+        for zone_id in SUB_ZONES
+    }
+
     for r in records:
         total += 1
         date_str = (r.get('date') or '')[:10]
         is_dark = not r.get('vesselId')
+
+        lat = r.get('lat', r.get('latitude'))
+        lon = r.get('lon', r.get('longitude'))
+        try:
+            lat_f = float(lat) if lat is not None else None
+            lon_f = float(lon) if lon is not None else None
+        except (TypeError, ValueError):
+            lat_f = lon_f = None
+
+        # 子區域統計
+        if lat_f is not None and lon_f is not None:
+            for zone_id, zone in SUB_ZONES.items():
+                if point_in_zone(lat_f, lon_f, zone):
+                    sub_counts[zone_id]['total'] += 1
+                    if is_dark:
+                        sub_counts[zone_id]['dark'] += 1
+                    break
 
         if is_dark:
             dark += 1
             if date_str:
                 dark_by_date[date_str] += 1
 
-            if len(dark_details) < MAX_DETAILS_PER_REGION:
-                lat = r.get('lat', r.get('latitude'))
-                lon = r.get('lon', r.get('longitude'))
-                if lat is not None and lon is not None:
-                    dark_details.append({
-                        'lat': round(float(lat), 2),
-                        'lon': round(float(lon), 2),
-                        'date': date_str,
-                        'detections': r.get('detections', 1),
-                    })
+            if lat_f is not None and lon_f is not None and len(dark_details) < MAX_DETAILS:
+                dark_details.append({
+                    'lat': round(lat_f, 2),
+                    'lon': round(lon_f, 2),
+                    'date': date_str,
+                    'detections': r.get('detections', 1),
+                })
         else:
             matched += 1
             flag = r.get('flag') or r.get('vesselFlag') or 'UNKNOWN'
@@ -212,7 +259,19 @@ def summarize_region(records):
 
     dark_ratio = round(dark / total * 100, 1) if total > 0 else 0.0
 
+    sub_zones_out = {}
+    for zone_id, counts in sub_counts.items():
+        zt = counts['total']
+        zd = counts['dark']
+        sub_zones_out[zone_id] = {
+            'name': SUB_ZONES[zone_id]['name'],
+            'total_detections': zt,
+            'dark_vessels': zd,
+            'dark_ratio': round(zd / zt * 100, 1) if zt > 0 else 0.0,
+        }
+
     return {
+        'name': REGION_NAME,
         'total_detections': total,
         'dark_vessels': dark,
         'matched_vessels': matched,
@@ -220,6 +279,7 @@ def summarize_region(records):
         'dark_by_date': dict(sorted(dark_by_date.items())),
         'matched_by_flag': dict(matched_by_flag),
         'dark_details': dark_details,
+        'sub_zones': sub_zones_out,
     }
 
 
@@ -229,7 +289,7 @@ def summarize_region(records):
 
 def main():
     print("=" * 70)
-    print("🛰️  GFW SAR 暗船偵測資料擷取")
+    print("🛰️  GFW SAR 暗船偵測資料擷取（全區單次模式）")
     print(f"執行時間: {datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S} UTC")
     print("=" * 70)
 
@@ -241,73 +301,40 @@ def main():
     start_date = end_date - timedelta(days=DATA_RANGE_DAYS)
     start_str = start_date.strftime('%Y-%m-%d')
     end_str = end_date.strftime('%Y-%m-%d')
-    print(f"📅 查詢範圍: {start_str} ~ {end_str} ({DATA_RANGE_DAYS} 天)\n")
+    print(f"📅 查詢範圍: {start_str} ~ {end_str} ({DATA_RANGE_DAYS} 天)")
+    print(
+        f"🗺  BBOX: lat {TAIWAN_BBOX['lat_min']}°~{TAIWAN_BBOX['lat_max']}°, "
+        f"lon {TAIWAN_BBOX['lon_min']}°~{TAIWAN_BBOX['lon_max']}°\n"
+    )
 
-    regions_out = {}
-    overall_total = 0
-    overall_dark = 0
-    overall_dark_by_date = defaultdict(int)
-    any_success = False
+    geojson = bbox_to_geojson(TAIWAN_BBOX)
+    print("📡 單次呼叫 /v3/4wings/report ...")
+    records = fetch_sar_data(geojson, start_str, end_str)
 
-    for region_id, region_info in DARK_VESSEL_REGIONS.items():
-        print(f"📍 {region_info['name']} ({region_id})")
-        records = fetch_sar_data(region_info['geojson'], start_str, end_str)
-
-        if records is None:
-            # 請求失敗 → 此區域留空，繼續處理其他區域
-            regions_out[region_id] = {
-                'name': region_info['name'],
-                'total_detections': 0,
-                'dark_vessels': 0,
-                'matched_vessels': 0,
-                'dark_ratio': 0.0,
-                'dark_by_date': {},
-                'matched_by_flag': {},
-                'dark_details': [],
-                'error': 'fetch_failed',
-            }
-            time.sleep(2)
-            continue
-
-        print(f"   取得 {len(records)} 筆 SAR 記錄")
-        any_success = True
-
-        summary = summarize_region(records)
-        summary['name'] = region_info['name']
-        regions_out[region_id] = summary
-
-        overall_total += summary['total_detections']
-        overall_dark += summary['dark_vessels']
-        for d, c in summary['dark_by_date'].items():
-            overall_dark_by_date[d] += c
-
-        print(
-            f"   暗船: {summary['dark_vessels']}/{summary['total_detections']} "
-            f"({summary['dark_ratio']}%)"
-        )
-        time.sleep(2)  # 尊重 API 速率限制
-
-    if not any_success:
-        print("\n❌ 所有區域 API 請求皆失敗，保留既有 dark_vessels.json（不覆寫）")
+    if records is None:
+        print("\n❌ API 請求失敗，保留既有 dark_vessels.json（不覆寫）")
         sys.exit(0)
 
-    overall_ratio = (
-        round(overall_dark / overall_total * 100, 1) if overall_total > 0 else 0.0
-    )
+    print(f"   取得 {len(records)} 筆 SAR 記錄")
+
+    summary = build_region_summary(records)
 
     output = {
         'updated_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+        'bbox': TAIWAN_BBOX,
         'data_range': {
             'start': start_str,
             'end': end_str,
         },
         'overall': {
-            'total_detections': overall_total,
-            'dark_vessels': overall_dark,
-            'dark_ratio': overall_ratio,
-            'dark_by_date': dict(sorted(overall_dark_by_date.items())),
+            'total_detections': summary['total_detections'],
+            'dark_vessels': summary['dark_vessels'],
+            'dark_ratio': summary['dark_ratio'],
+            'dark_by_date': summary['dark_by_date'],
         },
-        'regions': regions_out,
+        'regions': {
+            'taiwan_region': summary,
+        },
     }
 
     with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
@@ -315,9 +342,15 @@ def main():
 
     print("\n" + "=" * 70)
     print(f"✅ 已儲存: {OUTPUT_PATH}")
-    print(f"   總偵測: {overall_total}")
-    print(f"   暗船: {overall_dark} ({overall_ratio}%)")
-    print(f"   資料天數: {len(overall_dark_by_date)}")
+    print(f"   總偵測: {summary['total_detections']}")
+    print(f"   暗船: {summary['dark_vessels']} ({summary['dark_ratio']}%)")
+    print(f"   資料天數: {len(summary['dark_by_date'])}")
+    print("   子區域分布:")
+    for zone_id, z in summary['sub_zones'].items():
+        print(
+            f"     · {zone_id:6s} {z['name']}: "
+            f"dark {z['dark_vessels']}/{z['total_detections']} ({z['dark_ratio']}%)"
+        )
     print(f"   檔案大小: {OUTPUT_PATH.stat().st_size / 1024:.1f} KB")
     print("=" * 70)
 

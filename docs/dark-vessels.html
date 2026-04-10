@@ -190,11 +190,10 @@
         let map;
 
         // Region bounds for dark vessel page
+        // Single full-bbox region (lat 15–35, lon 110–128).
+        // Keys must match the region IDs emitted by src/fetch_gfw_data.py.
         const REGION_BOUNDS = {
-            taiwan_strait: [[23.5, 118.0], [23.5, 122.0], [26.5, 122.0], [26.5, 118.0]],
-            east_taiwan: [[22.0, 121.5], [22.0, 124.0], [25.5, 124.0], [25.5, 121.5]],
-            south_china_sea: [[18.0, 110.0], [18.0, 118.0], [23.0, 118.0], [23.0, 110.0]],
-            east_china_sea: [[26.0, 122.0], [26.0, 128.0], [32.0, 128.0], [32.0, 122.0]]
+            taiwan_region: [[15.0, 110.0], [15.0, 128.0], [35.0, 128.0], [35.0, 110.0]]
         };
 
         function initMap() {
@@ -266,13 +265,24 @@
 
         function renderFlagList(regions) {
             const flagList = document.getElementById('flagList');
-            const straitData = regions.taiwan_strait;
-            if (!straitData || !straitData.matched_by_flag) {
+            // Aggregate matched_by_flag across every region present (handles both
+            // single-region taiwan_region layout and legacy 4-sub-region layout).
+            const flagTotals = {};
+            Object.values(regions).forEach(r => {
+                const mbf = (r && r.matched_by_flag) || {};
+                Object.entries(mbf).forEach(([flag, count]) => {
+                    flagTotals[flag] = (flagTotals[flag] || 0) + count;
+                });
+            });
+
+            if (Object.keys(flagTotals).length === 0) {
                 flagList.innerHTML = `<div class="empty-state">${i18n.t('common.no_data')}</div>`;
                 return;
             }
 
-            const flags = Object.entries(straitData.matched_by_flag).slice(0, 15);
+            const flags = Object.entries(flagTotals)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 15);
             flagList.innerHTML = flags.map(([flag, count]) => `
                 <div class="flag-item">
                     <span>${flag}</span>

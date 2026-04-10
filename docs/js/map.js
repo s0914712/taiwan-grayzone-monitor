@@ -268,7 +268,11 @@ const MapModule = (function() {
     let filterFocEnabled = false;
 
     // Region colors for dark vessels
+    // `taiwan_region` = single full-bbox region from fetch_gfw_data.py.
+    // The older sub-region keys are retained for backward-compat with any
+    // cached/legacy data.json snapshots still in the wild.
     const REGION_COLORS = {
+        taiwan_region: '#ff3366',
         taiwan_strait: '#ff3366',
         east_taiwan: '#ff6b35',
         south_china_sea: '#ffd700',
@@ -276,6 +280,7 @@ const MapModule = (function() {
     };
 
     const REGION_NAMES = {
+        taiwan_region: '台灣周邊海域',
         taiwan_strait: '台灣海峽',
         east_taiwan: '台灣東部',
         south_china_sea: '南海北部',
