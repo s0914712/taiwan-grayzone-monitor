@@ -54,6 +54,16 @@ jobs:
           python src/exercise_prediction.py
         continue-on-error: true
 
+      - name: Fetch SCFI (Shanghai Containerized Freight Index)
+        run: |
+          python src/fetch_scfi_data.py
+        continue-on-error: true
+
+      - name: Analyze SCFI vs vessel traffic correlation
+        run: |
+          python src/analyze_scfi_correlation.py
+        continue-on-error: true
+
       - name: Fetch weekly dark vessel animation data
         env:
           GFW_API_TOKEN: ${{ secrets.GFW_API_TOKEN }}

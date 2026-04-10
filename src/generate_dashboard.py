@@ -86,6 +86,21 @@ def main():
     else:
         print("⚠️ 找不到 exercise_prediction.json，跳過")
 
+    # 讀取 SCFI vs 船舶流量相關性分析
+    scfi_corr_path = DATA_DIR / 'scfi_vessel_correlation.json'
+    scfi_correlation_data = None
+    if scfi_corr_path.exists():
+        try:
+            with open(scfi_corr_path, 'r', encoding='utf-8') as f:
+                scfi_correlation_data = json.load(f)
+            status = scfi_correlation_data.get('status', 'unknown')
+            n = scfi_correlation_data.get('sample_size', 0)
+            print(f"📊 已載入 SCFI 相關性分析: status={status}, n={n} 週")
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"⚠️ 讀取 scfi_vessel_correlation.json 失敗: {e}")
+    else:
+        print("⚠️ 找不到 scfi_vessel_correlation.json，跳過")
+
     # 讀取身分變更事件（由 fetch_ais_data.py 產生）
     identity_path = DATA_DIR / 'identity_events.json'
     identity_events_data = None
@@ -138,10 +153,11 @@ def main():
         'suspicious_analysis': suspicious_data,
         'dark_vessels': dark_vessels_data,
         'exercise_prediction': prediction_data,
+        'scfi_correlation': scfi_correlation_data,
         'ais_snapshot': ais_snapshot or {'updated_at': '', 'ais_data': {}, 'vessels': []},
         'identity_events': identity_events_data,
         'status': 'operational',
-        'version': '3.2.0'
+        'version': '3.3.0'
     }
 
     # 儲存至 docs 目錄（供 GitHub Pages 使用）
@@ -190,6 +206,12 @@ def main():
     if transfers_path.exists():
         shutil.copy2(transfers_path, DOCS_DIR / 'ship_transfers.json')
         print(f"🚢 已複製旁靠偵測資料至 docs/ship_transfers.json")
+
+    # 複製 SCFI 歷史資料至 docs（供前端雙軸圖表使用）
+    scfi_history_path = DATA_DIR / 'scfi_history.json'
+    if scfi_history_path.exists():
+        shutil.copy2(scfi_history_path, DOCS_DIR / 'scfi_history.json')
+        print(f"📊 已複製 SCFI 歷史資料至 docs/scfi_history.json")
 
 
 if __name__ == "__main__":

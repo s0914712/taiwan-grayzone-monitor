@@ -1,0 +1,368 @@
+{
+  "status": "ok",
+  "updated_at": "2026-04-10T22:32:58.575538+00:00",
+  "description": "SCFI 上海出口集裝箱運價指數 vs 台灣周邊船舶流量相關性分析",
+  "sample_size": 6,
+  "data_summary": {
+    "scfi_range": [
+      "2026-03-06",
+      "2026-04-10"
+    ],
+    "scfi_mean": 1578.88,
+    "scfi_std": 76.06,
+    "commercial_mean": 1079.0,
+    "commercial_std": 63.6
+  },
+  "correlations": {
+    "commercial": {
+      "pearson_r": -0.4168,
+      "pearson_p": 0.411021,
+      "spearman_r": -0.4286,
+      "spearman_p": 0.396501,
+      "n": 6,
+      "significant_pearson": false,
+      "significant_spearman": false,
+      "label": "商船(貨+油)"
+    },
+    "cargo": {
+      "pearson_r": -0.4596,
+      "pearson_p": 0.359101,
+      "spearman_r": -0.4286,
+      "spearman_p": 0.396501,
+      "n": 6,
+      "significant_pearson": false,
+      "significant_spearman": false,
+      "label": "貨船"
+    },
+    "tanker": {
+      "pearson_r": -0.1494,
+      "pearson_p": 0.777502,
+      "spearman_r": -0.2,
+      "spearman_p": 0.704,
+      "n": 6,
+      "significant_pearson": false,
+      "significant_spearman": false,
+      "label": "油輪"
+    },
+    "total_vessels": {
+      "pearson_r": 0.1599,
+      "pearson_p": 0.762125,
+      "spearman_r": 0.3143,
+      "spearman_p": 0.544093,
+      "n": 6,
+      "significant_pearson": false,
+      "significant_spearman": false,
+      "label": "全部船舶"
+    },
+    "fishing_vessels": {
+      "pearson_r": 0.1937,
+      "pearson_p": 0.71307,
+      "spearman_r": 0.3714,
+      "spearman_p": 0.468478,
+      "n": 6,
+      "significant_pearson": false,
+      "significant_spearman": false,
+      "label": "漁船(對照組)"
+    }
+  },
+  "sub_route_correlations": {
+    "europe": {
+      "pearson_r": -0.4283,
+      "pearson_p": 0.396823,
+      "spearman_r": -0.4286,
+      "spearman_p": 0.396501,
+      "n": 6,
+      "significant_pearson": false,
+      "significant_spearman": false
+    },
+    "uswc": {
+      "pearson_r": -0.4252,
+      "pearson_p": 0.400678,
+      "spearman_r": -0.4286,
+      "spearman_p": 0.396501,
+      "n": 6,
+      "significant_pearson": false,
+      "significant_spearman": false
+    },
+    "usec": {
+      "pearson_r": -0.4422,
+      "pearson_p": 0.379948,
+      "spearman_r": -0.4286,
+      "spearman_p": 0.396501,
+      "n": 6,
+      "significant_pearson": false,
+      "significant_spearman": false
+    },
+    "southeast_asia": {
+      "pearson_r": -0.4491,
+      "pearson_p": 0.371638,
+      "spearman_r": -0.4286,
+      "spearman_p": 0.396501,
+      "n": 6,
+      "significant_pearson": false,
+      "significant_spearman": false
+    },
+    "japan": {
+      "pearson_r": 0.4942,
+      "pearson_p": 0.319034,
+      "spearman_r": 0.4286,
+      "spearman_p": 0.396501,
+      "n": 6,
+      "significant_pearson": false,
+      "significant_spearman": false
+    }
+  },
+  "lag_analysis": {
+    "commercial": {
+      "label": "商船(貨+油)",
+      "lags": [
+        {
+          "lag": -2,
+          "correlation": -0.096,
+          "n": 4
+        },
+        {
+          "lag": -1,
+          "correlation": 0.1745,
+          "n": 5
+        },
+        {
+          "lag": 0,
+          "correlation": -0.4168,
+          "n": 6
+        },
+        {
+          "lag": 1,
+          "correlation": -0.2719,
+          "n": 5
+        },
+        {
+          "lag": 2,
+          "correlation": -0.6049,
+          "n": 4
+        }
+      ],
+      "best": {
+        "lag": 2,
+        "correlation": -0.6049,
+        "interpretation": "船舶流量領先 SCFI 2 週"
+      }
+    },
+    "cargo": {
+      "label": "貨船",
+      "lags": [
+        {
+          "lag": -2,
+          "correlation": -0.0654,
+          "n": 4
+        },
+        {
+          "lag": -1,
+          "correlation": 0.1917,
+          "n": 5
+        },
+        {
+          "lag": 0,
+          "correlation": -0.4596,
+          "n": 6
+        },
+        {
+          "lag": 1,
+          "correlation": -0.3935,
+          "n": 5
+        },
+        {
+          "lag": 2,
+          "correlation": -0.6404,
+          "n": 4
+        }
+      ],
+      "best": {
+        "lag": 2,
+        "correlation": -0.6404,
+        "interpretation": "船舶流量領先 SCFI 2 週"
+      }
+    },
+    "tanker": {
+      "label": "油輪",
+      "lags": [
+        {
+          "lag": -2,
+          "correlation": -0.1389,
+          "n": 4
+        },
+        {
+          "lag": -1,
+          "correlation": 0.1494,
+          "n": 5
+        },
+        {
+          "lag": 0,
+          "correlation": -0.1494,
+          "n": 6
+        },
+        {
+          "lag": 1,
+          "correlation": 0.3488,
+          "n": 5
+        },
+        {
+          "lag": 2,
+          "correlation": -0.3617,
+          "n": 4
+        }
+      ],
+      "best": {
+        "lag": 2,
+        "correlation": -0.3617,
+        "interpretation": "船舶流量領先 SCFI 2 週"
+      }
+    },
+    "total_vessels": {
+      "label": "全部船舶",
+      "lags": [
+        {
+          "lag": -2,
+          "correlation": 0.0702,
+          "n": 4
+        },
+        {
+          "lag": -1,
+          "correlation": 0.1675,
+          "n": 5
+        },
+        {
+          "lag": 0,
+          "correlation": 0.1599,
+          "n": 6
+        },
+        {
+          "lag": 1,
+          "correlation": -0.4894,
+          "n": 5
+        },
+        {
+          "lag": 2,
+          "correlation": 0.7817,
+          "n": 4
+        }
+      ],
+      "best": {
+        "lag": 2,
+        "correlation": 0.7817,
+        "interpretation": "船舶流量領先 SCFI 2 週"
+      }
+    },
+    "fishing_vessels": {
+      "label": "漁船(對照組)",
+      "lags": [
+        {
+          "lag": -2,
+          "correlation": 0.1655,
+          "n": 4
+        },
+        {
+          "lag": -1,
+          "correlation": 0.211,
+          "n": 5
+        },
+        {
+          "lag": 0,
+          "correlation": 0.1937,
+          "n": 6
+        },
+        {
+          "lag": 1,
+          "correlation": -0.5456,
+          "n": 5
+        },
+        {
+          "lag": 2,
+          "correlation": 0.8367,
+          "n": 4
+        }
+      ],
+      "best": {
+        "lag": 2,
+        "correlation": 0.8367,
+        "interpretation": "船舶流量領先 SCFI 2 週"
+      }
+    }
+  },
+  "granger_causality": {
+    "vessels_to_scfi": {},
+    "scfi_to_vessels": {},
+    "note": "資料不足 (6 筆)，需至少 10 週"
+  },
+  "rate_of_change_correlation": {
+    "pearson_r": 0.4675,
+    "pearson_p": 0.42724,
+    "spearman_r": 0.4,
+    "spearman_p": 0.504632,
+    "n": 5,
+    "significant_pearson": false,
+    "significant_spearman": false
+  },
+  "conclusion": {
+    "zh": "【SCFI vs 台灣周邊商船流量分析（n=6 週）】\n• 商船（貨+油）與 SCFI 綜合指數呈 中度負相關 (Pearson r=-0.417, p=0.4110, 未達統計顯著)\n• 最佳滯後: lag=2 週，r=-0.605 → 船舶流量領先 SCFI 2 週\n• 預測可行性: ⚠️ 存在 中度負相關，但未通過 Granger 因果檢驗，不建議單獨用於預測\n• 註：SCFI 為週資料，小樣本下結論僅供參考；建議持續累積至 30 週以上再作決策依據。",
+    "en": "[SCFI vs Taiwan-area Commercial Vessels (n=6 weeks)] Commercial vessels (cargo+tanker) vs SCFI composite: Pearson r=-0.417, p=0.4110. Best lag: 2 weeks (r=-0.605) - vessel traffic leads SCFI by 2 weeks. moderate negative correlation detected but no Granger causality; not recommended for standalone prediction.",
+    "predictability": "correlated_no_causality",
+    "correlation_strength": "中度"
+  },
+  "weekly_series": [
+    {
+      "week_ending": "2026-03-06",
+      "scfi_composite": 1695.4,
+      "commercial": 1032.0,
+      "cargo": 829.0,
+      "tanker": 203.0,
+      "total_vessels": 6508.0,
+      "fishing_vessels": 2214.0
+    },
+    {
+      "week_ending": "2026-03-13",
+      "scfi_composite": 1635.9,
+      "commercial": 1103.2,
+      "cargo": 870.0,
+      "tanker": 233.2,
+      "total_vessels": 4779.5,
+      "fishing_vessels": 1254.3
+    },
+    {
+      "week_ending": "2026-03-20",
+      "scfi_composite": 1585.2,
+      "commercial": 1063.0,
+      "cargo": 847.4,
+      "tanker": 215.6,
+      "total_vessels": 6084.9,
+      "fishing_vessels": 1923.2
+    },
+    {
+      "week_ending": "2026-03-27",
+      "scfi_composite": 1545.8,
+      "commercial": 1043.5,
+      "cargo": 833.8,
+      "tanker": 209.7,
+      "total_vessels": 6119.7,
+      "fishing_vessels": 1915.5
+    },
+    {
+      "week_ending": "2026-04-03",
+      "scfi_composite": 1515.3,
+      "commercial": 1035.2,
+      "cargo": 830.7,
+      "tanker": 204.5,
+      "total_vessels": 5563.7,
+      "fishing_vessels": 1705.7
+    },
+    {
+      "week_ending": "2026-04-10",
+      "scfi_composite": 1495.7,
+      "commercial": 1197.3,
+      "cargo": 967.7,
+      "tanker": 229.6,
+      "total_vessels": 5730.2,
+      "fishing_vessels": 1759.0
+    }
+  ]
+}
