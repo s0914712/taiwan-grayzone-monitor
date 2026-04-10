@@ -1,283 +1,326 @@
 #!/usr/bin/env python3
 """
-航港局 AIS 資料收集腳本 - MPB 端點版
-功能：從航港局「臺灣海域船舶即時資訊系統」收集 AIS 資料、分析軍演/漁撈熱區、維護歷史紀錄。
-資料來源: https://mpbais.motcmpb.gov.tw/aismpb/tools/geojsonais.ashx
+================================================================================
+GFW SAR 暗船偵測資料擷取腳本
+Dark Vessel SAR Data Fetcher (Global Fishing Watch v3 API)
+================================================================================
+
+功能：
+1. 從 GFW v3 API 擷取 30 天 SAR 衛星偵測資料（4 個子區域）
+2. 按區域與日期彙總，計算暗船比例
+3. 輸出 data/dark_vessels.json，供 analyze_suspicious /
+   exercise_prediction / 前端 dark-vessels.html 使用
+
+API:
+  POST https://gateway.api.globalfishingwatch.org/v3/4wings/report
+  dataset: public-global-sar-presence:latest
+  需設定環境變數 GFW_API_TOKEN
+
+輸出格式（與既有檔案保持一致）：
+  {
+    "updated_at": ISO8601,
+    "data_range": {"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"},
+    "overall": {
+      "total_detections": int,
+      "dark_vessels": int,
+      "dark_ratio": float,
+      "dark_by_date": {"YYYY-MM-DD": int, ...}
+    },
+    "regions": {
+      "<region_id>": {
+        "name": str,
+        "total_detections": int,
+        "dark_vessels": int,
+        "matched_vessels": int,
+        "dark_ratio": float,
+        "dark_by_date": {...},
+        "matched_by_flag": {...},
+        "dark_details": [{"lat", "lon", "date", "detections"}, ...]
+      }
+    }
+  }
+================================================================================
 """
 
 import os
+import sys
 import json
+import time
 import requests
-from datetime import datetime, timezone
 from collections import defaultdict
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
-# --- 配置區 ---
-DATA_DIR = 'data'
-DOCS_DIR = 'docs'
-OUTPUT_FILE = os.path.join(DATA_DIR, 'ais_snapshot.json')
-HISTORY_FILE = os.path.join(DATA_DIR, 'vessel_history.json')
-DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
+# =============================================================================
+# 設定
+# =============================================================================
 
-MPB_URL = "https://mpbais.motcmpb.gov.tw/aismpb/tools/geojsonais.ashx"
-MPB_HEADERS = {
-    "Accept": "application/json, text/javascript, */*; q=0.01",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "en-US,en;q=0.9,zh;q=0.8,zh-TW;q=0.7",
-    "Referer": "https://mpbais.motcmpb.gov.tw/aismpb/",
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/145.0.0.0 Safari/537.36"
-    ),
-    "X-Requested-With": "XMLHttpRequest",
+API_TOKEN = os.environ.get('GFW_API_TOKEN', '').strip()
+BASE_URL = "https://gateway.api.globalfishingwatch.org/v3"
+
+DATA_DIR = Path("data")
+DATA_DIR.mkdir(exist_ok=True)
+OUTPUT_PATH = DATA_DIR / 'dark_vessels.json'
+
+# 滾動資料窗口（天）
+DATA_RANGE_DAYS = 30
+
+# 每個區域保留的暗船座標樣本上限（供前端地圖顯示）
+MAX_DETAILS_PER_REGION = 100
+
+# =============================================================================
+# 區域定義（與 fetch_weekly_dark_vessels.py 同步）
+# - south_china_sea 南界由 18°N 擴展至 15°N，涵蓋更廣的南海北部海域
+# =============================================================================
+
+DARK_VESSEL_REGIONS = {
+    "taiwan_strait": {
+        "name": "台灣海峽",
+        "geojson": {
+            "type": "Polygon",
+            "coordinates": [[
+                [118.0, 23.5], [122.0, 23.5], [122.0, 26.5],
+                [118.0, 26.5], [118.0, 23.5]
+            ]]
+        }
+    },
+    "east_taiwan": {
+        "name": "台灣東部海域",
+        "geojson": {
+            "type": "Polygon",
+            "coordinates": [[
+                [121.5, 22.0], [124.0, 22.0], [124.0, 25.5],
+                [121.5, 25.5], [121.5, 22.0]
+            ]]
+        }
+    },
+    "south_china_sea": {
+        "name": "南海北部",
+        "geojson": {
+            "type": "Polygon",
+            "coordinates": [[
+                [110.0, 15.0], [118.0, 15.0], [118.0, 23.0],
+                [110.0, 23.0], [110.0, 15.0]
+            ]]
+        }
+    },
+    "east_china_sea": {
+        "name": "東海",
+        "geojson": {
+            "type": "Polygon",
+            "coordinates": [[
+                [122.0, 26.0], [130.5, 26.0], [130.5, 34.0],
+                [122.0, 34.0], [122.0, 26.0]
+            ]]
+        }
+    }
 }
 
-# 台灣周邊 bounding box (用於過濾非台灣海域資料)
-TAIWAN_BBOX = {'lat_min': 20, 'lat_max': 28, 'lon_min': 112, 'lon_max': 128}
+# =============================================================================
+# GFW API
+# =============================================================================
 
-FISHING_HOTSPOTS = {
-    'taiwan_bank':   {'name': '台灣灘漁場',   'bounds': [[22.0, 117.0], [23.5, 119.5]]},
-    'penghu':        {'name': '澎湖漁場',     'bounds': [[23.0, 119.0], [24.0, 120.0]]},
-    'kuroshio_east': {'name': '東部黑潮漁場', 'bounds': [[22.5, 121.0], [24.5, 122.0]]},
-    'northeast':     {'name': '東北漁場',     'bounds': [[24.8, 121.5], [25.8, 123.0]]},
-    'southwest':     {'name': '西南沿岸漁場', 'bounds': [[22.0, 120.0], [23.0, 120.8]]},
-}
-
-# MPB Ship_and_Cargo_Type 對照表
-# AIS 標準: 30-39 漁船, 35 軍事, 50-59 特殊, 60-69 客船, 70-79 貨船, 80-89 油輪
-def classify_vessel_type(type_code):
-    """根據 AIS Ship_and_Cargo_Type 碼分類船舶"""
-    if type_code is None:
-        return 'unknown'
-    t = int(type_code)
-    if 30 <= t <= 39:
-        return 'fishing'
-    elif t == 35:
-        return 'military'
-    elif 40 <= t <= 49:
-        return 'high_speed'
-    elif 50 <= t <= 59:
-        return 'special'
-    elif 60 <= t <= 69:
-        return 'passenger'
-    elif 70 <= t <= 79:
-        return 'cargo'
-    elif 80 <= t <= 89:
-        return 'tanker'
-    elif t == 0:
-        return 'unknown'
-    else:
-        return 'other'
-
-# --- 工具函式 ---
-
-def is_in_zone(lat, lon, bounds):
-    return (bounds[0][0] <= lat <= bounds[1][0] and
-            bounds[0][1] <= lon <= bounds[1][1])
+def get_headers():
+    return {
+        "Authorization": f"Bearer {API_TOKEN}",
+        "Content-Type": "application/json"
+    }
 
 
-def is_in_taiwan_bbox(lat, lon):
-    b = TAIWAN_BBOX
-    return (b['lat_min'] <= lat <= b['lat_max'] and
-            b['lon_min'] <= lon <= b['lon_max'])
+def fetch_sar_data(region_geojson, start_date, end_date):
+    """呼叫 GFW /v3/4wings/report 取得 SAR 偵測記錄
 
-
-# --- 資料收集 ---
-
-def collect_ais_data():
-    """從航港局 MPB 端點取得即時 AIS GeoJSON 資料"""
-    print(f"🚀 正在從航港局擷取 AIS 資料...")
+    回傳：扁平化後的 record 列表（每筆 dict 包含 lat/lon/date/detections/vesselId 等）
+    """
+    params = {
+        "datasets[0]": "public-global-sar-presence:latest",
+        "date-range": f"{start_date},{end_date}",
+        "temporal-resolution": "DAILY",
+        "spatial-resolution": "HIGH",
+        "spatial-aggregation": "false",
+        "format": "JSON"
+    }
 
     try:
-        resp = requests.get(MPB_URL, headers=MPB_HEADERS, timeout=30)
-        resp.raise_for_status()
-        geojson = resp.json()
-    except requests.RequestException as e:
-        print(f"❌ 請求失敗: {e}")
-        return {}
-
-    features = geojson.get("features", [])
-    print(f"  HTTP {resp.status_code} | {len(resp.content):,} bytes | {len(features)} features")
-
-    vessels = {}
-    skipped = 0
-
-    for feat in features:
-        props = feat.get("properties", {})
-        coords = feat.get("geometry", {}).get("coordinates", [None, None])
-
-        lon = coords[0] if coords and len(coords) > 0 else None
-        lat = coords[1] if coords and len(coords) > 1 else None
-
-        if lon is None or lat is None:
-            skipped += 1
-            continue
-
-        # 過濾超出台灣海域範圍的資料
-        if not is_in_taiwan_bbox(lat, lon):
-            skipped += 1
-            continue
-
-        mmsi = str(props.get("MMSI", "")).strip()
-        if not mmsi or mmsi == "0":
-            skipped += 1
-            continue
-
-        ship_name = str(props.get("ShipName", "")).strip()
-        type_code = props.get("Ship_and_Cargo_Type")
-        type_name = classify_vessel_type(type_code)
-        sog = props.get("SOG", 0.0) or 0.0
-        cog = props.get("COG", 0.0) or 0.0
-        record_time = props.get("Record_Time", "")
-
-        # 區域判定
-        fishing_hotspot = next(
-            (hid for hid, h in FISHING_HOTSPOTS.items()
-             if is_in_zone(lat, lon, h['bounds'])),
-            None
+        resp = requests.post(
+            f"{BASE_URL}/4wings/report",
+            params=params,
+            json={"geojson": region_geojson},
+            headers=get_headers(),
+            timeout=180
         )
+    except requests.RequestException as e:
+        print(f"   ❌ 請求失敗: {e}")
+        return None  # None 表示請求失敗（非 0 筆記錄）
 
-        # 可疑判定已停用，改由 analyze_suspicious.py 綜合分析
-        suspicious = False
+    if resp.status_code != 200:
+        print(f"   ❌ API 錯誤 {resp.status_code}: {resp.text[:200]}")
+        return None
 
-        vessels[mmsi] = {
-            'mmsi': mmsi,
-            'name': ship_name if ship_name else f'MMSI-{mmsi}',
-            'imo': str(props.get("IMO_Number", "")).strip(),
-            'call_sign': str(props.get("Call_Sign", "")).strip(),
-            'lat': lat,
-            'lon': lon,
-            'type': type_code,
-            'type_name': type_name,
-            'speed': float(sog),
-            'heading': float(cog),
-            'nav_status': str(props.get("Navigational_Status", "")),
-            'in_fishing_hotspot': fishing_hotspot,
-            'suspicious': suspicious,
-            'record_time': record_time,
-            'last_update': datetime.now(timezone.utc).isoformat(),
-        }
+    try:
+        data = resp.json()
+    except ValueError as e:
+        print(f"   ❌ JSON 解析失敗: {e}")
+        return None
 
-    print(f"  ✅ 有效船舶: {len(vessels)} | 跳過: {skipped}")
-    return vessels
+    entries = data.get('entries', [])
+    records = []
+    for entry in entries:
+        for key, values in entry.items():
+            if isinstance(values, list):
+                records.extend(values)
+    return records
 
 
-# --- 分析 ---
+# =============================================================================
+# 彙整
+# =============================================================================
 
-def analyze_data(vessels):
-    stats = {
-        'total_vessels': len(vessels),
-        'fishing_vessels': sum(1 for v in vessels.values() if v['type_name'] == 'fishing'),
-        'suspicious_count': 0,
-        'avg_speed': 0.0,
-        'by_type': defaultdict(int),
-        'in_fishing_hotspots': {k: 0 for k in FISHING_HOTSPOTS},
+def summarize_region(records):
+    """彙整單一區域的 SAR 記錄為輸出 schema"""
+    total = 0
+    dark = 0
+    matched = 0
+    dark_by_date = defaultdict(int)
+    matched_by_flag = defaultdict(int)
+    dark_details = []
+
+    for r in records:
+        total += 1
+        date_str = (r.get('date') or '')[:10]
+        is_dark = not r.get('vesselId')
+
+        if is_dark:
+            dark += 1
+            if date_str:
+                dark_by_date[date_str] += 1
+
+            if len(dark_details) < MAX_DETAILS_PER_REGION:
+                lat = r.get('lat', r.get('latitude'))
+                lon = r.get('lon', r.get('longitude'))
+                if lat is not None and lon is not None:
+                    dark_details.append({
+                        'lat': round(float(lat), 2),
+                        'lon': round(float(lon), 2),
+                        'date': date_str,
+                        'detections': r.get('detections', 1),
+                    })
+        else:
+            matched += 1
+            flag = r.get('flag') or r.get('vesselFlag') or 'UNKNOWN'
+            matched_by_flag[flag] += 1
+
+    dark_ratio = round(dark / total * 100, 1) if total > 0 else 0.0
+
+    return {
+        'total_detections': total,
+        'dark_vessels': dark,
+        'matched_vessels': matched,
+        'dark_ratio': dark_ratio,
+        'dark_by_date': dict(sorted(dark_by_date.items())),
+        'matched_by_flag': dict(matched_by_flag),
+        'dark_details': dark_details,
     }
 
-    if not vessels:
-        stats['by_type'] = {}
-        return stats
 
-    total_speed = 0
-    for v in vessels.values():
-        stats['by_type'][v['type_name']] += 1
-        if v['in_fishing_hotspot']:
-            stats['in_fishing_hotspots'][v['in_fishing_hotspot']] += 1
-        if v['suspicious']:
-            stats['suspicious_count'] += 1
-        total_speed += v['speed']
-
-    stats['avg_speed'] = round(total_speed / len(vessels), 2)
-    stats['by_type'] = dict(stats['by_type'])
-    return stats
-
-
-# --- 儲存 ---
-
-def save_all(vessels, stats):
-    """統一儲存入口，確保輸出檔案格式一致"""
-    now_str = datetime.now(timezone.utc).isoformat()
-    os.makedirs(DATA_DIR, exist_ok=True)
-    os.makedirs(DOCS_DIR, exist_ok=True)
-
-    vessel_list = list(vessels.values())
-
-    # 1. 儲存快照
-    full_output = {
-        'updated_at': now_str,
-        'source': 'MPB_geojsonais',
-        'statistics': stats,
-        'vessels': vessel_list,
-    }
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-        json.dump(full_output, f, ensure_ascii=False, indent=2)
-    print(f"  📄 快照已儲存: {OUTPUT_FILE} ({len(vessel_list)} 艘)")
-
-    # 2. 更新歷史紀錄 (追加每日摘要)
-    history = []
-    if os.path.exists(HISTORY_FILE):
-        try:
-            with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
-                history = json.load(f)
-        except Exception:
-            history = []
-
-    history.append({
-        'timestamp': now_str,
-        'total_vessels': stats['total_vessels'],
-        'fishing_vessels': stats['fishing_vessels'],
-        'suspicious_count': stats['suspicious_count'],
-        'by_type': stats['by_type'],
-    })
-
-    # 保留最近 1000 筆歷史
-    history = history[-1000:]
-    with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
-        json.dump(history, f, ensure_ascii=False, indent=2)
-
-    # 3. 更新 Dashboard 資料（與 generate_dashboard.py 格式一致）
-    existing = {}
-    if os.path.exists(DASHBOARD_FILE):
-        try:
-            with open(DASHBOARD_FILE, 'r', encoding='utf-8') as f:
-                existing = json.load(f)
-        except Exception:
-            pass
-
-    existing['updated_at'] = now_str
-    existing['ais_snapshot'] = {
-        'updated_at': now_str,
-        'source': 'MPB_geojsonais',
-        'ais_data': stats,
-        'vessels': vessel_list[:100],  # Dashboard 只放前 100 艘
-    }
-
-    with open(DASHBOARD_FILE, 'w', encoding='utf-8') as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
-    print(f"  📊 Dashboard 已更新: {DASHBOARD_FILE}")
-
-
-# --- 主程式 ---
+# =============================================================================
+# 主程式
+# =============================================================================
 
 def main():
-    print(f"{'='*50}")
-    print(f"  航港局 AIS 船位收集 (MPB 端點)")
-    print(f"  {datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S} UTC")
-    print(f"{'='*50}\n")
+    print("=" * 70)
+    print("🛰️  GFW SAR 暗船偵測資料擷取")
+    print(f"執行時間: {datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S} UTC")
+    print("=" * 70)
 
-    vessels = collect_ais_data()
-    stats = analyze_data(vessels)
-    save_all(vessels, stats)
+    if not API_TOKEN:
+        print("⚠️ 未設定 GFW_API_TOKEN，跳過（保留既有 dark_vessels.json）")
+        return
 
-    print(f"\n{'='*50}")
-    print(f"  ✅ 完成")
-    print(f"  船舶總數: {stats['total_vessels']}")
-    print(f"  漁船: {stats['fishing_vessels']}")
-    print(f"  可疑: {stats['suspicious_count']}")
-    print(f"  平均航速: {stats['avg_speed']} kn")
-    print(f"  類型分布: {stats['by_type']}")
-    print(f"{'='*50}")
+    end_date = datetime.now(timezone.utc)
+    start_date = end_date - timedelta(days=DATA_RANGE_DAYS)
+    start_str = start_date.strftime('%Y-%m-%d')
+    end_str = end_date.strftime('%Y-%m-%d')
+    print(f"📅 查詢範圍: {start_str} ~ {end_str} ({DATA_RANGE_DAYS} 天)\n")
+
+    regions_out = {}
+    overall_total = 0
+    overall_dark = 0
+    overall_dark_by_date = defaultdict(int)
+    any_success = False
+
+    for region_id, region_info in DARK_VESSEL_REGIONS.items():
+        print(f"📍 {region_info['name']} ({region_id})")
+        records = fetch_sar_data(region_info['geojson'], start_str, end_str)
+
+        if records is None:
+            # 請求失敗 → 此區域留空，繼續處理其他區域
+            regions_out[region_id] = {
+                'name': region_info['name'],
+                'total_detections': 0,
+                'dark_vessels': 0,
+                'matched_vessels': 0,
+                'dark_ratio': 0.0,
+                'dark_by_date': {},
+                'matched_by_flag': {},
+                'dark_details': [],
+                'error': 'fetch_failed',
+            }
+            time.sleep(2)
+            continue
+
+        print(f"   取得 {len(records)} 筆 SAR 記錄")
+        any_success = True
+
+        summary = summarize_region(records)
+        summary['name'] = region_info['name']
+        regions_out[region_id] = summary
+
+        overall_total += summary['total_detections']
+        overall_dark += summary['dark_vessels']
+        for d, c in summary['dark_by_date'].items():
+            overall_dark_by_date[d] += c
+
+        print(
+            f"   暗船: {summary['dark_vessels']}/{summary['total_detections']} "
+            f"({summary['dark_ratio']}%)"
+        )
+        time.sleep(2)  # 尊重 API 速率限制
+
+    if not any_success:
+        print("\n❌ 所有區域 API 請求皆失敗，保留既有 dark_vessels.json（不覆寫）")
+        sys.exit(0)
+
+    overall_ratio = (
+        round(overall_dark / overall_total * 100, 1) if overall_total > 0 else 0.0
+    )
+
+    output = {
+        'updated_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+        'data_range': {
+            'start': start_str,
+            'end': end_str,
+        },
+        'overall': {
+            'total_detections': overall_total,
+            'dark_vessels': overall_dark,
+            'dark_ratio': overall_ratio,
+            'dark_by_date': dict(sorted(overall_dark_by_date.items())),
+        },
+        'regions': regions_out,
+    }
+
+    with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
+        json.dump(output, f, ensure_ascii=False, indent=2)
+
+    print("\n" + "=" * 70)
+    print(f"✅ 已儲存: {OUTPUT_PATH}")
+    print(f"   總偵測: {overall_total}")
+    print(f"   暗船: {overall_dark} ({overall_ratio}%)")
+    print(f"   資料天數: {len(overall_dark_by_date)}")
+    print(f"   檔案大小: {OUTPUT_PATH.stat().st_size / 1024:.1f} KB")
+    print("=" * 70)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
