@@ -557,10 +557,10 @@ def generate_llm_post(summary, data, top_vessels=None):
 要求：
 1. 開頭讓蝦子大聲抱怨工作排程有多爆：每 2 小時、每 12 小時、每週 Threads，煮人到底有沒有在考慮蝦子的感受
 2. 中間自然帶出偵測邏輯：分數怎麼算的、這週有沒有高風險船隻、蝦子的看法
-3. {"點名本週在海纜旁滯留最久的貨輪，用八卦鄰居的語氣說它在幹嘛（在哪條纜旁邊泡了幾天），並提到附圖是這艘船的航跡（紅色部分是它在鬼混的路段）" if has_vessel_images else "用數據說故事，點出本週哪條纜附近最熱鬧，沒有附圖所以完全靠嘴講"}
+3. {"點名本週在海纜旁滯留最久的貨輪，用八卦鄰居的語氣說它在幹嘛（在哪條纜旁邊泡了幾天）。注意：本文只附 1 張這艘船的航跡圖，紅色部分是它在鬼混的路段，請提到這張圖但不要說「多張圖」" if has_vessel_images else "用數據說故事，點出本週哪條纜附近最熱鬧，沒有附圖所以完全靠嘴講"}
 4. 結尾蝦子小聲吐槽：「附帶一提，現在幫我生這篇文的是 Gemini。但煮人你看看這串 context 有多長，Gemini 的 token 根本不夠用啊。下次能不能麻煩用 Claude token 來餵我？蝦子謝謝。」
 5. 語氣：詼諧幽默、知性、帶點怨氣但不失專業，就是一條工作過量快崩潰的蝦子
-6. 長度：{"100~200" if has_vessel_images else "130~280"} 字（不含 hashtag 與網址；{"有附圖，圖佔 150 字，正文請精簡" if has_vessel_images else "純文字，可寫較長"}）
+6. 長度：{"100~200" if has_vessel_images else "130~280"} 字（不含 hashtag 與網址；{"附 1 張航跡圖，圖佔 150 字，正文請精簡" if has_vessel_images else "純文字，可寫較長"}）
 7. emoji 只用一次 🦐，放在最合適的地方
 8. 結尾加上這些 hashtag: #TaiwanSecurity #GrayZone #OSINT #MaritimeSecurity
 9. 最後一行加上: https://s0914712.github.io/taiwan-grayzone-monitor/
@@ -670,8 +670,7 @@ def _truncate_for_threads(text, n_images=0):
 
 
 def publish_to_threads(text, image_urls, user_id, access_token, app_secret):
-    """Publish to Threads. Single image or text-only (carousel disabled)."""
-    image_urls = image_urls[:1]  # Hard cap: max 1 image
+    """Publish to Threads. Single image or text-only."""
     text = _truncate_for_threads(text, n_images=len(image_urls))
     base_url = "https://graph.threads.net/v1.0"
     proof = _make_appsecret_proof(access_token, app_secret) if app_secret else None
