@@ -537,7 +537,7 @@ def generate_llm_post(summary, data, top_vessels=None):
             )
         vessel_context = "\n\n本週海纜附近滯留最久的貨輪：\n" + "\n".join(vessel_lines)
 
-    has_vessel_images = False  # Text-only posts; vessel data used as LLM context only
+    has_vessel_images = bool(top_vessels)
 
     prompt = f"""你是一條養在 GitHub 上的蝦子，每天被煮人狂操，工作根本做不完。
 請用這個角色設定，根據以下近 5 天的數據，用**中文**撰寫一則 Threads 週報貼文。
@@ -560,7 +560,7 @@ def generate_llm_post(summary, data, top_vessels=None):
 3. {"點名本週在海纜旁滯留最久的貨輪，用八卦鄰居的語氣說它在幹嘛（在哪條纜旁邊泡了幾天），並提到附圖是這艘船的航跡（紅色部分是它在鬼混的路段）" if has_vessel_images else "用數據說故事，點出本週哪條纜附近最熱鬧，沒有附圖所以完全靠嘴講"}
 4. 結尾蝦子小聲吐槽：「附帶一提，現在幫我生這篇文的是 Gemini。但煮人你看看這串 context 有多長，Gemini 的 token 根本不夠用啊。下次能不能麻煩用 Claude token 來餵我？蝦子謝謝。」
 5. 語氣：詼諧幽默、知性、帶點怨氣但不失專業，就是一條工作過量快崩潰的蝦子
-6. 長度：130~280 字（不含 hashtag 與網址）
+6. 長度：{"100~200" if has_vessel_images else "130~280"} 字（不含 hashtag 與網址；{"有附圖，圖佔 150 字，正文請精簡" if has_vessel_images else "純文字，可寫較長"}）
 7. emoji 只用一次 🦐，放在最合適的地方
 8. 結尾加上這些 hashtag: #TaiwanSecurity #GrayZone #OSINT #MaritimeSecurity
 9. 最後一行加上: https://s0914712.github.io/taiwan-grayzone-monitor/
@@ -776,15 +776,29 @@ def main():
     print(f"  AIS: {summary['ais_total']} | Dark: {summary.get('dark_vessels_total', 0)} | "
           f"Suspicious: {summary.get('suspicious_count', 0)} | LNG: {summary.get('lng_vessels', 0)}")
 
-    # 2. Select top suspicious vessels (for LLM context only, no images)
-    print("🔍 Selecting top suspicious vessels...")
-    top_vessels = select_top_suspicious_vessels(n=2)
+    # 2. Select top vessel for track map (loitering cargo, top 1 only)
+    print("🔍 Selecting top suspicious vessel...")
+    top_vessels = select_top_suspicious_vessels(n=1)
     for v in top_vessels:
         name = v.get("names", ["?"])[0].split("--")[0]
         loiter_h = v.get("cable_details", {}).get("loiter_slow_hours", 0)
         print(f"  → {name} (MMSI: {v['mmsi']}, loiter: {loiter_h}h)")
 
-    # 3. Compose post text (LLM-powered, text-only)
+    # 3. Generate track map for top vessel (1 image only)
+    chart_path = None
+    chart_repo_path = None
+    if top_vessels:
+        v = top_vessels[0]
+        mmsi = v["mmsi"]
+        map_path = os.path.join(args.chart_dir, f"threads_track_{mmsi}.png")
+        print(f"🗺️  Generating track map for {mmsi}...")
+        result = generate_track_map(v, map_path)
+        if result:
+            chart_path = result
+            chart_repo_path = f"{CHART_DIR}/threads_track_{mmsi}.png"
+
+    # 4. Compose post text (LLM-powered, 1 image → 350 char limit)
+    has_image = chart_path is not None
     post_text = compose_post_text(summary, data, top_vessels=top_vessels or None)
     print("\n📝 Post content:")
     print("─" * 40)
@@ -796,8 +810,16 @@ def main():
         print("\n🏁 Dry-run mode — not publishing")
         return
 
-    # 4. Publish to Threads (text-only)
+    # 5. Upload track map to GitHub (if generated)
     image_urls = []
+    github_token = os.environ.get("GITHUB_TOKEN")
+    if has_image and github_token:
+        print("📤 Uploading track map to GitHub...")
+        image_urls = upload_charts_to_github([(chart_path, chart_repo_path)], github_token)
+    elif has_image:
+        print("⚠️ GITHUB_TOKEN not set, skipping image upload")
+
+    # 6. Publish to Threads
     user_id = os.environ.get("THREADS_USER_ID")
     access_token = os.environ.get("THREADS_ACCESS_TOKEN")
     app_secret = os.environ.get("THREADS_APP_SECRET")
