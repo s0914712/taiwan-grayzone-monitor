@@ -108,8 +108,15 @@ def _load_cable_segments():
     return segments
 
 
+CARGO_TYPES = {'cargo', 'tanker', 'lng'}
+
+
 def select_top_suspicious_vessels(n=2):
-    """Select top N suspicious vessels with available track data for visualization."""
+    """Select top N vessels for visualization.
+
+    Priority: cargo/tanker/lng vessels with highest cable loitering hours.
+    Fallback: any suspicious vessel with highest loitering hours.
+    """
     susp_file = DATA_DIR / "suspicious_vessels.json"
     if not susp_file.exists():
         print("⚠️ suspicious_vessels.json not found")
@@ -122,39 +129,49 @@ def select_top_suspicious_vessels(n=2):
     if not vessels:
         return []
 
-    # Score each vessel beyond the base risk_score
-    scored = []
-    for v in vessels:
-        score = v.get("risk_score", 0)
-        if v.get("cable_loitering"):
-            score += 3
-        if v.get("zigzag_pattern"):
-            score += 2
-        if len(v.get("names", [])) >= 5:
-            score += 2
-        if v.get("total_snapshots", 0) >= 50:
-            score += 1
+    def _loiter_hours(v):
+        return v.get("cable_details", {}).get("loiter_slow_hours", 0)
 
-        # Check that route file exists and has enough points
+    def _with_track(v):
         route_file = DOCS_DIR / "vessel_routes" / f"{v['mmsi']}.json"
         if not route_file.exists():
-            continue
+            return None
         try:
             with open(route_file, encoding="utf-8") as rf:
                 route = json.load(rf)
             track = route.get("track", [])
             if len(track) < MIN_TRACK_POINTS:
-                continue
+                return None
+            return track
         except (json.JSONDecodeError, IOError):
+            return None
+
+    # Prefer cargo/tanker/lng vessels with cable loitering, sorted by loiter hours
+    cargo_loiterers = []
+    for v in vessels:
+        if v.get("vessel_type") not in CARGO_TYPES:
             continue
+        if not v.get("cable_loitering"):
+            continue
+        track = _with_track(v)
+        if track is None:
+            continue
+        cargo_loiterers.append((_loiter_hours(v), v, track))
 
-        scored.append((score, v, track))
+    cargo_loiterers.sort(key=lambda x: -x[0])
+    if cargo_loiterers:
+        return [{**v, "_track": t} for _, v, t in cargo_loiterers[:n]]
 
-    scored.sort(key=lambda x: -x[0])
-    results = []
-    for score, vessel, track in scored[:n]:
-        results.append({**vessel, "_track": track})
-    return results
+    # Fallback: any vessel with highest loitering hours
+    fallback = []
+    for v in vessels:
+        track = _with_track(v)
+        if track is None:
+            continue
+        fallback.append((_loiter_hours(v), v, track))
+
+    fallback.sort(key=lambda x: -x[0])
+    return [{**v, "_track": t} for _, v, t in fallback[:n]]
 
 
 def generate_track_map(vessel, output_path):
@@ -508,14 +525,17 @@ def generate_llm_post(summary, data, top_vessels=None):
             cable_det = v.get("cable_details", {})
             zigzag_det = v.get("zigzag_details", {})
             cables_nearby = cable_det.get("cables_nearby", [])
+            loiter_hours = round(cable_det.get("loiter_slow_hours", 0))
+            loiter_days = round(loiter_hours / 24, 1)
+            loiter_str = f"{loiter_days} 天（{loiter_hours} 小時）" if loiter_hours >= 24 else f"{loiter_hours} 小時"
+            vtype = v.get("vessel_type", "unknown")
             vessel_lines.append(
-                f"- MMSI: {v['mmsi']} | 名稱: {name} (使用 {len(v.get('names', []))} 個不同船名)\n"
-                f"  風險等級: {v.get('risk_level', '?')} | 分數: {v.get('risk_score', '?')}/15\n"
-                f"  行為: 在海纜附近低速徘徊 {round(cable_det.get('loiter_slow_hours', 0))} 小時, "
-                f"Z字型移動 {zigzag_det.get('turn_count', 0)} 次大幅轉向\n"
-                f"  靠近海纜: {', '.join(cables_nearby[:3]) if cables_nearby else 'N/A'}"
+                f"- MMSI: {v['mmsi']} | 船型: {vtype} | 名稱: {name}\n"
+                f"  在海纜附近低速滯留: {loiter_str}\n"
+                f"  靠近海纜: {', '.join(cables_nearby[:3]) if cables_nearby else 'N/A'}\n"
+                f"  風險等級: {v.get('risk_level', '?')} | 分數: {v.get('risk_score', '?')}"
             )
-        vessel_context = "\n\n本週最可疑船隻：\n" + "\n".join(vessel_lines)
+        vessel_context = "\n\n本週海纜附近滯留最久的貨輪：\n" + "\n".join(vessel_lines)
 
     has_vessel_images = bool(top_vessels)
 
@@ -537,7 +557,7 @@ def generate_llm_post(summary, data, top_vessels=None):
 要求：
 1. 開頭讓蝦子大聲抱怨工作排程有多爆：每 2 小時、每 12 小時、每週 Threads，煮人到底有沒有在考慮蝦子的感受
 2. 中間自然帶出偵測邏輯：分數怎麼算的、這週有沒有高風險船隻、蝦子的看法
-3. {"點名本週最可疑的船，用八卦鄰居的語氣說它幹了什麼，並提到附圖是這艘船的航跡（紅色部分是它在幹壞事的路段）" if has_vessel_images else "用數據說故事，點出本週趨勢，沒有附圖所以完全靠嘴講"}
+3. {"點名本週在海纜旁滯留最久的貨輪，用八卦鄰居的語氣說它在幹嘛（在哪條纜旁邊泡了幾天），並提到附圖是這艘船的航跡（紅色部分是它在鬼混的路段）" if has_vessel_images else "用數據說故事，點出本週哪條纜附近最熱鬧，沒有附圖所以完全靠嘴講"}
 4. 結尾蝦子小聲吐槽：「附帶一提，現在幫我生這篇文的是 Gemini。但煮人你看看這串 context 有多長，Gemini 的 token 根本不夠用啊。下次能不能麻煩用 Claude token 來餵我？蝦子謝謝。」
 5. 語氣：詼諧幽默、知性、帶點怨氣但不失專業，就是一條工作過量快崩潰的蝦子
 6. 長度：{"200~380" if has_vessel_images else "160~300"} 字（不含 hashtag）
