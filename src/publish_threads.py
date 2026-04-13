@@ -560,7 +560,7 @@ def generate_llm_post(summary, data, top_vessels=None):
 3. {"點名本週在海纜旁滯留最久的貨輪，用八卦鄰居的語氣說它在幹嘛（在哪條纜旁邊泡了幾天），並提到附圖是這艘船的航跡（紅色部分是它在鬼混的路段）" if has_vessel_images else "用數據說故事，點出本週哪條纜附近最熱鬧，沒有附圖所以完全靠嘴講"}
 4. 結尾蝦子小聲吐槽：「附帶一提，現在幫我生這篇文的是 Gemini。但煮人你看看這串 context 有多長，Gemini 的 token 根本不夠用啊。下次能不能麻煩用 Claude token 來餵我？蝦子謝謝。」
 5. 語氣：詼諧幽默、知性、帶點怨氣但不失專業，就是一條工作過量快崩潰的蝦子
-6. 長度：{"200~380" if has_vessel_images else "160~300"} 字（不含 hashtag）
+6. 長度：{"150~260" if has_vessel_images else "120~220"} 字（不含 hashtag 與網址）
 7. emoji 只用一次 🦐，放在最合適的地方
 8. 結尾加上這些 hashtag: #TaiwanSecurity #GrayZone #OSINT #MaritimeSecurity
 9. 最後一行加上: https://s0914712.github.io/taiwan-grayzone-monitor/
@@ -579,7 +579,7 @@ def generate_llm_post(summary, data, top_vessels=None):
             json={
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {
-                    "maxOutputTokens": 512,
+                    "maxOutputTokens": 320,
                     "temperature": 0.9,
                 },
             },
@@ -622,8 +622,53 @@ def _make_appsecret_proof(access_token, app_secret):
     ).hexdigest()
 
 
+THREADS_MAX_CHARS = 500
+
+THREADS_FOOTER = (
+    "\n\n#TaiwanSecurity #GrayZone #OSINT #MaritimeSecurity"
+    "\nhttps://s0914712.github.io/taiwan-grayzone-monitor/"
+)
+
+
+def _truncate_for_threads(text, limit=THREADS_MAX_CHARS):
+    """Ensure text fits within Threads character limit.
+
+    Preserves the standard footer (hashtags + URL) and truncates the body,
+    adding '…' if needed.
+    """
+    if len(text) <= limit:
+        return text
+
+    footer = THREADS_FOOTER
+    # Strip existing footer variants so we don't double-append
+    for marker in ("#TaiwanSecurity", "https://s0914712"):
+        idx = text.find(marker)
+        if idx != -1:
+            text = text[:idx].rstrip()
+            break
+
+    max_body = limit - len(footer) - 1  # -1 for the ellipsis
+    body = text[:max_body].rstrip()
+    # Try to break at a sentence boundary (。！？\n)
+    for sep in ('。', '！', '？', '\n'):
+        cut = body.rfind(sep)
+        if cut > max_body * 0.6:  # Don't cut too aggressively
+            body = body[:cut + 1]
+            break
+    else:
+        body = body + '…'
+
+    result = body + footer
+    # Final safety hard-cut
+    if len(result) > limit:
+        result = result[:limit - 1] + '…'
+    print(f"ℹ️ Text truncated to {len(result)} chars (was {len(text) + len(footer)} chars)")
+    return result
+
+
 def publish_to_threads(text, image_urls, user_id, access_token, app_secret):
     """Publish to Threads. Uses CAROUSEL if multiple images, IMAGE/TEXT if one or none."""
+    text = _truncate_for_threads(text)
     base_url = "https://graph.threads.net/v1.0"
     proof = _make_appsecret_proof(access_token, app_secret) if app_secret else None
 
