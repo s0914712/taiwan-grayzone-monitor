@@ -670,7 +670,8 @@ def _truncate_for_threads(text, n_images=0):
 
 
 def publish_to_threads(text, image_urls, user_id, access_token, app_secret):
-    """Publish to Threads. Uses CAROUSEL if multiple images, IMAGE/TEXT if one or none."""
+    """Publish to Threads. Single image or text-only (carousel disabled)."""
+    image_urls = image_urls[:1]  # Hard cap: max 1 image
     text = _truncate_for_threads(text, n_images=len(image_urls))
     base_url = "https://graph.threads.net/v1.0"
     proof = _make_appsecret_proof(access_token, app_secret) if app_secret else None
