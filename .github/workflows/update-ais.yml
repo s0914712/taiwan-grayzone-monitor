@@ -1,0 +1,106 @@
+name: Update AIS & Identity Tracking (High-Freq)
+
+on:
+  schedule:
+    # 白天高頻：台灣 08:00-17:00 (UTC 00:00-09:00) 每 30 分鐘
+    # 避開 UTC 00:00 和 12:00 整點，與 update-data.yml 錯開
+    - cron: '30 0-8 * * *'
+    # 夜間低頻：台灣 17:00-08:00 (UTC 09:00-00:00) 每 2 小時
+    - cron: '0 9,11,13,15,17,19,21,23 * * *'
+  workflow_dispatch:  # 允許手動觸發
+
+concurrency:
+  group: data-pipeline
+  cancel-in-progress: false
+
+jobs:
+  update-ais:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests pysocks
+
+      - name: Fetch AIS data via SOCKS5 proxy
+        run: python src/fetch_ais_data.py
+        env:
+          USE_PROXY: "true"
+          POOL: ${{ secrets.POOL }}
+        continue-on-error: true
+
+      - name: Analyze suspicious vessels (CSIS methodology)
+        run: python src/analyze_suspicious.py
+        continue-on-error: true
+
+      - name: Extract all vessel routes
+        run: python src/extract_all_routes.py
+        continue-on-error: true
+
+      - name: Detect ship-to-ship transfers
+        run: python src/detect_ship_transfers.py
+        continue-on-error: true
+
+      - name: Generate dashboard data
+        run: python src/generate_dashboard.py
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          # 如果 AIS 快照為空 (0 艘船)，還原以保留上次有效資料
+          VESSEL_COUNT=$(python3 -c "import json; d=json.load(open('data/ais_snapshot.json')); print(len(d.get('vessels',[])))" 2>/dev/null || echo "0")
+          if [ "$VESSEL_COUNT" = "0" ]; then
+            echo "⚠️ AIS snapshot has 0 vessels, restoring previous version"
+            git checkout -- data/ais_snapshot.json docs/data.json 2>/dev/null || true
+          fi
+          git add data/ docs/
+          git diff --staged --quiet || git commit -m "📡 AIS update $(date +'%Y-%m-%d %H:%M') UTC"
+          git pull --rebase -X theirs origin main || {
+            echo "⚠️ Rebase 失敗，改用 merge 策略"
+            git rebase --abort
+            git pull -X ours origin main
+          }
+          git push
+
+  deploy:
+    needs: update-ais
+    runs-on: ubuntu-latest
+    concurrency:
+      group: github-pages-deploy
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: './docs'
+          overwrite: true
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

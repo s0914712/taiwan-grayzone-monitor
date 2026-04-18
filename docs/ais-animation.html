@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>船位動畫 | AIS Track Animation - Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤可疑漁船位置變化">
+    <meta name="keywords" content="AIS動畫,船位追蹤,可疑船隻,台灣海峽,Taiwan Strait,maritime surveillance">
+    <meta name="author" content="Taiwan Gray Zone Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/ais-animation.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="船位動畫 | AIS Track Animation">
+    <meta property="og:description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤可疑漁船位置變化">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/ais-animation.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="船位動畫 | AIS Track Animation">
+    <meta name="twitter:description" content="台灣周邊可疑船隻 AIS 軌跡動畫，追蹤可疑漁船位置變化">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/main.css">
+
+    <style>
+        body {
+            overflow-y: auto;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 0 0 6px 6px;
+        }
+
+        /* Animation controls */
+        .anim-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            margin: 12px 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .anim-btn {
+            padding: 5px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        .anim-btn:hover,
+        .anim-btn.active {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            background: rgba(0, 245, 255, 0.1);
+        }
+
+        .anim-btn:disabled,
+        .anim-btn[disabled] {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .anim-btn.play-btn {
+            font-size: 16px;
+            padding: 5px 16px;
+            min-width: 44px;
+            text-align: center;
+        }
+
+        .anim-btn.play-btn.playing {
+            color: var(--accent-red);
+            border-color: var(--accent-red);
+            background: rgba(255, 51, 102, 0.1);
+        }
+
+        .anim-separator {
+            width: 1px;
+            height: 20px;
+            background: var(--border-glow);
+        }
+
+        .anim-label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .day-indicator {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--accent-cyan);
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .day-indicator .date-text {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .day-indicator .frame-text {
+            font-size: 9px;
+            color: var(--text-secondary);
+        }
+
+        /* Timeline slider */
+        .timeline-panel {
+            padding: 8px 16px 12px;
+            margin: 0 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glow);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+        }
+
+        .day-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: var(--bg-card);
+            border-radius: 3px;
+            outline: none;
+            margin: 6px 0;
+            cursor: pointer;
+        }
+
+        .day-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
+        }
+
+        .day-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
+        }
+
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 7px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 12px 16px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .stat-card .value.alert {
+            color: var(--accent-red);
+        }
+
+        .stat-card .label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Main content */
+        .main-content {
+            padding: 0 16px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-title {
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--accent-cyan);
+            border-bottom: 1px solid var(--border-glow);
+        }
+
+        .panel-body {
+            padding: 10px 12px;
+        }
+
+        .chart-container {
+            padding: 10px;
+            height: 200px;
+        }
+
+        /* Vessel table */
+        .vessel-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+
+        .vessel-table th {
+            text-align: left;
+            padding: 6px 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 9px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-glow);
+        }
+
+        .vessel-table td {
+            padding: 6px 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+        }
+
+        .vessel-table tr:hover {
+            background: rgba(0, 245, 255, 0.03);
+        }
+
+        .vessel-table .suspicious-tag {
+            color: var(--accent-red);
+            font-weight: 600;
+        }
+
+        /* Map legend */
+        .map-legend-inline {
+            display: flex;
+            gap: 14px;
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-glow);
+            flex-wrap: wrap;
+        }
+
+        .legend-chip {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+            color: var(--text-secondary);
+        }
+
+        .legend-chip .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .update-info {
+            text-align: center;
+            padding: 10px;
+            font-size: 9px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* Trail toggle */
+        .trail-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .trail-toggle input {
+            accent-color: var(--accent-cyan);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                padding: 8px;
+            }
+            .stat-card { padding: 12px; }
+            .stat-card .value { font-size: 22px; }
+            .stat-card .label { font-size: 12px; }
+            .anim-controls { margin: 8px 8px 0; gap: 6px; }
+            .range-selector, .playback-controls {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 6px;
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            .anim-btn { min-height: 44px; min-width: 44px; font-size: 12px; padding: 8px 10px; }
+            .anim-label { display: none; }
+            .anim-separator { display: none; }
+            .vessel-filter-select { min-height: 44px; font-size: 12px; }
+            .trail-toggle { font-size: 12px; }
+            .day-indicator { margin-left: 0; width: 100%; text-align: center; font-size: 13px; }
+            #map { height: calc(100vh - 44px - 56px - 120px); max-height: 350px; min-height: 200px; }
+            .main-content { padding: 0 8px 72px; }
+            .timeline-panel { margin: 0 8px; }
+        }
+
+        /* Footer */
+        .site-footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 9px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-glow);
+        }
+
+        .site-footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 28, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border-glow);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--accent-cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .loading-subtext {
+            margin-top: 6px;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        /* Vessel filter dropdown */
+        .vessel-filter-select {
+            background: var(--bg-card);
+            color: var(--accent-cyan);
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .vessel-filter-select:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        .vessel-filter-select option {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        /* Triangle vessel icon - remove default leaflet div icon styling */
+        .vessel-icon {
+            background: none !important;
+            border: none !important;
+        }
+
+        /* Detection tags */
+        .detect-tag {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 8px;
+            font-weight: 600;
+            margin-right: 2px;
+        }
+        .detect-tag.loiter { background: rgba(255,165,0,0.25); color: #ffa500; }
+        .detect-tag.zigzag { background: rgba(255,0,255,0.25); color: #ff66ff; }
+        .detect-tag.cable  { background: rgba(255,215,0,0.25); color: #ffd700; }
+
+        /* Cable buffer slider */
+        .cable-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+        .cable-controls input[type="range"] {
+            width: 60px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-card);
+            border-radius: 2px;
+            outline: none;
+        }
+        .cable-controls input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+        }
+        .cable-controls input[type="range"]::-moz-range-thumb {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+            border: none;
+        }
+        .cable-buffer-val {
+            font-family: 'JetBrains Mono', monospace;
+            color: #ffd700;
+            min-width: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" data-i18n="common.loading">載入中...</div>
+        <div class="loading-subtext" id="loadingDetail">正在載入 AIS 軌跡資料，資料量較大請稍候...</div>
+    </div>
+
+    <header class="header">
+        <h1 data-i18n="title.ais_anim">🚢 可疑船位動畫 Suspicious Vessel Animation</h1>
+        <div class="header-nav">
+            <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
+            <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
+            <a href="weekly-animation.html" data-i18n="nav.animation">軌跡動畫</a>
+            <a href="ais-animation.html" class="active" data-i18n="nav.ais_anim">船位動畫</a>
+            <a href="cn-fishing-animation.html" data-i18n="nav.cn_fishing">大陸漁船</a>
+            <a href="ship-transfers.html" data-i18n="nav.transfers">旁靠偵測</a>
+            <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
+        </div>
+    </header>
+
+    <!-- Animation controls -->
+    <div class="anim-controls" id="animControls">
+        <div class="range-selector">
+            <span class="anim-label" data-i18n="ais_anim.range">範圍</span>
+            <button class="anim-btn" data-range="1" onclick="setRange(1)">1天</button>
+            <button class="anim-btn" data-range="3" onclick="setRange(3)">3天</button>
+            <button class="anim-btn" data-range="7" onclick="setRange(7)" data-i18n="ais_anim.days_7">7天</button>
+            <button class="anim-btn active" data-range="14" onclick="setRange(14)" data-i18n="ais_anim.days_14">14天</button>
+        </div>
+        <div class="playback-controls">
+            <button class="anim-btn" onclick="stepBackward()" title="上一幀">⏮</button>
+            <button class="anim-btn play-btn" id="playBtn" onclick="togglePlay()" title="播放/暫停">▶</button>
+            <button class="anim-btn" onclick="stepForward()" title="下一幀">⏭</button>
+            <span class="anim-label" data-i18n="ais_anim.speed">速度</span>
+            <button class="anim-btn active" data-speed="1" onclick="setSpeed(1)">1x</button>
+            <button class="anim-btn" data-speed="2" onclick="setSpeed(2)">2x</button>
+            <button class="anim-btn" data-speed="4" onclick="setSpeed(4)">4x</button>
+        </div>
+        <div class="playback-controls">
+            <label class="trail-toggle">
+                <input type="checkbox" id="showTrails" checked onchange="toggleTrails()">
+                <span data-i18n="ais_anim.show_trails">顯示軌跡</span>
+            </label>
+            <label class="trail-toggle">
+                <input type="checkbox" id="showCables" onchange="toggleCableLayer()">
+                <span data-i18n="ais_anim.layer_cables">海底電纜</span>
+            </label>
+            <select id="vesselFilter" onchange="setVesselFilter(this.value)" class="vessel-filter-select">
+                <option value="all" data-i18n="ais_anim.filter_all">全部船隻</option>
+                <option value="cn_fishing" data-i18n="ais_anim.filter_cn">大陸漁船</option>
+                <option value="suspicious" data-i18n="ais_anim.filter_suspicious">可疑船</option>
+                <option value="loitering" data-i18n="ais_anim.filter_loiter">滯留偵測</option>
+                <option value="zigzag" data-i18n="ais_anim.filter_zigzag">Z字型航行</option>
+                <option value="near_cable" data-i18n="ais_anim.filter_near_cable">電纜周邊</option>
+            </select>
+        </div>
+        <div class="cable-controls" id="cableControls" style="display:none">
+            <span data-i18n="ais_anim.cable_buffer">電纜緩衝區 (nm)</span>
+            <input type="range" id="cableBuffer" min="1" max="10" value="2" step="0.5" oninput="updateCableBuffer()">
+            <span class="cable-buffer-val" id="cableBufferVal">2</span>
+        </div>
+        <div class="day-indicator" id="dayIndicator">
+            <div class="date-text">--</div>
+            <div class="frame-text" data-i18n="common.loading">載入中...</div>
+        </div>
+    </div>
+
+    <!-- Timeline slider -->
+    <div class="timeline-panel">
+        <input type="range" class="day-slider" id="daySlider" min="0" max="0" value="0">
+        <div class="timeline-labels" id="timelineLabels"></div>
+    </div>
+
+
+    <div class="main-content">
+        <!-- Map -->
+        <div class="panel map-panel">
+            <div class="panel-title" data-i18n="ais_anim.map_title">📍 可疑船隻 AIS 軌跡動畫</div>
+            <div id="map"></div>
+            <div class="map-legend-inline">
+                <div class="legend-chip"><svg width="7" height="16" style="flex-shrink:0" viewBox="0 0 7 16"><polygon points="3.5,0 7,16 3.5,11.2 0,16" fill="#ff3366" opacity="0.85"/></svg><span data-i18n="ais_anim.suspicious">可疑船</span></div>
+                <div class="legend-chip"><svg width="7" height="16" style="flex-shrink:0" viewBox="0 0 7 16"><polygon points="3.5,0 7,16 3.5,11.2 0,16" fill="#00f5ff" opacity="0.7"/></svg><span>一般船隻</span></div>
+                <div class="legend-chip"><span class="dot" style="background:rgba(0,255,136,0.3)"></span><span>漁撈熱點</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ffa500"></span><span data-i18n="ais_anim.detect_loiter">滯留</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ff66ff"></span><span data-i18n="ais_anim.detect_zigzag">Z字型</span></div>
+                <div class="legend-chip"><span class="dot" style="background:#ffd700"></span><span data-i18n="ais_anim.detect_cable">近電纜</span></div>
+            </div>
+        </div>
+
+        <!-- Daily trend chart -->
+        <div class="panel chart-panel">
+            <div class="panel-title" data-i18n="ais_anim.chart_title">📊 各時段可疑船數量</div>
+            <div class="chart-container">
+                <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Vessel list -->
+        <div class="panel">
+            <div class="panel-title">🚢 本幀船隻列表</div>
+            <div class="panel-body">
+                <table class="vessel-table">
+                    <thead>
+                        <tr>
+                            <th>MMSI</th>
+                            <th data-i18n="ais_anim.popup_name">船名</th>
+                            <th data-i18n="ais_anim.popup_type">類型</th>
+                            <th data-i18n="ais_anim.popup_speed">航速</th>
+                            <th>狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vesselTableBody">
+                        <tr><td colspan="5" class="empty-state" data-i18n="common.loading">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="update-info" id="updateInfo">資料更新時間: --</div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+
+    <script src="js/i18n.js"></script>
+    <script>
+    // =========================================================================
+    // Fishing hotspots (same as fetch_ais_data.py)
+    // =========================================================================
+    const FISHING_HOTSPOTS = {
+        taiwan_bank:   { name: '台灣灘漁場',   bounds: [[22.0, 117.0], [23.5, 119.5]] },
+        penghu:        { name: '澎湖漁場',     bounds: [[23.0, 119.0], [24.0, 120.0]] },
+        kuroshio_east: { name: '東部黑潮漁場', bounds: [[22.5, 121.0], [24.5, 122.0]] },
+        northeast:     { name: '東北漁場',     bounds: [[24.8, 121.5], [25.8, 123.0]] },
+        southwest:     { name: '西南沿岸漁場', bounds: [[22.0, 120.0], [23.0, 120.8]] }
+    };
+
+    // =========================================================================
+    // Animation state
+    // =========================================================================
+    const Anim = {
+        allFrames: [],
+        filteredFrames: [],
+        currentIdx: 0,
+        playing: false,
+        speed: 1,
+        intervalId: null,
+        selectedRange: 14,
+        markerLayer: null,
+        trailLayer: null,
+        showTrails: true,
+        vesselFilter: 'all',  // 'all', 'cn_fishing', 'suspicious'
+        chart: null,
+        vesselTrails: {}  // mmsi -> [{lat, lon, timestamp}, ...]
+    };
+
+    let map;
+
+    // =========================================================================
+    // Cable & Detection state
+    // =========================================================================
+    const Cable = {
+        geoData: null,          // GeoJSON FeatureCollection
+        layer: null,            // Leaflet GeoJSON layer
+        bufferLayer: null,      // Leaflet layer for buffer zones
+        bufferNm: 2,            // buffer distance in nautical miles
+        visible: false,
+        lines: [],              // pre-extracted [[lat,lon], ...] per segment
+        faultStatus: null       // { faultedSlugs: Set, faultsBySlug: {} }
+    };
+
+    // Detection results per frame (cached)
+    const Detection = {
+        vesselIndex: null,      // Map<mmsi, [{lat, lon, speed, heading, frameIdx}, ...]>
+        loiteringSet: null,     // Set<mmsi> - vessels loitering >6hr
+        zigzagSet: null,        // Set<mmsi> - vessels with zigzag heading
+        nearCableSet: null,     // Set<mmsi> - vessels near cable at current frame
+        lastBuiltFrame: -1,
+        lastCableFrame: -1
+    };
+
+    // =========================================================================
+    // Cable data loading & rendering
+    // =========================================================================
+    async function loadCableData() {
+        if (Cable.geoData) return;
+        try {
+            const [cableRes, statusRes] = await Promise.all([
+                fetch('taiwan_cables.json?' + Date.now()),
+                fetch('cable_status.json?' + Date.now()).catch(() => null)
+            ]);
+            if (!cableRes.ok) throw new Error('HTTP ' + cableRes.status);
+            Cable.geoData = await cableRes.json();
+
+            // Load fault status
+            if (statusRes && statusRes.ok) {
+                try {
+                    const statusData = await statusRes.json();
+                    const faultedSlugs = new Set();
+                    const faultsBySlug = {};
+                    (statusData.faults || []).forEach(f => {
+                        if (f.status === 'fault') {
+                            faultedSlugs.add(f.slug);
+                            if (!faultsBySlug[f.slug]) faultsBySlug[f.slug] = [];
+                            faultsBySlug[f.slug].push(f);
+                        }
+                    });
+                    Cable.faultStatus = { faultedSlugs, faultsBySlug };
+                } catch (_) {}
+            }
+
+            // Pre-extract line segments as [lat, lon] arrays for distance calc
+            Cable.lines = [];
+            Cable.geoData.features.forEach(f => {
+                const coords = f.geometry.coordinates;
+                if (f.geometry.type === 'MultiLineString') {
+                    coords.forEach(line => {
+                        Cable.lines.push(line.map(c => [c[1], c[0]])); // [lat, lon]
+                    });
+                } else if (f.geometry.type === 'LineString') {
+                    Cable.lines.push(coords.map(c => [c[1], c[0]]));
+                }
+            });
+        } catch (e) {
+            console.error('Cable data load failed:', e);
+        }
+    }
+
+    function renderCableLayer() {
+        if (!Cable.geoData || !map) return;
+        if (Cable.layer) { map.removeLayer(Cable.layer); Cable.layer = null; }
+        if (Cable.bufferLayer) { map.removeLayer(Cable.bufferLayer); Cable.bufferLayer = null; }
+
+        if (!Cable.visible) return;
+
+        const faulted = Cable.faultStatus ? Cable.faultStatus.faultedSlugs : new Set();
+        const faultDetails = Cable.faultStatus ? Cable.faultStatus.faultsBySlug : {};
+
+        Cable.layer = L.geoJSON(Cable.geoData, {
+            style: f => {
+                const slug = f.properties.slug || '';
+                const isFaulted = faulted.has(slug);
+                return {
+                    color: isFaulted ? '#ff0000' : '#' + (f.properties.color || 'ffd700'),
+                    weight: isFaulted ? 3 : 2,
+                    opacity: isFaulted ? 0.9 : 0.7
+                };
+            },
+            onEachFeature: (f, layer) => {
+                const slug = f.properties.slug || '';
+                const name = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                const faults = faultDetails[slug];
+                let tip = name;
+                if (faults && faults.length > 0) {
+                    const details = faults.map(ft =>
+                        '\u26a0 ' + ft.segment + ': ' + (ft.description_zh || ft.description_en)
+                    ).join('<br>');
+                    tip = '<b style="color:#ff0000">' + name + '</b><br>' + details;
+                }
+                layer.bindTooltip(tip, { sticky: true, className: 'cable-tooltip' });
+            }
+        }).addTo(map);
+
+        // Render buffer zones as semi-transparent corridors
+        renderCableBuffers();
+    }
+
+    function renderCableBuffers() {
+        if (Cable.bufferLayer) { map.removeLayer(Cable.bufferLayer); Cable.bufferLayer = null; }
+        if (!Cable.visible || Cable.bufferNm <= 0) return;
+
+        Cable.bufferLayer = L.layerGroup().addTo(map);
+        const bufferDeg = Cable.bufferNm / 60; // 1 nm ≈ 1/60 degree
+
+        Cable.lines.forEach(line => {
+            if (line.length < 2) return;
+            // Simple corridor: offset line on both sides
+            const left = [], right = [];
+            for (let i = 0; i < line.length; i++) {
+                const lat = line[i][0], lon = line[i][1];
+                // Compute perpendicular direction
+                let dx = 0, dy = 0;
+                if (i < line.length - 1) {
+                    dy = line[i + 1][0] - lat;
+                    dx = line[i + 1][1] - lon;
+                } else {
+                    dy = lat - line[i - 1][0];
+                    dx = lon - line[i - 1][1];
+                }
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const perpLat = -dx / len * bufferDeg;
+                const perpLon = dy / len * bufferDeg;
+                left.push([lat + perpLat, lon + perpLon]);
+                right.push([lat - perpLat, lon - perpLon]);
+            }
+            const polygon = left.concat(right.reverse());
+            L.polygon(polygon, {
+                color: '#ffd700', weight: 0.5, opacity: 0.3,
+                fillColor: '#ffd700', fillOpacity: 0.08,
+                interactive: false
+            }).addTo(Cable.bufferLayer);
+        });
+    }
+
+    async function toggleCableLayer() {
+        Cable.visible = document.getElementById('showCables').checked;
+        document.getElementById('cableControls').style.display = Cable.visible ? 'flex' : 'none';
+        if (Cable.visible && !Cable.geoData) {
+            await loadCableData();
+        }
+        renderCableLayer();
+        // Re-run near-cable detection if filter is active
+        if (Anim.vesselFilter === 'near_cable') {
+            Detection.lastCableFrame = -1;
+            renderFrame(Anim.currentIdx);
+        }
+    }
+
+    function updateCableBuffer() {
+        Cable.bufferNm = parseFloat(document.getElementById('cableBuffer').value);
+        document.getElementById('cableBufferVal').textContent = Cable.bufferNm;
+        renderCableBuffers();
+        // Re-run near-cable detection
+        Detection.lastCableFrame = -1;
+        if (Anim.vesselFilter === 'near_cable') {
+            renderFrame(Anim.currentIdx);
+        }
+    }
+
+    // =========================================================================
+    // Detection engine
+    // =========================================================================
+
+    /**
+     * Build vessel index: Map<mmsi, Array<{lat, lon, speed, heading, frameIdx}>>
+     * Called once when filteredFrames change.
+     */
+    function buildVesselIndex() {
+        if (Detection.vesselIndex) return; // already built
+        Detection.vesselIndex = new Map();
+        Anim.filteredFrames.forEach((frame, fi) => {
+            if (!frame.vessels) return;
+            frame.vessels.forEach(v => {
+                if (!Detection.vesselIndex.has(v.mmsi)) {
+                    Detection.vesselIndex.set(v.mmsi, []);
+                }
+                Detection.vesselIndex.get(v.mmsi).push({
+                    lat: v.lat, lon: v.lon,
+                    speed: v.speed || 0,
+                    heading: v.heading !== undefined ? v.heading : null,
+                    frameIdx: fi,
+                    name: v.name, type_name: v.type_name,
+                    suspicious: v.suspicious
+                });
+            });
+        });
+    }
+
+    /**
+     * Detect loitering: vessel appears in 3+ consecutive frames (≈6hr+)
+     * with speed < 1 kn and displacement < 0.01° (≈1km)
+     */
+    function detectLoitering() {
+        if (Detection.loiteringSet) return Detection.loiteringSet;
+        buildVesselIndex();
+        const result = new Set();
+
+        Detection.vesselIndex.forEach((records, mmsi) => {
+            if (records.length < 3) return;
+            // Sort by frameIdx
+            records.sort((a, b) => a.frameIdx - b.frameIdx);
+            let streak = 1;
+            for (let i = 1; i < records.length; i++) {
+                const prev = records[i - 1], curr = records[i];
+                const isConsecutive = (curr.frameIdx - prev.frameIdx) <= 2; // allow 1 gap
+                const lowSpeed = curr.speed < 1;
+                const smallDisp = Math.abs(curr.lat - prev.lat) < 0.01 &&
+                                  Math.abs(curr.lon - prev.lon) < 0.01;
+                if (isConsecutive && lowSpeed && smallDisp) {
+                    streak++;
+                    if (streak >= 3) result.add(mmsi);
+                } else {
+                    streak = 1;
+                }
+            }
+        });
+        Detection.loiteringSet = result;
+        return result;
+    }
+
+    /**
+     * Detect zigzag: heading change > 30° for 3+ consecutive observations
+     */
+    function detectZigzag() {
+        if (Detection.zigzagSet) return Detection.zigzagSet;
+        buildVesselIndex();
+        const result = new Set();
+
+        Detection.vesselIndex.forEach((records, mmsi) => {
+            if (records.length < 4) return;
+            records.sort((a, b) => a.frameIdx - b.frameIdx);
+            let zigCount = 0;
+            for (let i = 1; i < records.length; i++) {
+                const prev = records[i - 1], curr = records[i];
+                if (prev.heading === null || curr.heading === null) { zigCount = 0; continue; }
+                let diff = Math.abs(curr.heading - prev.heading);
+                if (diff > 180) diff = 360 - diff;
+                if (diff > 30) {
+                    zigCount++;
+                    if (zigCount >= 3) { result.add(mmsi); break; }
+                } else {
+                    zigCount = 0;
+                }
+            }
+        });
+        Detection.zigzagSet = result;
+        return result;
+    }
+
+    /**
+     * Detect vessels near submarine cables at current frame
+     * Uses point-to-segment distance
+     */
+    function detectNearCable(frameIdx) {
+        if (Detection.lastCableFrame === frameIdx && Detection.nearCableSet) {
+            return Detection.nearCableSet;
+        }
+        const result = new Set();
+        if (!Cable.lines || Cable.lines.length === 0) {
+            Detection.nearCableSet = result;
+            Detection.lastCableFrame = frameIdx;
+            return result;
+        }
+
+        const frame = Anim.filteredFrames[frameIdx];
+        if (!frame || !frame.vessels) {
+            Detection.nearCableSet = result;
+            Detection.lastCableFrame = frameIdx;
+            return result;
+        }
+
+        const bufferDeg = Cable.bufferNm / 60;
+        const bufferDegSq = bufferDeg * bufferDeg;
+
+        frame.vessels.forEach(v => {
+            for (const line of Cable.lines) {
+                if (isPointNearLine(v.lat, v.lon, line, bufferDegSq)) {
+                    result.add(v.mmsi);
+                    break;
+                }
+            }
+        });
+
+        Detection.nearCableSet = result;
+        Detection.lastCableFrame = frameIdx;
+        return result;
+    }
+
+    /**
+     * Check if point is within buffer distance of any segment in line
+     */
+    function isPointNearLine(plat, plon, line, bufferDegSq) {
+        for (let i = 0; i < line.length - 1; i++) {
+            const a = line[i], b = line[i + 1];
+            // Quick bounding box check
+            const minLat = Math.min(a[0], b[0]) - Math.sqrt(bufferDegSq);
+            const maxLat = Math.max(a[0], b[0]) + Math.sqrt(bufferDegSq);
+            const minLon = Math.min(a[1], b[1]) - Math.sqrt(bufferDegSq);
+            const maxLon = Math.max(a[1], b[1]) + Math.sqrt(bufferDegSq);
+            if (plat < minLat || plat > maxLat || plon < minLon || plon > maxLon) continue;
+
+            // Point-to-segment distance squared
+            const dx = b[1] - a[1], dy = b[0] - a[0];
+            const lenSq = dx * dx + dy * dy;
+            let t = lenSq > 0 ? ((plon - a[1]) * dx + (plat - a[0]) * dy) / lenSq : 0;
+            t = Math.max(0, Math.min(1, t));
+            const projLon = a[1] + t * dx;
+            const projLat = a[0] + t * dy;
+            const distSq = (plon - projLon) * (plon - projLon) + (plat - projLat) * (plat - projLat);
+            if (distSq <= bufferDegSq) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Reset detection caches (call when filteredFrames change)
+     */
+    function resetDetectionCache() {
+        Detection.vesselIndex = null;
+        Detection.loiteringSet = null;
+        Detection.zigzagSet = null;
+        Detection.nearCableSet = null;
+        Detection.lastBuiltFrame = -1;
+        Detection.lastCableFrame = -1;
+    }
+
+    /**
+     * Get detection tags for a vessel at current frame
+     * Returns array of {type, label, color}
+     */
+    function getDetectionTags(mmsi, frameIdx) {
+        const tags = [];
+        // Loitering
+        const loiterSet = detectLoitering();
+        if (loiterSet.has(mmsi)) {
+            // Count how many consecutive low-speed frames
+            const records = Detection.vesselIndex.get(mmsi) || [];
+            let maxStreak = 0, streak = 1;
+            for (let i = 1; i < records.length; i++) {
+                if (records[i].speed < 1 && records[i].frameIdx - records[i-1].frameIdx <= 2) {
+                    streak++;
+                    maxStreak = Math.max(maxStreak, streak);
+                } else { streak = 1; }
+            }
+            const hours = maxStreak * 2; // each frame ≈ 2hr
+            tags.push({ type: 'loiter', label: i18n.t('ais_anim.loiter_hours', hours), color: '#ffa500' });
+        }
+        // Zigzag
+        const zigzagSet = detectZigzag();
+        if (zigzagSet.has(mmsi)) {
+            tags.push({ type: 'zigzag', label: i18n.t('ais_anim.detect_zigzag'), color: '#ff66ff' });
+        }
+        // Near cable
+        if (Cable.lines.length > 0) {
+            const cableSet = detectNearCable(frameIdx);
+            if (cableSet.has(mmsi)) {
+                tags.push({ type: 'cable', label: i18n.t('ais_anim.detect_cable'), color: '#ffd700' });
+            }
+        }
+        return tags;
+    }
+
+    // =========================================================================
+    // Map initialization
+    // =========================================================================
+    function initMap() {
+        map = L.map('map', {
+            center: [24.5, 123.0],
+            zoom: 6,
+            zoomControl: true,
+            attributionControl: false,
+            preferCanvas: true
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 18,
+            opacity: 0.9
+        }).addTo(map);
+
+        // Fishing hotspots
+        Object.entries(FISHING_HOTSPOTS).forEach(([key, spot]) => {
+            const b = spot.bounds;
+            L.rectangle([b[0], b[1]], {
+                color: '#00ff88', weight: 1, opacity: 0.3,
+                fillColor: 'rgba(0,255,136,0.05)', fillOpacity: 0.05,
+                dashArray: '4,4'
+            }).addTo(map).bindTooltip(spot.name, { permanent: false, direction: 'center' });
+        });
+
+        Anim.markerLayer = L.layerGroup().addTo(map);
+        Anim.trailLayer = L.layerGroup().addTo(map);
+    }
+
+    // =========================================================================
+    // Data loading
+    // =========================================================================
+    function hideLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            overlay.classList.add('hidden');
+            setTimeout(() => overlay.style.display = 'none', 300);
+        }
+    }
+
+    async function loadData() {
+        try {
+            document.getElementById('loadingDetail').textContent =
+                '正在下載 AIS 軌跡資料...';
+
+            const res = await fetch('ais_track_history.json?' + Date.now());
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+
+            document.getElementById('loadingDetail').textContent =
+                '正在解析資料，請稍候...';
+            const data = await res.json();
+
+            if (!Array.isArray(data) || data.length === 0) {
+                hideLoading();
+                document.getElementById('dataStatus').textContent = i18n.t('ais_anim.no_data');
+                document.getElementById('vesselTableBody').innerHTML =
+                    '<tr><td colspan="5" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
+                return;
+            }
+
+            document.getElementById('loadingDetail').textContent =
+                '渲染 ' + data.length + ' 幀資料中...';
+
+            Anim.allFrames = data;
+
+            // 用 setTimeout 讓 UI 更新後再渲染（避免阻塞 loading 動畫）
+            await new Promise(r => setTimeout(r, 50));
+            updateRangeButtons();
+            applyRangeFilter(Anim.selectedRange);
+
+            const first = data[0].timestamp || '';
+            const last = data[data.length - 1].timestamp || '';
+            document.getElementById('dataStatus').textContent =
+                '\u2705 ' + first.slice(0, 10) + ' ~ ' + last.slice(0, 10);
+            document.getElementById('updateInfo').textContent =
+                i18n.t('common.updated') + ' ' + new Date(last).toLocaleString();
+
+            hideLoading();
+
+        } catch (e) {
+            console.error('載入失敗:', e);
+            hideLoading();
+            document.getElementById('dataStatus').textContent = i18n.t('ais_anim.load_fail');
+            document.getElementById('vesselTableBody').innerHTML =
+                '<tr><td colspan="5" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
+        }
+    }
+
+    // =========================================================================
+    // Range filtering
+    // =========================================================================
+    function applyRangeFilter(days) {
+        Anim.selectedRange = days;
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        const cutoffStr = cutoff.toISOString();
+
+        Anim.filteredFrames = Anim.allFrames.filter(f => f.timestamp >= cutoffStr);
+        if (Anim.filteredFrames.length === 0) {
+            Anim.filteredFrames = Anim.allFrames;
+        }
+
+        Anim.currentIdx = 0;
+        Anim.vesselTrails = {};
+        resetDetectionCache();
+        pause();
+        updateSlider();
+        updateChart();
+        renderFrame(0);
+    }
+
+    function setRange(days) {
+        document.querySelectorAll('[data-range]').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.range) === days);
+        });
+        applyRangeFilter(days);
+    }
+
+    /** 資料載入後，檢查每個時間範圍按鈕是否有對應資料，無資料則 disabled */
+    function updateRangeButtons() {
+        if (!Anim.allFrames || Anim.allFrames.length === 0) return;
+        const now = new Date();
+        document.querySelectorAll('[data-range]').forEach(btn => {
+            const days = parseInt(btn.dataset.range);
+            const cutoff = new Date(now);
+            cutoff.setDate(cutoff.getDate() - days);
+            const cutoffStr = cutoff.toISOString();
+            const hasData = Anim.allFrames.some(f => f.timestamp >= cutoffStr);
+            btn.disabled = !hasData;
+            if (btn.disabled && btn.classList.contains('active')) {
+                btn.classList.remove('active');
+            }
+        });
+        // 如果目前 active 的按鈕被 disabled，自動選最大可用範圍
+        const activeBtn = document.querySelector('[data-range].active:not([disabled])');
+        if (!activeBtn) {
+            const available = [...document.querySelectorAll('[data-range]:not([disabled])')];
+            if (available.length > 0) {
+                const largest = available.reduce((a, b) =>
+                    parseInt(a.dataset.range) > parseInt(b.dataset.range) ? a : b);
+                setRange(parseInt(largest.dataset.range));
+            }
+        }
+    }
+
+    // =========================================================================
+    // Build vessel trails up to current frame
+    // =========================================================================
+    function buildTrails(upToIdx) {
+        Anim.vesselTrails = {};
+        for (let i = 0; i <= upToIdx; i++) {
+            const frame = Anim.filteredFrames[i];
+            if (!frame || !frame.vessels) continue;
+            frame.vessels.forEach(v => {
+                if (!Anim.vesselTrails[v.mmsi]) {
+                    Anim.vesselTrails[v.mmsi] = { points: [], suspicious: v.suspicious, name: v.name };
+                }
+                Anim.vesselTrails[v.mmsi].points.push([v.lat, v.lon]);
+                Anim.vesselTrails[v.mmsi].suspicious = v.suspicious;
+            });
+        }
+    }
+
+    // Compute heading angle (degrees, 0=north, clockwise) from trail history
+    function computeHeading(mmsi, currentLat, currentLon) {
+        const trail = Anim.vesselTrails && Anim.vesselTrails[mmsi];
+        if (trail && trail.points.length >= 2) {
+            const pts = trail.points;
+            const prev = pts[pts.length - 2];
+            const curr = pts[pts.length - 1];
+            const dLon = curr[1] - prev[1];
+            const dLat = curr[0] - prev[0];
+            if (Math.abs(dLon) > 0.0001 || Math.abs(dLat) > 0.0001) {
+                const angle = Math.atan2(dLon, dLat) * (180 / Math.PI);
+                return (angle + 360) % 360;
+            }
+        }
+        return null; // unknown heading
+    }
+
+    // Create MarineTraffic-style arrow SVG icon for vessel marker
+    function createVesselIcon(color, isSuspicious, heading) {
+        const w = isSuspicious ? 10 : 7;
+        const h = isSuspicious ? 20 : 16;
+        const rotation = heading !== null ? heading : 0;
+        const opacity = isSuspicious ? 0.85 : 0.7;
+        const sw = isSuspicious ? 1.5 : 0.8;
+
+        let shape;
+        if (heading !== null) {
+            // Narrow arrow with notch — shows heading direction clearly
+            const cx = w / 2;
+            const notch = h * 0.7;
+            shape = '<polygon points="' + cx + ',0 ' + w + ',' + h + ' ' + cx + ',' + notch + ' 0,' + h + '" ' +
+                    'fill="' + color + '" fill-opacity="' + opacity + '" ' +
+                    'stroke="' + color + '" stroke-width="' + sw + '" stroke-opacity="0.9"/>';
+        } else {
+            // Diamond for unknown heading
+            const cx = w / 2;
+            const cy = h / 2;
+            shape = '<polygon points="' + cx + ',0 ' + w + ',' + cy + ' ' + cx + ',' + h + ' 0,' + cy + '" ' +
+                    'fill="' + color + '" fill-opacity="' + opacity + '" ' +
+                    'stroke="' + color + '" stroke-width="' + sw + '" stroke-opacity="0.9"/>';
+        }
+
+        const svg = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" ' +
+                    'xmlns="http://www.w3.org/2000/svg" ' +
+                    'style="transform:rotate(' + rotation + 'deg)">' +
+                    shape + '</svg>';
+
+        return L.divIcon({
+            html: svg,
+            className: 'vessel-icon',
+            iconSize: [w, h],
+            iconAnchor: [w / 2, h / 2],
+            popupAnchor: [0, -h / 2]
+        });
+    }
+
+    // =========================================================================
+    // Frame rendering
+    // =========================================================================
+    function renderFrame(idx) {
+        if (idx < 0 || idx >= Anim.filteredFrames.length) return;
+        Anim.currentIdx = idx;
+
+        const frame = Anim.filteredFrames[idx];
+        const allVessels = frame.vessels || [];
+        const vessels = filterVessels(allVessels);
+
+        // Clear layers
+        Anim.markerLayer.clearLayers();
+        Anim.trailLayer.clearLayers();
+
+        // Always build trails (needed for heading computation)
+        buildTrails(idx);
+
+        // Draw trail lines if enabled
+        if (Anim.showTrails) {
+            Object.entries(Anim.vesselTrails).forEach(([mmsi, trail]) => {
+                if (trail.points.length < 2) return;
+                const color = trail.suspicious ? '#ff3366' : '#00f5ff';
+                L.polyline(trail.points, {
+                    color: color,
+                    weight: 0.8,
+                    opacity: 0.25,
+                    dashArray: '4,6'
+                }).addTo(Anim.trailLayer);
+            });
+        }
+
+        // Plot vessel markers (triangle = heading known, diamond = unknown)
+        vessels.forEach(v => {
+            const isSuspicious = v.suspicious;
+            const tags = getDetectionTags(v.mmsi, idx);
+            const hasDetection = tags.length > 0;
+
+            // Color priority: detection > suspicious > normal
+            let color = isSuspicious ? '#ff3366' : '#00f5ff';
+            if (hasDetection) {
+                color = tags[0].color; // use primary detection color
+            }
+            const heading = computeHeading(v.mmsi, v.lat, v.lon) ?? (v.heading !== undefined ? v.heading : null);
+
+            const icon = createVesselIcon(color, isSuspicious || hasDetection, heading);
+            const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(Anim.markerLayer);
+
+            const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
+            const tagHtml = tags.map(t =>
+                '<span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.1);color:' + t.color + ';margin-right:3px">' + t.label + '</span>'
+            ).join('');
+            marker.bindPopup(
+                '<div style="font-size:14px;line-height:1.8;min-width:180px">' +
+                '<b style="color:' + color + ';font-size:15px">' + (v.name || v.mmsi) + '</b><br>' +
+                'MMSI: ' + v.mmsi + '<br>' +
+                ((v.mmsi || '').startsWith('898') ? '<span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span><br>' : '') +
+                i18n.t('ais_anim.popup_type') + ': ' + v.type_name + '<br>' +
+                i18n.t('ais_anim.popup_speed') + ': ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
+                '航向: ' + headingText + '<br>' +
+                (isSuspicious ? '<span style="color:#ff3366;font-weight:600;font-size:14px">⚠ SUSPICIOUS</span><br>' : '') +
+                (tagHtml ? tagHtml : '') +
+                '</div>'
+            );
+        });
+
+        // Update UI
+        updateDayIndicator(frame, idx);
+        updateStatCards(frame, idx);
+        updateVesselTable(vessels);
+        updateSliderPosition(idx);
+        highlightChartBar(idx);
+    }
+
+    // =========================================================================
+    // UI updates
+    // =========================================================================
+    function updateDayIndicator(frame, idx) {
+        const ts = frame.timestamp || '';
+        const dateStr = ts.slice(0, 16).replace('T', ' ');
+        document.getElementById('dayIndicator').innerHTML =
+            '<div class="date-text">' + dateStr + ' UTC</div>' +
+            '<div class="frame-text">' + i18n.t('ais_anim.frame', idx + 1, Anim.filteredFrames.length) + '</div>';
+    }
+
+    function updateStatCards(frame, idx) {
+        // Stats banner removed — function kept as no-op for compatibility
+    }
+
+    function updateVesselTable(vessels) {
+        const tbody = document.getElementById('vesselTableBody');
+        if (!vessels || vessels.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">' + i18n.t('ais_anim.no_data_msg') + '</td></tr>';
+            return;
+        }
+
+        // Sort: suspicious first, then by speed descending
+        const sorted = [...vessels].sort((a, b) => {
+            if (a.suspicious !== b.suspicious) return b.suspicious ? 1 : -1;
+            return (b.speed || 0) - (a.speed || 0);
+        });
+
+        const rows = sorted.slice(0, 30).map(v => {
+            const isSusp = v.suspicious;
+            const tags = getDetectionTags(v.mmsi, Anim.currentIdx);
+            const tagHtml = tags.map(t =>
+                '<span class="detect-tag ' + t.type + '">' + t.label + '</span>'
+            ).join('');
+            const combined = (isSusp ? '<span class="suspicious-tag">⚠ SUSPICIOUS</span> ' : '') + tagHtml;
+            const statusHtml = combined || 'OK';
+            return '<tr>' +
+                '<td>' + v.mmsi + '</td>' +
+                '<td>' + (v.name || '--') + '</td>' +
+                '<td>' + (v.type_name || '--') + '</td>' +
+                '<td>' + (v.speed || 0).toFixed(1) + ' kn</td>' +
+                '<td>' + statusHtml + '</td>' +
+                '</tr>';
+        });
+
+        tbody.innerHTML = rows.join('');
+        if (sorted.length > 30) {
+            tbody.innerHTML += '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);font-size:9px">... ' + (sorted.length - 30) + ' more vessels</td></tr>';
+        }
+    }
+
+    // =========================================================================
+    // Slider
+    // =========================================================================
+    function updateSlider() {
+        const slider = document.getElementById('daySlider');
+        slider.min = 0;
+        slider.max = Math.max(0, Anim.filteredFrames.length - 1);
+        slider.value = 0;
+
+        const labels = document.getElementById('timelineLabels');
+        const frames = Anim.filteredFrames;
+        if (frames.length <= 1) {
+            labels.innerHTML = frames.length === 1 ? '<span>' + (frames[0].timestamp || '').slice(5, 16) + '</span>' : '';
+            return;
+        }
+
+        const step = Math.max(1, Math.floor(frames.length / 6));
+        const labelHtml = [];
+        for (let i = 0; i < frames.length; i++) {
+            if (i === 0 || i === frames.length - 1 || i % step === 0) {
+                labelHtml.push('<span>' + (frames[i].timestamp || '').slice(5, 16).replace('T', ' ') + '</span>');
+            }
+        }
+        labels.innerHTML = labelHtml.join('');
+    }
+
+    function updateSliderPosition(idx) {
+        document.getElementById('daySlider').value = idx;
+    }
+
+    document.getElementById('daySlider').addEventListener('input', function () {
+        pause();
+        renderFrame(parseInt(this.value));
+    });
+
+    // =========================================================================
+    // Chart
+    // =========================================================================
+    function updateChart() {
+        const ctx = document.getElementById('dailyChart').getContext('2d');
+        if (Anim.chart) Anim.chart.destroy();
+
+        const labels = Anim.filteredFrames.map(f => (f.timestamp || '').slice(5, 16).replace('T', ' '));
+        const data = Anim.filteredFrames.map(f => f.suspicious_count || 0);
+
+        Anim.chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: i18n.t('ais_anim.suspicious'),
+                    data: data,
+                    backgroundColor: data.map((_, i) =>
+                        i === Anim.currentIdx ? 'rgba(0, 245, 255, 0.8)' : 'rgba(255, 51, 102, 0.5)'
+                    ),
+                    borderColor: data.map((_, i) =>
+                        i === Anim.currentIdx ? '#00f5ff' : '#ff3366'
+                    ),
+                    borderWidth: 1,
+                    borderRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        ticks: { color: '#8aa4c8', font: { size: 7, family: 'JetBrains Mono' }, maxRotation: 45 },
+                        grid: { color: 'rgba(0,245,255,0.05)' }
+                    },
+                    y: {
+                        ticks: { color: '#8aa4c8', font: { size: 9, family: 'JetBrains Mono' } },
+                        grid: { color: 'rgba(0,245,255,0.05)' }
+                    }
+                }
+            }
+        });
+    }
+
+    function highlightChartBar(idx) {
+        if (!Anim.chart) return;
+        const dataset = Anim.chart.data.datasets[0];
+        dataset.backgroundColor = dataset.data.map((_, i) =>
+            i === idx ? 'rgba(0, 245, 255, 0.8)' : 'rgba(255, 51, 102, 0.5)'
+        );
+        dataset.borderColor = dataset.data.map((_, i) =>
+            i === idx ? '#00f5ff' : '#ff3366'
+        );
+        Anim.chart.update('none');
+    }
+
+    // =========================================================================
+    // Playback controls
+    // =========================================================================
+    function play() {
+        if (Anim.playing) return;
+        if (Anim.filteredFrames.length === 0) return;
+        if (Anim.currentIdx >= Anim.filteredFrames.length - 1) {
+            Anim.currentIdx = -1;
+        }
+
+        Anim.playing = true;
+        const btn = document.getElementById('playBtn');
+        btn.classList.add('playing');
+        btn.textContent = '\u23F8';
+
+        const baseInterval = 1500;
+        const interval = baseInterval / Anim.speed;
+
+        Anim.intervalId = setInterval(() => {
+            const nextIdx = Anim.currentIdx + 1;
+            if (nextIdx >= Anim.filteredFrames.length) {
+                pause();
+                return;
+            }
+            renderFrame(nextIdx);
+        }, interval);
+    }
+
+    function pause() {
+        Anim.playing = false;
+        clearInterval(Anim.intervalId);
+        const btn = document.getElementById('playBtn');
+        btn.classList.remove('playing');
+        btn.textContent = '\u25B6';
+    }
+
+    function togglePlay() {
+        Anim.playing ? pause() : play();
+    }
+
+    function stepForward() {
+        pause();
+        renderFrame(Math.min(Anim.currentIdx + 1, Anim.filteredFrames.length - 1));
+    }
+
+    function stepBackward() {
+        pause();
+        renderFrame(Math.max(Anim.currentIdx - 1, 0));
+    }
+
+    function setSpeed(speed) {
+        Anim.speed = speed;
+        document.querySelectorAll('[data-speed]').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.speed) === speed);
+        });
+        if (Anim.playing) {
+            pause();
+            play();
+        }
+    }
+
+    function toggleTrails() {
+        Anim.showTrails = document.getElementById('showTrails').checked;
+        renderFrame(Anim.currentIdx);
+    }
+
+    // Chinese fishing vessel name patterns
+    const CN_FISHING_PATTERNS = [
+        /^MIN/i, /^闽/i, /^閩/i,           // 福建 (Fujian/Min)
+        /^XIANG/i, /^湘/i,                  // 湖南 (Hunan/Xiang)
+        /^LU\s?YU/i, /^鲁/i, /^魯/i,       // 山東 (Shandong/Lu)
+        /^ZHE/i, /^浙/i,                    // 浙江 (Zhejiang)
+        /^YUE/i, /^粤/i, /^粵/i,            // 廣東 (Guangdong/Yue)
+        /^SU\s?YU/i, /^苏/i, /^蘇/i,       // 江蘇 (Jiangsu/Su)
+        /^GUI/i, /^桂/i,                    // 廣西 (Guangxi/Gui)
+        /^QIONG/i, /^琼/i, /^瓊/i,         // 海南 (Hainan/Qiong)
+        /^JIN\s?YU/i, /^津/i,              // 天津 (Tianjin/Jin)
+        /^LIAO/i, /^辽/i, /^遼/i,          // 遼寧 (Liaoning)
+    ];
+
+    function isCnFishingVessel(v) {
+        const name = (v.name || '').toUpperCase();
+        if (CN_FISHING_PATTERNS.some(p => p.test(name))) return true;
+        // Also match names containing "YU" (漁) with number patterns like "MIN.HUI.YU.00582"
+        if (/YU[.\s]*\d/i.test(name)) return true;
+        return false;
+    }
+
+    function filterVessels(vessels) {
+        switch (Anim.vesselFilter) {
+            case 'cn_fishing':
+                return vessels.filter(v => isCnFishingVessel(v));
+            case 'suspicious':
+                return vessels.filter(v => v.suspicious);
+            case 'loitering':
+                { const set = detectLoitering(); return vessels.filter(v => set.has(v.mmsi)); }
+            case 'zigzag':
+                { const set = detectZigzag(); return vessels.filter(v => set.has(v.mmsi)); }
+            case 'near_cable':
+                { const set = detectNearCable(Anim.currentIdx); return vessels.filter(v => set.has(v.mmsi)); }
+            default:
+                return vessels;
+        }
+    }
+
+    async function setVesselFilter(filter) {
+        Anim.vesselFilter = filter;
+        // Auto-enable cable layer when selecting near_cable filter
+        if (filter === 'near_cable') {
+            if (!Cable.geoData) await loadCableData();
+            if (!Cable.visible) {
+                Cable.visible = true;
+                document.getElementById('showCables').checked = true;
+                document.getElementById('cableControls').style.display = 'flex';
+                renderCableLayer();
+            }
+        }
+        renderFrame(Anim.currentIdx);
+    }
+
+    // =========================================================================
+    // Keyboard shortcuts
+    // =========================================================================
+    document.addEventListener('keydown', function (e) {
+        if (e.target.tagName === 'INPUT') return;
+        switch (e.key) {
+            case ' ':
+                e.preventDefault();
+                togglePlay();
+                break;
+            case 'ArrowRight':
+                stepForward();
+                break;
+            case 'ArrowLeft':
+                stepBackward();
+                break;
+        }
+    });
+
+    // =========================================================================
+    // Initialize
+    // =========================================================================
+    initMap();
+    loadData();
+    </script>
+    <script src="js/mobile-nav.js"></script>
+</body>
+
+</html>

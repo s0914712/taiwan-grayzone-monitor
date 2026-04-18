@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>統計分析 | Statistics - Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="台灣周邊海域船隻活動統計分析、暗船趨勢圖表、區域分布與軍演預測指標，含每日數據追蹤">
+    <meta name="keywords" content="統計分析,暗船趨勢,軍演預測,台灣海峽,maritime statistics,dark vessel trend,exercise prediction">
+    <meta name="author" content="Taiwan Gray Zone Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/statistics.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="統計分析 | Statistics - Taiwan Gray Zone Monitor">
+    <meta property="og:description" content="台灣周邊海域船隻活動統計分析、暗船趨勢圖表、區域分布與軍演預測指標">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/statistics.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="統計分析 | Statistics - Taiwan Gray Zone Monitor">
+    <meta name="twitter:description" content="台灣周邊海域船隻活動統計分析、暗船趨勢圖表與軍演預測指標">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/main.css">
+
+    <style>
+        body {
+            overflow-y: auto;
+        }
+
+        .time-range-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .time-range-btn {
+            padding: 6px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .time-range-btn:hover,
+        .time-range-btn.active {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            background: rgba(0, 245, 255, 0.1);
+        }
+
+        .prediction-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .prediction-level {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .prediction-level.low {
+            color: var(--accent-green);
+        }
+
+        .prediction-level.medium {
+            color: var(--accent-yellow);
+        }
+
+        .prediction-level.high {
+            color: var(--accent-orange);
+        }
+
+        .prediction-level.critical {
+            color: var(--accent-red);
+        }
+
+        .prediction-details {
+            flex: 1;
+        }
+
+        .prediction-title {
+            font-size: 11px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .prediction-desc {
+            font-size: 9px;
+            color: var(--text-secondary);
+        }
+
+        .correlation-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .correlation-item {
+            background: var(--bg-card);
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .correlation-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .correlation-positive {
+            color: var(--accent-red);
+        }
+
+        .correlation-negative {
+            color: var(--accent-green);
+        }
+
+        .correlation-neutral {
+            color: var(--text-secondary);
+        }
+
+        .correlation-label {
+            font-size: 8px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        @media (max-width: 900px) {
+            .main-content { padding-bottom: 72px; }
+            .time-range-btn { min-height: 44px; font-size: 12px; padding: 8px 16px; }
+            .prediction-indicator { flex-direction: column; text-align: center; }
+            .correlation-grid { grid-template-columns: repeat(2, 1fr); }
+            .correlation-label { font-size: 12px; }
+            .correlation-value { font-size: 16px; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <header class="header">
+        <h1 data-i18n="title.stats">📊 統計分析 Statistics</h1>
+        <div class="header-nav">
+            <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
+            <a href="statistics.html" class="active" data-i18n="nav.statistics">統計分析</a>
+            <a href="weekly-animation.html" data-i18n="nav.animation">軌跡動畫</a>
+            <a href="ais-animation.html" data-i18n="nav.ais_anim">船位動畫</a>
+            <a href="cn-fishing-animation.html" data-i18n="nav.cn_fishing">大陸漁船</a>
+            <a href="ship-transfers.html" data-i18n="nav.transfers">旁靠偵測</a>
+            <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
+        </div>
+    </header>
+
+    <div style="padding: 10px 16px;">
+        <div class="time-range-selector">
+            <button class="time-range-btn" data-range="7" data-i18n="st.days_7">7 天</button>
+            <button class="time-range-btn active" data-range="30" data-i18n="st.days_30">30 天</button>
+            <button class="time-range-btn" data-range="90" data-i18n="st.days_90">90 天</button>
+        </div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="value" id="statTotalDark">--</div>
+            <div class="label" data-i18n="dark.dark_total">暗船總數</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statAvgDaily">--</div>
+            <div class="label" data-i18n="dark.avg_daily">日均暗船</div>
+        </div>
+        <div class="stat-card">
+            <div class="value alert" id="statDarkRatio">--%</div>
+            <div class="label" data-i18n="dark.ratio">暗船比例</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statChnHours">--</div>
+            <div class="label" data-i18n="idx.chn_hours">中國船時(萬)</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="panel" style="grid-column: 1 / -1;">
+            <div class="panel-title" data-i18n="st.predict_title">🎯 軍演預測指標</div>
+            <div class="panel-body">
+                <div class="prediction-indicator">
+                    <div class="prediction-level medium" id="predictionLevel" data-i18n="st.predict_mid">中</div>
+                    <div class="prediction-details">
+                        <div class="prediction-title" data-i18n="st.predict_7d">7日預測風險等級</div>
+                        <div class="prediction-desc" id="predictionDesc" data-i18n="st.predict_desc_mid">暗船活動略高於平均，持續觀察中</div>
+                    </div>
+                </div>
+                <div class="correlation-grid">
+                    <div class="correlation-item">
+                        <div class="correlation-value correlation-positive" id="corrLag1">+0.42</div>
+                        <div class="correlation-label" data-i18n="st.corr_lag1">暗船→架次 (1日滯後)</div>
+                    </div>
+                    <div class="correlation-item">
+                        <div class="correlation-value correlation-positive" id="corrLag3">+0.38</div>
+                        <div class="correlation-label" data-i18n="st.corr_lag3">暗船→架次 (3日滯後)</div>
+                    </div>
+                    <div class="correlation-item">
+                        <div class="correlation-value correlation-positive" id="corrLag7">+0.29</div>
+                        <div class="correlation-label" data-i18n="st.corr_lag7">暗船→架次 (7日滯後)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-title" data-i18n="st.trend_title">📈 暗船數量趨勢</div>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title" data-i18n="st.region_title">🗺️ 區域暗船分布</div>
+            <div class="chart-container" style="height: 200px;">
+                <canvas id="regionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded');if(!window._flagChartRendered){window._flagChartRendered=true;renderFlagChart()}" data-i18n="st.flag_title">🚩 有 AIS 船隻國旗分布 ▸ 點擊展開</div>
+            <div class="panel-collapsible-body">
+                <div class="chart-container" style="height: 200px;">
+                    <canvas id="flagChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" style="grid-column: 1 / -1;">
+            <div class="panel-title" data-i18n="st.daily_title">📋 每日數據</div>
+            <div class="panel-body">
+                <table class="region-table" id="dailyTable">
+                    <thead>
+                        <tr>
+                            <th data-i18n="th.date">日期</th>
+                            <th data-i18n="th.sar_detect">SAR 偵測</th>
+                            <th data-i18n="th.dark">暗船</th>
+                            <th data-i18n="th.dark_ratio">暗船比例</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyTableBody">
+                        <tr>
+                            <td colspan="5" class="empty-state" data-i18n="common.loading">載入中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- AIS 歷史趨勢 -->
+    <div class="main-content" style="margin-top: 0;">
+        <div class="panel chart-panel" style="grid-column: 1 / -1;">
+            <div class="panel-title">📡 AIS 船舶歷史趨勢 (每日快照)</div>
+            <div class="chart-container" style="height: 280px;">
+                <canvas id="aisHistoryChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-title">🐟 可疑漁船數量趨勢</div>
+            <div class="chart-container" style="height: 200px;">
+                <canvas id="aisSuspiciousChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-title">🚢 船型分布趨勢</div>
+            <div class="chart-container" style="height: 200px;">
+                <canvas id="aisTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCFI vs 船舶流量相關性分析 -->
+    <div class="main-content" id="scfiSection" style="margin-top: 0; display: none;">
+        <div class="panel" style="grid-column: 1 / -1;">
+            <div class="panel-title">📊 SCFI 運價指數 vs 商船流量相關性分析</div>
+            <div class="panel-body">
+                <p id="scfiConclusion" style="font-size: 13px; line-height: 1.7; color: var(--text-primary); white-space: pre-line; margin: 0 0 12px 0;"></p>
+                <div id="scfiCaveat" style="font-size: 11px; color: var(--text-secondary); border-left: 3px solid var(--accent-yellow); padding-left: 10px; margin-top: 8px;"></div>
+            </div>
+        </div>
+
+        <div class="panel chart-panel" style="grid-column: 1 / -1;">
+            <div class="panel-title">📈 SCFI 指數 vs 商船數量（週資料，雙軸對照）</div>
+            <div class="chart-container" style="height: 320px;">
+                <canvas id="scfiVesselChart"></canvas>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; text-align: center;">
+                <span style="color: #ffd700;">●</span> SCFI 綜合指數（左軸）
+                &nbsp;&nbsp;
+                <span style="color: #00f5ff;">●</span> 台灣周邊商船 貨船+油輪（右軸）
+            </div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-title">📉 滯後相關係數</div>
+            <div class="chart-container" style="height: 220px;">
+                <canvas id="scfiLagChart"></canvas>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+                正值 lag = 船舶領先 SCFI；負值 lag = SCFI 領先船舶
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">📏 相關性統計摘要</div>
+            <div class="panel-body" id="scfiStatsBody" style="font-size: 12px; line-height: 1.9;">
+                <div>樣本週數: <span id="scfiSampleN" style="color: var(--accent-cyan); font-weight: 600;">-</span></div>
+                <div>商船 Pearson r: <span id="scfiPearsonR" class="correlation-value">-</span></div>
+                <div>商船 Spearman r: <span id="scfiSpearmanR" class="correlation-value">-</span></div>
+                <div>週變化率相關: <span id="scfiRocR" class="correlation-value">-</span></div>
+                <div>最佳滯後: <span id="scfiBestLag" style="color: var(--accent-cyan); font-weight: 600;">-</span></div>
+                <div>Granger 商船→SCFI: <span id="scfiGrangerV2S" style="font-weight: 600;">-</span></div>
+                <div>Granger SCFI→商船: <span id="scfiGrangerS2V" style="font-weight: 600;">-</span></div>
+                <div>預測可行性: <span id="scfiPredictability" style="font-weight: 600;">-</span></div>
+            </div>
+        </div>
+
+        <div class="panel" style="grid-column: 1 / -1;">
+            <div class="panel-title">📋 週資料明細</div>
+            <div class="panel-body">
+                <table class="region-table" id="scfiTable">
+                    <thead>
+                        <tr>
+                            <th>週結束日</th>
+                            <th>SCFI 綜合</th>
+                            <th>商船</th>
+                            <th>貨船</th>
+                            <th>油輪</th>
+                            <th>船舶總數</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scfiTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="js/i18n.js"></script>
+    <script src="js/charts.js"></script>
+    <script>
+        let fullData = null;
+        let selectedRange = 30;
+
+        async function loadData() {
+            try {
+                const res = await fetch('data.json?' + Date.now());
+                fullData = await res.json();
+
+                document.getElementById('dataStatus').textContent = i18n.t('st.data_loaded');
+                document.getElementById('updateInfo').textContent =
+                    i18n.t('common.updated') + ' ' + new Date(fullData.updated_at).toLocaleString();
+
+                renderStats();
+                renderCharts();
+                renderDailyTable();
+                renderPrediction();
+                loadScfiAnalysis();
+            } catch (e) {
+                console.error('Load failed:', e);
+                document.getElementById('dataStatus').textContent = i18n.t('common.error_load');
+            }
+        }
+
+        function renderStats() {
+            if (!fullData.dark_vessels || !fullData.dark_vessels.overall) return;
+
+            const overall = fullData.dark_vessels.overall;
+            document.getElementById('statTotalDark').textContent =
+                ChartsModule.formatCompact(overall.dark_vessels || 0);
+            document.getElementById('statAvgDaily').textContent =
+                Math.round((overall.dark_vessels || 0) / Math.max(1, selectedRange));
+            document.getElementById('statDarkRatio').textContent =
+                (overall.dark_ratio || 0) + '%';
+
+            if (fullData.vessel_monitoring && fullData.vessel_monitoring.summary) {
+                const s = fullData.vessel_monitoring.summary;
+                document.getElementById('statChnHours').textContent =
+                    (s.chn_presence_hours / 10000).toFixed(1);
+            }
+        }
+
+        function renderCharts() {
+            // Trend chart
+            if (fullData.vessel_monitoring && fullData.vessel_monitoring.daily) {
+                const daily = fullData.vessel_monitoring.daily.slice(-selectedRange);
+                const labels = daily.map(d => d.date.slice(5));
+                const darkData = daily.map(d => d.dark_vessels);
+                const totalData = daily.map(d => d.total_detections);
+
+                ChartsModule.renderTrendChart('trendChart', {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: i18n.t('dark.dark_vessel'),
+                            data: darkData,
+                            borderColor: '#ff3366',
+                            backgroundColor: 'rgba(255, 51, 102, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: i18n.t('dark.total_detect_s'),
+                            data: totalData,
+                            borderColor: '#00f5ff',
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            tension: 0.3
+                        }
+                    ]
+                });
+            }
+
+            // Region chart
+            if (fullData.dark_vessels && fullData.dark_vessels.regions) {
+                const regions = fullData.dark_vessels.regions;
+                const labels = [];
+                const values = [];
+                const colors = ['#00f5ff', '#ff6b35', '#00ff88', '#ffd700'];
+
+                Object.entries(regions).forEach(([key, r], i) => {
+                    labels.push(r.name || key);
+                    values.push(r.dark_vessels || 0);
+                });
+
+                ChartsModule.renderPieChart('regionChart', labels, values, colors);
+            }
+
+            // Flag chart deferred to panel expand (see renderFlagChart)
+        }
+
+        function renderFlagChart() {
+            if (fullData.dark_vessels && fullData.dark_vessels.regions &&
+                fullData.dark_vessels.regions.taiwan_strait &&
+                fullData.dark_vessels.regions.taiwan_strait.matched_by_flag) {
+
+                const flags = fullData.dark_vessels.regions.taiwan_strait.matched_by_flag;
+                const entries = Object.entries(flags).slice(0, 6);
+                const labels = entries.map(([k]) => k);
+                const values = entries.map(([, v]) => v);
+                const colors = ['#ff3366', '#00f5ff', '#ff6b35', '#00ff88', '#ffd700', '#9b59b6'];
+
+                ChartsModule.renderPieChart('flagChart', labels, values, colors);
+            }
+        }
+
+        function renderDailyTable() {
+            const tbody = document.getElementById('dailyTableBody');
+            if (!fullData.vessel_monitoring || !fullData.vessel_monitoring.daily) {
+                tbody.innerHTML = `<tr><td colspan="5" class="empty-state">${i18n.t('common.no_data')}</td></tr>`;
+                return;
+            }
+
+            const daily = fullData.vessel_monitoring.daily.slice(-selectedRange).reverse();
+
+            tbody.innerHTML = daily.map(d => {
+                const ratio = d.total_detections > 0
+                    ? Math.round(d.dark_vessels / d.total_detections * 100)
+                    : 0;
+                const barWidth = Math.max(2, Math.min(100, ratio));
+
+                return `
+                    <tr>
+                        <td>${d.date}</td>
+                        <td>${d.total_detections}</td>
+                        <td style="color:var(--accent-red);font-weight:600">${d.dark_vessels}</td>
+                        <td>${ratio}%</td>
+                        <td><span class="ratio-bar" style="width:${barWidth}px"></span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderPrediction() {
+            if (!fullData.exercise_prediction) return;
+
+            const pred = fullData.exercise_prediction;
+
+            // Update correlation values if available
+            if (pred.lag_correlation) {
+                const lags = pred.lag_correlation;
+                // Find correlations for lag 1, 3, 7
+                lags.forEach(l => {
+                    if (l.lag === 1) updateCorrelation('corrLag1', l.correlation);
+                    if (l.lag === 3) updateCorrelation('corrLag3', l.correlation);
+                    if (l.lag === 7) updateCorrelation('corrLag7', l.correlation);
+                });
+            }
+
+            // Update prediction level based on recent trends
+            if (pred.high_sortie_analysis) {
+                const analysis = pred.high_sortie_analysis;
+                const levelEl = document.getElementById('predictionLevel');
+                const descEl = document.getElementById('predictionDesc');
+
+                if (analysis.avg_dark_before_high > analysis.overall_avg_dark * 1.5) {
+                    levelEl.textContent = i18n.t('st.predict_high');
+                    levelEl.className = 'prediction-level high';
+                    descEl.textContent = i18n.t('st.predict_desc_high');
+                } else if (analysis.avg_dark_before_high > analysis.overall_avg_dark * 1.2) {
+                    levelEl.textContent = i18n.t('st.predict_mid');
+                    levelEl.className = 'prediction-level medium';
+                    descEl.textContent = i18n.t('st.predict_desc_mid');
+                } else {
+                    levelEl.textContent = i18n.t('st.predict_low');
+                    levelEl.className = 'prediction-level low';
+                    descEl.textContent = i18n.t('st.predict_desc_low');
+                }
+            }
+        }
+
+        function updateCorrelation(elId, value) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+
+            el.textContent = (value > 0 ? '+' : '') + value.toFixed(2);
+            el.className = 'correlation-value ' +
+                (value > 0.2 ? 'correlation-positive' :
+                    value < -0.2 ? 'correlation-negative' : 'correlation-neutral');
+        }
+
+        // Time range selector
+        document.querySelectorAll('.time-range-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.time-range-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedRange = parseInt(btn.dataset.range);
+                renderStats();
+                renderCharts();
+                renderDailyTable();
+            });
+        });
+
+        // AIS History charts
+        async function loadAisHistory() {
+            try {
+                const res = await fetch('ais_history.json?' + Date.now());
+                const history = await res.json();
+                if (!Array.isArray(history) || history.length === 0) return;
+
+                const labels = history.map(d => d.date.slice(5));
+
+                // Total vessels + fishing vessels trend
+                ChartsModule.renderTrendChart('aisHistoryChart', {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '船舶總數',
+                            data: history.map(d => d.stats.total_vessels),
+                            borderColor: '#00f5ff',
+                            backgroundColor: 'rgba(0, 245, 255, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: '漁船',
+                            data: history.map(d => d.stats.fishing_vessels),
+                            borderColor: '#ff6b35',
+                            backgroundColor: 'transparent',
+                            tension: 0.3
+                        }
+                    ]
+                });
+
+                // Suspicious vessel count trend
+                ChartsModule.renderTrendChart('aisSuspiciousChart', {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '可疑船舶',
+                            data: history.map(d => d.stats.suspicious_count),
+                            borderColor: '#ff3366',
+                            backgroundColor: 'rgba(255, 51, 102, 0.15)',
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                });
+
+                // Type distribution stacked area
+                const types = ['cargo', 'tanker', 'fishing', 'passenger', 'special'];
+                const typeColors = {
+                    cargo: '#00f5ff',
+                    tanker: '#ff6b35',
+                    fishing: '#00ff88',
+                    passenger: '#ffd700',
+                    special: '#9b59b6'
+                };
+                const typeLabels = {
+                    cargo: '貨船',
+                    tanker: '油輪',
+                    fishing: '漁船',
+                    passenger: '客船',
+                    special: '特殊'
+                };
+
+                ChartsModule.renderTrendChart('aisTypeChart', {
+                    labels: labels,
+                    datasets: types.map(t => ({
+                        label: typeLabels[t] || t,
+                        data: history.map(d => (d.stats.by_type || {})[t] || 0),
+                        borderColor: typeColors[t] || '#888',
+                        backgroundColor: 'transparent',
+                        tension: 0.3
+                    }))
+                });
+
+            } catch (e) {
+                console.log('AIS history not available:', e.message);
+            }
+        }
+
+        loadAisHistory();
+
+        // ============================================================
+        // SCFI vs Vessel Traffic Correlation
+        // ============================================================
+        async function loadScfiAnalysis() {
+            try {
+                const scfiCorr = fullData && fullData.scfi_correlation;
+                if (!scfiCorr || scfiCorr.status !== 'ok') {
+                    console.log('SCFI analysis not available:', scfiCorr && scfiCorr.status);
+                    return;
+                }
+
+                document.getElementById('scfiSection').style.display = '';
+
+                // 結論
+                const conclEl = document.getElementById('scfiConclusion');
+                if (conclEl && scfiCorr.conclusion && scfiCorr.conclusion.zh) {
+                    conclEl.textContent = scfiCorr.conclusion.zh;
+                }
+
+                // Caveat (小樣本提示)
+                const caveatEl = document.getElementById('scfiCaveat');
+                if (caveatEl) {
+                    const n = scfiCorr.sample_size || 0;
+                    if (n < 10) {
+                        caveatEl.textContent = `⚠️ 當前樣本僅 ${n} 週，統計檢驗信心不足。系統會持續累積週資料，預期 10 週後可進行 Granger 因果檢驗，30 週後結論才具高可信度。`;
+                    } else if (n < 30) {
+                        caveatEl.textContent = `ℹ️ 當前樣本 ${n} 週，已可進行 Granger 因果檢驗；建議累積至 30 週以上再作決策依據。`;
+                    } else {
+                        caveatEl.textContent = `✅ 樣本 ${n} 週，統計推論具足夠信心度。`;
+                    }
+                }
+
+                // 統計摘要
+                setText('scfiSampleN', scfiCorr.sample_size + ' 週');
+
+                const commercial = (scfiCorr.correlations && scfiCorr.correlations.commercial) || {};
+                updateCorrVal('scfiPearsonR', commercial.pearson_r, commercial.significant_pearson, commercial.pearson_p);
+                updateCorrVal('scfiSpearmanR', commercial.spearman_r, commercial.significant_spearman, commercial.spearman_p);
+
+                const roc = scfiCorr.rate_of_change_correlation || {};
+                updateCorrVal('scfiRocR', roc.pearson_r, roc.significant_pearson, roc.pearson_p);
+
+                const bestLag = (scfiCorr.lag_analysis && scfiCorr.lag_analysis.commercial &&
+                                 scfiCorr.lag_analysis.commercial.best) || {};
+                if (bestLag.lag !== undefined) {
+                    const arrow = bestLag.lag > 0 ? '船→SCFI' : (bestLag.lag < 0 ? 'SCFI→船' : '同步');
+                    setText('scfiBestLag', `${bestLag.lag} 週 (r=${(bestLag.correlation||0).toFixed(2)}, ${arrow})`);
+                }
+
+                // Granger
+                const granger = scfiCorr.granger_causality || {};
+                setGranger('scfiGrangerV2S', granger.vessels_to_scfi, granger.note);
+                setGranger('scfiGrangerS2V', granger.scfi_to_vessels, granger.note);
+
+                // 預測可行性
+                const pred = (scfiCorr.conclusion && scfiCorr.conclusion.predictability) || 'unknown';
+                const predMap = {
+                    'vessels_predict_scfi':    ['✅ 船舶→SCFI 可預測', 'var(--accent-green)'],
+                    'scfi_predicts_vessels':   ['✅ SCFI→船舶 可預測', 'var(--accent-green)'],
+                    'bidirectional':           ['✅ 雙向互為預測', 'var(--accent-green)'],
+                    'correlated_no_causality': ['⚠️ 相關但無因果', 'var(--accent-yellow)'],
+                    'weak':                    ['❌ 預測可行性低', 'var(--accent-red)'],
+                    'insufficient':            ['⏳ 資料不足', 'var(--text-secondary)'],
+                    'unknown':                 ['-', 'var(--text-secondary)'],
+                };
+                const predEl = document.getElementById('scfiPredictability');
+                if (predEl) {
+                    const [txt, color] = predMap[pred] || predMap.unknown;
+                    predEl.textContent = txt;
+                    predEl.style.color = color;
+                }
+
+                renderScfiDualChart(scfiCorr);
+                renderScfiLagChart(scfiCorr);
+                renderScfiTable(scfiCorr);
+
+            } catch (e) {
+                console.error('SCFI render failed:', e);
+            }
+        }
+
+        function setText(id, val) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        }
+
+        function updateCorrVal(id, val, significant, p) {
+            const el = document.getElementById(id);
+            if (!el || val == null) { if (el) el.textContent = 'N/A'; return; }
+            const sig = significant ? ' *' : '';
+            const pStr = (p != null && !isNaN(p)) ? ` (p=${p.toFixed(3)})` : '';
+            el.textContent = (val > 0 ? '+' : '') + val.toFixed(3) + sig + pStr;
+            el.className = 'correlation-value ' +
+                (val > 0.2 ? 'correlation-positive' :
+                    val < -0.2 ? 'correlation-negative' : 'correlation-neutral');
+        }
+
+        function setGranger(id, grangerObj, note) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (!grangerObj || Object.keys(grangerObj).length === 0) {
+                el.textContent = note || '資料不足';
+                el.style.color = 'var(--text-secondary)';
+                return;
+            }
+            // 找最小 p-value
+            let minP = null, lagAtMin = null;
+            for (const [lag, v] of Object.entries(grangerObj)) {
+                if (v && typeof v === 'object' && v.p_value != null) {
+                    if (minP === null || v.p_value < minP) {
+                        minP = v.p_value;
+                        lagAtMin = lag;
+                    }
+                }
+            }
+            if (minP === null) {
+                el.textContent = '無有效結果';
+                el.style.color = 'var(--text-secondary)';
+                return;
+            }
+            const sig = minP < 0.05;
+            el.textContent = `p=${minP.toFixed(3)} (lag=${lagAtMin})` + (sig ? ' ✓' : '');
+            el.style.color = sig ? 'var(--accent-green)' : 'var(--text-secondary)';
+        }
+
+        function renderScfiDualChart(scfiCorr) {
+            const series = scfiCorr.weekly_series || [];
+            if (series.length === 0) return;
+
+            const canvas = document.getElementById('scfiVesselChart');
+            if (!canvas) return;
+            if (canvas._chart) canvas._chart.destroy();
+
+            const labels = series.map(s => s.week_ending.slice(5));
+            const scfiData = series.map(s => s.scfi_composite);
+            const commercialData = series.map(s => s.commercial);
+
+            canvas._chart = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'SCFI 綜合指數',
+                            data: scfiData,
+                            borderColor: '#ffd700',
+                            backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            fill: true,
+                        },
+                        {
+                            label: '商船 (貨+油)',
+                            data: commercialData,
+                            borderColor: '#00f5ff',
+                            backgroundColor: 'transparent',
+                            yAxisID: 'y1',
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: 4,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { labels: { color: '#e8eef7' } },
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#8aa4c8' },
+                            grid: { color: 'rgba(138, 164, 200, 0.1)' },
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'SCFI 指數', color: '#ffd700' },
+                            ticks: { color: '#ffd700' },
+                            grid: { color: 'rgba(255, 215, 0, 0.1)' },
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            title: { display: true, text: '商船數量', color: '#00f5ff' },
+                            ticks: { color: '#00f5ff' },
+                            grid: { drawOnChartArea: false },
+                        },
+                    },
+                },
+            });
+        }
+
+        function renderScfiLagChart(scfiCorr) {
+            const lags = (scfiCorr.lag_analysis && scfiCorr.lag_analysis.commercial &&
+                          scfiCorr.lag_analysis.commercial.lags) || [];
+            if (lags.length === 0) return;
+
+            const canvas = document.getElementById('scfiLagChart');
+            if (!canvas) return;
+            if (canvas._chart) canvas._chart.destroy();
+
+            const best = (scfiCorr.lag_analysis.commercial.best || {}).lag;
+
+            canvas._chart = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: lags.map(l => l.lag + 'w'),
+                    datasets: [{
+                        label: '相關係數',
+                        data: lags.map(l => l.correlation),
+                        backgroundColor: lags.map(l =>
+                            l.lag === best ? '#ff6b35' :
+                            (l.correlation > 0 ? 'rgba(0, 245, 255, 0.6)' : 'rgba(255, 51, 102, 0.6)')
+                        ),
+                        borderColor: lags.map(l =>
+                            l.lag === best ? '#ff6b35' :
+                            (l.correlation > 0 ? '#00f5ff' : '#ff3366')
+                        ),
+                        borderWidth: 1,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Lag (週)', color: '#8aa4c8' },
+                            ticks: { color: '#8aa4c8' },
+                            grid: { color: 'rgba(138, 164, 200, 0.1)' },
+                        },
+                        y: {
+                            min: -1, max: 1,
+                            title: { display: true, text: '相關係數 r', color: '#8aa4c8' },
+                            ticks: { color: '#8aa4c8' },
+                            grid: { color: 'rgba(138, 164, 200, 0.1)' },
+                        },
+                    },
+                },
+            });
+        }
+
+        function renderScfiTable(scfiCorr) {
+            const tbody = document.getElementById('scfiTableBody');
+            if (!tbody) return;
+            const series = scfiCorr.weekly_series || [];
+            if (series.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">無資料</td></tr>';
+                return;
+            }
+            tbody.innerHTML = series.slice().reverse().map(s => `
+                <tr>
+                    <td>${s.week_ending}</td>
+                    <td style="color: #ffd700; font-weight: 600;">${s.scfi_composite.toFixed(1)}</td>
+                    <td style="color: #00f5ff; font-weight: 600;">${s.commercial.toFixed(0)}</td>
+                    <td>${s.cargo.toFixed(0)}</td>
+                    <td>${s.tanker.toFixed(0)}</td>
+                    <td>${s.total_vessels.toFixed(0)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Initialize
+        loadData();
+    </script>
+    <script src="js/mobile-nav.js"></script>
+</body>
+
+</html>
