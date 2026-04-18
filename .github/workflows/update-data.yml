@@ -1,0 +1,139 @@
+name: Update Gray Zone Vessel Data
+
+on:
+  schedule:
+    # 每天 UTC 00:00, 12:00 執行（台灣時間 08:00, 20:00）— GFW/軍演等低頻資料
+    - cron: '0 0,12 * * *'
+  workflow_dispatch:  # 允許手動觸發
+
+concurrency:
+  group: data-pipeline
+  cancel-in-progress: false
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          pip install requests pandas numpy websockets scipy statsmodels pysocks beautifulsoup4
+          
+      - name: Fetch AIS data via SOCKS5 proxy
+        env:
+          USE_PROXY: "true"
+          POOL: ${{ secrets.POOL }}
+        run: |
+          python src/fetch_ais_data.py
+        continue-on-error: true
+          
+      - name: Fetch GFW data and analyze
+        env:
+          GFW_API_TOKEN: ${{ secrets.GFW_API_TOKEN }}
+        run: |
+          python src/fetch_gfw_data.py
+        continue-on-error: true
+
+      - name: Analyze suspicious vessels (CSIS methodology)
+        run: |
+          python src/analyze_suspicious.py
+        continue-on-error: true
+
+      - name: Exercise prediction analysis
+        run: |
+          python src/exercise_prediction.py
+        continue-on-error: true
+
+      - name: Fetch SCFI (Shanghai Containerized Freight Index)
+        run: |
+          python src/fetch_scfi_data.py
+        continue-on-error: true
+
+      - name: Analyze SCFI vs vessel traffic correlation
+        run: |
+          python src/analyze_scfi_correlation.py
+        continue-on-error: true
+
+      - name: Fetch weekly dark vessel animation data
+        env:
+          GFW_API_TOKEN: ${{ secrets.GFW_API_TOKEN }}
+        run: |
+          python src/fetch_weekly_dark_vessels.py
+        continue-on-error: true
+
+      - name: Detect ship-to-ship transfers
+        run: |
+          python src/detect_ship_transfers.py
+        continue-on-error: true
+
+      - name: Fetch submarine cable fault status from MODA
+        run: |
+          python src/fetch_cable_status.py
+        continue-on-error: true
+
+      - name: Generate dashboard data
+        run: |
+          python src/generate_dashboard.py
+          
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          # 如果 AIS 快照為空 (0 艘船)，還原以保留上次有效資料
+          VESSEL_COUNT=$(python3 -c "import json; d=json.load(open('data/ais_snapshot.json')); print(len(d.get('vessels',[])))" 2>/dev/null || echo "0")
+          if [ "$VESSEL_COUNT" = "0" ]; then
+            echo "⚠️ AIS snapshot has 0 vessels, restoring previous version"
+            git checkout -- data/ais_snapshot.json docs/data.json 2>/dev/null || true
+          fi
+          git add data/ docs/
+          git diff --staged --quiet || git commit -m "🛰️ Update vessel data $(date +'%Y-%m-%d %H:%M') UTC"
+          # 拉取遠端最新，自動產生的 data 檔衝突時以本地為主
+          git pull --rebase -X theirs origin main || {
+            echo "⚠️ Rebase 失敗，改用 merge 策略"
+            git rebase --abort
+            git pull -X ours origin main
+          }
+          git push
+          
+  deploy:
+    needs: update-data
+    runs-on: ubuntu-latest
+    concurrency:
+      group: github-pages-deploy
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main  # 確保取得最新的 commit
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: './docs'
+          overwrite: true
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

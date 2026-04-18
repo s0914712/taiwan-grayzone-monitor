@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>關於本站 | About — Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="了解台灣周邊灰色地帶活動、海底電纜安全，以及本站提供的開源監測工具。">
+    <meta name="keywords" content="灰色地帶,gray zone,台灣海峽,海底電纜,submarine cable,暗船,dark vessel,AIS,maritime surveillance">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/intro.html">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+
+    <meta name="theme-color" content="#0a0f1c">
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <header class="header" style="position:sticky;top:0;z-index:100">
+        <h1>🛰️ <span data-i18n="nav.grayzone">台灣灰色地帶監測</span></h1>
+        <div class="header-info">
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <div class="intro-hero">
+        <h1 class="lang-zh-only" data-i18n="intro.hero_title">台灣周邊海域灰色地帶監測</h1>
+        <h1 class="lang-en-only">Gray Zone Activity Monitor around Taiwan</h1>
+        <p class="subtitle lang-zh-only" data-i18n="intro.hero_subtitle">開源衛星數據 &#x2022; 即時船舶追蹤 &#x2022; 海纜安全</p>
+        <p class="subtitle lang-en-only">Open Satellite Data &#x2022; Real-time Vessel Tracking &#x2022; Cable Security</p>
+    </div>
+
+    <!-- Section 1: What is Gray Zone? -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2 data-i18n="intro.gz_title">🌊 什麼是灰色地帶活動？</h2>
+            <p data-i18n="intro.gz_p1">「灰色地帶」是指介於和平與戰爭之間的模糊狀態。在台灣周邊海域，這包括：大量漁船越界作業、船隻關閉 AIS 定位訊號成為「暗船」、海上民兵偽裝為漁船活動，以及與軍事演習高度相關的異常船舶行為。</p>
+            <p data-i18n="intro.gz_p2">這些活動不構成傳統意義上的軍事衝突，卻持續侵蝕海上秩序、消耗監測資源，並可能為進一步行動創造條件。透過衛星與 AIS 數據的交叉比對，我們能追蹤這些隱蔽的海上活動。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>🌊 What is Gray Zone Activity?</h2>
+            <p>The "gray zone" refers to the ambiguous space between peace and war. Around Taiwan, this includes: fishing fleets crossing maritime boundaries, vessels disabling AIS transponders to become "dark ships," maritime militia disguised as fishing boats, and anomalous vessel behavior closely correlated with military exercises.</p>
+            <p>These activities fall short of traditional military conflict but continuously erode maritime order, drain monitoring resources, and may create conditions for further action. By cross-referencing satellite imagery and AIS data, we can track these covert maritime activities.</p>
+        </div>
+    </section>
+
+    <!-- Section 2: Submarine Cables -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2 data-i18n="intro.cable_title">🔌 海底電纜與灰色地帶</h2>
+            <p data-i18n="intro.cable_p1">台灣超過 95% 的對外網路通訊依賴海底電纜。這些電纜集中通過台灣海峽與周邊海域——正是灰色地帶活動最頻繁的區域。</p>
+            <p data-i18n="intro.cable_p2">拖網漁船的錨泊與作業是電纜損壞的主因之一。當大量不明船隻在電纜路線附近活動，便構成潛在威脅。本站地圖圖層可疊加顯示海底電纜路線與船隻分布，協助識別風險。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>🔌 Submarine Cables & the Gray Zone</h2>
+            <p>Over 95% of Taiwan's international internet traffic relies on submarine cables. These cables pass through the Taiwan Strait and surrounding waters — precisely where gray zone activity is most intense.</p>
+            <p>Anchor dragging by fishing trawlers is a leading cause of cable damage. When unidentified vessels operate near cable routes, they pose a potential threat. Our map layers overlay submarine cable routes with vessel positions to help identify risks.</p>
+        </div>
+    </section>
+
+    <!-- Section 3: Tools -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2 data-i18n="intro.tools_title">🧰 監測工具</h2>
+        </div>
+        <div class="lang-en-only">
+            <h2>🧰 Monitoring Tools</h2>
+        </div>
+    </section>
+
+    <div class="intro-tools-grid">
+        <a href="index.html" class="intro-tool-card">
+            <div class="tool-icon">🛰️</div>
+            <h3 class="lang-zh-only">即時監測地圖</h3>
+            <h3 class="lang-en-only">Live Monitor Map</h3>
+            <p class="lang-zh-only">即時顯示船隻位置、暗船偵測、海底電纜路線與漁撈熱點</p>
+            <p class="lang-en-only">Real-time vessel positions, dark vessel detections, cable routes & fishing hotspots</p>
+        </a>
+        <a href="dark-vessels.html" class="intro-tool-card">
+            <div class="tool-icon">🔦</div>
+            <h3 class="lang-zh-only">暗船偵測</h3>
+            <h3 class="lang-en-only">Dark Vessel Detection</h3>
+            <p class="lang-zh-only">SAR 衛星偵測無 AIS 訊號的船隻，按區域分析分布</p>
+            <p class="lang-en-only">SAR satellite detection of vessels without AIS, regional analysis</p>
+        </a>
+        <a href="statistics.html" class="intro-tool-card">
+            <div class="tool-icon">📊</div>
+            <h3 class="lang-zh-only">統計分析</h3>
+            <h3 class="lang-en-only">Statistics & Analysis</h3>
+            <p class="lang-zh-only">趨勢圖表、軍事演習預測指標、暗船與軍事活動相關性</p>
+            <p class="lang-en-only">Trend charts, military exercise prediction indicators & correlations</p>
+        </a>
+        <a href="weekly-animation.html" class="intro-tool-card">
+            <div class="tool-icon">🎬</div>
+            <h3 class="lang-zh-only">軌跡動畫</h3>
+            <h3 class="lang-en-only">Vessel Trail Animation</h3>
+            <p class="lang-zh-only">以 deck.gl 光跡動畫呈現船舶軌跡</p>
+            <p class="lang-en-only">deck.gl TripsLayer vessel trail animation</p>
+        </a>
+        <a href="ais-animation.html" class="intro-tool-card">
+            <div class="tool-icon">📡</div>
+            <h3 class="lang-zh-only">AIS 船位動畫</h3>
+            <h3 class="lang-en-only">AIS Track Animation</h3>
+            <p class="lang-zh-only">即時船位動態回放，追蹤可疑船隻與漁船軌跡</p>
+            <p class="lang-en-only">Real-time vessel track playback for suspicious and fishing vessels</p>
+        </a>
+        <a href="cn-fishing-animation.html" class="intro-tool-card">
+            <div class="tool-icon">🐟</div>
+            <h3 class="lang-zh-only">大陸漁船追蹤</h3>
+            <h3 class="lang-en-only">Chinese Fishing Vessels</h3>
+            <p class="lang-zh-only">依省份分析中國漁船在台灣周邊的活動分布</p>
+            <p class="lang-en-only">Chinese fishing vessel activity by province around Taiwan</p>
+        </a>
+        <a href="identity-history.html" class="intro-tool-card">
+            <div class="tool-icon">🔄</div>
+            <h3 class="lang-zh-only">身分追蹤</h3>
+            <h3 class="lang-en-only">Identity Tracking</h3>
+            <p class="lang-zh-only">偵測船隻變更名稱、呼號或 IMO 號碼等可疑行為</p>
+            <p class="lang-en-only">Detect vessels changing names, call signs, or IMO numbers</p>
+        </a>
+    </div>
+
+    <!-- CTA -->
+    <div class="intro-cta">
+        <a href="index.html" class="lang-zh-only" data-i18n="intro.cta">開始監測 →</a>
+        <a href="index.html" class="lang-en-only">Start Monitoring →</a>
+    </div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+
+    <script src="js/i18n.js"></script>
+    <style>
+        body.lang-en .lang-zh-only { display: none !important; }
+        body:not(.lang-en) .lang-en-only { display: none !important; }
+    </style>
+    <script src="js/mobile-nav.js"></script>
+</body>
+
+</html>

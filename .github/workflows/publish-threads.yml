@@ -1,0 +1,64 @@
+name: Publish Weekly Summary to Threads
+
+on:
+  schedule:
+    # 每週一 UTC 00:30（台灣時間 08:30）
+    - cron: '30 0 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (preview only)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: publish-threads
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests matplotlib
+
+      # --- 新增的 Token 檢查區塊 ---
+      - name: Debug Token Format
+        env:
+          TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+        run: |
+          echo "Checking token length and format..."
+          echo "Length of token: ${#TOKEN}"
+          if [[ "$TOKEN" == " "* ]]; then echo "CRITICAL: Token starts with a space!"; fi
+          if [[ "$TOKEN" == *" " ]]; then echo "CRITICAL: Token ends with a space!"; fi
+          if [[ "$TOKEN" == *$'\r'* ]]; then echo "CRITICAL: Token contains carriage return (CR)!"; fi
+          if [[ "$TOKEN" == *$'\n'* ]]; then echo "CRITICAL: Token contains newline (LF)!"; fi
+          echo "Token format check complete."
+      # -----------------------------
+
+      - name: Generate and publish weekly summary
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          THREADS_APP_SECRET: ${{ secrets.THREADS_APP_SECRET }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          ARGS="--mode weekly"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          python src/publish_threads.py $ARGS

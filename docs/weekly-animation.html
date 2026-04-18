@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIS 軌跡動畫 | Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="台灣周邊 AIS 船舶軌跡動畫">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0f1c;
+            color: #e8eef7;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+        #map { width: 100vw; height: 100vh; background: #0a0f1c; }
+
+        /* Top bar */
+        .topbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: rgba(10,15,28,0.92);
+            border-bottom: 1px solid rgba(0,245,255,0.15);
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(8px);
+        }
+        .back-btn {
+            background: none;
+            border: 1px solid rgba(0,245,255,0.25);
+            color: #00f5ff;
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .topbar-time {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #00f5ff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .topbar-stat {
+            font-size: 10px;
+            color: #6a8aaa;
+            flex-shrink: 0;
+        }
+        .btn {
+            background: rgba(0,245,255,0.08);
+            border: 1px solid rgba(0,245,255,0.25);
+            color: #00f5ff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .btn:hover { background: rgba(0,245,255,0.18); }
+        .btn.active { background: rgba(0,245,255,0.3); border-color: #00f5ff; }
+        .btn.playing { color: #ff3366; border-color: #ff3366; background: rgba(255,51,102,0.1); }
+
+        /* Bottom control bar */
+        .bottombar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: rgba(10,15,28,0.92);
+            border-top: 1px solid rgba(0,245,255,0.15);
+            padding: 6px 10px 8px;
+            backdrop-filter: blur(8px);
+        }
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .slider-row input[type="range"] {
+            flex: 1;
+            accent-color: #00f5ff;
+            height: 6px;
+        }
+        .range-row {
+            display: flex;
+            gap: 4px;
+            margin-top: 5px;
+            justify-content: center;
+        }
+        .range-btn {
+            background: rgba(0,245,255,0.06);
+            border: 1px solid rgba(0,245,255,0.15);
+            color: #6a8aaa;
+            padding: 3px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .range-btn:hover { color: #8aa4c8; }
+        .range-btn.active { background: rgba(0,245,255,0.2); border-color: #00f5ff; color: #00f5ff; }
+
+        /* Legend */
+        .legend {
+            position: fixed;
+            bottom: 70px; left: 8px;
+            z-index: 1000;
+            background: rgba(10,15,28,0.82);
+            border: 1px solid rgba(0,245,255,0.1);
+            border-radius: 5px;
+            padding: 4px 8px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 9px;
+            color: #8aa4c8;
+        }
+        .legend-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            box-shadow: 0 0 4px currentColor;
+        }
+
+        /* Loading */
+        #loading {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            z-index: 2000;
+            text-align: center;
+            color: #00f5ff;
+        }
+        .spinner {
+            border: 3px solid rgba(0,245,255,0.1);
+            border-top: 3px solid #00f5ff;
+            border-radius: 50%;
+            width: 30px; height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Hide Leaflet attribution on small screens */
+        @media (max-width: 480px) {
+            .leaflet-control-attribution { font-size: 8px; max-width: 40vw; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="loading">
+    <div class="spinner"></div>
+    <div id="loadMsg">載入 AIS 軌跡資料...</div>
+</div>
+
+<div class="topbar" id="topbar" style="display:none">
+    <a href="index.html" class="back-btn">&#8592;</a>
+    <div class="topbar-time" id="timeDisplay">-</div>
+    <div class="topbar-stat" id="statLine">-</div>
+    <button class="btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
+    <button class="btn active" data-speed="0.5" onclick="setSpeed(0.5)">0.5x</button>
+    <button class="btn" data-speed="1" onclick="setSpeed(1)">1x</button>
+</div>
+
+<div class="legend" id="legend" style="display:none">
+    <div class="legend-item"><div class="legend-dot" style="color:#ff6347"></div>福建</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#4169e1"></div>浙江</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#ffa500"></div>廣東</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#32cd32"></div>山東</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#00f5ff"></div>貨輪</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#ff6b35"></div>油輪</div>
+    <div class="legend-item"><div class="legend-dot" style="color:#9370db"></div>其他</div>
+</div>
+
+<div class="bottombar" id="bottombar" style="display:none">
+    <div class="slider-row">
+        <input type="range" id="timeSlider" min="0" max="1000" value="0">
+    </div>
+    <div class="range-row">
+        <button class="range-btn" data-range="1" onclick="setRange(1)">1天</button>
+        <button class="range-btn" data-range="3" onclick="setRange(3)">3天</button>
+        <button class="range-btn" data-range="7" onclick="setRange(7)">1週</button>
+        <button class="range-btn active" data-range="0" onclick="setRange(0)">全部</button>
+    </div>
+</div>
+
+<script>
+// =========================================================================
+// Province & type color detection
+// =========================================================================
+const PROVINCE_PATTERNS = {
+    fujian:    { patterns: [/^MIN/i, /^闽/i, /^閩/i], color: '#ff6347' },
+    zhejiang:  { patterns: [/^ZHE/i, /^浙/i],         color: '#4169e1' },
+    guangdong: { patterns: [/^YUE/i, /^粤/i, /^粵/i], color: '#ffa500' },
+    shandong:  { patterns: [/^LU\s?YU/i, /^鲁/i, /^魯/i], color: '#32cd32' },
+    hainan:    { patterns: [/^QIONG/i, /^琼/i, /^瓊/i], color: '#ff69b4' },
+    jiangsu:   { patterns: [/^SU\s?YU/i, /^苏/i, /^蘇/i], color: '#00ced1' },
+    guangxi:   { patterns: [/^GUI/i, /^桂/i],         color: '#daa520' },
+};
+
+const TYPE_COLORS = {
+    fishing: '#00ff88', cargo: '#00f5ff', tanker: '#ff6b35',
+    lng: '#f0e130', other: '#9370db', unknown: '#888'
+};
+
+function getColor(v) {
+    const name = (v.name || '').toUpperCase();
+    for (const prov of Object.values(PROVINCE_PATTERNS)) {
+        if (prov.patterns.some(p => p.test(name))) return prov.color;
+    }
+    return TYPE_COLORS[v.type_name] || TYPE_COLORS.unknown;
+}
+
+// =========================================================================
+// State
+// =========================================================================
+let map, playing = false, speed = 0.5, currentTime = 0;
+let loopLength = 1, rangeDays = 0;
+let globalTMin = 0, globalTMax = 0;
+let vessels = []; // processed vessel data
+let trailLayer; // Leaflet layer group for trails
+let markerLayer; // Leaflet layer group for head markers
+let animFrame = null;
+
+// =========================================================================
+// Data processing — lightweight, limit to 300 vessels max
+// =========================================================================
+const MAX_VESSELS = 300;
+
+function processData(frames) {
+    const vesselMap = {};
+    let tMin = Infinity, tMax = -Infinity;
+
+    for (const frame of frames) {
+        const ts = new Date(frame.timestamp).getTime();
+        if (ts < tMin) tMin = ts;
+        if (ts > tMax) tMax = ts;
+        for (const v of (frame.vessels || [])) {
+            if (!v.lat || !v.lon) continue;
+            if (!vesselMap[v.mmsi]) {
+                vesselMap[v.mmsi] = {
+                    mmsi: v.mmsi,
+                    name: v.name || v.mmsi,
+                    type_name: v.type_name || 'unknown',
+                    color: getColor(v),
+                    points: []
+                };
+            }
+            vesselMap[v.mmsi].points.push({ lat: v.lat, lon: v.lon, t: ts });
+        }
+    }
+
+    globalTMin = tMin;
+    globalTMax = tMax;
+
+    // Sort each vessel's points by time, deduplicate
+    let all = Object.values(vesselMap);
+    for (const v of all) {
+        v.points.sort((a, b) => a.t - b.t);
+        const deduped = [v.points[0]];
+        for (let i = 1; i < v.points.length; i++) {
+            const prev = deduped[deduped.length - 1];
+            const cur = v.points[i];
+            if (cur.lat !== prev.lat || cur.lon !== prev.lon) {
+                deduped.push(cur);
+            }
+        }
+        v.points = deduped;
+    }
+
+    // Filter to vessels with at least 2 points, sort by point count descending, take top N
+    all = all.filter(v => v.points.length >= 2);
+    all.sort((a, b) => b.points.length - a.points.length);
+    vessels = all.slice(0, MAX_VESSELS);
+
+    applyRange();
+}
+
+function applyRange() {
+    const tMax = globalTMax;
+    const tMin = rangeDays === 0 ? globalTMin : tMax - rangeDays * 86400000;
+    loopLength = tMax - tMin;
+
+    // Pre-compute range-clipped points for each vessel
+    for (const v of vessels) {
+        v.rangePoints = v.points.filter(p => p.t >= tMin && p.t <= tMax);
+        v.tMin = tMin;
+    }
+}
+
+// =========================================================================
+// Rendering — Leaflet polylines + circle markers
+// =========================================================================
+const TRAIL_DURATION = 30 * 60 * 1000; // 30 min trail
+
+function renderFrame() {
+    trailLayer.clearLayers();
+    markerLayer.clearLayers();
+
+    const tMin = rangeDays === 0 ? globalTMin : globalTMax - rangeDays * 86400000;
+    const absTime = tMin + currentTime;
+    let activeCount = 0;
+
+    for (const v of vessels) {
+        const pts = v.rangePoints;
+        if (!pts || pts.length < 2) continue;
+
+        // Find points within trail window
+        const trailStart = absTime - TRAIL_DURATION;
+        const trailPts = [];
+        let headPt = null;
+
+        for (let i = 0; i < pts.length; i++) {
+            if (pts[i].t > absTime) break;
+            if (pts[i].t >= trailStart) {
+                trailPts.push(pts[i]);
+            }
+            headPt = pts[i];
+        }
+
+        // Interpolate head position if between two known points
+        for (let i = 0; i < pts.length - 1; i++) {
+            if (pts[i].t <= absTime && pts[i + 1].t > absTime) {
+                const frac = (absTime - pts[i].t) / (pts[i + 1].t - pts[i].t);
+                headPt = {
+                    lat: pts[i].lat + (pts[i + 1].lat - pts[i].lat) * frac,
+                    lon: pts[i].lon + (pts[i + 1].lon - pts[i].lon) * frac,
+                    t: absTime
+                };
+                trailPts.push(headPt);
+                break;
+            }
+        }
+
+        if (trailPts.length < 1 || !headPt) continue;
+        if (headPt.t < trailStart) continue;
+
+        activeCount++;
+
+        // Draw trail polyline with gradient-like effect (2 layers)
+        if (trailPts.length >= 2) {
+            const latlngs = trailPts.map(p => [p.lat, p.lon]);
+            // Outer glow
+            L.polyline(latlngs, {
+                color: v.color, weight: 4, opacity: 0.2,
+                lineCap: 'round', lineJoin: 'round', interactive: false
+            }).addTo(trailLayer);
+            // Core line
+            L.polyline(latlngs, {
+                color: v.color, weight: 1.5, opacity: 0.7,
+                lineCap: 'round', lineJoin: 'round', interactive: false
+            }).addTo(trailLayer);
+        }
+
+        // Head marker
+        L.circleMarker([headPt.lat, headPt.lon], {
+            radius: 3, color: v.color, fillColor: v.color,
+            fillOpacity: 0.9, weight: 0, interactive: true
+        }).bindPopup(
+            '<b>' + v.name + '</b><br>MMSI: ' + v.mmsi + '<br>Type: ' + v.type_name,
+            { className: 'dark-popup' }
+        ).addTo(markerLayer);
+    }
+
+    // Update stat
+    document.getElementById('statLine').textContent = activeCount + '/' + vessels.length;
+
+    // Update time display
+    const d = new Date(absTime);
+    document.getElementById('timeDisplay').textContent =
+        d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+}
+
+// =========================================================================
+// Animation loop
+// =========================================================================
+function animate() {
+    if (!playing) return;
+    // At 0.5x: full loop in ~120s. At 1x: ~60s.
+    const step = (loopLength / 3600) * speed;
+    currentTime += step;
+    if (currentTime > loopLength) currentTime = 0;
+
+    document.getElementById('timeSlider').value = Math.round((currentTime / loopLength) * 1000);
+    renderFrame();
+    animFrame = requestAnimationFrame(animate);
+}
+
+function togglePlay() {
+    playing = !playing;
+    const btn = document.getElementById('playBtn');
+    btn.innerHTML = playing ? '&#9646;&#9646;' : '&#9654;';
+    btn.classList.toggle('playing', playing);
+    if (playing) animFrame = requestAnimationFrame(animate);
+    else if (animFrame) cancelAnimationFrame(animFrame);
+}
+
+function setSpeed(s) {
+    speed = s;
+    document.querySelectorAll('[data-speed]').forEach(b => {
+        b.classList.toggle('active', parseFloat(b.dataset.speed) === s);
+    });
+}
+
+function setRange(days) {
+    rangeDays = days;
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.range-btn[data-range="' + days + '"]').classList.add('active');
+    applyRange();
+    currentTime = 0;
+    document.getElementById('timeSlider').value = 0;
+    renderFrame();
+}
+
+document.getElementById('timeSlider').addEventListener('input', function() {
+    currentTime = (this.value / 1000) * loopLength;
+    renderFrame();
+});
+
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+});
+
+// =========================================================================
+// Init
+// =========================================================================
+async function init() {
+    // Init Leaflet map
+    map = L.map('map', {
+        center: [24.0, 121.0],
+        zoom: 7,
+        minZoom: 4,
+        maxZoom: 14,
+        zoomControl: false
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19
+    }).addTo(map);
+
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    trailLayer = L.layerGroup().addTo(map);
+    markerLayer = L.layerGroup().addTo(map);
+
+    // Load data
+    try {
+        const res = await fetch('ais_track_history.json?' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+
+        document.getElementById('loadMsg').textContent = '處理 ' + data.length + ' 幀...';
+        await new Promise(r => setTimeout(r, 30));
+
+        processData(data);
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('topbar').style.display = '';
+        document.getElementById('bottombar').style.display = '';
+        document.getElementById('legend').style.display = '';
+
+        renderFrame();
+        togglePlay();
+    } catch (e) {
+        console.error(e);
+        document.getElementById('loadMsg').innerHTML =
+            '<span style="color:#ff3366">載入失敗: ' + e.message + '</span>';
+    }
+}
+
+// Add dark popup style
+const popStyle = document.createElement('style');
+popStyle.textContent = `.dark-popup .leaflet-popup-content-wrapper{background:rgba(10,15,28,0.92);color:#e8eef7;border:1px solid rgba(0,245,255,0.2);border-radius:6px;font-size:12px}.dark-popup .leaflet-popup-tip{background:rgba(10,15,28,0.92)}`;
+document.head.appendChild(popStyle);
+
+init();
+</script>
+</body>
+</html>
