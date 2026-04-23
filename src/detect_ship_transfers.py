@@ -13,7 +13,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 DATA_DIR = Path("data")
-TRACK_HISTORY_FILE = DATA_DIR / "ais_track_history.json"
+DOCS_DIR = Path("docs")
+# tier-1 軌跡歷史已搬至 docs/
+TRACK_HISTORY_FILE = DOCS_DIR / "ais_track_history.json"
 SNAPSHOT_FILE = DATA_DIR / "ais_snapshot.json"
 OUTPUT_FILE = DATA_DIR / "ship_transfers.json"
 

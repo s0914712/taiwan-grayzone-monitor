@@ -16,11 +16,9 @@ def main():
     parser.add_argument('--type', default='', help='Vessel type')
     args = parser.parse_args()
 
-    # Find track history file
+    # Find track history file (已搬至 docs/)
     base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     history_path = os.path.join(base, 'docs', 'ais_track_history.json')
-    if not os.path.exists(history_path):
-        history_path = os.path.join(base, 'data', 'ais_track_history.json')
 
     print(f'Reading {history_path}...')
     with open(history_path) as f:

@@ -1,3 +1,9 @@
 __pycache__/
 *.pyc
 Pool.txt
+
+# Large accumulating artifacts live in docs/ (served to frontend + read by pipeline).
+# Any stale data/ copies from old pipeline runs are ignored to keep them out of commits.
+data/vessel_profiles.json
+data/ais_track_history.json
+data/ais_track_commercial.json

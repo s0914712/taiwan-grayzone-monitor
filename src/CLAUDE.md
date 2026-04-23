@@ -13,7 +13,7 @@ fetch_ais_data.py → fetch_gfw_data.py → detect_ship_transfers.py
 
 | File | Purpose | Input | Output |
 |------|---------|-------|--------|
-| `fetch_ais_data.py` | Fetch AIS from Taiwan Port Bureau (SOCKS5 proxy), update profiles, save tier-1/tier-2 tracks, detect identity changes | Port Bureau API | `ais_snapshot.json`, `vessel_profiles.json`, `ais_track_history.json`, `ais_track_commercial.json`, `identity_events.json` |
+| `fetch_ais_data.py` | Fetch AIS from Taiwan Port Bureau (SOCKS5 proxy), update profiles, save tier-1/tier-2 tracks, detect identity changes | Port Bureau API | `data/ais_snapshot.json`, `docs/vessel_profiles.json`, `docs/ais_track_history.json`, `docs/ais_track_commercial.json`, `data/identity_events.json` |
 | `fetch_gfw_data.py` | Fetch GFW SAR satellite detections for dark vessels + fishing hotspots | GFW API (`GFW_API_TOKEN`) | `dark_vessels.json` |
 | `fetch_weekly_dark_vessels.py` | Extract 90-day SAR dark vessel data grouped by date | GFW API | `weekly_dark_vessels.json` |
 | `detect_ship_transfers.py` | Detect ship-to-ship rendezvous (<10m, >1hr), classify as pair trawling vs suspicious | `ais_track_history.json`, `ais_snapshot.json` | `ship_transfers.json` |
@@ -62,9 +62,10 @@ fetch_ais_data.py → fetch_gfw_data.py → detect_ship_transfers.py
 ```
 
 ### Track Tiers
-- **Tier-1** (`ais_track_history.json`): CN fishing + suspicious vessels, max 336 entries (28 days)
-- **Tier-2** (`ais_track_commercial.json`): cargo/tanker/LNG + identity-changed, max 336 entries (28 days)
-- Identity-changed MMSIs loaded from `identity_events.json` (last 7 days)
+- **Tier-1** (`docs/ais_track_history.json`): CN fishing + suspicious vessels, max 336 entries (28 days)
+- **Tier-2** (`docs/ais_track_commercial.json`): cargo/tanker/LNG + identity-changed, max 336 entries (28 days)
+- Identity-changed MMSIs loaded from `data/identity_events.json` (last 7 days)
+- Large accumulating files (`vessel_profiles.json`, `ais_track_history.json`, `ais_track_commercial.json`) are written to `docs/` as compact JSON (no indent) to stay under GitHub's 100 MiB per-file limit. `data/` counterparts are gitignored.
 
 ## Conventions
 - All timestamps ISO 8601 UTC

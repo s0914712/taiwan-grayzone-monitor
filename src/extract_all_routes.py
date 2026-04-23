@@ -55,14 +55,10 @@ def load_track_file(path, all_vessels):
 def main():
     base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    # Track history files to read (tier-1 + tier-2)
+    # Track history files to read (tier-1 + tier-2) — 都在 docs/
     track_files = [
-        # Tier 1: CN fishing + suspicious (prefer docs/ copy, fallback data/)
         os.path.join(base, 'docs', 'ais_track_history.json'),
-        os.path.join(base, 'data', 'ais_track_history.json'),
-        # Tier 2: cargo, tanker, LNG, identity-changed
         os.path.join(base, 'docs', 'ais_track_commercial.json'),
-        os.path.join(base, 'data', 'ais_track_commercial.json'),
     ]
 
     all_vessels = {}  # mmsi -> { name, type, track: [points] }
