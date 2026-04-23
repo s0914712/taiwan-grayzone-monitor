@@ -12,8 +12,11 @@ import json
 import random
 import requests
 import urllib3
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from collections import defaultdict
+
+# 船隻 profile 保留天數：最近 N 天未再出現即剔除，避免檔案無限成長
+VESSEL_PROFILE_RETENTION_DAYS = 90
 
 # 航港局 SSL 憑證缺少 Subject Key Identifier，停用驗證
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -23,10 +26,11 @@ DATA_DIR = 'data'
 DOCS_DIR = 'docs'
 OUTPUT_FILE = os.path.join(DATA_DIR, 'ais_snapshot.json')
 HISTORY_FILE = os.path.join(DATA_DIR, 'vessel_history.json')
-VESSEL_PROFILES_FILE = os.path.join(DATA_DIR, 'vessel_profiles.json')
+# 大型累積檔案直接寫入 docs/ (供前端與分析共用，避免 data/docs 重複 commit)
+VESSEL_PROFILES_FILE = os.path.join(DOCS_DIR, 'vessel_profiles.json')
 AIS_HISTORY_FILE = os.path.join(DATA_DIR, 'ais_history.json')
-AIS_TRACK_FILE = os.path.join(DATA_DIR, 'ais_track_history.json')
-AIS_TRACK_COMMERCIAL_FILE = os.path.join(DATA_DIR, 'ais_track_commercial.json')
+AIS_TRACK_FILE = os.path.join(DOCS_DIR, 'ais_track_history.json')
+AIS_TRACK_COMMERCIAL_FILE = os.path.join(DOCS_DIR, 'ais_track_commercial.json')
 DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
 IDENTITY_EVENTS_FILE = os.path.join(DATA_DIR, 'identity_events.json')
 
@@ -526,9 +530,24 @@ def save_all(vessels, stats):
         if v.get('imo'):
             p['last_imo'] = v['imo']
 
+    # Prune profiles not seen in last N days + cap list fields (keeps size bounded)
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=VESSEL_PROFILE_RETENTION_DAYS)).isoformat()
+    before_count = len(profiles)
+    profiles = {
+        mmsi: p for mmsi, p in profiles.items()
+        if p.get('last_seen_timestamps') and p['last_seen_timestamps'][-1] >= cutoff
+    }
+    for p in profiles.values():
+        if len(p.get('names_seen', [])) > 20:
+            p['names_seen'] = p['names_seen'][-20:]
+        if len(p.get('types_seen', [])) > 5:
+            p['types_seen'] = p['types_seen'][-5:]
+    pruned = before_count - len(profiles)
+
+    # Compact JSON (no indent) — file is large, whitespace waste matters
     with open(VESSEL_PROFILES_FILE, 'w', encoding='utf-8') as f:
-        json.dump(profiles, f, ensure_ascii=False, indent=2)
-    print(f"  👤 船隻 profile 已更新: {VESSEL_PROFILES_FILE} ({len(profiles)} 艘)")
+        json.dump(profiles, f, ensure_ascii=False, separators=(',', ':'))
+    print(f"  👤 船隻 profile 已更新: {VESSEL_PROFILES_FILE} ({len(profiles)} 艘, pruned {pruned} 艘 >{VESSEL_PROFILE_RETENTION_DAYS}d)")
 
     # 2b. AIS 歷史快照（每天 12 筆，每 2 小時一筆，供前端趨勢圖使用）
     now = datetime.now(timezone.utc)
@@ -620,8 +639,9 @@ def save_all(vessels, stats):
 
     track_history.append(track_entry)
     track_history = track_history[-AIS_TRACK_MAX_ENTRIES:]
+    # Compact JSON: file is large, whitespace adds ~40% overhead
     with open(AIS_TRACK_FILE, 'w', encoding='utf-8') as f:
-        json.dump(track_history, f, ensure_ascii=False, indent=2)
+        json.dump(track_history, f, ensure_ascii=False, separators=(',', ':'))
     print(f"  🎬 軌跡歷史已更新: {AIS_TRACK_FILE} ({len(track_history)} 筆, {len(track_vessels)} 艘船)")
 
     # 2d. 商船/油輪軌跡歷史 (Tier-2: cargo, tanker, LNG, 身分變更船舶)
@@ -677,8 +697,9 @@ def save_all(vessels, stats):
 
     commercial_history.append(commercial_entry)
     commercial_history = commercial_history[-AIS_TRACK_COMMERCIAL_MAX_ENTRIES:]
+    # Compact JSON (see tier-1 note)
     with open(AIS_TRACK_COMMERCIAL_FILE, 'w', encoding='utf-8') as f:
-        json.dump(commercial_history, f, ensure_ascii=False, indent=2)
+        json.dump(commercial_history, f, ensure_ascii=False, separators=(',', ':'))
     print(f"  🚢 商船軌跡已更新: {AIS_TRACK_COMMERCIAL_FILE} ({len(commercial_history)} 筆, {len(commercial_vessels)} 艘船)")
 
     # 3. 更新 Dashboard 資料（與 generate_dashboard.py 格式一致）

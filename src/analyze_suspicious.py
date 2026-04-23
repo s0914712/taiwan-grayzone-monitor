@@ -28,9 +28,11 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 DATA_DIR = Path("data")
-HISTORY_FILE = DATA_DIR / "vessel_profiles.json"
-TRACK_HISTORY_FILE = DATA_DIR / "ais_track_history.json"
-TRACK_COMMERCIAL_FILE = DATA_DIR / "ais_track_commercial.json"
+DOCS_DIR = Path("docs")
+# 大型累積檔案已搬至 docs/ (直接讀取 docs/ 版本)
+HISTORY_FILE = DOCS_DIR / "vessel_profiles.json"
+TRACK_HISTORY_FILE = DOCS_DIR / "ais_track_history.json"
+TRACK_COMMERCIAL_FILE = DOCS_DIR / "ais_track_commercial.json"
 CABLE_GEO_FILE = DATA_DIR / "cable-geo.json"
 IDENTITY_EVENTS_FILE = DATA_DIR / "identity_events.json"
 SANCTIONS_FILE = DATA_DIR / "un_sanctions_vessels.json"
@@ -891,8 +893,8 @@ def load_track_history():
     # Tier-1: CN fishing + suspicious
     # Tier-2: cargo, tanker, LNG, identity-changed
     track_sources = [
-        ("tier-1", [Path("docs") / "ais_track_history.json", TRACK_HISTORY_FILE]),
-        ("tier-2", [Path("docs") / "ais_track_commercial.json", TRACK_COMMERCIAL_FILE]),
+        ("tier-1", [TRACK_HISTORY_FILE]),
+        ("tier-2", [TRACK_COMMERCIAL_FILE]),
     ]
 
     for tier_label, candidates in track_sources:
