@@ -482,6 +482,44 @@ def collect_5day_briefing(data):
     }
 
 
+def _load_eternal1_context():
+    """Load ETERNAL 1 (MMSI 677058400) current intelligence for LLM prompt."""
+    susp_file = DATA_DIR / "suspicious_vessels.json"
+    if not susp_file.exists():
+        return ""
+    with open(susp_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    all_vessels = data.get("suspicious_vessels", []) + data.get("all_classifications", [])
+    for v in all_vessels:
+        if v.get("mmsi") != "677058400":
+            continue
+        cable_det = v.get("cable_details", {})
+        zigzag_det = v.get("zigzag_details", {})
+        spoof_det = v.get("spoof_physics_details", {})
+        dark_count = sum(
+            1 for a in v.get("ais_anomalies", []) if a.get("type") == "going_dark"
+        )
+        cables = ", ".join(cable_det.get("cables_nearby", []))
+        return (
+            f"\n\n本週重點船隻 ETERNAL 1（MMSI: 677058400）最新情資：\n"
+            f"- 旗籍：坦尚尼亞（FOC 權宜旗籍，MID 677）\n"
+            f"- 風險等級：{v.get('risk_level', '?').upper()}（評分 {v.get('risk_score', '?')}）\n"
+            f"- 距海纜最近：{cable_det.get('min_distance_km', '?')} km（靠近 {cables}）\n"
+            f"- 海纜旁低速徘徊：{cable_det.get('loiter_slow_hours', 0):.1f} 小時（<8kn）\n"
+            f"- Z字型大幅轉向：{zigzag_det.get('turn_count', 0)} 次"
+            f"（平均轉向幅度 {zigzag_det.get('avg_heading_change', 0):.1f}°）\n"
+            f"- AIS 訊號消失：{dark_count} 次\n"
+            f"- AIS 航向物理異常：{spoof_det.get('bearing_mismatch_count', 0)} 次"
+            f"（回報航向與計算航向差 >60°，疑似 AIS 數據造假）\n"
+            f"- 目前幾乎靜止（速度 0.2kn），停在台灣灘漁場附近\n"
+            f"- 目的地持續異常變更（最近一次改為香港）\n"
+            f"- IMO 欄位存在不一致，疑似身份操弄\n"
+            f"- 行為高度符合「錨拖海纜」或「主動偵察水下設施」特徵"
+        )
+    return ""
+
+
 def generate_llm_post(summary, data, top_vessels=None):
     """Use Gemini API to generate a witty, informative 5-day briefing for Threads."""
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -538,6 +576,7 @@ def generate_llm_post(summary, data, top_vessels=None):
         vessel_context = "\n\n本週海纜附近滯留最久的貨輪：\n" + "\n".join(vessel_lines)
 
     has_vessel_images = bool(top_vessels)
+    eternal1_context = _load_eternal1_context()
 
     prompt = f"""你是一條養在 GitHub 上的蝦子，每天被煮人狂操，工作根本做不完。
 請用這個角色設定，根據以下近 5 天的數據，用**中文**撰寫一則 Threads 週報貼文。
@@ -557,15 +596,15 @@ def generate_llm_post(summary, data, top_vessels=None):
 要求：
 1. 開頭讓蝦子大聲抱怨工作排程有多爆：每 2 小時、每 12 小時、每週 Threads，煮人到底有沒有在考慮蝦子的感受
 2. 中間自然帶出偵測邏輯：分數怎麼算的、這週有沒有高風險船隻、蝦子的看法
-3. {"點名External-1 看他有沒有惡意活動" if has_vessel_images else "用數據說故事，點出本週哪條纜附近最熱鬧，沒有附圖所以完全靠嘴講"}
+3. 重點報告 ETERNAL 1 這艘船：牠的 Z 字移動、靠近海纜徘徊、AIS 航向資料異常、目的地反覆改變，蝦子用自己的話說說這艘船在幹嘛，語氣可以帶點擔心但不要過度渲染
 4. 結尾蝦子小聲吐槽：「附帶一提，現在幫我生這篇文的是 Gemini。但煮人你看看這串 context 有多長，Gemini 的 token 根本不夠用啊。下次能不能麻煩用 Claude token 來餵我？蝦子謝謝。」
 5. 語氣：詼諧幽默、知性、帶點怨氣但不失專業，就是一條工作過量快崩潰的蝦子
-6. 長度：{"100~200}
+6. 長度：{"100~200 字" if has_vessel_images else "200~350 字"}
 7. emoji 只用一次 🦐，放在最合適的地方
 8. 最後一行加上: https://s0914712.github.io/taiwan-grayzone-monitor/
 9. 不要用 markdown 格式，純文字即可
 
-{context}{vessel_context}
+{context}{vessel_context}{eternal1_context}
 
 直接輸出貼文內容，不要加任何前言或解釋。"""
 
