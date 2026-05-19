@@ -26,11 +26,13 @@ DATA_DIR = 'data'
 DOCS_DIR = 'docs'
 OUTPUT_FILE = os.path.join(DATA_DIR, 'ais_snapshot.json')
 HISTORY_FILE = os.path.join(DATA_DIR, 'vessel_history.json')
-# 大型累積檔案直接寫入 docs/ (供前端與分析共用，避免 data/docs 重複 commit)
-VESSEL_PROFILES_FILE = os.path.join(DOCS_DIR, 'vessel_profiles.json')
+# vessel_profiles + ais_track_commercial are pipeline-only (not fetched by frontend).
+# They live in data/ and are persisted between runs via Actions cache (not committed to git).
+# ais_track_history stays in docs/ because frontend animation pages fetch it directly.
+VESSEL_PROFILES_FILE = os.path.join(DATA_DIR, 'vessel_profiles.json')
 AIS_HISTORY_FILE = os.path.join(DATA_DIR, 'ais_history.json')
 AIS_TRACK_FILE = os.path.join(DOCS_DIR, 'ais_track_history.json')
-AIS_TRACK_COMMERCIAL_FILE = os.path.join(DOCS_DIR, 'ais_track_commercial.json')
+AIS_TRACK_COMMERCIAL_FILE = os.path.join(DATA_DIR, 'ais_track_commercial.json')
 DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
 IDENTITY_EVENTS_FILE = os.path.join(DATA_DIR, 'identity_events.json')
 

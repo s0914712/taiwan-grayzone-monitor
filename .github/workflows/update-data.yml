@@ -29,6 +29,16 @@ jobs:
         run: |
           pip install requests pandas numpy websockets scipy statsmodels pysocks beautifulsoup4
           
+      - name: Restore large data cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/vessel_profiles.json
+            data/ais_track_commercial.json
+          key: large-data-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            large-data-${{ runner.os }}-
+
       - name: Fetch AIS data via SOCKS5 proxy
         env:
           USE_PROXY: "true"
@@ -85,6 +95,15 @@ jobs:
         run: |
           python src/generate_dashboard.py
           
+      - name: Save large data cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            data/vessel_profiles.json
+            data/ais_track_commercial.json
+          key: large-data-${{ runner.os }}-${{ github.run_id }}
+
       - name: Commit and push changes
         run: |
           git config --local user.email "action@github.com"
