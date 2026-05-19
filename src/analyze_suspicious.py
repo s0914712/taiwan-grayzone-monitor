@@ -29,10 +29,11 @@ from pathlib import Path
 
 DATA_DIR = Path("data")
 DOCS_DIR = Path("docs")
-# 大型累積檔案已搬至 docs/ (直接讀取 docs/ 版本)
-HISTORY_FILE = DOCS_DIR / "vessel_profiles.json"
+# vessel_profiles + ais_track_commercial: pipeline-only, live in data/ (Actions cache).
+# ais_track_history stays in docs/ (fetched directly by frontend animation pages).
+HISTORY_FILE = DATA_DIR / "vessel_profiles.json"
 TRACK_HISTORY_FILE = DOCS_DIR / "ais_track_history.json"
-TRACK_COMMERCIAL_FILE = DOCS_DIR / "ais_track_commercial.json"
+TRACK_COMMERCIAL_FILE = DATA_DIR / "ais_track_commercial.json"
 CABLE_GEO_FILE = DATA_DIR / "cable-geo.json"
 IDENTITY_EVENTS_FILE = DATA_DIR / "identity_events.json"
 SANCTIONS_FILE = DATA_DIR / "un_sanctions_vessels.json"
