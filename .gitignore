@@ -2,8 +2,11 @@ __pycache__/
 *.pyc
 Pool.txt
 
-# Large accumulating artifacts live in docs/ (served to frontend + read by pipeline).
-# Any stale data/ copies from old pipeline runs are ignored to keep them out of commits.
+# Large pipeline-only files live in data/ and are persisted via Actions cache (not git).
+# ais_track_history.json stays in docs/ because the frontend fetches it directly.
 data/vessel_profiles.json
-data/ais_track_history.json
 data/ais_track_commercial.json
+
+# Guard against accidentally committing the old docs/ locations.
+docs/vessel_profiles.json
+docs/ais_track_commercial.json
