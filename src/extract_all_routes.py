@@ -55,10 +55,10 @@ def load_track_file(path, all_vessels):
 def main():
     base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    # Track history files to read (tier-1 + tier-2) — 都在 docs/
+    # Tier-1 (docs/): frontend fetches it. Tier-2 (data/): pipeline-only, Actions cache.
     track_files = [
         os.path.join(base, 'docs', 'ais_track_history.json'),
-        os.path.join(base, 'docs', 'ais_track_commercial.json'),
+        os.path.join(base, 'data', 'ais_track_commercial.json'),
     ]
 
     all_vessels = {}  # mmsi -> { name, type, track: [points] }
