@@ -64,6 +64,16 @@ SPOOF_CIRCLE_MAX_RADIUS_KM = 5.0   # 半徑 > 5km 排除（可能正常航行）
 SPOOF_CIRCLE_MIN_RADIUS_KM = 0.1   # 半徑 < 0.1km 排除（GPS 漂移）
 SPOOF_CIRCLE_MIN_ARC_DEG = 270.0   # 弧度覆蓋 > 270° 才算圓形
 
+# ── 星爆/蜘蛛網軌跡（僅針對非漁船）─────────────────────────
+# 多次從中心點出發的輻射型往返，常見於 AIS 信號操控
+STARBURST_MIN_POINTS = 10            # 至少 10 個有效移動點
+STARBURST_MIN_ARC_DEG = 270.0        # 弧度覆蓋 ≥270°（放射狀）
+STARBURST_RADIUS_CV_MIN = 0.35       # CV ≥0.35 區別於圓形（圓形是 <0.25）
+STARBURST_MIN_RADIUS_KM = 0.5        # 平均半徑下限
+STARBURST_MAX_RADIUS_KM = 30.0       # 平均半徑上限
+STARBURST_MIN_SPOKES = 5             # 至少 5 個方向有遠端點（30° 分箱）
+STARBURST_HUB_FRACTION = 0.3         # ≥30% 的點集中於 hub (r < 0.3 × max_r)
+
 # ── 船型威脅乘數 ──────────────────────────────────────────
 # 商船（cargo/tanker/lng）錨鍊長、噸位大，對海纜威脅高 → ×1.0
 # 漁船常態作業、體積小、危險性低 → ×0.2
@@ -474,6 +484,83 @@ def check_circle_pattern(track_points):
         'mean_radius_km': round(mean_r, 3),
         'radius_cv': round(cv, 3),
         'arc_coverage_deg': round(arc_coverage, 1),
+        'point_count': len(moving),
+    }
+
+
+def check_starburst_pattern(track_points, vessel_type='unknown'):
+    """
+    偵測星爆/蜘蛛網軌跡 (Starburst Pattern)：
+    - 多條輻射狀往返自中心點
+    - 弧度覆蓋廣（≥270°）但半徑變異大（CV ≥0.35）→ 區別於圓形
+    - 大部分點集中於 hub，少數點延伸成輻條
+    僅針對非漁船（fishing 直接 return False）
+    回傳: (is_starburst, details)
+    """
+    if vessel_type == 'fishing':
+        return False, {}
+
+    moving = [p for p in track_points
+              if p.get('lat') is not None and p.get('lon') is not None
+              and p.get('speed', 0) > 0.5]
+
+    if len(moving) < STARBURST_MIN_POINTS:
+        return False, {}
+
+    clat = sum(p['lat'] for p in moving) / len(moving)
+    clon = sum(p['lon'] for p in moving) / len(moving)
+
+    radii = [haversine_km(clat, clon, p['lat'], p['lon']) for p in moving]
+    mean_r = sum(radii) / len(radii)
+    max_r = max(radii)
+
+    if mean_r < STARBURST_MIN_RADIUS_KM or mean_r > STARBURST_MAX_RADIUS_KM:
+        return False, {}
+
+    std_r = math.sqrt(sum((r - mean_r) ** 2 for r in radii) / len(radii))
+    cv = std_r / mean_r if mean_r > 0 else 0
+
+    if cv < STARBURST_RADIUS_CV_MIN:
+        return False, {}
+
+    bearings = [calc_bearing(clat, clon, p['lat'], p['lon']) for p in moving]
+
+    angles = sorted(bearings)
+    gaps = [angles[i+1] - angles[i] for i in range(len(angles) - 1)]
+    gaps.append(360 - angles[-1] + angles[0])
+    arc_coverage = 360 - max(gaps)
+
+    if arc_coverage < STARBURST_MIN_ARC_DEG:
+        return False, {}
+
+    # 輻條偵測：12 個 30° 分箱，計算有多少分箱含「遠端點」(r > 0.5 × max_r)
+    spoke_bins = [False] * 12
+    far_threshold = 0.5 * max_r
+    for b, r in zip(bearings, radii):
+        if r >= far_threshold:
+            spoke_bins[int(b // 30) % 12] = True
+    spoke_count = sum(spoke_bins)
+
+    if spoke_count < STARBURST_MIN_SPOKES:
+        return False, {}
+
+    # Hub 集中度：≥30% 的點落在 r < 0.3 × max_r
+    hub_threshold = 0.3 * max_r
+    hub_count = sum(1 for r in radii if r < hub_threshold)
+    hub_fraction = hub_count / len(radii)
+
+    if hub_fraction < STARBURST_HUB_FRACTION:
+        return False, {}
+
+    return True, {
+        'center_lat': round(clat, 4),
+        'center_lon': round(clon, 4),
+        'mean_radius_km': round(mean_r, 3),
+        'max_radius_km': round(max_r, 3),
+        'radius_cv': round(cv, 3),
+        'arc_coverage_deg': round(arc_coverage, 1),
+        'spoke_count': spoke_count,
+        'hub_fraction': round(hub_fraction, 3),
         'point_count': len(moving),
     }
 
@@ -951,6 +1038,8 @@ def classify_vessel(profile, track_points, identity_events=None,
         'spoof_impossible_physics': False,
         'spoof_box_pattern': False,
         'spoof_circle_pattern': False,
+        'spoof_starburst_pattern': False,
+        'spoof_starburst_details': {},
         'itu_mars_mismatch': False,
         'ais_anomalies': [],
         'risk_level': 'normal',
@@ -1095,6 +1184,20 @@ def classify_vessel(profile, track_points, identity_events=None,
     classification['vessel_type'] = vessel_type
     type_mult = VESSEL_TYPE_MULTIPLIER.get(vessel_type, 0.5)
     classification['type_multiplier'] = type_mult
+
+    # ── 星爆/蜘蛛網軌跡（僅非漁船，僅標記不加分）──
+    if track_points:
+        starburst, starburst_details = check_starburst_pattern(
+            track_points, vessel_type)
+        classification['spoof_starburst_pattern'] = starburst
+        classification['spoof_starburst_details'] = starburst_details
+        if starburst:
+            classification['flags'].append(
+                f"AIS星爆軌跡（非漁船）：{starburst_details['spoke_count']}條輻條 "
+                f"中心({starburst_details['center_lat']:.4f}, "
+                f"{starburst_details['center_lon']:.4f}) "
+                f"半徑{starburst_details['mean_radius_km']}km"
+            )
 
     # ── 風險計分 ──
     raw_score = 0
@@ -1302,6 +1405,7 @@ def main():
     spoof_physics_count = 0
     spoof_box_count = 0
     spoof_circle_count = 0
+    spoof_starburst_count = 0
     mars_mismatch_count = 0
     sts_transfer_count = 0
 
@@ -1327,6 +1431,8 @@ def main():
             spoof_box_count += 1
         if c.get('spoof_circle_pattern'):
             spoof_circle_count += 1
+        if c.get('spoof_starburst_pattern'):
+            spoof_starburst_count += 1
         if c.get('itu_mars_mismatch'):
             mars_mismatch_count += 1
         if c.get('sts_transfer'):
@@ -1346,6 +1452,12 @@ def main():
             'spoof_teleport_kmh': SPOOF_TELEPORT_KMH,
             'spoof_box_angle_tolerance': SPOOF_BOX_ANGLE_TOLERANCE,
             'spoof_circle_radius_cv': SPOOF_CIRCLE_RADIUS_CV,
+            'starburst_min_arc_deg': STARBURST_MIN_ARC_DEG,
+            'starburst_radius_cv_min': STARBURST_RADIUS_CV_MIN,
+            'starburst_max_radius_km': STARBURST_MAX_RADIUS_KM,
+            'starburst_min_spokes': STARBURST_MIN_SPOKES,
+            'starburst_hub_fraction': STARBURST_HUB_FRACTION,
+            'starburst_excludes_fishing': True,
             'vessel_type_multiplier': VESSEL_TYPE_MULTIPLIER,
             'sts_suspicious_score': STS_SUSPICIOUS_SCORE,
             'sts_any_score': STS_ANY_SCORE,
@@ -1370,6 +1482,7 @@ def main():
             'spoof_impossible_physics': spoof_physics_count,
             'spoof_box_pattern': spoof_box_count,
             'spoof_circle_pattern': spoof_circle_count,
+            'spoof_starburst_pattern': spoof_starburst_count,
             'itu_mars_mismatch': mars_mismatch_count,
             'sts_transfer': sts_transfer_count,
             'risk_distribution': risk_counts,
@@ -1398,6 +1511,7 @@ def main():
     print(f"   偽訊號-異常物理: {spoof_physics_count}")
     print(f"   偽訊號-方形軌跡: {spoof_box_count}")
     print(f"   偽訊號-圓形軌跡: {spoof_circle_count}")
+    print(f"   星爆軌跡(非漁船,僅標記): {spoof_starburst_count}")
     print(f"   ITU MARS不符: {mars_mismatch_count}")
     print(f"   STS旁靠涉入: {sts_transfer_count}")
     print(f"   風險分布: {risk_counts}")
