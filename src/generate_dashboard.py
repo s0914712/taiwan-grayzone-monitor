@@ -15,6 +15,91 @@ DATA_DIR = Path("data")
 DOCS_DIR = Path("docs")
 DOCS_DIR.mkdir(exist_ok=True)
 
+# 暗船每日歷史持久檔（跨執行累積，避免 vessel_monitoring 趨勢凍結）
+DARK_HISTORY_PATH = DATA_DIR / 'dark_vessel_history.json'
+DARK_HISTORY_MAX_DAYS = 365
+
+
+def refresh_vessel_monitoring_daily(vessel_data, dark_vessels_data):
+    """
+    用最新的 dark_vessels.json (overall.dark_by_date) 更新並累積一份持久的
+    暗船每日歷史，再覆寫 vessel_monitoring.daily / summary，讓前端趨勢圖
+    不再凍結在 vessel_data.json 最後一次手動產生的日期。
+
+    - dark_by_date 只提供每日暗船數；SAR 每日總偵測數無逐日拆分，
+      沿用歷史慣例讓 total_detections 與 dark_vessels 相同（不捏造數字）。
+    - 首次執行會以既有 vessel_data.json 的 daily 作為種子，保留舊日期的資料。
+    """
+    # 1. 載入既有持久歷史 {date: {dark_vessels, total_detections}}
+    history = {}
+    if DARK_HISTORY_PATH.exists():
+        try:
+            with open(DARK_HISTORY_PATH, 'r', encoding='utf-8') as f:
+                history = json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"⚠️ 讀取 {DARK_HISTORY_PATH.name} 失敗，將重建: {e}")
+            history = {}
+
+    # 2. 種子：用 vessel_data.json 既有 daily 補上歷史尚未涵蓋的日期
+    for entry in (vessel_data.get('daily') or []):
+        d = entry.get('date')
+        if d and d not in history:
+            dark = entry.get('dark_vessels', 0)
+            history[d] = {
+                'dark_vessels': dark,
+                'total_detections': entry.get('total_detections', dark),
+            }
+
+    # 3. 覆蓋：用最新 dark_by_date 作為這些日期的權威值
+    if dark_vessels_data:
+        dark_by_date = (dark_vessels_data.get('overall') or {}).get('dark_by_date') or {}
+        for d, cnt in dark_by_date.items():
+            history[d] = {
+                'dark_vessels': cnt,
+                'total_detections': cnt,  # SAR 無逐日總數拆分，沿用歷史慣例
+            }
+
+    if not history:
+        return vessel_data  # 無任何暗船資料可用，維持原樣
+
+    # 4. 修剪保留天數並排序
+    for d in sorted(history.keys())[:-DARK_HISTORY_MAX_DAYS] if len(history) > DARK_HISTORY_MAX_DAYS else []:
+        del history[d]
+
+    # 5. 持久化
+    try:
+        with open(DARK_HISTORY_PATH, 'w', encoding='utf-8') as f:
+            json.dump(history, f, ensure_ascii=False, indent=2)
+    except IOError as e:
+        print(f"⚠️ 寫入 {DARK_HISTORY_PATH.name} 失敗: {e}")
+
+    # 6. 組裝 daily 並覆寫 vessel_monitoring
+    daily = [
+        {'date': d, 'dark_vessels': history[d]['dark_vessels'],
+         'total_detections': history[d]['total_detections']}
+        for d in sorted(history.keys())
+    ]
+    vessel_data['daily'] = daily
+
+    dark_counts = [e['dark_vessels'] for e in daily]
+    recent_7d = dark_counts[-7:]
+    summary = vessel_data.get('summary') or {}
+    summary.update({
+        'total_days': len(daily),
+        'avg_daily_dark_vessels': round(sum(dark_counts) / len(dark_counts), 1) if dark_counts else 0,
+        'avg_daily_detections': round(sum(dark_counts) / len(dark_counts), 1) if dark_counts else 0,
+        'recent_7d_avg': round(sum(recent_7d) / len(recent_7d), 1) if recent_7d else 0,
+    })
+    vessel_data['summary'] = summary
+
+    if daily:
+        vessel_data['data_range'] = {'start': daily[0]['date'], 'end': daily[-1]['date']}
+    vessel_data['updated_at'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+    print(f"📈 已更新 vessel_monitoring.daily: {len(daily)} 天 "
+          f"({daily[0]['date']} ~ {daily[-1]['date']})")
+    return vessel_data
+
 def main():
     print("📊 生成 Dashboard 資料...")
 
@@ -49,6 +134,9 @@ def main():
               f"({overall.get('dark_ratio', 0)}%)")
     else:
         print("⚠️ 找不到 dark_vessels.json，跳過")
+
+    # 用最新暗船資料刷新並累積 vessel_monitoring 每日趨勢（避免凍結在舊日期）
+    vessel_data = refresh_vessel_monitoring_daily(vessel_data, dark_vessels_data)
 
     # 讀取 AIS 快照資料（由 fetch_ais_data.py 產生）
     ais_path = DATA_DIR / 'ais_snapshot.json'
