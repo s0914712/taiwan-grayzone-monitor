@@ -146,12 +146,21 @@ def main():
         return
 
     # 12 小時新鮮度檢查
+    # 用檔案內容的 updated_at 而非檔案 mtime：在 GitHub Actions 每次都是
+    # 全新 clone，checkout 會把 mtime 重設為當下時間，導致永遠判定「還新」
+    # 而跳過重抓（這正是先前資料凍結的原因）。
     if OUTPUT_PATH.exists():
-        mod_time = datetime.fromtimestamp(OUTPUT_PATH.stat().st_mtime)
-        age_hours = (datetime.now() - mod_time).total_seconds() / 3600
-        if age_hours < 12:
-            print(f"⏭️ {OUTPUT_PATH} 尚新（{age_hours:.1f}h），跳過重新擷取")
-            return
+        try:
+            with open(OUTPUT_PATH, 'r', encoding='utf-8') as f:
+                prev = json.load(f)
+            prev_ts = (prev.get('updated_at') or '').replace('Z', '')
+            prev_dt = datetime.fromisoformat(prev_ts)
+            age_hours = (datetime.utcnow() - prev_dt).total_seconds() / 3600
+            if age_hours < 12:
+                print(f"⏭️ {OUTPUT_PATH} 尚新（{age_hours:.1f}h），跳過重新擷取")
+                return
+        except (json.JSONDecodeError, IOError, ValueError) as e:
+            print(f"⚠️ 無法解析既有 {OUTPUT_PATH.name} 的 updated_at，將重新擷取: {e}")
 
     # 計算日期範圍
     end_date = datetime.utcnow()
