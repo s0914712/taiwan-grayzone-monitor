@@ -108,5 +108,5 @@ Each animation HTML page has **self-contained inline JS** (not shared modules). 
 | `weekly_dark_vessels.json` | 90-day SAR detections for animation | `fetch_weekly_dark_vessels.py` |
 | `ship_transfers.json` | STS rendezvous events | `detect_ship_transfers.py` |
 | `cable_status.json` | Submarine cable status | Manual |
-| `taiwan_cables.json` | Cable route GeoJSON | Manual |
+| `taiwan_cables.json` | Cable route GeoJSON. Feature `properties`: `slug` (fault-match key, must stay in sync with `fetch_cable_status.py` `CABLE_NAME_TO_SLUG`), `color` (hex, no `#`), plus optional metadata rendered in the map popup: `name`, `status`, `cable_type`, `length`, `rfs`, `owners`, `tw_landings`, `cn_landings`. Planned cables (`status` 規劃中) render dashed. | Manual |
 | `vessel_routes/{mmsi}.json` | Per-vessel route files (1,000+) | `extract_all_routes.py` |
