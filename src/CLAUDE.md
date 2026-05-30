@@ -20,7 +20,7 @@ fetch_ais_data.py → fetch_gfw_data.py → detect_ship_transfers.py
 | `analyze_suspicious.py` | **Core threat scoring engine** — see root CLAUDE.md for full scoring docs | profiles, tracks (tier-1+2), cables, identity events, sanctions, MARS cache, STS transfers | `suspicious_vessels.json` |
 | `exercise_prediction.py` | Correlate dark vessel activity with PLA sortie data (Granger causality) | `dark_vessels.json`, PLA sortie data | `exercise_prediction.json` |
 | `extract_all_routes.py` | Batch extract per-vessel route JSONs from tier-1+tier-2 track history | `ais_track_history.json`, `ais_track_commercial.json` | `docs/vessel_routes/{mmsi}.json` |
-| `generate_dashboard.py` | Consolidate all data → single JSON for frontend; copy auxiliary files to docs/ | All `data/*.json` | `docs/data.json` + copies to docs/ |
+| `generate_dashboard.py` | Consolidate all data → single JSON for frontend; copy auxiliary files to docs/. Also refreshes `vessel_monitoring.daily` dark-vessel trend from `dark_vessels.json` and accumulates it in `data/dark_vessel_history.json` (persistent, max 365 days) so the trend never freezes. | All `data/*.json` | `docs/data.json` + copies to docs/, `data/dark_vessel_history.json` |
 
 ### Utilities
 
