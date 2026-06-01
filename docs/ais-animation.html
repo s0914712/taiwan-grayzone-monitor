@@ -672,9 +672,80 @@
         }
         .focus-btn:hover { background: rgba(0,245,255,0.12); }
 
+        /* ── Researcher tools ── */
+        .context-strip {
+            position: relative;
+            height: 12px;
+            margin: 2px 2px 0;
+        }
+        .ctx-bar {
+            position: absolute;
+            bottom: 0;
+            width: 2px;
+            border-radius: 1px;
+            transform: translateX(-50%);
+        }
+        .ctx-exercise {
+            position: absolute;
+            top: 0; bottom: 0;
+            background: rgba(255,51,102,0.18);
+            border-left: 1px solid rgba(255,51,102,0.5);
+            border-right: 1px solid rgba(255,51,102,0.5);
+        }
+        .context-readout {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--accent-orange);
+            margin-left: auto;
+            white-space: nowrap;
+        }
+        .tool-btn {
+            padding: 5px 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            cursor: pointer;
+            font-family: 'Noto Sans TC', sans-serif;
+            transition: all var(--transition-fast);
+        }
+        .tool-btn:hover { color: var(--accent-cyan); border-color: var(--accent-cyan); }
+        .tool-btn.active { color: var(--accent-green); border-color: var(--accent-green); background: rgba(0,255,136,0.1); }
+        .draw-hint {
+            background: rgba(0,255,136,0.12);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 10px;
+        }
+        .dark-label {
+            background: none !important;
+            border: none !important;
+        }
+        .dark-label span {
+            display: inline-block;
+            white-space: nowrap;
+            font-size: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #b0b8c8;
+            background: rgba(10,15,28,0.7);
+            padding: 0 3px;
+            border-radius: 2px;
+            transform: translateX(-50%);
+        }
+        .aoi-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+        .aoi-metric { text-align: center; background: var(--bg-secondary); border-radius: 5px; padding: 7px 4px; }
+        .aoi-metric .v { font-family: 'Orbitron', sans-serif; font-size: 17px; font-weight: 700; color: var(--accent-green); }
+        .aoi-metric .l { font-size: 9px; color: var(--text-secondary); margin-top: 2px; }
+        .aoi-chart-box { height: 110px; }
+
         @media (max-width: 768px) {
             .gz-intro { margin: 8px 8px 0; }
             .event-caption { max-width: 85%; font-size: 12px; }
+            .tool-btn { min-height: 44px; }
+            .context-readout { margin-left: 0; width: 100%; text-align: center; }
         }
     </style>
 </head>
@@ -765,6 +836,7 @@
                 <option value="loitering" data-i18n="ais_anim.filter_loiter">滯留偵測</option>
                 <option value="zigzag" data-i18n="ais_anim.filter_zigzag">Z字型航行</option>
                 <option value="near_cable" data-i18n="ais_anim.filter_near_cable">電纜周邊</option>
+                <option value="dark" data-i18n="ais_anim.filter_dark">走暗船</option>
             </select>
         </div>
         <div class="cable-controls" id="cableControls" style="display:none">
@@ -772,15 +844,39 @@
             <input type="range" id="cableBuffer" min="1" max="10" value="2" step="0.5" oninput="updateCableBuffer()">
             <span class="cable-buffer-val" id="cableBufferVal">2</span>
         </div>
+        <!-- Researcher tools -->
+        <div class="playback-controls" id="researchTools">
+            <label class="trail-toggle">
+                <input type="checkbox" id="showDark" onchange="toggleDark()">
+                <span data-i18n="ais_anim.show_dark">走暗區段</span>
+            </label>
+            <span class="cable-controls" id="darkControls" style="display:none">
+                <span data-i18n="ais_anim.dark_threshold">走暗門檻 (時)</span>
+                <input type="range" id="darkThreshold" min="12" max="72" value="24" step="2" oninput="updateDarkThreshold()">
+                <span class="cable-buffer-val" id="darkThresholdVal">24</span>
+            </span>
+            <button class="tool-btn" id="drawAreaBtn" onclick="toggleDraw('area')" data-i18n="ais_anim.draw_area">✏️ 畫區域</button>
+            <button class="tool-btn" id="drawLineBtn" onclick="toggleDraw('line')" data-i18n="ais_anim.draw_line">📏 畫絆線</button>
+            <button class="tool-btn" id="drawClearBtn" onclick="clearDraw()" data-i18n="ais_anim.draw_clear" style="display:none">🗑 清除</button>
+            <button class="tool-btn" onclick="copyShareLink()" id="copyLinkBtn" data-i18n="ais_anim.copy_link">🔗 複製連結</button>
+            <select id="exportSelect" class="vessel-filter-select" onchange="doExport(this.value)">
+                <option value="" data-i18n="ais_anim.export">⬇ 匯出…</option>
+                <option value="geojson" data-i18n="ais_anim.export_geojson">GeoJSON (軌跡+事件)</option>
+                <option value="csv" data-i18n="ais_anim.export_csv">CSV (軌跡點)</option>
+            </select>
+        </div>
+        <span class="draw-hint" id="drawHint" style="display:none"></span>
         <div class="day-indicator" id="dayIndicator">
             <div class="date-text">--</div>
             <div class="frame-text" data-i18n="common.loading">載入中...</div>
         </div>
+        <div class="context-readout" id="contextReadout"></div>
     </div>
 
     <!-- Timeline slider -->
     <div class="timeline-panel">
         <div class="timeline-events" id="timelineEvents" title=""></div>
+        <div class="context-strip" id="contextStrip" title=""></div>
         <input type="range" class="day-slider" id="daySlider" min="0" max="0" value="0">
         <div class="timeline-labels" id="timelineLabels"></div>
     </div>
@@ -815,6 +911,15 @@
                 <button class="focus-btn" id="caseExit" data-i18n="ais_anim.focus_exit">← 退出聚焦</button>
             </div>
             <div class="case-body" id="caseBody"></div>
+        </div>
+
+        <!-- AOI / tripwire analysis panel -->
+        <div class="panel case-panel" id="aoiPanel" style="display:none">
+            <div class="case-head">
+                <span class="case-name" id="aoiTitle">📐 區域分析</span>
+                <button class="focus-btn" onclick="clearDraw()" data-i18n="ais_anim.draw_clear">🗑 清除</button>
+            </div>
+            <div class="case-body" id="aoiBody"></div>
         </div>
 
         <!-- Daily trend chart -->
@@ -896,7 +1001,23 @@
         eventLayer: null,  // pulsing gray-zone event markers
         showEvents: true,
         loop: false,
-        focusMmsi: null    // single-vessel focus / case narrative
+        focusMmsi: null,   // single-vessel focus / case narrative
+        // Researcher tools
+        showDark: false,
+        darkThresholdHrs: 24,
+        drawMode: null,    // null | 'area' | 'line'
+        drawPts: [],       // vertices being drawn
+        aoi: null,         // [[lat,lon],...] closed polygon ring
+        tripwire: null,    // [[lat,lon],[lat,lon]]
+        drawLayer: null,   // Leaflet layer for AOI/tripwire + preview
+        aoiChart: null
+    };
+
+    // External-event correlation context (PLA sorties, named exercises)
+    const Context = {
+        byDate: {},        // 'YYYY-MM-DD' -> {sorties, naval, dark}
+        exercises: [],     // [{exercise, trigger, start, end}]
+        maxSorties: 1
     };
 
     let map;
@@ -943,6 +1064,7 @@
         loiteringSet: null,     // Set<mmsi> - vessels loitering >6hr
         zigzagSet: null,        // Set<mmsi> - vessels with zigzag heading
         nearCableSet: null,     // Set<mmsi> - vessels near cable at current frame
+        darkInfo: null,         // Map<mmsi, {count, maxGapHrs, segments}> - going-dark gaps
         lastBuiltFrame: -1,
         lastCableFrame: -1
     };
@@ -1186,6 +1308,45 @@
     }
 
     /**
+     * Detect "going dark": a vessel disappears for > threshold hours BETWEEN two
+     * observed points (i.e. it later reappears). A vessel that simply stops being
+     * seen at the end of its sequence is treated as "left the area", NOT going dark.
+     * Returns Map<mmsi, {count, maxGapHrs, segments:[{aIdx,bIdx,gapHrs}]}>.
+     */
+    function detectGoingDark() {
+        if (Detection.darkInfo) return Detection.darkInfo;
+        buildVesselIndex();
+        const info = new Map();
+        const frames = Anim.filteredFrames;
+        const thr = Anim.darkThresholdHrs;
+        Detection.vesselIndex.forEach((records, mmsi) => {
+            // Need a densely-tracked vessel; a few sparse hits are just intermittent
+            // reception, not deliberate "going dark".
+            if (records.length < 10) return;
+            records.sort((a, b) => a.frameIdx - b.frameIdx);
+            const gaps = [];
+            for (let i = 1; i < records.length; i++) {
+                gaps.push((Date.parse(frames[records[i].frameIdx].timestamp) -
+                           Date.parse(frames[records[i - 1].frameIdx].timestamp)) / 3600e3);
+            }
+            // median inter-report gap = the vessel's normal cadence
+            const med = [...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)] || 1;
+            const segs = [];
+            let maxGap = 0;
+            for (let i = 0; i < gaps.length; i++) {
+                // anomalous silence: longer than threshold AND ≫ this vessel's own cadence
+                if (gaps[i] > thr && gaps[i] > med * 4) {
+                    segs.push({ aIdx: records[i].frameIdx, bIdx: records[i + 1].frameIdx, gapHrs: gaps[i] });
+                    maxGap = Math.max(maxGap, gaps[i]);
+                }
+            }
+            if (segs.length) info.set(mmsi, { count: segs.length, maxGapHrs: maxGap, segments: segs });
+        });
+        Detection.darkInfo = info;
+        return info;
+    }
+
+    /**
      * Detect vessels near submarine cables at current frame
      * Uses point-to-segment distance
      */
@@ -1258,6 +1419,7 @@
         Detection.loiteringSet = null;
         Detection.zigzagSet = null;
         Detection.nearCableSet = null;
+        Detection.darkInfo = null;
         Detection.lastBuiltFrame = -1;
         Detection.lastCableFrame = -1;
     }
@@ -1378,11 +1540,23 @@
 
             Gray.events = events;
 
-            // Vessel threat profiles for case narrative
+            // Vessel threat profiles for case narrative + PLA event-correlation context
             if (dataRes && dataRes.ok) {
                 const data = await dataRes.json();
                 const sv = ((data.suspicious_analysis || {}).suspicious_vessels) || [];
                 sv.forEach(v => Gray.profiles.set(String(v.mmsi), v));
+
+                const ep = data.exercise_prediction || {};
+                (ep.daily_merged || []).forEach(d => {
+                    if (!d.date) return;
+                    Context.byDate[d.date] = {
+                        sorties: d.sorties || 0, naval: d.vessels || 0, dark: d.dark_vessels || 0
+                    };
+                    Context.maxSorties = Math.max(Context.maxSorties, d.sorties || 0);
+                });
+                Context.exercises = (ep.event_study || []).map(e => ({
+                    exercise: e.exercise, trigger: e.trigger, start: e.start, end: e.end
+                })).filter(e => e.start);
             }
         } catch (e) {
             console.error('Gray event load failed:', e);
@@ -1390,7 +1564,9 @@
 
         buildEventFrameIndex();
         renderTimelineEvents();
+        renderContextStrip();
         renderEventMarkers(Anim.currentIdx);
+        updateContextReadout(Anim.currentIdx);
     }
 
     /** Map each event timestamp to the nearest frame index in filteredFrames. */
@@ -1447,6 +1623,59 @@
         });
     }
 
+    /** Render PLA sortie-intensity bars + named-exercise bands under the timeline. */
+    function renderContextStrip() {
+        const strip = document.getElementById('contextStrip');
+        if (!strip) return;
+        strip.innerHTML = '';
+        const frames = Anim.filteredFrames;
+        const n = frames.length;
+        if (n <= 1 || Object.keys(Context.byDate).length === 0) return;
+
+        // Per-frame PLA sortie intensity bar
+        frames.forEach((f, i) => {
+            const date = (f.timestamp || '').slice(0, 10);
+            const ctx = Context.byDate[date];
+            if (!ctx || !ctx.sorties) return;
+            const s = ctx.sorties;
+            const color = s >= 20 ? '#ff3366' : s >= 10 ? '#ff9d2e' : '#00f5ff';
+            const bar = document.createElement('div');
+            bar.className = 'ctx-bar';
+            bar.style.left = (i / (n - 1)) * 100 + '%';
+            bar.style.height = Math.max(2, Math.min(12, (s / Context.maxSorties) * 12)) + 'px';
+            bar.style.background = color;
+            strip.appendChild(bar);
+        });
+
+        // Named exercise windows that fall inside the visible range
+        const t0 = Date.parse(frames[0].timestamp), t1 = Date.parse(frames[n - 1].timestamp);
+        const span = t1 - t0 || 1;
+        Context.exercises.forEach(ex => {
+            const s = Date.parse(ex.start + 'T00:00:00Z'), e = Date.parse((ex.end || ex.start) + 'T23:59:59Z');
+            if (isNaN(s) || e < t0 || s > t1) return;
+            const L = Math.max(0, (s - t0) / span) * 100;
+            const R = Math.min(1, (e - t0) / span) * 100;
+            const band = document.createElement('div');
+            band.className = 'ctx-exercise';
+            band.style.left = L + '%';
+            band.style.width = Math.max(1.5, R - L) + '%';
+            band.title = i18n.t('ais_anim.ctx_exercise') + ' · ' + ex.exercise + (ex.trigger ? ' (' + ex.trigger + ')' : '');
+            strip.appendChild(band);
+        });
+    }
+
+    /** Show the current frame's PLA pressure in the readout. */
+    function updateContextReadout(idx) {
+        const el = document.getElementById('contextReadout');
+        if (!el) return;
+        const frame = Anim.filteredFrames[idx];
+        if (!frame) { el.textContent = ''; return; }
+        const date = (frame.timestamp || '').slice(0, 10);
+        const ctx = Context.byDate[date];
+        if (!ctx) { el.textContent = ''; return; }
+        el.textContent = i18n.t('ais_anim.ctx_readout', ctx.sorties, ctx.naval, ctx.dark);
+    }
+
     /** Draw pulsing rings + caption for events active at the current frame. */
     function renderEventMarkers(idx) {
         if (!Anim.eventLayer) return;
@@ -1487,6 +1716,7 @@
         Anim.showEvents = document.getElementById('showEvents').checked;
         renderTimelineEvents();
         renderEventMarkers(Anim.currentIdx);
+        syncUrl();
     }
 
     function toggleLoop() {
@@ -1523,6 +1753,8 @@
         Anim.markerLayer = L.layerGroup().addTo(map);
         Anim.trailLayer = L.layerGroup().addTo(map);
         Anim.eventLayer = L.layerGroup().addTo(map);
+        Anim.drawLayer = L.layerGroup().addTo(map);
+        map.on('click', onMapClick);
     }
 
     // =========================================================================
@@ -1575,6 +1807,9 @@
 
             hideLoading();
 
+            // Restore any shareable state from the URL (focus / range / AOI / frame)
+            applyUrlState();
+
             // Load gray-zone events in the background (non-blocking)
             loadGrayEvents();
 
@@ -1607,8 +1842,10 @@
         pause();
         updateSlider();
         updateChart();
-        if (Gray.loaded) { buildEventFrameIndex(); renderTimelineEvents(); }
+        if (Gray.loaded) { buildEventFrameIndex(); renderTimelineEvents(); renderContextStrip(); }
         renderFrame(0);
+        if (Anim.aoi || Anim.tripwire) recomputeAreaMetrics();
+        syncUrl();
     }
 
     function setRange(days) {
@@ -1655,9 +1892,10 @@
             if (!frame || !frame.vessels) continue;
             frame.vessels.forEach(v => {
                 if (!Anim.vesselTrails[v.mmsi]) {
-                    Anim.vesselTrails[v.mmsi] = { points: [], suspicious: v.suspicious, name: v.name };
+                    Anim.vesselTrails[v.mmsi] = { points: [], frames: [], suspicious: v.suspicious, name: v.name };
                 }
                 Anim.vesselTrails[v.mmsi].points.push([v.lat, v.lon]);
+                Anim.vesselTrails[v.mmsi].frames.push(i);  // for going-dark gap detection
                 Anim.vesselTrails[v.mmsi].suspicious = v.suspicious;
             });
         }
@@ -1792,6 +2030,9 @@
             }
         }
 
+        // Going-dark ghost segments (gaps where AIS went silent then reappeared)
+        if (Anim.showDark) drawGoingDarkSegments(focus);
+
         // Plot vessel markers (triangle = heading known, diamond = unknown)
         vessels.forEach(v => {
             const isSuspicious = v.suspicious;
@@ -1859,7 +2100,8 @@
     }
 
     function updateStatCards(frame, idx) {
-        // Stats banner removed — function kept as no-op for compatibility
+        // Repurposed: drive the PLA event-correlation readout
+        updateContextReadout(idx);
     }
 
     function updateVesselTable(vessels) {
@@ -1935,6 +2177,7 @@
     document.getElementById('daySlider').addEventListener('input', function () {
         pause();
         renderFrame(parseInt(this.value));
+        syncUrl();
     });
 
     // =========================================================================
@@ -2095,6 +2338,8 @@
                 { const set = detectZigzag(); return vessels.filter(v => set.has(v.mmsi)); }
             case 'near_cable':
                 { const set = detectNearCable(Anim.currentIdx); return vessels.filter(v => set.has(v.mmsi)); }
+            case 'dark':
+                { const info = detectGoingDark(); return vessels.filter(v => info.has(v.mmsi)); }
             default:
                 return vessels;
         }
@@ -2113,6 +2358,7 @@
             }
         }
         renderFrame(Anim.currentIdx);
+        syncUrl();
     }
 
     // =========================================================================
@@ -2126,12 +2372,14 @@
         renderCaseNarrative(Anim.focusMmsi);
         renderFrame(Anim.currentIdx);
         panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        syncUrl();
     }
 
     function exitFocus() {
         Anim.focusMmsi = null;
         document.getElementById('casePanel').style.display = 'none';
         renderFrame(Anim.currentIdx);
+        syncUrl();
     }
 
     function riskLabel(level) { return i18n.t('ais_anim.risk_' + (level || 'normal')); }
@@ -2165,6 +2413,12 @@
                 html += '<div class="case-row">' + tags.map(t =>
                     '<span class="detect-tag ' + t.type + '">' + t.label + '</span>').join(' ') + '</div>';
             }
+        }
+
+        const dark = detectGoingDark().get(mmsi);
+        if (dark) {
+            html += '<div class="case-row"><span class="k">' + i18n.t('ais_anim.focus_dark') + '</span>' +
+                i18n.t('ais_anim.focus_dark_val', dark.count, Math.round(dark.maxGapHrs)) + '</div>';
         }
 
         const evs = Gray.events.filter(e => e.mmsis.includes(mmsi) && e.frameIdx >= 0)
@@ -2240,6 +2494,326 @@
         });
     }
 
+    // =========================================================================
+    // Feature 4 — Going dark: ghost segments + toggles
+    // =========================================================================
+    function drawGoingDarkSegments(focus) {
+        const info = detectGoingDark();
+        if (info.size === 0) return;
+        const frames = Anim.filteredFrames;
+        const entries = focus
+            ? (Anim.vesselTrails[focus] ? [[focus, Anim.vesselTrails[focus]]] : [])
+            : Object.entries(Anim.vesselTrails);
+        entries.forEach(([mmsi, trail]) => {
+            if (!info.has(mmsi)) return;
+            const pts = trail.points, fr = trail.frames;
+            for (let k = 1; k < pts.length; k++) {
+                const gapHrs = (Date.parse(frames[fr[k]].timestamp) - Date.parse(frames[fr[k - 1]].timestamp)) / 3600e3;
+                if (gapHrs <= Anim.darkThresholdHrs) continue;
+                L.polyline([pts[k - 1], pts[k]], {
+                    color: '#9aa6b8', weight: 1, opacity: 0.6, dashArray: '2,8', interactive: false
+                }).addTo(Anim.trailLayer);
+                const mid = [(pts[k - 1][0] + pts[k][0]) / 2, (pts[k - 1][1] + pts[k][1]) / 2];
+                L.marker(mid, {
+                    icon: L.divIcon({ className: 'dark-label', html: '<span>' + i18n.t('ais_anim.dark_label', Math.round(gapHrs)) + '</span>', iconSize: [0, 0] }),
+                    interactive: false
+                }).addTo(Anim.trailLayer);
+            }
+        });
+    }
+
+    function toggleDark() {
+        Anim.showDark = document.getElementById('showDark').checked;
+        document.getElementById('darkControls').style.display = Anim.showDark ? 'inline-flex' : 'none';
+        renderFrame(Anim.currentIdx);
+        syncUrl();
+    }
+    function updateDarkThreshold() {
+        Anim.darkThresholdHrs = parseFloat(document.getElementById('darkThreshold').value);
+        document.getElementById('darkThresholdVal').textContent = Anim.darkThresholdHrs;
+        Detection.darkInfo = null; // recompute
+        renderFrame(Anim.currentIdx);
+        if (Anim.vesselFilter === 'dark') renderFrame(Anim.currentIdx);
+    }
+
+    // =========================================================================
+    // Feature 3 — AOI / tripwire geometry + metrics
+    // =========================================================================
+    function pointInPolygon(lat, lon, ring) {
+        // ray casting; ring = [[lat,lon],...]
+        let inside = false;
+        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+            const yi = ring[i][0], xi = ring[i][1], yj = ring[j][0], xj = ring[j][1];
+            const intersect = ((xi > lon) !== (xj > lon)) &&
+                (lat < (yj - yi) * (lon - xi) / ((xj - xi) || 1e-12) + yi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }
+    function segIntersect(a, b, c, d) {
+        // a,b,c,d = [lat,lon]; segment AB vs CD
+        function ccw(p, q, r) { return (r[0] - p[0]) * (q[1] - p[1]) - (q[0] - p[0]) * (r[1] - p[1]); }
+        const d1 = ccw(c, d, a), d2 = ccw(c, d, b), d3 = ccw(a, b, c), d4 = ccw(a, b, d);
+        return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+    }
+
+    function onMapClick(e) {
+        if (!Anim.drawMode) return;
+        Anim.drawPts.push([e.latlng.lat, e.latlng.lng]);
+        renderDrawLayer(true);
+        if (Anim.drawMode === 'line' && Anim.drawPts.length >= 2) finishDraw();
+    }
+
+    function toggleDraw(mode) {
+        if (Anim.drawMode === mode) { finishDraw(); return; }
+        clearDraw(true);
+        Anim.drawMode = mode;
+        Anim.drawPts = [];
+        if (map.doubleClickZoom) map.doubleClickZoom.disable();
+        document.getElementById('drawAreaBtn').classList.toggle('active', mode === 'area');
+        document.getElementById('drawLineBtn').classList.toggle('active', mode === 'line');
+        const hint = document.getElementById('drawHint');
+        hint.style.display = 'inline-block';
+        hint.textContent = i18n.t(mode === 'area' ? 'ais_anim.draw_hint_area' : 'ais_anim.draw_hint_line');
+    }
+
+    function finishDraw() {
+        const mode = Anim.drawMode, pts = Anim.drawPts;
+        Anim.drawMode = null;
+        if (map.doubleClickZoom) map.doubleClickZoom.enable();
+        document.getElementById('drawHint').style.display = 'none';
+        document.getElementById('drawAreaBtn').classList.remove('active');
+        document.getElementById('drawLineBtn').classList.remove('active');
+        if (mode === 'area' && pts.length >= 3) { Anim.aoi = pts.slice(); Anim.tripwire = null; }
+        else if (mode === 'line' && pts.length >= 2) { Anim.tripwire = pts.slice(0, 2); Anim.aoi = null; }
+        else { renderDrawLayer(false); return; }
+        document.getElementById('drawClearBtn').style.display = 'inline-block';
+        renderDrawLayer(false);
+        recomputeAreaMetrics();
+        syncUrl();
+    }
+
+    function clearDraw(silent) {
+        Anim.drawMode = null; Anim.drawPts = []; Anim.aoi = null; Anim.tripwire = null;
+        if (Anim.drawLayer) Anim.drawLayer.clearLayers();
+        if (Anim.aoiChart) { Anim.aoiChart.destroy(); Anim.aoiChart = null; }
+        document.getElementById('aoiPanel').style.display = 'none';
+        document.getElementById('drawClearBtn').style.display = 'none';
+        document.getElementById('drawHint').style.display = 'none';
+        document.getElementById('drawAreaBtn').classList.remove('active');
+        document.getElementById('drawLineBtn').classList.remove('active');
+        if (map && map.doubleClickZoom) map.doubleClickZoom.enable();
+        if (!silent) syncUrl();
+    }
+
+    function renderDrawLayer(preview) {
+        if (!Anim.drawLayer) return;
+        Anim.drawLayer.clearLayers();
+        const style = { color: '#00ff88', weight: 2, dashArray: '6,5', fillColor: '#00ff88', fillOpacity: 0.08 };
+        if (preview && Anim.drawPts.length) {
+            if (Anim.drawMode === 'area') L.polyline(Anim.drawPts, style).addTo(Anim.drawLayer);
+            else L.polyline(Anim.drawPts, style).addTo(Anim.drawLayer);
+            Anim.drawPts.forEach(p => L.circleMarker(p, { radius: 3, color: '#00ff88', fillOpacity: 1 }).addTo(Anim.drawLayer));
+            return;
+        }
+        if (Anim.aoi) L.polygon(Anim.aoi, style).addTo(Anim.drawLayer);
+        if (Anim.tripwire) L.polyline(Anim.tripwire, { color: '#00ff88', weight: 2, dashArray: '6,5' }).addTo(Anim.drawLayer);
+    }
+
+    function frameGapHrs() {
+        const n = Anim.filteredFrames.length;
+        if (n < 2) return 2;
+        const span = (Date.parse(Anim.filteredFrames[n - 1].timestamp) - Date.parse(Anim.filteredFrames[0].timestamp)) / 3600e3;
+        return span / (n - 1);
+    }
+
+    function recomputeAreaMetrics() {
+        if (Anim.aoi) renderAoiMetrics();
+        else if (Anim.tripwire) renderTripwireMetrics();
+        else document.getElementById('aoiPanel').style.display = 'none';
+    }
+
+    function renderAoiMetrics() {
+        buildVesselIndex();
+        const ring = Anim.aoi;
+        const n = Anim.filteredFrames.length;
+        const series = new Array(n).fill(0);
+        const entered = new Map();
+        Detection.vesselIndex.forEach((recs, mmsi) => {
+            let any = false;
+            recs.forEach(r => { if (pointInPolygon(r.lat, r.lon, ring)) { series[r.frameIdx]++; any = true; } });
+            if (any) entered.set(mmsi, recs[0].type_name || 'unknown');
+        });
+        const peak = series.reduce((a, b) => Math.max(a, b), 0);
+        const dwell = series.reduce((a, b) => a + b, 0) * frameGapHrs();
+        const byType = {};
+        entered.forEach(t => { byType[t] = (byType[t] || 0) + 1; });
+
+        document.getElementById('aoiTitle').textContent = i18n.t('ais_anim.aoi_title');
+        const typeRow = Object.entries(byType).sort((a, b) => b[1] - a[1])
+            .map(([t, c]) => '<span class="detect-tag" style="background:rgba(0,245,255,0.12);color:' +
+                (VESSEL_COLORS[t] || '#8aa4c8') + '">' + t + ' ' + c + '</span>').join(' ');
+        document.getElementById('aoiBody').innerHTML =
+            '<div class="aoi-metrics">' +
+            '<div class="aoi-metric"><div class="v">' + entered.size + '</div><div class="l">' + i18n.t('ais_anim.aoi_vessels') + '</div></div>' +
+            '<div class="aoi-metric"><div class="v">' + Math.round(dwell) + '</div><div class="l">' + i18n.t('ais_anim.aoi_dwell') + ' (h)</div></div>' +
+            '<div class="aoi-metric"><div class="v">' + peak + '</div><div class="l">' + i18n.t('ais_anim.aoi_peak') + '</div></div>' +
+            '</div>' +
+            (typeRow ? '<div class="case-row"><span class="k">' + i18n.t('ais_anim.aoi_bytype') + '</span>' + typeRow + '</div>' : '') +
+            (entered.size ? '<div class="case-row"><span class="k">' + i18n.t('ais_anim.aoi_chart') + '</span><div class="aoi-chart-box"><canvas id="aoiChartCanvas"></canvas></div></div>'
+                : '<div class="case-row" style="color:#8aa4c8">' + i18n.t('ais_anim.aoi_none') + '</div>');
+        document.getElementById('aoiPanel').style.display = 'block';
+        if (entered.size) buildAoiChart(series);
+    }
+
+    function buildAoiChart(series) {
+        if (Anim.aoiChart) { Anim.aoiChart.destroy(); Anim.aoiChart = null; }
+        const canvas = document.getElementById('aoiChartCanvas');
+        if (!canvas) return;
+        const labels = Anim.filteredFrames.map(f => (f.timestamp || '').slice(5, 13).replace('T', ' '));
+        Anim.aoiChart = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: { labels, datasets: [{ data: series, backgroundColor: '#00ff88aa', borderWidth: 0 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                onClick: (e, els) => { if (els.length) { pause(); renderFrame(els[0].index); } },
+                scales: {
+                    x: { ticks: { color: '#8aa4c8', font: { size: 6 }, maxTicksLimit: 8 }, grid: { display: false } },
+                    y: { ticks: { color: '#8aa4c8', font: { size: 8 }, precision: 0 }, grid: { color: 'rgba(0,245,255,0.05)' } }
+                }
+            }
+        });
+    }
+
+    function renderTripwireMetrics() {
+        buildVesselIndex();
+        const tw = Anim.tripwire;
+        const crossings = [];
+        Detection.vesselIndex.forEach((recs, mmsi) => {
+            const sorted = recs.slice().sort((a, b) => a.frameIdx - b.frameIdx);
+            for (let i = 1; i < sorted.length; i++) {
+                if (segIntersect([sorted[i - 1].lat, sorted[i - 1].lon], [sorted[i].lat, sorted[i].lon], tw[0], tw[1])) {
+                    crossings.push({ mmsi, name: sorted[i].name, frameIdx: sorted[i].frameIdx, type: sorted[i].type_name });
+                }
+            }
+        });
+        crossings.sort((a, b) => a.frameIdx - b.frameIdx);
+        document.getElementById('aoiTitle').textContent = i18n.t('ais_anim.tripwire_title');
+        const list = crossings.slice(0, 40).map(c => {
+            const ts = (Anim.filteredFrames[c.frameIdx].timestamp || '').slice(5, 16).replace('T', ' ');
+            return '<div class="case-evt" onclick="pause();renderFrame(' + c.frameIdx + ')">' +
+                '<span class="ce-dot" style="background:' + (VESSEL_COLORS[c.type] || '#8aa4c8') + '"></span>' +
+                '<span class="ce-time">' + ts + '</span><span>' + (c.name || c.mmsi) + '</span></div>';
+        }).join('');
+        document.getElementById('aoiBody').innerHTML =
+            '<div class="aoi-metrics"><div class="aoi-metric" style="grid-column:span 3">' +
+            '<div class="v">' + crossings.length + '</div><div class="l">' + i18n.t('ais_anim.tripwire_count') + '</div></div></div>' +
+            (crossings.length ? list : '<div class="case-row" style="color:#8aa4c8">' + i18n.t('ais_anim.aoi_none') + '</div>');
+        document.getElementById('aoiPanel').style.display = 'block';
+    }
+
+    // =========================================================================
+    // Feature 2 — Reproducible URL state + export
+    // =========================================================================
+    let _urlTimer = null;
+    function syncUrl() {
+        clearTimeout(_urlTimer);
+        _urlTimer = setTimeout(() => {
+            const p = new URLSearchParams();
+            if (Anim.selectedRange !== 14) p.set('range', Anim.selectedRange);
+            if (Anim.vesselFilter !== 'all') p.set('filter', Anim.vesselFilter);
+            if (!Anim.showEvents) p.set('events', '0');
+            if (Anim.showDark) p.set('dark', '1');
+            if (Anim.focusMmsi) p.set('focus', Anim.focusMmsi);
+            if (Anim.currentIdx > 0) p.set('frame', Anim.currentIdx);
+            if (Anim.aoi) p.set('aoi', 'area:' + encodeRing(Anim.aoi));
+            else if (Anim.tripwire) p.set('aoi', 'line:' + encodeRing(Anim.tripwire));
+            const qs = p.toString();
+            history.replaceState(null, '', qs ? '?' + qs : location.pathname);
+        }, 300);
+    }
+    function encodeRing(pts) { return pts.map(p => p[0].toFixed(4) + ',' + p[1].toFixed(4)).join(';'); }
+    function decodeRing(s) {
+        return s.split(';').map(pr => pr.split(',').map(Number)).filter(p => p.length === 2 && !isNaN(p[0]));
+    }
+
+    function applyUrlState() {
+        const p = new URLSearchParams(location.search);
+        const range = parseInt(p.get('range'));
+        if ([1, 3, 7, 14].includes(range)) setRange(range);
+        const filter = p.get('filter');
+        if (filter) { const sel = document.getElementById('vesselFilter'); if (sel) sel.value = filter; setVesselFilter(filter); }
+        if (p.get('events') === '0') { document.getElementById('showEvents').checked = false; toggleEvents(); }
+        if (p.get('dark') === '1') { document.getElementById('showDark').checked = true; toggleDark(); }
+        const aoi = p.get('aoi');
+        if (aoi) {
+            const [kind, body] = aoi.split(':');
+            const pts = decodeRing(body || '');
+            if (kind === 'area' && pts.length >= 3) Anim.aoi = pts;
+            else if (kind === 'line' && pts.length >= 2) Anim.tripwire = pts.slice(0, 2);
+            if (Anim.aoi || Anim.tripwire) { renderDrawLayer(false); document.getElementById('drawClearBtn').style.display = 'inline-block'; recomputeAreaMetrics(); }
+        }
+        const focus = p.get('focus');
+        if (focus) enterFocus(focus);
+        const frame = parseInt(p.get('frame'));
+        if (!isNaN(frame) && frame >= 0) renderFrame(Math.min(frame, Anim.filteredFrames.length - 1));
+    }
+
+    function copyShareLink() {
+        const btn = document.getElementById('copyLinkBtn');
+        const done = () => { btn.textContent = i18n.t('ais_anim.copied'); setTimeout(() => btn.textContent = i18n.t('ais_anim.copy_link'), 1500); };
+        if (navigator.clipboard) navigator.clipboard.writeText(location.href).then(done).catch(done);
+        else done();
+    }
+
+    function buildTrackRecords(mmsi) {
+        buildVesselIndex();
+        const recs = (Detection.vesselIndex.get(mmsi) || []).slice().sort((a, b) => a.frameIdx - b.frameIdx);
+        return recs.map(r => ({
+            ts: Anim.filteredFrames[r.frameIdx].timestamp,
+            lat: r.lat, lon: r.lon, speed: r.speed, heading: r.heading
+        }));
+    }
+
+    function downloadBlob(filename, text, type) {
+        const blob = new Blob([text], { type });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function doExport(format) {
+        const sel = document.getElementById('exportSelect');
+        if (sel) sel.value = '';
+        if (!format) return;
+        const mmsi = Anim.focusMmsi;
+        if (!mmsi) { alert(i18n.t('ais_anim.export_need_focus')); return; }
+        const recs = buildTrackRecords(mmsi);
+        const prof = Gray.profiles.get(mmsi) || {};
+        const name = (prof.names && prof.names[prof.names.length - 1]) || (Anim.vesselTrails[mmsi] || {}).name || mmsi;
+        const base = 'track_' + mmsi + '_' + Anim.selectedRange + 'd';
+        if (format === 'csv') {
+            const rows = [['timestamp', 'lat', 'lon', 'speed_kn', 'heading_deg']];
+            recs.forEach(r => rows.push([r.ts, r.lat, r.lon, r.speed != null ? r.speed : '', r.heading != null ? r.heading : '']));
+            downloadBlob(base + '.csv', rows.map(r => r.join(',')).join('\n'), 'text/csv');
+        } else {
+            const features = [{
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: recs.map(r => [r.lon, r.lat]) },
+                properties: { mmsi, name, risk_score: prof.risk_score, risk_level: prof.risk_level, flags: prof.flags || [] }
+            }];
+            Gray.events.filter(e => e.mmsis.includes(mmsi)).forEach(e => features.push({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [e.lon, e.lat] },
+                properties: { event: e.type, label: e.label, detail: e.detail, timestamp: e.ts }
+            }));
+            downloadBlob(base + '.geojson', JSON.stringify({ type: 'FeatureCollection', features }, null, 1), 'application/geo+json');
+        }
+    }
+
     // Re-render JS-built strings when language changes
     window.addEventListener('langchange', () => {
         refreshBehTitles();
@@ -2248,6 +2822,9 @@
         renderTimelineEvents();
         if (Anim.filteredFrames.length) renderFrame(Anim.currentIdx);
         if (Anim.focusMmsi) renderCaseNarrative(Anim.focusMmsi);
+        if (Anim.aoi || Anim.tripwire) recomputeAreaMetrics();
+        const hint = document.getElementById('drawHint');
+        if (Anim.drawMode && hint) hint.textContent = i18n.t(Anim.drawMode === 'area' ? 'ais_anim.draw_hint_area' : 'ais_anim.draw_hint_line');
     });
 
     // =========================================================================
@@ -2255,6 +2832,7 @@
     // =========================================================================
     document.addEventListener('keydown', function (e) {
         if (e.target.tagName === 'INPUT') return;
+        if (e.key === 'Enter' && Anim.drawMode) { finishDraw(); return; }
         switch (e.key) {
             case ' ':
                 e.preventDefault();
