@@ -353,6 +353,43 @@ const i18n = (function () {
         'ais_anim.type_lng':         { zh: 'LNG', en: 'LNG' },
         'ais_anim.stationary':       { zh: '靜止/錨泊', en: 'Stationary' },
 
+        // ── 研究工具 Researcher tools ──
+        // 事件對照 Event correlation
+        'ais_anim.ctx_readout':      { zh: 'PLA 機/艦 {0}/{1} · 暗船 {2}', en: 'PLA air/sea {0}/{1} · dark {2}' },
+        'ais_anim.ctx_nodata':       { zh: '當日無 PLA 資料', en: 'No PLA data for this date' },
+        'ais_anim.ctx_legend':       { zh: 'PLA 架次強度', en: 'PLA sortie intensity' },
+        'ais_anim.ctx_exercise':     { zh: '軍演', en: 'Exercise' },
+        // 重現與匯出 Reproduce & export
+        'ais_anim.copy_link':        { zh: '🔗 複製連結', en: '🔗 Copy link' },
+        'ais_anim.copied':           { zh: '✓ 已複製', en: '✓ Copied' },
+        'ais_anim.export':           { zh: '⬇ 匯出…', en: '⬇ Export…' },
+        'ais_anim.export_geojson':   { zh: 'GeoJSON (軌跡+事件)', en: 'GeoJSON (track+events)' },
+        'ais_anim.export_csv':       { zh: 'CSV (軌跡點)', en: 'CSV (track points)' },
+        'ais_anim.export_need_focus':{ zh: '請先聚焦一艘船再匯出', en: 'Focus a vessel first to export' },
+        // AOI / 絆線 Area of interest / tripwire
+        'ais_anim.draw_area':        { zh: '✏️ 畫區域', en: '✏️ Draw area' },
+        'ais_anim.draw_line':        { zh: '📏 畫絆線', en: '📏 Draw tripwire' },
+        'ais_anim.draw_clear':       { zh: '🗑 清除', en: '🗑 Clear' },
+        'ais_anim.draw_hint_area':   { zh: '在地圖點擊加入頂點，雙擊或按 Enter 完成多邊形', en: 'Click map to add vertices; double-click or Enter to finish' },
+        'ais_anim.draw_hint_line':   { zh: '點擊起點與終點畫一條絆線', en: 'Click start and end points to draw a tripwire' },
+        'ais_anim.aoi_title':        { zh: '📐 區域分析', en: '📐 Area Analysis' },
+        'ais_anim.aoi_vessels':      { zh: '進入船數', en: 'Vessels entered' },
+        'ais_anim.aoi_dwell':        { zh: '總停留', en: 'Total dwell' },
+        'ais_anim.aoi_peak':         { zh: '同時最多', en: 'Peak concurrent' },
+        'ais_anim.aoi_bytype':       { zh: '依船型', en: 'By type' },
+        'ais_anim.aoi_chart':        { zh: '區內船數 / 時段', en: 'Vessels in area / frame' },
+        'ais_anim.tripwire_title':   { zh: '📏 絆線穿越', en: '📏 Tripwire Crossings' },
+        'ais_anim.tripwire_count':   { zh: '穿越次數', en: 'Crossings' },
+        'ais_anim.aoi_none':         { zh: '此範圍內無船進入', en: 'No vessels in range' },
+        'ais_anim.hours_unit':       { zh: '{0} 小時', en: '{0} h' },
+        // 走暗 Going dark
+        'ais_anim.show_dark':        { zh: '走暗區段', en: 'Going-dark' },
+        'ais_anim.dark_threshold':   { zh: '走暗門檻 (時)', en: 'Dark gap (h)' },
+        'ais_anim.filter_dark':      { zh: '走暗船', en: 'Went dark' },
+        'ais_anim.dark_label':       { zh: '走暗 {0}h', en: 'Dark {0}h' },
+        'ais_anim.focus_dark':       { zh: '走暗區段', en: 'Going-dark' },
+        'ais_anim.focus_dark_val':   { zh: '{0} 次 · 最長 {1}h', en: '{0}× · longest {1}h' },
+
         // ── 海纜狀態 ──
         'cable.status_title':        { zh: '🔌 海纜狀態', en: '🔌 Cable Status' },
         'cable.fault':               { zh: '障礙中', en: 'Faulted' },
