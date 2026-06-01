@@ -617,29 +617,18 @@
         .event-caption.show { opacity: 1; transform: translateY(0); }
         .event-caption .ec-type { font-weight: 700; }
 
-        /* ── Pulsing event ring + vessel pulse ── */
+        /* ── Event marker ring (clean, static — no glow animation) ── */
         .event-ring {
             background: none !important;
             border: none !important;
         }
-        @keyframes evtpulse {
-            0%   { transform: scale(0.6); opacity: 0.9; }
-            70%  { transform: scale(1.8); opacity: 0; }
-            100% { transform: scale(1.8); opacity: 0; }
-        }
         .event-ring .ring {
             display: block;
-            width: 22px; height: 22px;
+            width: 18px; height: 18px;
             border-radius: 50%;
             border: 2px solid currentColor;
-            animation: evtpulse 1.6s ease-out infinite;
+            background: radial-gradient(currentColor 0 2px, transparent 2.5px);
         }
-        @keyframes vpulse {
-            0%   { box-shadow: 0 0 0 0 rgba(255,51,102,0.5); }
-            70%  { box-shadow: 0 0 0 7px rgba(255,51,102,0); }
-            100% { box-shadow: 0 0 0 0 rgba(255,51,102,0); }
-        }
-        .vessel-icon.pulse svg { border-radius: 50%; animation: vpulse 1.8s ease-out infinite; }
 
         /* ── Case narrative panel ── */
         .case-panel {
@@ -804,8 +793,12 @@
             <div id="map"></div>
             <div class="event-caption" id="eventCaption"></div>
             <div class="map-legend-inline">
-                <div class="legend-chip"><svg width="7" height="16" style="flex-shrink:0" viewBox="0 0 7 16"><polygon points="3.5,0 7,16 3.5,11.2 0,16" fill="#ff3366" opacity="0.85"/></svg><span data-i18n="ais_anim.suspicious">可疑船</span></div>
-                <div class="legend-chip"><svg width="7" height="16" style="flex-shrink:0" viewBox="0 0 7 16"><polygon points="3.5,0 7,16 3.5,11.2 0,16" fill="#00f5ff" opacity="0.7"/></svg><span data-i18n="ais_anim.normal_vessel">一般船隻</span></div>
+                <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#ff3366" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.suspicious">可疑船</span></div>
+                <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#00ff88" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.type_fishing">漁船</span></div>
+                <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#00f5ff" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.type_cargo">貨船</span></div>
+                <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#ff6b35" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.type_tanker">油輪</span></div>
+                <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#f0e130" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.type_lng">LNG</span></div>
+                <div class="legend-chip"><svg width="11" height="11" style="flex-shrink:0" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="3.4" fill="#8aa4c8" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.stationary">靜止/錨泊</span></div>
                 <div class="legend-chip"><span class="dot" style="background:rgba(0,255,136,0.3)"></span><span data-i18n="ais_anim.hotspot">漁撈熱點</span></div>
                 <div class="legend-chip" data-beh="loiter" style="cursor:help"><span class="dot" style="background:#ffa500"></span><span data-i18n="ais_anim.detect_loiter">滯留</span></div>
                 <div class="legend-chip" data-beh="zigzag" style="cursor:help"><span class="dot" style="background:#ff66ff"></span><span data-i18n="ais_anim.detect_zigzag">Z字型</span></div>
@@ -865,6 +858,16 @@
     // =========================================================================
     // Fishing hotspots (same as fetch_ais_data.py)
     // =========================================================================
+    // Vessel type colors (MarineTraffic-style, matches docs/js/map.js)
+    const VESSEL_COLORS = {
+        fishing: '#00ff88',
+        cargo:   '#00f5ff',
+        tanker:  '#ff6b35',
+        lng:     '#f0e130',
+        other:   '#ff3366',
+        unknown: '#8aa4c8'
+    };
+
     const FISHING_HOTSPOTS = {
         taiwan_bank:   { name: '台灣灘漁場',   bounds: [[22.0, 117.0], [23.5, 119.5]] },
         penghu:        { name: '澎湖漁場',     bounds: [[23.0, 119.0], [24.0, 120.0]] },
@@ -1695,42 +1698,54 @@
         }
     }
 
-    // Create MarineTraffic-style arrow SVG icon for vessel marker
-    function createVesselIcon(color, isSuspicious, heading, pulse) {
-        const w = isSuspicious ? 10 : 7;
-        const h = isSuspicious ? 20 : 16;
-        const rotation = heading !== null ? heading : 0;
-        const opacity = isSuspicious ? 0.85 : 0.7;
-        const sw = isSuspicious ? 1.5 : 0.8;
+    // Create a clean MarineTraffic-style vessel symbol.
+    //  - moving vessel: a kite/pentagon hull pointed toward its heading
+    //  - stationary / unknown heading: a circle (MT convention)
+    // Type-colored fill + thin light outline for crisp edges on the dark map.
+    function createVesselIcon(color, emphasis, heading, stationary) {
+        const w = emphasis ? 13 : 10;
+        const h = emphasis ? 18 : 14;
+        const sw = emphasis ? 1.1 : 0.8;          // outline width
+        const stroke = 'rgba(255,255,255,0.7)';   // light halo for contrast
 
-        let shape;
-        if (heading !== null) {
-            // Narrow arrow with notch — shows heading direction clearly
-            const cx = w / 2;
-            const notch = h * 0.7;
-            shape = '<polygon points="' + cx + ',0 ' + w + ',' + h + ' ' + cx + ',' + notch + ' 0,' + h + '" ' +
-                    'fill="' + color + '" fill-opacity="' + opacity + '" ' +
-                    'stroke="' + color + '" stroke-width="' + sw + '" stroke-opacity="0.9"/>';
-        } else {
-            // Diamond for unknown heading
-            const cx = w / 2;
-            const cy = h / 2;
-            shape = '<polygon points="' + cx + ',0 ' + w + ',' + cy + ' ' + cx + ',' + h + ' 0,' + cy + '" ' +
-                    'fill="' + color + '" fill-opacity="' + opacity + '" ' +
-                    'stroke="' + color + '" stroke-width="' + sw + '" stroke-opacity="0.9"/>';
+        let shape, box;
+        if (stationary || heading === null) {
+            // Circle for moored / drifting vessels
+            const r = emphasis ? 4.6 : 3.4;
+            const d = r * 2 + sw * 2;
+            box = d;
+            shape = '<circle cx="' + (d / 2) + '" cy="' + (d / 2) + '" r="' + r + '" ' +
+                    'fill="' + color + '" fill-opacity="0.92" ' +
+                    'stroke="' + stroke + '" stroke-width="' + sw + '"/>';
+            const svg = '<svg width="' + d + '" height="' + d + '" viewBox="0 0 ' + d + ' ' + d + '" ' +
+                        'xmlns="http://www.w3.org/2000/svg">' + shape + '</svg>';
+            return L.divIcon({
+                html: svg, className: 'vessel-icon',
+                iconSize: [d, d], iconAnchor: [d / 2, d / 2], popupAnchor: [0, -d / 2]
+            });
         }
+
+        // Hull pointing up (bow at top); rotated by heading via CSS transform.
+        const cx = w / 2;
+        const pts = [
+            cx + ',0',                              // bow tip
+            w + ',' + (h * 0.32),                   // starboard shoulder
+            (w * 0.80) + ',' + h,                   // starboard stern
+            (w * 0.20) + ',' + h,                   // port stern
+            '0,' + (h * 0.32)                       // port shoulder
+        ].join(' ');
+        shape = '<polygon points="' + pts + '" ' +
+                'fill="' + color + '" fill-opacity="0.95" ' +
+                'stroke="' + stroke + '" stroke-width="' + sw + '" stroke-linejoin="round"/>';
 
         const svg = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" ' +
                     'xmlns="http://www.w3.org/2000/svg" ' +
-                    'style="transform:rotate(' + rotation + 'deg)">' +
+                    'style="transform:rotate(' + heading + 'deg);transform-origin:center">' +
                     shape + '</svg>';
 
         return L.divIcon({
-            html: svg,
-            className: 'vessel-icon' + (pulse ? ' pulse' : ''),
-            iconSize: [w, h],
-            iconAnchor: [w / 2, h / 2],
-            popupAnchor: [0, -h / 2]
+            html: svg, className: 'vessel-icon',
+            iconSize: [w, h], iconAnchor: [w / 2, h / 2], popupAnchor: [0, -h / 2]
         });
     }
 
@@ -1783,15 +1798,16 @@
             const tags = getDetectionTags(v.mmsi, idx);
             const hasDetection = tags.length > 0;
 
-            // Color priority: detection > suspicious > normal
-            let color = isSuspicious ? '#ff3366' : '#00f5ff';
+            // Color priority: detection > suspicious > vessel type (MarineTraffic-style)
+            let color = isSuspicious ? '#ff3366' : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.unknown);
             if (hasDetection) {
                 color = tags[0].color; // use primary detection color
             }
             const heading = computeHeading(v.mmsi, v.lat, v.lon) ?? (v.heading !== undefined ? v.heading : null);
 
-            const pulse = isSuspicious || hasDetection || (focus && String(v.mmsi) === focus);
-            const icon = createVesselIcon(color, isSuspicious || hasDetection || !!focus, heading, pulse);
+            const emphasis = isSuspicious || hasDetection || (focus && String(v.mmsi) === focus);
+            const stationary = (v.speed !== undefined && v.speed !== null && v.speed < 0.5);
+            const icon = createVesselIcon(color, emphasis, heading, stationary);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(Anim.markerLayer);
 
             const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';

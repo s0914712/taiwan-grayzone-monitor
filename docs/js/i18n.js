@@ -347,6 +347,11 @@ const i18n = (function () {
         'ais_anim.loop':             { zh: '循環', en: 'Loop' },
         'ais_anim.normal_vessel':    { zh: '一般船隻', en: 'Normal Vessel' },
         'ais_anim.hotspot':          { zh: '漁撈熱點', en: 'Fishing Hotspot' },
+        'ais_anim.type_fishing':     { zh: '漁船', en: 'Fishing' },
+        'ais_anim.type_cargo':       { zh: '貨船', en: 'Cargo' },
+        'ais_anim.type_tanker':      { zh: '油輪', en: 'Tanker' },
+        'ais_anim.type_lng':         { zh: 'LNG', en: 'LNG' },
+        'ais_anim.stationary':       { zh: '靜止/錨泊', en: 'Stationary' },
 
         // ── 海纜狀態 ──
         'cable.status_title':        { zh: '🔌 海纜狀態', en: '🔌 Cable Status' },
