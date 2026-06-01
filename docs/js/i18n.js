@@ -307,6 +307,47 @@ const i18n = (function () {
         'ais_anim.detect_cable':     { zh: '近電纜', en: 'Near Cable' },
         'ais_anim.loiter_hours':     { zh: '滯留 {0}h', en: 'Loiter {0}h' },
 
+        // ── 灰區動畫強化 Gray Zone Animation Enhancements ──
+        // 簡介面板 Intro panel
+        'ais_anim.intro_title':      { zh: '什麼是「灰色地帶行動」？', en: 'What are "Gray Zone" actions?' },
+        'ais_anim.intro_body':       { zh: '灰色地帶行動是介於和平與衝突之間的低強度脅迫——利用民用船隻（漁船、貨船）執行偵察、騷擾、破壞海纜等任務，刻意維持「可否認性」。下方動畫把可疑行為標在時間軸上，按 ▶ 播放即可看出「何時、在哪、發生了什麼」。', en: 'Gray zone actions are low-intensity coercion between peace and conflict—using civilian vessels (fishing boats, cargo ships) for reconnaissance, harassment, or cable sabotage while preserving "deniability". The animation below marks suspicious behaviors on the timeline; press ▶ to see "when, where, and what happened".' },
+        'ais_anim.intro_dismiss':    { zh: '知道了', en: 'Got it' },
+        'ais_anim.intro_reopen':     { zh: '？ 什麼是灰色地帶', en: '? What is gray zone' },
+        // 行為解說 Behavior explanations
+        'ais_anim.beh_sts':          { zh: '旁靠補給：兩船在外海近距離靠泊轉運人員/物資，常用於規避港口查驗。', en: 'STS transfer: two vessels rendezvous at sea to transfer crew/cargo, often to evade port inspection.' },
+        'ais_anim.beh_identity':     { zh: '身分變更：船名、呼號或船型反覆變更，掩蓋真實身分以逃避追蹤。', en: 'Identity change: name, callsign or ship type repeatedly altered to hide true identity and evade tracking.' },
+        'ais_anim.beh_cable':        { zh: '近電纜徘徊：在海底電纜附近低速逗留，可能進行拖錨破壞或偵察。', en: 'Near-cable loitering: lingering at low speed near submarine cables, possibly dragging anchors or scouting.' },
+        'ais_anim.beh_loiter':       { zh: '滯留：長時間停留於敏感海域不作業，異於正常航運或漁撈模式。', en: 'Loitering: dwelling for long periods in sensitive waters, abnormal versus normal shipping or fishing.' },
+        'ais_anim.beh_zigzag':       { zh: 'Z字型航行：反覆大幅轉向，可能為拖錨破壞海纜或反偵察機動。', en: 'Zigzag: repeated sharp turns, possibly anchor-dragging on cables or counter-surveillance maneuvering.' },
+        'ais_anim.beh_dark':         { zh: '走暗/AIS造假：關閉或偽造 AIS 訊號，刻意隱藏行蹤與位置。', en: 'Going dark / AIS spoofing: disabling or faking AIS signals to deliberately hide movement and position.' },
+        'ais_anim.beh_dark_chip':    { zh: '走暗/造假', en: 'Dark/Spoof' },
+        // 事件時間軸 Event timeline
+        'ais_anim.events_label':     { zh: '灰區事件', en: 'Gray Zone Events' },
+        'ais_anim.evt_sts':          { zh: '旁靠補給', en: 'STS Transfer' },
+        'ais_anim.evt_identity':     { zh: '身分變更', en: 'Identity Change' },
+        'ais_anim.evt_cable_fault':  { zh: '海纜故障', en: 'Cable Fault' },
+        'ais_anim.evt_at':           { zh: '距 {0}m · {1}h', en: '{0}m apart · {1}h' },
+        'ais_anim.evt_none':         { zh: '此範圍內無標註事件', en: 'No annotated events in range' },
+        'ais_anim.show_events':      { zh: '事件標註', en: 'Event Markers' },
+        // 聚焦敘事 Focus / case narrative
+        'ais_anim.focus_btn':        { zh: '🎯 聚焦', en: '🎯 Focus' },
+        'ais_anim.focus_exit':       { zh: '← 退出聚焦', en: '← Exit Focus' },
+        'ais_anim.focus_title':      { zh: '案例敘事', en: 'Case Narrative' },
+        'ais_anim.focus_risk':       { zh: '威脅評分', en: 'Risk Score' },
+        'ais_anim.focus_names':      { zh: '曾用船名', en: 'Known Names' },
+        'ais_anim.focus_flags':      { zh: '可疑指標', en: 'Threat Flags' },
+        'ais_anim.focus_timeline':   { zh: '事件時序', en: 'Event Timeline' },
+        'ais_anim.focus_no_profile': { zh: '此船未進入前 50 名威脅檔案，以下為前端即時偵測結果。', en: 'Not in top-50 threat profiles; showing live front-end detections below.' },
+        'ais_anim.focus_no_events':  { zh: '此範圍內無偵測到事件。', en: 'No detected events in this range.' },
+        'ais_anim.risk_critical':    { zh: '極高', en: 'Critical' },
+        'ais_anim.risk_high':        { zh: '高', en: 'High' },
+        'ais_anim.risk_medium':      { zh: '中', en: 'Medium' },
+        'ais_anim.risk_normal':      { zh: '一般', en: 'Normal' },
+        // 播放優化 Playback
+        'ais_anim.loop':             { zh: '循環', en: 'Loop' },
+        'ais_anim.normal_vessel':    { zh: '一般船隻', en: 'Normal Vessel' },
+        'ais_anim.hotspot':          { zh: '漁撈熱點', en: 'Fishing Hotspot' },
+
         // ── 海纜狀態 ──
         'cable.status_title':        { zh: '🔌 海纜狀態', en: '🔌 Cable Status' },
         'cable.fault':               { zh: '障礙中', en: 'Faulted' },
