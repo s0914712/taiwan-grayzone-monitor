@@ -180,8 +180,7 @@ taiwan-grayzone-monitor/
 │   ├── statistics.html                # Statistics dashboard 統計儀表板
 │   ├── ship-transfers.html            # STS transfer detection 旁靠偵測
 │   ├── identity-history.html          # AIS identity tracking 身分追蹤
-│   ├── weekly-animation.html          # Dark vessel 90-day animation 暗船動畫
-│   ├── ais-animation.html             # AIS position animation 船位動畫
+│   ├── ais-animation.html             # AIS track animation + research tools 軌跡動畫
 │   ├── cn-fishing-animation.html      # Chinese fishing fleet animation 大陸漁船動畫
 │   ├── intro.html                     # Project introduction 專案介紹
 │   ├── js/
