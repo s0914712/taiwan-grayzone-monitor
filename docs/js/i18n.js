@@ -266,10 +266,8 @@ const i18n = (function () {
         'anim.no_detect':        { zh: '本日無偵測資料', en: 'No detections for this day' },
         'anim.frame':            { zh: '第 {0} / {1} 天', en: 'Day {0} of {1}' },
 
-        // ── AIS 船位動畫 AIS Track Animation ──
-        'nav.ais_anim':          { zh: '船位動畫', en: 'AIS Animation' },
-        'nav.mob_ais_anim':      { zh: '船位', en: 'Track' },
-        'title.ais_anim':        { zh: '🚢 可疑船位動畫 Suspicious Vessel Animation', en: '🚢 Suspicious Vessel Animation' },
+        // ── 軌跡動畫 AIS Track Animation ──
+        'title.ais_anim':        { zh: '🚢 軌跡動畫 AIS Track Animation', en: '🚢 AIS Track Animation' },
         'ais_anim.range':        { zh: '範圍', en: 'Range' },
         'ais_anim.days_7':       { zh: '7 天', en: '7 Days' },
         'ais_anim.days_14':      { zh: '14 天', en: '14 Days' },
