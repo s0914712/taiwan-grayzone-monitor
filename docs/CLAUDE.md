@@ -11,8 +11,7 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 | `dark-vessels.html` | SAR dark vessel analysis charts + map | `data.json` (dark_vessels section) |
 | `statistics.html` | Historical trend charts (vessel counts, dark vessels, fishing effort) | `ais_history.json` |
 | `identity-history.html` | AIS identity change timeline table | `identity_events.json` |
-| `weekly-animation.html` | Leaflet-based vessel trail animation (max 300 vessels, 2-layer glow) | `ais_track_history.json` |
-| `ais-animation.html` | AIS track playback animation | `ais_track_history.json` |
+| `ais-animation.html` | AIS track playback animation + gray-zone events, focus narrative, AOI/tripwire, going-dark, export. Nav label "軌跡動畫" points here. | `ais_track_history.json`, `data.json`, `ship_transfers.json`, `identity_events.json` |
 | `cn-fishing-animation.html` | Chinese fishing vessel animation | `ais_track_history.json` |
 | `ship-transfers.html` | STS rendezvous detection results table + map | `ship_transfers.json` |
 | `intro.html` | Project introduction / about page | Static |
@@ -94,7 +93,7 @@ i18n.t('idx.ago_h', 24)   // {0} replacement
 - Responds to `langchange` event for live language switch
 
 ### Animation Pages
-Each animation HTML page has **self-contained inline JS** (not shared modules). Each creates its own Leaflet map + playback controls. `weekly-animation.html` uses Leaflet polylines (replaced deck.gl for mobile compatibility).
+Each animation HTML page has **self-contained inline JS** (not shared modules). Each creates its own Leaflet map + playback controls.
 
 ## Data Files in docs/
 
