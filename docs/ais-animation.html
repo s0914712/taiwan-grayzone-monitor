@@ -510,6 +510,183 @@
             color: #ffd700;
             min-width: 30px;
         }
+
+        /* ── Gray zone intro / education panel ── */
+        .gz-intro {
+            margin: 12px 16px 0;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(0,245,255,0.08), rgba(255,51,102,0.06));
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            position: relative;
+        }
+        .gz-intro h3 {
+            margin: 0 0 6px;
+            font-size: 13px;
+            color: var(--accent-cyan);
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        .gz-intro p {
+            margin: 0 0 10px;
+            font-size: 11px;
+            line-height: 1.7;
+            color: var(--text-primary);
+        }
+        .gz-behaviors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .gz-beh-chip {
+            font-size: 10px;
+            padding: 3px 9px;
+            border-radius: 12px;
+            border: 1px solid var(--border-glow);
+            color: var(--text-secondary);
+            cursor: help;
+            transition: all var(--transition-fast);
+        }
+        .gz-beh-chip:hover { color: var(--text-primary); border-color: currentColor; }
+        .gz-intro-close {
+            position: absolute;
+            top: 8px; right: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            font-size: 10px;
+            padding: 3px 8px;
+            cursor: pointer;
+        }
+        .gz-intro-close:hover { color: var(--accent-cyan); border-color: var(--accent-cyan); }
+        .gz-intro-reopen {
+            margin-left: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            font-size: 9px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        .gz-intro-reopen:hover { color: var(--accent-cyan); border-color: var(--accent-cyan); }
+
+        /* ── Event timeline track ── */
+        .timeline-events {
+            position: relative;
+            height: 14px;
+            margin: 0 2px 2px;
+        }
+        .tl-event {
+            position: absolute;
+            top: 2px;
+            width: 3px;
+            height: 10px;
+            border-radius: 1px;
+            transform: translateX(-50%);
+            cursor: pointer;
+            opacity: 0.85;
+            transition: transform var(--transition-fast), opacity var(--transition-fast);
+        }
+        .tl-event:hover { transform: translateX(-50%) scaleY(1.4); opacity: 1; }
+        .day-slider {
+            background: linear-gradient(to right, var(--accent-cyan) 0%, var(--accent-cyan) var(--progress,0%), var(--bg-card) var(--progress,0%));
+        }
+
+        /* ── Event caption overlay on map ── */
+        .map-panel { position: relative; }
+        .event-caption {
+            position: absolute;
+            top: 10px; left: 52px;
+            z-index: 1000;
+            max-width: calc(100% - 64px);
+            background: rgba(10,15,28,0.88);
+            border: 1px solid var(--accent-orange);
+            border-left-width: 3px;
+            border-radius: 5px;
+            padding: 7px 11px;
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--text-primary);
+            opacity: 0;
+            transform: translateY(-6px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: none;
+        }
+        .event-caption.show { opacity: 1; transform: translateY(0); }
+        .event-caption .ec-type { font-weight: 700; }
+
+        /* ── Pulsing event ring + vessel pulse ── */
+        .event-ring {
+            background: none !important;
+            border: none !important;
+        }
+        @keyframes evtpulse {
+            0%   { transform: scale(0.6); opacity: 0.9; }
+            70%  { transform: scale(1.8); opacity: 0; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+        .event-ring .ring {
+            display: block;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            animation: evtpulse 1.6s ease-out infinite;
+        }
+        @keyframes vpulse {
+            0%   { box-shadow: 0 0 0 0 rgba(255,51,102,0.5); }
+            70%  { box-shadow: 0 0 0 7px rgba(255,51,102,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,51,102,0); }
+        }
+        .vessel-icon.pulse svg { border-radius: 50%; animation: vpulse 1.8s ease-out infinite; }
+
+        /* ── Case narrative panel ── */
+        .case-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .case-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-glow);
+            background: var(--bg-secondary);
+        }
+        .case-head .case-name { font-size: 12px; font-weight: 600; color: var(--accent-cyan); }
+        .case-body { padding: 10px 12px; font-size: 11px; line-height: 1.6; }
+        .case-row { margin-bottom: 8px; }
+        .case-row .k { color: var(--text-secondary); font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px; }
+        .risk-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 10px;
+            font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 12px;
+        }
+        .risk-badge.critical { background: rgba(255,51,102,0.2); color: #ff3366; }
+        .risk-badge.high     { background: rgba(255,107,53,0.2); color: #ff6b35; }
+        .risk-badge.medium   { background: rgba(255,215,0,0.2); color: #ffd700; }
+        .risk-badge.normal   { background: rgba(138,164,200,0.2); color: #8aa4c8; }
+        .case-flag { padding: 3px 0; border-bottom: 1px dashed rgba(138,164,200,0.15); }
+        .case-evt {
+            display: flex; gap: 8px; align-items: baseline;
+            padding: 4px 6px; border-radius: 4px; cursor: pointer;
+        }
+        .case-evt:hover { background: rgba(0,245,255,0.06); }
+        .case-evt .ce-time { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-secondary); white-space: nowrap; }
+        .case-evt .ce-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .focus-btn {
+            background: var(--bg-secondary); border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan); border-radius: 4px; font-size: 9px;
+            padding: 2px 6px; cursor: pointer; font-family: 'Noto Sans TC', sans-serif;
+        }
+        .focus-btn:hover { background: rgba(0,245,255,0.12); }
+
+        @media (max-width: 768px) {
+            .gz-intro { margin: 8px 8px 0; }
+            .event-caption { max-width: 85%; font-size: 12px; }
+        }
     </style>
 </head>
 
@@ -542,6 +719,21 @@
         </div>
     </header>
 
+    <!-- Gray zone intro / education panel -->
+    <div class="gz-intro" id="gzIntro" style="display:none">
+        <button class="gz-intro-close" id="gzIntroClose" data-i18n="ais_anim.intro_dismiss">知道了</button>
+        <h3 data-i18n="ais_anim.intro_title">什麼是「灰色地帶行動」？</h3>
+        <p data-i18n="ais_anim.intro_body">灰色地帶行動是介於和平與衝突之間的低強度脅迫……</p>
+        <div class="gz-behaviors">
+            <span class="gz-beh-chip" data-beh="sts"      style="color:#ff9d2e" data-i18n="ais_anim.evt_sts">旁靠補給</span>
+            <span class="gz-beh-chip" data-beh="identity" style="color:#c264ff" data-i18n="ais_anim.evt_identity">身分變更</span>
+            <span class="gz-beh-chip" data-beh="cable"    style="color:#ffd700" data-i18n="ais_anim.detect_cable">近電纜</span>
+            <span class="gz-beh-chip" data-beh="loiter"   style="color:#ffa500" data-i18n="ais_anim.detect_loiter">滯留</span>
+            <span class="gz-beh-chip" data-beh="zigzag"   style="color:#ff66ff" data-i18n="ais_anim.detect_zigzag">Z字型</span>
+            <span class="gz-beh-chip" data-beh="dark"     style="color:#8aa4c8" data-i18n="ais_anim.beh_dark_chip">走暗/造假</span>
+        </div>
+    </div>
+
     <!-- Animation controls -->
     <div class="anim-controls" id="animControls">
         <div class="range-selector">
@@ -564,6 +756,14 @@
             <label class="trail-toggle">
                 <input type="checkbox" id="showTrails" checked onchange="toggleTrails()">
                 <span data-i18n="ais_anim.show_trails">顯示軌跡</span>
+            </label>
+            <label class="trail-toggle">
+                <input type="checkbox" id="showEvents" checked onchange="toggleEvents()">
+                <span data-i18n="ais_anim.show_events">事件標註</span>
+            </label>
+            <label class="trail-toggle">
+                <input type="checkbox" id="loopPlay" onchange="toggleLoop()">
+                <span data-i18n="ais_anim.loop">循環</span>
             </label>
             <label class="trail-toggle">
                 <input type="checkbox" id="showCables" onchange="toggleCableLayer()">
@@ -591,6 +791,7 @@
 
     <!-- Timeline slider -->
     <div class="timeline-panel">
+        <div class="timeline-events" id="timelineEvents" title=""></div>
         <input type="range" class="day-slider" id="daySlider" min="0" max="0" value="0">
         <div class="timeline-labels" id="timelineLabels"></div>
     </div>
@@ -601,14 +802,26 @@
         <div class="panel map-panel">
             <div class="panel-title" data-i18n="ais_anim.map_title">📍 可疑船隻 AIS 軌跡動畫</div>
             <div id="map"></div>
+            <div class="event-caption" id="eventCaption"></div>
             <div class="map-legend-inline">
                 <div class="legend-chip"><svg width="7" height="16" style="flex-shrink:0" viewBox="0 0 7 16"><polygon points="3.5,0 7,16 3.5,11.2 0,16" fill="#ff3366" opacity="0.85"/></svg><span data-i18n="ais_anim.suspicious">可疑船</span></div>
-                <div class="legend-chip"><svg width="7" height="16" style="flex-shrink:0" viewBox="0 0 7 16"><polygon points="3.5,0 7,16 3.5,11.2 0,16" fill="#00f5ff" opacity="0.7"/></svg><span>一般船隻</span></div>
-                <div class="legend-chip"><span class="dot" style="background:rgba(0,255,136,0.3)"></span><span>漁撈熱點</span></div>
-                <div class="legend-chip"><span class="dot" style="background:#ffa500"></span><span data-i18n="ais_anim.detect_loiter">滯留</span></div>
-                <div class="legend-chip"><span class="dot" style="background:#ff66ff"></span><span data-i18n="ais_anim.detect_zigzag">Z字型</span></div>
-                <div class="legend-chip"><span class="dot" style="background:#ffd700"></span><span data-i18n="ais_anim.detect_cable">近電纜</span></div>
+                <div class="legend-chip"><svg width="7" height="16" style="flex-shrink:0" viewBox="0 0 7 16"><polygon points="3.5,0 7,16 3.5,11.2 0,16" fill="#00f5ff" opacity="0.7"/></svg><span data-i18n="ais_anim.normal_vessel">一般船隻</span></div>
+                <div class="legend-chip"><span class="dot" style="background:rgba(0,255,136,0.3)"></span><span data-i18n="ais_anim.hotspot">漁撈熱點</span></div>
+                <div class="legend-chip" data-beh="loiter" style="cursor:help"><span class="dot" style="background:#ffa500"></span><span data-i18n="ais_anim.detect_loiter">滯留</span></div>
+                <div class="legend-chip" data-beh="zigzag" style="cursor:help"><span class="dot" style="background:#ff66ff"></span><span data-i18n="ais_anim.detect_zigzag">Z字型</span></div>
+                <div class="legend-chip" data-beh="cable" style="cursor:help"><span class="dot" style="background:#ffd700"></span><span data-i18n="ais_anim.detect_cable">近電纜</span></div>
+                <div class="legend-chip" data-beh="sts" style="cursor:help"><span class="dot" style="background:#ff9d2e"></span><span data-i18n="ais_anim.evt_sts">旁靠補給</span></div>
+                <div class="legend-chip" data-beh="identity" style="cursor:help"><span class="dot" style="background:#c264ff"></span><span data-i18n="ais_anim.evt_identity">身分變更</span></div>
             </div>
+        </div>
+
+        <!-- Case narrative panel (focus mode) -->
+        <div class="panel case-panel" id="casePanel" style="display:none">
+            <div class="case-head">
+                <span class="case-name" id="caseName">--</span>
+                <button class="focus-btn" id="caseExit" data-i18n="ais_anim.focus_exit">← 退出聚焦</button>
+            </div>
+            <div class="case-body" id="caseBody"></div>
         </div>
 
         <!-- Daily trend chart -->
@@ -676,10 +889,37 @@
         showTrails: true,
         vesselFilter: 'all',  // 'all', 'cn_fishing', 'suspicious'
         chart: null,
-        vesselTrails: {}  // mmsi -> [{lat, lon, timestamp}, ...]
+        vesselTrails: {},  // mmsi -> [{lat, lon, timestamp}, ...]
+        eventLayer: null,  // pulsing gray-zone event markers
+        showEvents: true,
+        loop: false,
+        focusMmsi: null    // single-vessel focus / case narrative
     };
 
     let map;
+
+    // =========================================================================
+    // Gray zone events (STS transfers, identity changes, cable faults) +
+    // vessel threat profiles. Loaded once, mapped onto the animation timeline.
+    // =========================================================================
+    const Gray = {
+        events: [],            // [{type, ts, lat, lon, mmsis:[], label, detail, color, frameIdx}]
+        profiles: new Map(),   // mmsi -> suspicious_analysis profile
+        loaded: false
+    };
+
+    const EVENT_COLORS = { sts: '#ff9d2e', identity: '#c264ff', cable_fault: '#ff0000' };
+
+    // Reuse backend exclusion logic: skip buoy / fishing-net beacon noise
+    function isBeaconNoise(mmsi, name) {
+        const m = String(mmsi || '');
+        if (m.startsWith('9') || m.startsWith('898')) return true;
+        const n = String(name || '').trim().toUpperCase();
+        if (n.includes('%') || n.includes('BUOY')) return true;
+        // Fishing-net beacon voltage suffix (e.g. "12.5V") — mirrors backend EXCLUSION_RULES
+        if (/\d+\.?\d*V$/.test(n)) return true;
+        return false;
+    }
 
     // =========================================================================
     // Cable & Detection state
@@ -1056,6 +1296,201 @@
     }
 
     // =========================================================================
+    // Gray zone event loading & timeline mapping
+    // =========================================================================
+    async function loadGrayEvents() {
+        if (Gray.loaded) return;
+        Gray.loaded = true;
+        try {
+            const [stsRes, idRes, dataRes] = await Promise.all([
+                fetch('ship_transfers.json?' + Date.now()).catch(() => null),
+                fetch('identity_events.json?' + Date.now()).catch(() => null),
+                fetch('data.json?' + Date.now()).catch(() => null)
+            ]);
+
+            const events = [];
+
+            // STS transfers — keep only suspicious rendezvous
+            if (stsRes && stsRes.ok) {
+                const sts = await stsRes.json();
+                const all = [].concat(sts.active_transfers || [], sts.history || []);
+                all.forEach(t => {
+                    if (t.classification !== 'suspicious') return;
+                    const loc = t.location || {};
+                    const lat = loc.lat, lon = loc.lon;
+                    if (lat == null || lon == null) return;
+                    const v1 = (t.vessel1 || {}).name || (t.vessel1 || {}).mmsi || '?';
+                    const v2 = (t.vessel2 || {}).name || (t.vessel2 || {}).mmsi || '?';
+                    events.push({
+                        type: 'sts', ts: t.first_seen, lat, lon,
+                        mmsis: [String((t.vessel1 || {}).mmsi), String((t.vessel2 || {}).mmsi)],
+                        label: v1 + ' ↔ ' + v2,
+                        detail: i18n.t('ais_anim.evt_at', (t.min_distance_m || 0).toFixed(1),
+                                       (t.duration_hours || 0).toFixed(1)),
+                        color: EVENT_COLORS.sts, frameIdx: -1
+                    });
+                });
+            }
+
+            // Identity changes — filter out buoy / beacon name flicker
+            if (idRes && idRes.ok) {
+                const ids = await idRes.json();
+                (Array.isArray(ids) ? ids : []).forEach(ev => {
+                    const ch = (ev.changes || [])[0];
+                    if (!ch) return;
+                    if (isBeaconNoise(ev.mmsi, ch.old) || isBeaconNoise(ev.mmsi, ch.new)) return;
+                    if (ev.lat == null || ev.lon == null) return;
+                    events.push({
+                        type: 'identity', ts: ev.timestamp, lat: ev.lat, lon: ev.lon,
+                        mmsis: [String(ev.mmsi)],
+                        label: (ch.field || '') + ': ' + (ch.old || '?') + ' → ' + (ch.new || '?'),
+                        detail: 'MMSI ' + ev.mmsi + (ev.multi_field ? ' · multi-field' : ''),
+                        color: EVENT_COLORS.identity, frameIdx: -1
+                    });
+                });
+            }
+
+            // Cable faults — load cable geometry + status, place marker at segment midpoint.
+            // (Faults dated outside the visible window are range-filtered out later.)
+            if (!Cable.geoData) await loadCableData();
+            if (Cable.faultStatus && Cable.faultStatus.faultsBySlug) {
+                Object.entries(Cable.faultStatus.faultsBySlug).forEach(([slug, faults]) => {
+                    const feat = (Cable.geoData.features || []).find(f => (f.properties || {}).slug === slug);
+                    if (!feat) return;
+                    let coords = feat.geometry.coordinates;
+                    if (feat.geometry.type === 'MultiLineString') coords = coords[0];
+                    if (!coords || !coords.length) return;
+                    const mid = coords[Math.floor(coords.length / 2)];
+                    faults.forEach(ft => {
+                        events.push({
+                            type: 'cable_fault', ts: ft.fault_date || null,
+                            lat: mid[1], lon: mid[0], mmsis: [],
+                            label: ft.name_zh || ft.segment || slug.replace(/-/g, ' '),
+                            detail: ft.description_zh || ft.description_en || '',
+                            color: EVENT_COLORS.cable_fault, frameIdx: -1
+                        });
+                    });
+                });
+            }
+
+            Gray.events = events;
+
+            // Vessel threat profiles for case narrative
+            if (dataRes && dataRes.ok) {
+                const data = await dataRes.json();
+                const sv = ((data.suspicious_analysis || {}).suspicious_vessels) || [];
+                sv.forEach(v => Gray.profiles.set(String(v.mmsi), v));
+            }
+        } catch (e) {
+            console.error('Gray event load failed:', e);
+        }
+
+        buildEventFrameIndex();
+        renderTimelineEvents();
+        renderEventMarkers(Anim.currentIdx);
+    }
+
+    /** Map each event timestamp to the nearest frame index in filteredFrames. */
+    function buildEventFrameIndex() {
+        const frames = Anim.filteredFrames;
+        if (!frames.length || !Gray.events.length) return;
+        const times = frames.map(f => Date.parse(f.timestamp || '') || 0);
+        Gray.events.forEach(ev => {
+            const t = Date.parse(ev.ts || '');
+            if (isNaN(t)) { ev.frameIdx = -1; return; }
+            // outside the visible range → hide
+            if (t < times[0] - 2 * 3600e3 || t > times[times.length - 1] + 2 * 3600e3) {
+                ev.frameIdx = -1; return;
+            }
+            let best = 0, bestD = Infinity;
+            for (let i = 0; i < times.length; i++) {
+                const d = Math.abs(times[i] - t);
+                if (d < bestD) { bestD = d; best = i; }
+            }
+            ev.frameIdx = best;
+        });
+    }
+
+    /** Render colored ticks on the timeline events track (aggregated per frame). */
+    function renderTimelineEvents() {
+        const track = document.getElementById('timelineEvents');
+        if (!track) return;
+        track.innerHTML = '';
+        const n = Anim.filteredFrames.length;
+        if (!Anim.showEvents || n <= 1 || !Gray.events.length) return;
+
+        // Aggregate events by frame index to avoid hundreds of overlapping ticks
+        const PRIORITY = { cable_fault: 3, sts: 2, identity: 1 };
+        const byFrame = new Map();
+        Gray.events.forEach(ev => {
+            if (ev.frameIdx < 0) return;
+            if (!byFrame.has(ev.frameIdx)) byFrame.set(ev.frameIdx, []);
+            byFrame.get(ev.frameIdx).push(ev);
+        });
+
+        byFrame.forEach((evs, frameIdx) => {
+            evs.sort((a, b) => (PRIORITY[b.type] || 0) - (PRIORITY[a.type] || 0));
+            const top = evs[0];
+            const pct = (frameIdx / (n - 1)) * 100;
+            const tick = document.createElement('div');
+            tick.className = 'tl-event';
+            tick.style.left = pct + '%';
+            tick.style.background = top.color;
+            if (evs.length > 2) tick.style.height = '13px';
+            tick.title = i18n.t('ais_anim.evt_' + top.type) + ' · ' + top.label +
+                (evs.length > 1 ? ' (+' + (evs.length - 1) + ')' : '');
+            tick.addEventListener('click', () => { pause(); renderFrame(frameIdx); });
+            track.appendChild(tick);
+        });
+    }
+
+    /** Draw pulsing rings + caption for events active at the current frame. */
+    function renderEventMarkers(idx) {
+        if (!Anim.eventLayer) return;
+        Anim.eventLayer.clearLayers();
+        const caption = document.getElementById('eventCaption');
+        if (!Anim.showEvents) { if (caption) caption.classList.remove('show'); return; }
+
+        const active = Gray.events.filter(ev => ev.frameIdx === idx);
+        active.forEach(ev => {
+            const icon = L.divIcon({
+                className: 'event-ring',
+                html: '<span class="ring" style="color:' + ev.color + '"></span>',
+                iconSize: [22, 22], iconAnchor: [11, 11]
+            });
+            L.marker([ev.lat, ev.lon], { icon, zIndexOffset: 500 })
+                .addTo(Anim.eventLayer)
+                .bindPopup('<div style="font-size:13px;line-height:1.6;min-width:160px">' +
+                    '<b style="color:' + ev.color + '">' + i18n.t('ais_anim.evt_' + ev.type) + '</b><br>' +
+                    ev.label + '<br><span style="color:#8aa4c8">' + ev.detail + '</span></div>');
+        });
+
+        if (caption) {
+            if (active.length) {
+                const ev = active[0];
+                const more = active.length > 1 ? ' +' + (active.length - 1) : '';
+                caption.style.borderLeftColor = ev.color;
+                caption.innerHTML = '<span class="ec-type" style="color:' + ev.color + '">' +
+                    i18n.t('ais_anim.evt_' + ev.type) + more + '</span> · ' + ev.label +
+                    '<br><span style="color:#8aa4c8;font-size:10px">' + ev.detail + '</span>';
+                caption.classList.add('show');
+            } else {
+                caption.classList.remove('show');
+            }
+        }
+    }
+
+    function toggleEvents() {
+        Anim.showEvents = document.getElementById('showEvents').checked;
+        renderTimelineEvents();
+        renderEventMarkers(Anim.currentIdx);
+    }
+
+    function toggleLoop() {
+        Anim.loop = document.getElementById('loopPlay').checked;
+    }
+
+    // =========================================================================
     // Map initialization
     // =========================================================================
     function initMap() {
@@ -1084,6 +1519,7 @@
 
         Anim.markerLayer = L.layerGroup().addTo(map);
         Anim.trailLayer = L.layerGroup().addTo(map);
+        Anim.eventLayer = L.layerGroup().addTo(map);
     }
 
     // =========================================================================
@@ -1136,6 +1572,9 @@
 
             hideLoading();
 
+            // Load gray-zone events in the background (non-blocking)
+            loadGrayEvents();
+
         } catch (e) {
             console.error('載入失敗:', e);
             hideLoading();
@@ -1165,6 +1604,7 @@
         pause();
         updateSlider();
         updateChart();
+        if (Gray.loaded) { buildEventFrameIndex(); renderTimelineEvents(); }
         renderFrame(0);
     }
 
@@ -1237,8 +1677,26 @@
         return null; // unknown heading
     }
 
+    // Draw an age-graded "comet" trail: older segments faint/thin, recent bright/thick
+    function drawCometTrail(points, color, layer, opts) {
+        opts = opts || {};
+        const maxSeg = opts.maxSeg || 60;
+        const minW = opts.minW || 0.6, maxW = opts.maxW || 2.4, maxO = opts.maxO || 0.85;
+        const start = Math.max(1, points.length - maxSeg);
+        const total = Math.max(1, points.length - start);
+        for (let i = start; i < points.length; i++) {
+            const age = (i - start) / total; // 0 = oldest shown, 1 = newest
+            L.polyline([points[i - 1], points[i]], {
+                color: color,
+                weight: minW + age * (maxW - minW),
+                opacity: 0.12 + age * (maxO - 0.12),
+                interactive: false
+            }).addTo(layer);
+        }
+    }
+
     // Create MarineTraffic-style arrow SVG icon for vessel marker
-    function createVesselIcon(color, isSuspicious, heading) {
+    function createVesselIcon(color, isSuspicious, heading, pulse) {
         const w = isSuspicious ? 10 : 7;
         const h = isSuspicious ? 20 : 16;
         const rotation = heading !== null ? heading : 0;
@@ -1269,7 +1727,7 @@
 
         return L.divIcon({
             html: svg,
-            className: 'vessel-icon',
+            className: 'vessel-icon' + (pulse ? ' pulse' : ''),
             iconSize: [w, h],
             iconAnchor: [w / 2, h / 2],
             popupAnchor: [0, -h / 2]
@@ -1285,7 +1743,11 @@
 
         const frame = Anim.filteredFrames[idx];
         const allVessels = frame.vessels || [];
-        const vessels = filterVessels(allVessels);
+        const focus = Anim.focusMmsi;
+        // In focus mode, ignore the dropdown filter and show only the focused vessel
+        const vessels = focus
+            ? allVessels.filter(v => String(v.mmsi) === focus)
+            : filterVessels(allVessels);
 
         // Clear layers
         Anim.markerLayer.clearLayers();
@@ -1294,18 +1756,25 @@
         // Always build trails (needed for heading computation)
         buildTrails(idx);
 
-        // Draw trail lines if enabled
+        // Draw trail lines if enabled (comet gradient for suspicious / focus vessels)
         if (Anim.showTrails) {
-            Object.entries(Anim.vesselTrails).forEach(([mmsi, trail]) => {
-                if (trail.points.length < 2) return;
-                const color = trail.suspicious ? '#ff3366' : '#00f5ff';
-                L.polyline(trail.points, {
-                    color: color,
-                    weight: 0.8,
-                    opacity: 0.25,
-                    dashArray: '4,6'
-                }).addTo(Anim.trailLayer);
-            });
+            if (focus) {
+                const tr = Anim.vesselTrails[focus];
+                if (tr && tr.points.length >= 2) {
+                    drawCometTrail(tr.points, '#ff3366', Anim.trailLayer, { maxSeg: 400, maxW: 3, maxO: 0.95 });
+                }
+            } else {
+                Object.entries(Anim.vesselTrails).forEach(([mmsi, trail]) => {
+                    if (trail.points.length < 2) return;
+                    if (trail.suspicious) {
+                        drawCometTrail(trail.points, '#ff3366', Anim.trailLayer, { maxSeg: 80, maxW: 2.2, maxO: 0.85 });
+                    } else {
+                        L.polyline(trail.points, {
+                            color: '#00f5ff', weight: 0.7, opacity: 0.18, interactive: false
+                        }).addTo(Anim.trailLayer);
+                    }
+                });
+            }
         }
 
         // Plot vessel markers (triangle = heading known, diamond = unknown)
@@ -1321,13 +1790,16 @@
             }
             const heading = computeHeading(v.mmsi, v.lat, v.lon) ?? (v.heading !== undefined ? v.heading : null);
 
-            const icon = createVesselIcon(color, isSuspicious || hasDetection, heading);
+            const pulse = isSuspicious || hasDetection || (focus && String(v.mmsi) === focus);
+            const icon = createVesselIcon(color, isSuspicious || hasDetection || !!focus, heading, pulse);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(Anim.markerLayer);
 
             const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
             const tagHtml = tags.map(t =>
                 '<span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.1);color:' + t.color + ';margin-right:3px">' + t.label + '</span>'
             ).join('');
+            const focusBtn = (focus && String(v.mmsi) === focus) ? '' :
+                '<button onclick="enterFocus(\'' + v.mmsi + '\')" style="margin-top:6px;background:#141e32;border:1px solid #00f5ff;color:#00f5ff;border-radius:4px;padding:3px 8px;font-size:12px;cursor:pointer">' + i18n.t('ais_anim.focus_btn') + '</button>';
             marker.bindPopup(
                 '<div style="font-size:14px;line-height:1.8;min-width:180px">' +
                 '<b style="color:' + color + ';font-size:15px">' + (v.name || v.mmsi) + '</b><br>' +
@@ -1338,14 +1810,23 @@
                 '航向: ' + headingText + '<br>' +
                 (isSuspicious ? '<span style="color:#ff3366;font-weight:600;font-size:14px">⚠ SUSPICIOUS</span><br>' : '') +
                 (tagHtml ? tagHtml : '') +
+                focusBtn +
                 '</div>'
             );
         });
 
+        // Follow the focused vessel
+        if (focus && vessels.length) {
+            map.panTo([vessels[0].lat, vessels[0].lon], { animate: true, duration: 0.4 });
+        }
+
+        // Gray-zone event markers + caption for this frame
+        renderEventMarkers(idx);
+
         // Update UI
         updateDayIndicator(frame, idx);
         updateStatCards(frame, idx);
-        updateVesselTable(vessels);
+        updateVesselTable(focus ? filterVessels(allVessels) : vessels);
         updateSliderPosition(idx);
         highlightChartBar(idx);
     }
@@ -1385,7 +1866,8 @@
                 '<span class="detect-tag ' + t.type + '">' + t.label + '</span>'
             ).join('');
             const combined = (isSusp ? '<span class="suspicious-tag">⚠ SUSPICIOUS</span> ' : '') + tagHtml;
-            const statusHtml = combined || 'OK';
+            const focusBtn = '<button class="focus-btn" onclick="enterFocus(\'' + v.mmsi + '\')">' + i18n.t('ais_anim.focus_btn') + '</button>';
+            const statusHtml = (combined || 'OK') + ' ' + focusBtn;
             return '<tr>' +
                 '<td>' + v.mmsi + '</td>' +
                 '<td>' + (v.name || '--') + '</td>' +
@@ -1428,7 +1910,10 @@
     }
 
     function updateSliderPosition(idx) {
-        document.getElementById('daySlider').value = idx;
+        const slider = document.getElementById('daySlider');
+        slider.value = idx;
+        const max = parseInt(slider.max) || 1;
+        slider.style.setProperty('--progress', (max ? (idx / max) * 100 : 0) + '%');
     }
 
     document.getElementById('daySlider').addEventListener('input', function () {
@@ -1514,6 +1999,7 @@
         Anim.intervalId = setInterval(() => {
             const nextIdx = Anim.currentIdx + 1;
             if (nextIdx >= Anim.filteredFrames.length) {
+                if (Anim.loop) { renderFrame(0); return; }
                 pause();
                 return;
             }
@@ -1614,6 +2100,141 @@
     }
 
     // =========================================================================
+    // Single-vessel focus / case narrative
+    // =========================================================================
+    function enterFocus(mmsi) {
+        Anim.focusMmsi = String(mmsi);
+        if (map) map.closePopup();
+        const panel = document.getElementById('casePanel');
+        panel.style.display = 'block';
+        renderCaseNarrative(Anim.focusMmsi);
+        renderFrame(Anim.currentIdx);
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function exitFocus() {
+        Anim.focusMmsi = null;
+        document.getElementById('casePanel').style.display = 'none';
+        renderFrame(Anim.currentIdx);
+    }
+
+    function riskLabel(level) { return i18n.t('ais_anim.risk_' + (level || 'normal')); }
+
+    function renderCaseNarrative(mmsi) {
+        const prof = Gray.profiles.get(mmsi);
+        const trail = Anim.vesselTrails[mmsi];
+        let displayName = mmsi;
+        if (prof && prof.names && prof.names.length) displayName = prof.names[prof.names.length - 1];
+        else if (trail && trail.name) displayName = trail.name;
+        document.getElementById('caseName').textContent = displayName + ' · ' + mmsi;
+
+        let html = '';
+        if (prof) {
+            const lvl = prof.risk_level || 'normal';
+            html += '<div class="case-row"><span class="k">' + i18n.t('ais_anim.focus_risk') + '</span>' +
+                '<span class="risk-badge ' + lvl + '">' + (prof.risk_score != null ? prof.risk_score : '--') + '</span> ' +
+                '<span style="color:#8aa4c8">' + riskLabel(lvl) + '</span></div>';
+            if (prof.names && prof.names.length > 1) {
+                html += '<div class="case-row"><span class="k">' + i18n.t('ais_anim.focus_names') + '</span>' +
+                    prof.names.slice(0, 8).join('、') + '</div>';
+            }
+            if (prof.flags && prof.flags.length) {
+                html += '<div class="case-row"><span class="k">' + i18n.t('ais_anim.focus_flags') + '</span>' +
+                    prof.flags.map(f => '<div class="case-flag">⚠ ' + f + '</div>').join('') + '</div>';
+            }
+        } else {
+            html += '<div class="case-row" style="color:#8aa4c8">' + i18n.t('ais_anim.focus_no_profile') + '</div>';
+            const tags = getDetectionTags(mmsi, Anim.currentIdx);
+            if (tags.length) {
+                html += '<div class="case-row">' + tags.map(t =>
+                    '<span class="detect-tag ' + t.type + '">' + t.label + '</span>').join(' ') + '</div>';
+            }
+        }
+
+        const evs = Gray.events.filter(e => e.mmsis.includes(mmsi) && e.frameIdx >= 0)
+            .sort((a, b) => a.frameIdx - b.frameIdx);
+        html += '<div class="case-row"><span class="k">' + i18n.t('ais_anim.focus_timeline') + '</span>';
+        if (evs.length) {
+            html += evs.map(e => {
+                const ts = (Anim.filteredFrames[e.frameIdx].timestamp || '').slice(5, 16).replace('T', ' ');
+                return '<div class="case-evt" onclick="pause();renderFrame(' + e.frameIdx + ')">' +
+                    '<span class="ce-dot" style="background:' + e.color + '"></span>' +
+                    '<span class="ce-time">' + ts + '</span>' +
+                    '<span>' + i18n.t('ais_anim.evt_' + e.type) + ' · ' + e.label + '</span></div>';
+            }).join('');
+        } else {
+            html += '<div style="color:#8aa4c8">' + i18n.t('ais_anim.focus_no_events') + '</div>';
+        }
+        html += '</div>';
+        document.getElementById('caseBody').innerHTML = html;
+    }
+
+    // =========================================================================
+    // Education: intro panel + behavior tooltips
+    // =========================================================================
+    function initIntro() {
+        const intro = document.getElementById('gzIntro');
+        const seen = localStorage.getItem('ais-anim-intro-seen');
+        if (!seen) intro.style.display = 'block';
+        document.getElementById('gzIntroClose').addEventListener('click', () => {
+            intro.style.display = 'none';
+            localStorage.setItem('ais-anim-intro-seen', '1');
+        });
+        // Reopen button in the controls bar
+        const btn = document.createElement('button');
+        btn.className = 'gz-intro-reopen';
+        btn.textContent = i18n.t('ais_anim.intro_reopen');
+        btn.id = 'gzReopen';
+        btn.addEventListener('click', () => { intro.style.display = 'block'; });
+        document.getElementById('animControls').prepend(btn);
+    }
+
+    const BEH_KEYS = {
+        sts: 'ais_anim.beh_sts', identity: 'ais_anim.beh_identity', cable: 'ais_anim.beh_cable',
+        loiter: 'ais_anim.beh_loiter', zigzag: 'ais_anim.beh_zigzag', dark: 'ais_anim.beh_dark'
+    };
+    let behTip = null;
+    function initBehaviorTips() {
+        behTip = document.createElement('div');
+        behTip.style.cssText = 'position:fixed;z-index:9998;max-width:240px;background:rgba(10,15,28,0.96);' +
+            'border:1px solid var(--accent-cyan);border-radius:6px;padding:8px 10px;font-size:11px;' +
+            'line-height:1.5;color:#e8eef7;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.5)';
+        document.body.appendChild(behTip);
+        document.addEventListener('click', e => {
+            if (!e.target.closest('[data-beh]')) behTip.style.display = 'none';
+        });
+        document.querySelectorAll('[data-beh]').forEach(el => {
+            const key = BEH_KEYS[el.dataset.beh];
+            if (!key) return;
+            el.addEventListener('click', e => {
+                e.stopPropagation();
+                behTip.textContent = i18n.t(key);
+                behTip.style.display = 'block';
+                const r = el.getBoundingClientRect();
+                behTip.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 252)) + 'px';
+                behTip.style.top = (r.bottom + 6) + 'px';
+            });
+        });
+        refreshBehTitles();
+    }
+    function refreshBehTitles() {
+        document.querySelectorAll('[data-beh]').forEach(el => {
+            const key = BEH_KEYS[el.dataset.beh];
+            if (key) el.setAttribute('title', i18n.t(key));
+        });
+    }
+
+    // Re-render JS-built strings when language changes
+    window.addEventListener('langchange', () => {
+        refreshBehTitles();
+        const reopen = document.getElementById('gzReopen');
+        if (reopen) reopen.textContent = i18n.t('ais_anim.intro_reopen');
+        renderTimelineEvents();
+        if (Anim.filteredFrames.length) renderFrame(Anim.currentIdx);
+        if (Anim.focusMmsi) renderCaseNarrative(Anim.focusMmsi);
+    });
+
+    // =========================================================================
     // Keyboard shortcuts
     // =========================================================================
     document.addEventListener('keydown', function (e) {
@@ -1636,6 +2257,9 @@
     // Initialize
     // =========================================================================
     initMap();
+    initIntro();
+    initBehaviorTips();
+    document.getElementById('caseExit').addEventListener('click', exitFocus);
     loadData();
     </script>
     <script src="js/mobile-nav.js"></script>
