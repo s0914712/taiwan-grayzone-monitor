@@ -41,8 +41,10 @@ IDENTITY_EVENTS_MAX = 5000
 
 # AIS 歷史快照：每天保留 12 筆（每 2 小時一筆），共保留 90 天 = 1080 筆
 AIS_HISTORY_MAX_ENTRIES = 1080
-# AIS 軌跡歷史：保留 28 天，每 2 小時一筆 = 336 筆
-AIS_TRACK_MAX_ENTRIES = 336
+# AIS 軌跡歷史：保留 14 天，每 2 小時一筆 = 168 筆
+# (此檔會送到前端動畫頁；動畫最大範圍為 14 天，故保留 14 天即足夠，
+#  同時將檔案大小減半以避免行動裝置載入/解析失敗)
+AIS_TRACK_MAX_ENTRIES = 168
 # 商船軌跡歷史：同 28 天
 AIS_TRACK_COMMERCIAL_MAX_ENTRIES = 336
 
@@ -606,16 +608,21 @@ def save_all(vessels, stats):
     print(f"  📅 歷史快照已更新: {AIS_HISTORY_FILE} ({len(ais_history)} 筆, period={period:02d}h)")
 
     # 2c. AIS 軌跡歷史（記錄大陸漁船 + 可疑船位置，供動畫播放）
+    # Frontend payload optimization: round coordinates to ~1m precision and
+    # speed/heading to 1 decimal. This file is served to the browser (~30 MB),
+    # so trimming float precision meaningfully shrinks it without affecting the
+    # km-scale animation/detection. The per-vessel `suspicious` flag is omitted —
+    # threat scoring now lives in analyze_suspicious.py → data.json, and the
+    # frontend resolves suspicion from that set (see docs/ais-animation.html).
     track_vessels = [
         {
             'mmsi': v['mmsi'],
             'name': v['name'],
-            'lat': v['lat'],
-            'lon': v['lon'],
-            'speed': v['speed'],
-            'heading': v['heading'],
+            'lat': round(v['lat'], 5),
+            'lon': round(v['lon'], 5),
+            'speed': round(v['speed'], 1),
+            'heading': round(v['heading'], 1),
             'type_name': v['type_name'],
-            'suspicious': v.get('suspicious', False),
         }
         for v in vessel_list
         if is_cn_fishing_vessel(v.get('name')) or v.get('suspicious')
@@ -625,7 +632,6 @@ def save_all(vessels, stats):
         'timestamp': now_str,
         'period_key': period_key,
         'vessel_count': len(track_vessels),
-        'suspicious_count': sum(1 for v in track_vessels if v.get('suspicious')),
         'vessels': track_vessels,
     }
 

@@ -1028,8 +1028,15 @@
     const Gray = {
         events: [],            // [{type, ts, lat, lon, mmsis:[], label, detail, color, frameIdx}]
         profiles: new Map(),   // mmsi -> suspicious_analysis profile
+        suspiciousMmsis: new Set(), // mmsi (string) of vessels flagged suspicious by analyze_suspicious.py
         loaded: false
     };
+
+    // Track-history vessels no longer carry a `suspicious` flag (detection moved
+    // to analyze_suspicious.py → data.json). Resolve suspicion from that set.
+    function isSuspicious(mmsi) {
+        return Gray.suspiciousMmsis.has(String(mmsi));
+    }
 
     const EVENT_COLORS = { sts: '#ff9d2e', identity: '#c264ff', cable_fault: '#ff0000' };
 
@@ -1239,7 +1246,7 @@
                     heading: v.heading !== undefined ? v.heading : null,
                     frameIdx: fi,
                     name: v.name, type_name: v.type_name,
-                    suspicious: v.suspicious
+                    suspicious: isSuspicious(v.mmsi)
                 });
             });
         });
@@ -1542,8 +1549,16 @@
             // Vessel threat profiles for case narrative + PLA event-correlation context
             if (dataRes && dataRes.ok) {
                 const data = await dataRes.json();
-                const sv = ((data.suspicious_analysis || {}).suspicious_vessels) || [];
+                const sa = data.suspicious_analysis || {};
+                const sv = sa.suspicious_vessels || [];
                 sv.forEach(v => Gray.profiles.set(String(v.mmsi), v));
+                // Build the suspicious-vessel set from the full risk classification
+                // (suspicious_vessels ∪ all_classifications where suspicious===true)
+                // so the per-frame chart and markers reflect real threat scoring.
+                sv.forEach(v => Gray.suspiciousMmsis.add(String(v.mmsi)));
+                (sa.all_classifications || []).forEach(c => {
+                    if (c && c.suspicious) Gray.suspiciousMmsis.add(String(c.mmsi));
+                });
 
                 const ep = data.exercise_prediction || {};
                 (ep.daily_merged || []).forEach(d => {
@@ -1566,6 +1581,12 @@
         renderContextStrip();
         renderEventMarkers(Anim.currentIdx);
         updateContextReadout(Anim.currentIdx);
+        // Suspicious set is only known after data.json loads → refresh the
+        // per-period suspicious chart and recolor the current frame's markers.
+        if (Gray.suspiciousMmsis.size) {
+            updateChart();
+            renderFrame(Anim.currentIdx);
+        }
     }
 
     /** Map each event timestamp to the nearest frame index in filteredFrames. */
@@ -1891,11 +1912,11 @@
             if (!frame || !frame.vessels) continue;
             frame.vessels.forEach(v => {
                 if (!Anim.vesselTrails[v.mmsi]) {
-                    Anim.vesselTrails[v.mmsi] = { points: [], frames: [], suspicious: v.suspicious, name: v.name };
+                    Anim.vesselTrails[v.mmsi] = { points: [], frames: [], suspicious: isSuspicious(v.mmsi), name: v.name };
                 }
                 Anim.vesselTrails[v.mmsi].points.push([v.lat, v.lon]);
                 Anim.vesselTrails[v.mmsi].frames.push(i);  // for going-dark gap detection
-                Anim.vesselTrails[v.mmsi].suspicious = v.suspicious;
+                Anim.vesselTrails[v.mmsi].suspicious = isSuspicious(v.mmsi);
             });
         }
     }
@@ -2034,18 +2055,18 @@
 
         // Plot vessel markers (triangle = heading known, diamond = unknown)
         vessels.forEach(v => {
-            const isSuspicious = v.suspicious;
+            const isSusp = isSuspicious(v.mmsi);
             const tags = getDetectionTags(v.mmsi, idx);
             const hasDetection = tags.length > 0;
 
             // Color priority: detection > suspicious > vessel type (MarineTraffic-style)
-            let color = isSuspicious ? '#ff3366' : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.unknown);
+            let color = isSusp ? '#ff3366' : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.unknown);
             if (hasDetection) {
                 color = tags[0].color; // use primary detection color
             }
             const heading = computeHeading(v.mmsi, v.lat, v.lon) ?? (v.heading !== undefined ? v.heading : null);
 
-            const emphasis = isSuspicious || hasDetection || (focus && String(v.mmsi) === focus);
+            const emphasis = isSusp || hasDetection || (focus && String(v.mmsi) === focus);
             const stationary = (v.speed !== undefined && v.speed !== null && v.speed < 0.5);
             const icon = createVesselIcon(color, emphasis, heading, stationary);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(Anim.markerLayer);
@@ -2064,7 +2085,7 @@
                 i18n.t('ais_anim.popup_type') + ': ' + v.type_name + '<br>' +
                 i18n.t('ais_anim.popup_speed') + ': ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
                 '航向: ' + headingText + '<br>' +
-                (isSuspicious ? '<span style="color:#ff3366;font-weight:600;font-size:14px">⚠ SUSPICIOUS</span><br>' : '') +
+                (isSusp ? '<span style="color:#ff3366;font-weight:600;font-size:14px">⚠ SUSPICIOUS</span><br>' : '') +
                 (tagHtml ? tagHtml : '') +
                 focusBtn +
                 '</div>'
@@ -2112,12 +2133,13 @@
 
         // Sort: suspicious first, then by speed descending
         const sorted = [...vessels].sort((a, b) => {
-            if (a.suspicious !== b.suspicious) return b.suspicious ? 1 : -1;
+            const sa = isSuspicious(a.mmsi), sb = isSuspicious(b.mmsi);
+            if (sa !== sb) return sb ? 1 : -1;
             return (b.speed || 0) - (a.speed || 0);
         });
 
         const rows = sorted.slice(0, 30).map(v => {
-            const isSusp = v.suspicious;
+            const isSusp = isSuspicious(v.mmsi);
             const tags = getDetectionTags(v.mmsi, Anim.currentIdx);
             const tagHtml = tags.map(t =>
                 '<span class="detect-tag ' + t.type + '">' + t.label + '</span>'
@@ -2187,7 +2209,16 @@
         if (Anim.chart) Anim.chart.destroy();
 
         const labels = Anim.filteredFrames.map(f => (f.timestamp || '').slice(5, 16).replace('T', ' '));
-        const data = Anim.filteredFrames.map(f => f.suspicious_count || 0);
+        // Track frames no longer carry suspicious_count (always 0 since detection
+        // moved to analyze_suspicious.py). Derive the count per frame from the
+        // suspicious-vessel set loaded from data.json. Falls back to the stored
+        // field before that set is available.
+        const data = Anim.filteredFrames.map(f => {
+            if (Gray.suspiciousMmsis.size && Array.isArray(f.vessels)) {
+                return f.vessels.reduce((n, v) => n + (isSuspicious(v.mmsi) ? 1 : 0), 0);
+            }
+            return f.suspicious_count || 0;
+        });
 
         Anim.chart = new Chart(ctx, {
             type: 'bar',
@@ -2330,7 +2361,7 @@
             case 'cn_fishing':
                 return vessels.filter(v => isCnFishingVessel(v));
             case 'suspicious':
-                return vessels.filter(v => v.suspicious);
+                return vessels.filter(v => isSuspicious(v.mmsi));
             case 'loitering':
                 { const set = detectLoitering(); return vessels.filter(v => set.has(v.mmsi)); }
             case 'zigzag':
