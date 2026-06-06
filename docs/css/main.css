@@ -16,7 +16,18 @@
     --accent-yellow: #ffd700;
     --accent-purple: #9b59b6;
     --border-glow: rgba(0, 245, 255, 0.3);
-    
+
+    /* Threat severity ramp (warm = intensity). Shared by risk levels + events. */
+    --sev-critical: #ff2d55;
+    --sev-high: #ff7847;
+    --sev-medium: #ffab2e;
+    --sev-low: #8aa4c8;
+    /* Behavior detection hues (distinct, off the warm severity ramp). */
+    --beh-loiter: #b66bff;
+    --beh-zigzag: #ff5fe0;
+    --beh-cable: #ffd700;
+    --beh-anchor: #19b6ff;
+
     /* Spacing */
     --spacing-xs: 4px;
     --spacing-sm: 8px;
@@ -612,9 +623,9 @@ body {
     text-transform: uppercase;
 }
 
-.risk-critical { background: var(--accent-red); color: #fff; }
-.risk-high { background: var(--accent-orange); color: #fff; }
-.risk-medium { background: var(--accent-yellow); color: #000; }
+.risk-critical { background: var(--sev-critical); color: #fff; }
+.risk-high { background: var(--sev-high); color: #fff; }
+.risk-medium { background: var(--sev-medium); color: #000; }
 
 /* =============================================================================
    Vessel List

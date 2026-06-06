@@ -623,6 +623,11 @@ def save_all(vessels, stats):
             'speed': round(v['speed'], 1),
             'heading': round(v['heading'], 1),
             'type_name': v['type_name'],
+            # Compact anchoring flag — only emitted when the reported AIS
+            # navigational status is "at anchor" (1) or "moored" (5). Lets the
+            # frontend animation classify anchoring separately. Omitted otherwise
+            # to keep this browser-served file small.
+            **({'anc': 1} if str(v.get('nav_status', '')) in ('1', '5') else {}),
         }
         for v in vessel_list
         if is_cn_fishing_vessel(v.get('name')) or v.get('suspicious')
@@ -679,6 +684,7 @@ def save_all(vessels, stats):
             'speed': v['speed'],
             'heading': v['heading'],
             'type_name': v['type_name'],
+            **({'anc': 1} if str(v.get('nav_status', '')) in ('1', '5') else {}),
         }
         for v in vessel_list
         if v['mmsi'] not in tier1_mmsis

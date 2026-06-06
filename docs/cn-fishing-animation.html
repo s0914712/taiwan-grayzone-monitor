@@ -457,8 +457,8 @@
             font-weight: 600;
             margin-right: 2px;
         }
-        .detect-tag.loiter { background: rgba(255,165,0,0.25); color: #ffa500; }
-        .detect-tag.zigzag { background: rgba(255,0,255,0.25); color: #ff66ff; }
+        .detect-tag.loiter { background: rgba(182,107,255,0.25); color: #b66bff; }
+        .detect-tag.zigzag { background: rgba(255,95,224,0.25); color: #ff5fe0; }
         .detect-tag.cable  { background: rgba(255,215,0,0.25); color: #ffd700; }
 
         /* Cable buffer slider */
@@ -1063,12 +1063,12 @@
                 } else { streak = 1; }
             }
             const hours = maxStreak * 2; // each frame ≈ 2hr
-            tags.push({ type: 'loiter', label: i18n.t('ais_anim.loiter_hours', hours), color: '#ffa500' });
+            tags.push({ type: 'loiter', label: i18n.t('ais_anim.loiter_hours', hours), color: '#b66bff' });
         }
         // Zigzag
         const zigzagSet = detectZigzag();
         if (zigzagSet.has(mmsi)) {
-            tags.push({ type: 'zigzag', label: i18n.t('ais_anim.detect_zigzag'), color: '#ff66ff' });
+            tags.push({ type: 'zigzag', label: i18n.t('ais_anim.detect_zigzag'), color: '#ff5fe0' });
         }
         // Near cable
         if (Cable.lines.length > 0) {
@@ -1448,7 +1448,7 @@
                 '<b style="color:' + color + ';font-size:15px">' + (v.name || v.mmsi) + '</b><br>' +
                 '<span style="color:' + color + ';font-weight:600">省份: ' + provName + '</span><br>' +
                 'MMSI: ' + v.mmsi + '<br>' +
-                ((v.mmsi || '').startsWith('898') ? '<span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span><br>' : '') +
+                ((v.mmsi || '').startsWith('898') ? '<span style="color:#8aa4c8;font-weight:600">🎣 可能為魚網標記</span><br>' : '') +
                 i18n.t('ais_anim.popup_speed') + ': ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
                 '航向: ' + headingText + '<br>' +
                 (isSuspicious ? '<span style="color:#ff3366;font-weight:600;font-size:14px">⚠ SUSPICIOUS</span>' : '') +
