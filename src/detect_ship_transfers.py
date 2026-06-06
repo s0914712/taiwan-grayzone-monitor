@@ -22,7 +22,8 @@ OUTPUT_FILE = DATA_DIR / "ship_transfers.json"
 # ── 門檻設定 ────────────────────────────────────────────
 ALONGSIDE_DISTANCE_KM = 0.01       # 10 公尺
 MAX_SPEED_KN = 5.0                 # 旁靠時速度 < 5 knots
-PORT_EXCLUSION_KM = 2.0            # 港口排除半徑 2 公里
+PORT_EXCLUSION_KM = 2.0            # 台灣港口排除半徑 2 公里
+CN_PORT_EXCLUSION_KM = 8.0         # 大陸沿岸大型港口/錨地排除半徑（錨地範圍大）
 MIN_DURATION_HOURS = 1.0           # 至少旁靠 1 小時
 PARALLEL_HEADING_DEG = 15          # 雙拖判定：航向差 < 15°
 PAIR_TRAWL_SPEED_MIN = 2.0        # 雙拖速度下限
@@ -283,6 +284,28 @@ PORTS = {
     "麥寮港 Mailiao":                    (23.7500, 120.2500),
 }
 
+# ── 大陸沿岸主要港口/錨地（監測範圍內）──────────────────
+# 大陸漁船多在自家港口/錨地旁靠補給、整補，屬例行作業而非對台灰色地帶活動，
+# 應與台灣港口一併排除（使用較大半徑涵蓋大型商港的外海錨地）。
+# 涵蓋福建沿岸（正對台灣）為主，並含粵東、浙南鄰近海域。
+CN_PORTS = {
+    # ── 浙江南部 South Zhejiang ──
+    "溫州 Wenzhou":          (27.9000, 120.8500),
+    "蒼南 Cangnan":          (27.5000, 120.6000),
+    # ── 福建 Fujian（正對台灣海峽）──
+    "寧德三都澳 Ningde":      (26.6600, 119.5500),
+    "福州馬尾 Fuzhou-Mawei":  (26.0500, 119.4500),
+    "福州江陰 Fuzhou-Jiangyin":(25.9500, 119.6200),
+    "平潭 Pingtan":           (25.5000, 119.7900),
+    "莆田湄洲灣 Putian":      (25.0800, 119.1000),
+    "泉州 Quanzhou":          (24.8100, 118.6900),
+    "廈門 Xiamen":            (24.4500, 118.0700),
+    "漳州東山 Dongshan":      (23.7000, 117.5000),
+    # ── 廣東東部 East Guangdong ──
+    "汕頭 Shantou":           (23.3500, 116.6800),
+    "惠來 Huilai":            (23.0300, 116.3000),
+}
+
 # ── 漁場定義（與 fetch_ais_data.py 一致）────────────────
 FISHING_HOTSPOTS = {
     'taiwan_bank':   [[22.0, 117.0], [23.5, 119.5]],
@@ -307,9 +330,12 @@ def haversine_km(lat1, lon1, lat2, lon2):
 
 
 def is_in_port(lat, lon):
-    """檢查是否在任何港口排除區域內"""
+    """檢查是否在任何港口排除區域內（台灣港口 2km；大陸沿岸大型港口/錨地 8km）"""
     for name, (plat, plon) in PORTS.items():
         if haversine_km(lat, lon, plat, plon) < PORT_EXCLUSION_KM:
+            return name
+    for name, (plat, plon) in CN_PORTS.items():
+        if haversine_km(lat, lon, plat, plon) < CN_PORT_EXCLUSION_KM:
             return name
     return None
 
