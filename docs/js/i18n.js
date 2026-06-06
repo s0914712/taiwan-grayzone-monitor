@@ -372,6 +372,7 @@ const i18n = (function () {
         'ais_anim.export_geojson':   { zh: 'GeoJSON (軌跡+事件)', en: 'GeoJSON (track+events)' },
         'ais_anim.export_csv':       { zh: 'CSV (軌跡點)', en: 'CSV (track points)' },
         'ais_anim.export_need_focus':{ zh: '請先聚焦一艘船再匯出', en: 'Focus a vessel first to export' },
+        'ais_anim.tools_toggle':     { zh: '⚙ 研究工具', en: '⚙ Tools' },
         // AOI / 絆線 Area of interest / tripwire
         'ais_anim.draw_area':        { zh: '✏️ 畫區域', en: '✏️ Draw area' },
         'ais_anim.draw_line':        { zh: '📏 畫絆線', en: '📏 Draw tripwire' },
