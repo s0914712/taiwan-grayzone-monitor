@@ -32,7 +32,7 @@ const MapModule = (function() {
     let _suspiciousData = null;
 
     // Risk level colors (used in suspicious markers + info cards)
-    const riskColors = { critical: '#ff3366', high: '#ff6b35', medium: '#ffd700' };
+    const riskColors = { critical: '#ff2d55', high: '#ff7847', medium: '#ffab2e' };
 
     // MMSI MID → Flag State lookup (ITU MID table)
     const MID_FLAG_TABLE = {
@@ -243,8 +243,8 @@ const MapModule = (function() {
     const VESSEL_COLORS = {
         fishing: '#00ff88',
         cargo: '#00f5ff',
-        tanker: '#ff6b35',
-        lng: '#f0e130',       // Yellow for LNG/gas vessels
+        tanker: '#ff5e8a',    // Rose — kept off the warm severity ramp
+        lng: '#c8ff3d',       // Lime for LNG/gas vessels (clears cable yellow)
         other: '#ff3366',
         unknown: '#888888'
     };
@@ -1433,7 +1433,7 @@ const MapModule = (function() {
                     const isFaulted = faulted.has(slug);
                     const isPlanned = (p.status || '').indexOf('\u898f\u5283') >= 0;
                     return {
-                        color: isFaulted ? '#ff0000' : '#' + (p.color || 'ffd700'),
+                        color: isFaulted ? '#ff2d55' : '#' + (p.color || 'ffd700'),
                         weight: isFaulted ? 3 : 2,
                         opacity: isFaulted ? 0.9 : (isPlanned ? 0.55 : 0.75),
                         dashArray: isPlanned ? '6,6' : null
@@ -1451,7 +1451,7 @@ const MapModule = (function() {
                         const details = faults.map(ft =>
                             '\u26a0 ' + ft.segment + ': ' + (ft.description_zh || ft.description_en)
                         ).join('<br>');
-                        tip = '<b style="color:#ff0000">' + name + '</b><br>' + details;
+                        tip = '<b style="color:#ff2d55">' + name + '</b><br>' + details;
                     }
                     layer.bindTooltip(tip, { sticky: true });
 

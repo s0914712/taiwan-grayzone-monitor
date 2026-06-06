@@ -342,8 +342,12 @@
             accent-color: var(--accent-cyan);
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
+        /* Collapsible researcher-tools group */
+        .tools-toggle.active { color: var(--accent-green); border-color: var(--accent-green); background: rgba(0,255,136,0.1); }
+        #researchTools.tools-hidden { display: none; }
+
+        /* Responsive — unified with the site/bottom-nav breakpoint (900px) */
+        @media (max-width: 900px) {
             .stats-row {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 8px;
@@ -365,11 +369,36 @@
             .anim-label { display: none; }
             .anim-separator { display: none; }
             .vessel-filter-select { min-height: 44px; font-size: 12px; }
-            .trail-toggle { font-size: 12px; }
+            /* Comfortable tap targets for checkbox toggles */
+            .trail-toggle { font-size: 12px; min-height: 44px; padding: 0 4px; }
+            .trail-toggle input { transform: scale(1.25); }
+            .tools-toggle { min-height: 44px; }
             .day-indicator { margin-left: 0; width: 100%; text-align: center; font-size: 13px; }
-            #map { height: calc(100vh - 44px - 56px - 120px); max-height: 350px; min-height: 200px; }
+            /* Tablet gets a taller map than phones */
+            #map { height: calc(100vh - 44px - 56px - 132px); max-height: 420px; min-height: 240px; }
             .main-content { padding: 0 8px 72px; }
             .timeline-panel { margin: 0 8px; }
+            /* Legend: larger, legible chips when wrapped */
+            .map-legend-inline { gap: 10px 12px; padding: 8px 12px; }
+            .legend-chip { font-size: 11px; }
+            .legend-chip .dot { width: 10px; height: 10px; }
+            /* Behavior chips become real tap targets (hover is dead on touch) */
+            .gz-beh-chip { min-height: 40px; padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; }
+            .gz-beh-chip:active { color: var(--text-primary); border-color: currentColor; }
+            /* Event-log rows: let names wrap instead of truncating; keep focus tappable */
+            #eventLogBody { max-height: 320px; }
+            .elog-name { white-space: normal; }
+            .elog-row .focus-btn { min-height: 36px; padding: 6px 10px; }
+            /* Wider invisible hit area for timeline event ticks */
+            .tl-event::before { content: ''; position: absolute; top: -4px; bottom: -4px; left: -5px; right: -5px; }
+        }
+
+        /* Small phones: tighten further */
+        @media (max-width: 600px) {
+            #map { max-height: 320px; }
+            .legend-chip { font-size: 10px; }
+            .panel-title { font-size: 12px; }
+            .gz-intro { margin: 8px 8px 0; }
         }
 
         /* Footer */
@@ -470,9 +499,10 @@
             font-weight: 600;
             margin-right: 2px;
         }
-        .detect-tag.loiter { background: rgba(255,165,0,0.25); color: #ffa500; }
-        .detect-tag.zigzag { background: rgba(255,0,255,0.25); color: #ff66ff; }
+        .detect-tag.loiter { background: rgba(182,107,255,0.25); color: #b66bff; }
+        .detect-tag.zigzag { background: rgba(255,95,224,0.25); color: #ff5fe0; }
         .detect-tag.cable  { background: rgba(255,215,0,0.25); color: #ffd700; }
+        .detect-tag.anchor { background: rgba(25,182,255,0.25); color: #19b6ff; }
 
         /* Cable buffer slider */
         .cable-controls {
@@ -653,9 +683,9 @@
             display: inline-block; padding: 2px 8px; border-radius: 10px;
             font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 12px;
         }
-        .risk-badge.critical { background: rgba(255,51,102,0.2); color: #ff3366; }
-        .risk-badge.high     { background: rgba(255,107,53,0.2); color: #ff6b35; }
-        .risk-badge.medium   { background: rgba(255,215,0,0.2); color: #ffd700; }
+        .risk-badge.critical { background: rgba(255,45,85,0.2);  color: #ff2d55; }
+        .risk-badge.high     { background: rgba(255,120,71,0.2); color: #ff7847; }
+        .risk-badge.medium   { background: rgba(255,171,46,0.2); color: #ffab2e; }
         .risk-badge.normal   { background: rgba(138,164,200,0.2); color: #8aa4c8; }
         .case-flag { padding: 3px 0; border-bottom: 1px dashed rgba(138,164,200,0.15); }
         .case-evt {
@@ -671,6 +701,40 @@
             padding: 2px 6px; cursor: pointer; font-family: 'Noto Sans TC', sans-serif;
         }
         .focus-btn:hover { background: rgba(0,245,255,0.12); }
+
+        /* ── Event log panel ── */
+        #eventLogBody { padding: 4px 6px; max-height: 360px; overflow-y: auto; }
+        .elog-section {
+            font-size: 10px; font-weight: 600; color: var(--accent-cyan);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            padding: 8px 6px 4px; position: sticky; top: 0;
+            background: var(--bg-card); z-index: 1;
+        }
+        .elog-count {
+            display: inline-block; min-width: 16px; text-align: center;
+            background: rgba(0,245,255,0.12); color: var(--accent-cyan);
+            border-radius: 8px; padding: 0 5px; font-size: 9px; margin-left: 2px;
+        }
+        .elog-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px; border-radius: 4px; cursor: pointer;
+            border-bottom: 1px dashed rgba(138,164,200,0.12);
+        }
+        .elog-row:hover { background: rgba(0,245,255,0.06); }
+        .elog-row .ce-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .elog-row .risk-badge { flex-shrink: 0; min-width: 30px; text-align: center; }
+        .elog-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+        .elog-name {
+            font-size: 11px; color: var(--text-primary);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .elog-sub {
+            font-size: 9px; color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .elog-row .focus-btn { flex-shrink: 0; }
+        .elog-empty { padding: 10px 6px; font-size: 10px; color: var(--text-secondary); }
 
         /* ── Researcher tools ── */
         .context-strip {
@@ -741,7 +805,7 @@
         .aoi-metric .l { font-size: 9px; color: var(--text-secondary); margin-top: 2px; }
         .aoi-chart-box { height: 110px; }
 
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             .gz-intro { margin: 8px 8px 0; }
             .event-caption { max-width: 85%; font-size: 12px; }
             .tool-btn { min-height: 44px; }
@@ -784,11 +848,12 @@
         <h3 data-i18n="ais_anim.intro_title">什麼是「灰色地帶行動」？</h3>
         <p data-i18n="ais_anim.intro_body">灰色地帶行動是介於和平與衝突之間的低強度脅迫……</p>
         <div class="gz-behaviors">
-            <span class="gz-beh-chip" data-beh="sts"      style="color:#ff9d2e" data-i18n="ais_anim.evt_sts">旁靠補給</span>
-            <span class="gz-beh-chip" data-beh="identity" style="color:#c264ff" data-i18n="ais_anim.evt_identity">身分變更</span>
+            <span class="gz-beh-chip" data-beh="sts"      style="color:#ff7847" data-i18n="ais_anim.evt_sts">旁靠補給</span>
+            <span class="gz-beh-chip" data-beh="identity" style="color:#ffab2e" data-i18n="ais_anim.evt_identity">身分變更</span>
             <span class="gz-beh-chip" data-beh="cable"    style="color:#ffd700" data-i18n="ais_anim.detect_cable">近電纜</span>
-            <span class="gz-beh-chip" data-beh="loiter"   style="color:#ffa500" data-i18n="ais_anim.detect_loiter">滯留</span>
-            <span class="gz-beh-chip" data-beh="zigzag"   style="color:#ff66ff" data-i18n="ais_anim.detect_zigzag">Z字型</span>
+            <span class="gz-beh-chip" data-beh="loiter"   style="color:#b66bff" data-i18n="ais_anim.detect_loiter">滯留</span>
+            <span class="gz-beh-chip" data-beh="zigzag"   style="color:#ff5fe0" data-i18n="ais_anim.detect_zigzag">Z字型</span>
+            <span class="gz-beh-chip" data-beh="anchor"   style="color:#19b6ff" data-i18n="ais_anim.detect_anchor">錨泊</span>
             <span class="gz-beh-chip" data-beh="dark"     style="color:#8aa4c8" data-i18n="ais_anim.beh_dark_chip">走暗/造假</span>
         </div>
     </div>
@@ -835,6 +900,7 @@
                 <option value="loitering" data-i18n="ais_anim.filter_loiter">滯留偵測</option>
                 <option value="zigzag" data-i18n="ais_anim.filter_zigzag">Z字型航行</option>
                 <option value="near_cable" data-i18n="ais_anim.filter_near_cable">電纜周邊</option>
+                <option value="anchored" data-i18n="ais_anim.filter_anchored">錨泊船</option>
                 <option value="dark" data-i18n="ais_anim.filter_dark">走暗船</option>
             </select>
         </div>
@@ -843,7 +909,8 @@
             <input type="range" id="cableBuffer" min="1" max="10" value="2" step="0.5" oninput="updateCableBuffer()">
             <span class="cable-buffer-val" id="cableBufferVal">2</span>
         </div>
-        <!-- Researcher tools -->
+        <!-- Researcher tools (collapsible; collapsed by default on small screens) -->
+        <button class="tool-btn tools-toggle" id="toolsToggle" onclick="toggleTools()" aria-expanded="true" data-i18n="ais_anim.tools_toggle">⚙ 研究工具</button>
         <div class="playback-controls" id="researchTools">
             <label class="trail-toggle">
                 <input type="checkbox" id="showDark" onchange="toggleDark()">
@@ -891,15 +958,16 @@
                 <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#ff3366" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.suspicious">可疑船</span></div>
                 <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#00ff88" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.type_fishing">漁船</span></div>
                 <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#00f5ff" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.type_cargo">貨船</span></div>
-                <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#ff6b35" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.type_tanker">油輪</span></div>
-                <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#f0e130" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.type_lng">LNG</span></div>
-                <div class="legend-chip"><svg width="11" height="11" style="flex-shrink:0" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="3.4" fill="#8aa4c8" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.stationary">靜止/錨泊</span></div>
+                <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#ff5e8a" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.type_tanker">油輪</span></div>
+                <div class="legend-chip"><svg width="9" height="13" style="flex-shrink:0" viewBox="0 0 9 13"><polygon points="4.5,0 9,4.16 7.2,13 1.8,13 0,4.16" fill="#c8ff3d" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.type_lng">LNG</span></div>
+                <div class="legend-chip"><svg width="11" height="11" style="flex-shrink:0" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="3.4" fill="#8aa4c8" stroke="rgba(255,255,255,0.7)" stroke-width="0.8"/></svg><span data-i18n="ais_anim.stationary">靜止/漂流</span></div>
+                <div class="legend-chip" data-beh="anchor" style="cursor:help"><svg width="13" height="13" style="flex-shrink:0" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#19b6ff" stroke="rgba(255,255,255,0.85)" stroke-width="1.4"/><g fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.7"/><path d="M12 7.7 V17.6"/><path d="M8.4 10 H15.6"/><path d="M6.4 13 A6 6 0 0 0 17.6 13"/><path d="M6.4 13 l-1.1 -1.1 M6.4 13 l1.6 0.4"/><path d="M17.6 13 l1.1 -1.1 M17.6 13 l-1.6 0.4"/></g></svg><span data-i18n="ais_anim.detect_anchor">錨泊</span></div>
                 <div class="legend-chip"><span class="dot" style="background:rgba(0,255,136,0.3)"></span><span data-i18n="ais_anim.hotspot">漁撈熱點</span></div>
-                <div class="legend-chip" data-beh="loiter" style="cursor:help"><span class="dot" style="background:#ffa500"></span><span data-i18n="ais_anim.detect_loiter">滯留</span></div>
-                <div class="legend-chip" data-beh="zigzag" style="cursor:help"><span class="dot" style="background:#ff66ff"></span><span data-i18n="ais_anim.detect_zigzag">Z字型</span></div>
+                <div class="legend-chip" data-beh="loiter" style="cursor:help"><span class="dot" style="background:#b66bff"></span><span data-i18n="ais_anim.detect_loiter">滯留</span></div>
+                <div class="legend-chip" data-beh="zigzag" style="cursor:help"><span class="dot" style="background:#ff5fe0"></span><span data-i18n="ais_anim.detect_zigzag">Z字型</span></div>
                 <div class="legend-chip" data-beh="cable" style="cursor:help"><span class="dot" style="background:#ffd700"></span><span data-i18n="ais_anim.detect_cable">近電纜</span></div>
-                <div class="legend-chip" data-beh="sts" style="cursor:help"><span class="dot" style="background:#ff9d2e"></span><span data-i18n="ais_anim.evt_sts">旁靠補給</span></div>
-                <div class="legend-chip" data-beh="identity" style="cursor:help"><span class="dot" style="background:#c264ff"></span><span data-i18n="ais_anim.evt_identity">身分變更</span></div>
+                <div class="legend-chip" data-beh="sts" style="cursor:help"><span class="dot" style="background:#ff7847"></span><span data-i18n="ais_anim.evt_sts">旁靠補給</span></div>
+                <div class="legend-chip" data-beh="identity" style="cursor:help"><span class="dot" style="background:#ffab2e"></span><span data-i18n="ais_anim.evt_identity">身分變更</span></div>
             </div>
         </div>
 
@@ -926,6 +994,14 @@
             <div class="panel-title" data-i18n="ais_anim.chart_title">📊 各時段可疑船數量</div>
             <div class="chart-container">
                 <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Event log: high-risk vessels + gray-zone events -->
+        <div class="panel">
+            <div class="panel-title" data-i18n="ais_anim.elog_title">📋 事件清單：高風險船舶與灰區事件</div>
+            <div class="panel-body" id="eventLogBody">
+                <div class="empty-state" data-i18n="common.loading">載入中...</div>
             </div>
         </div>
 
@@ -966,11 +1042,20 @@
     const VESSEL_COLORS = {
         fishing: '#00ff88',
         cargo:   '#00f5ff',
-        tanker:  '#ff6b35',
-        lng:     '#f0e130',
+        tanker:  '#ff5e8a',   // rose — off the warm severity ramp
+        lng:     '#c8ff3d',   // lime — clears the cable/severity yellows
         other:   '#ff3366',
         unknown: '#8aa4c8'
     };
+
+    // Distinct, eye-catching colour reserved for anchoring vessels (nav status
+    // "at anchor" / "moored"). Deliberately unused by any vessel type so the
+    // anchor state stands out on the dark map.
+    const ANCHOR_COLOR = '#19b6ff';
+
+    // Per-risk-level colours for high-risk vessel annotations (warm severity ramp,
+    // mirrors index.html / --sev-* in main.css)
+    const RISK_COLORS = { critical: '#ff2d55', high: '#ff7847', medium: '#ffab2e', normal: '#8aa4c8' };
 
     const FISHING_HOTSPOTS = {
         taiwan_bank:   { name: '台灣灘漁場',   bounds: [[22.0, 117.0], [23.5, 119.5]] },
@@ -1038,7 +1123,9 @@
         return Gray.suspiciousMmsis.has(String(mmsi));
     }
 
-    const EVENT_COLORS = { sts: '#ff9d2e', identity: '#c264ff', cable_fault: '#ff0000' };
+    // Gray-zone event colours follow the threat-priority ramp (see PRIORITY map):
+    // cable_fault (highest) → critical red, sts → high coral, identity → medium amber.
+    const EVENT_COLORS = { sts: '#ff7847', identity: '#ffab2e', cable_fault: '#ff2d55' };
 
     // Reuse backend exclusion logic: skip buoy / fishing-net beacon noise
     function isBeaconNoise(mmsi, name) {
@@ -1070,6 +1157,7 @@
         loiteringSet: null,     // Set<mmsi> - vessels loitering >6hr
         zigzagSet: null,        // Set<mmsi> - vessels with zigzag heading
         nearCableSet: null,     // Set<mmsi> - vessels near cable at current frame
+        anchoredSet: null,      // Set<mmsi> - vessels that were ever anchoring/moored
         darkInfo: null,         // Map<mmsi, {count, maxGapHrs, segments}> - going-dark gaps
         lastBuiltFrame: -1,
         lastCableFrame: -1
@@ -1137,7 +1225,7 @@
                 const slug = f.properties.slug || '';
                 const isFaulted = faulted.has(slug);
                 return {
-                    color: isFaulted ? '#ff0000' : '#' + (f.properties.color || 'ffd700'),
+                    color: isFaulted ? '#ff2d55' : '#' + (f.properties.color || 'ffd700'),
                     weight: isFaulted ? 3 : 2,
                     opacity: isFaulted ? 0.9 : 0.7
                 };
@@ -1151,7 +1239,7 @@
                     const details = faults.map(ft =>
                         '\u26a0 ' + ft.segment + ': ' + (ft.description_zh || ft.description_en)
                     ).join('<br>');
-                    tip = '<b style="color:#ff0000">' + name + '</b><br>' + details;
+                    tip = '<b style="color:#ff2d55">' + name + '</b><br>' + details;
                 }
                 layer.bindTooltip(tip, { sticky: true, className: 'cable-tooltip' });
             }
@@ -1246,6 +1334,7 @@
                     heading: v.heading !== undefined ? v.heading : null,
                     frameIdx: fi,
                     name: v.name, type_name: v.type_name,
+                    anc: v.anc === 1,            // reported "at anchor" / "moored"
                     suspicious: isSuspicious(v.mmsi)
                 });
             });
@@ -1311,6 +1400,50 @@
         });
         Detection.zigzagSet = result;
         return result;
+    }
+
+    /**
+     * Detect anchoring vessels — those that were EVER at anchor/moored within the
+     * visible range. Prefers the reported AIS navigational status (`anc` flag);
+     * for older data without it, falls back to a sustained near-zero-speed,
+     * near-stationary run (≥2 consecutive frames ≈ 4hr). Returns Set<mmsi>.
+     */
+    function detectAnchored() {
+        if (Detection.anchoredSet) return Detection.anchoredSet;
+        buildVesselIndex();
+        const result = new Set();
+        Detection.vesselIndex.forEach((records, mmsi) => {
+            records.sort((a, b) => a.frameIdx - b.frameIdx);
+            // Explicit reported anchoring status anywhere in the track
+            if (records.some(r => r.anc)) { result.add(mmsi); return; }
+            // Fallback: stayed put at near-zero speed for ≥2 consecutive frames
+            let streak = 1;
+            for (let i = 1; i < records.length; i++) {
+                const prev = records[i - 1], curr = records[i];
+                const isConsecutive = (curr.frameIdx - prev.frameIdx) <= 2;
+                const nearZero = curr.speed < 0.5;
+                const stationary = Math.abs(curr.lat - prev.lat) < 0.003 &&
+                                   Math.abs(curr.lon - prev.lon) < 0.003;
+                if (isConsecutive && nearZero && stationary) {
+                    streak++;
+                    if (streak >= 2) { result.add(mmsi); break; }
+                } else {
+                    streak = 1;
+                }
+            }
+        });
+        Detection.anchoredSet = result;
+        return result;
+    }
+
+    /** Is this vessel anchoring at the given frame (reported anchor, or stopped & ever-anchored)? */
+    function isAnchoredAt(mmsi, frameIdx) {
+        const records = Detection.vesselIndex && Detection.vesselIndex.get(mmsi);
+        if (!records) return false;
+        const rec = records.find(r => r.frameIdx === frameIdx);
+        if (!rec) return false;
+        if (rec.anc) return true;
+        return rec.speed < 0.5 && detectAnchored().has(mmsi);
     }
 
     /**
@@ -1425,6 +1558,7 @@
         Detection.loiteringSet = null;
         Detection.zigzagSet = null;
         Detection.nearCableSet = null;
+        Detection.anchoredSet = null;
         Detection.darkInfo = null;
         Detection.lastBuiltFrame = -1;
         Detection.lastCableFrame = -1;
@@ -1449,12 +1583,12 @@
                 } else { streak = 1; }
             }
             const hours = maxStreak * 2; // each frame ≈ 2hr
-            tags.push({ type: 'loiter', label: i18n.t('ais_anim.loiter_hours', hours), color: '#ffa500' });
+            tags.push({ type: 'loiter', label: i18n.t('ais_anim.loiter_hours', hours), color: '#b66bff' });
         }
         // Zigzag
         const zigzagSet = detectZigzag();
         if (zigzagSet.has(mmsi)) {
-            tags.push({ type: 'zigzag', label: i18n.t('ais_anim.detect_zigzag'), color: '#ff66ff' });
+            tags.push({ type: 'zigzag', label: i18n.t('ais_anim.detect_zigzag'), color: '#ff5fe0' });
         }
         // Near cable
         if (Cable.lines.length > 0) {
@@ -1462,6 +1596,11 @@
             if (cableSet.has(mmsi)) {
                 tags.push({ type: 'cable', label: i18n.t('ais_anim.detect_cable'), color: '#ffd700' });
             }
+        }
+        // Anchoring (current frame) — pushed last so cable/loiter/zigzag still
+        // drive the marker colour; anchoring is conveyed by the anchor glyph.
+        if (isAnchoredAt(mmsi, frameIdx)) {
+            tags.push({ type: 'anchor', label: i18n.t('ais_anim.detect_anchor'), color: ANCHOR_COLOR });
         }
         return tags;
     }
@@ -1560,6 +1699,24 @@
                     if (c && c.suspicious) Gray.suspiciousMmsis.add(String(c.mmsi));
                 });
 
+                // High-risk vessel annotations — surface the main-page suspicious
+                // list onto this timeline (last known position / time). Shown on
+                // the timeline ticks + event log, but not as extra map rings since
+                // these vessels already render as red markers each frame.
+                sv.forEach(v => {
+                    if (v.last_lat == null || v.last_lon == null) return;
+                    const nm = (v.names && v.names.length) ? v.names[v.names.length - 1] : String(v.mmsi);
+                    const lvl = v.risk_level || 'normal';
+                    Gray.events.push({
+                        type: 'highrisk', ts: v.last_seen, lat: v.last_lat, lon: v.last_lon,
+                        mmsis: [String(v.mmsi)],
+                        label: nm + ' · ' + riskLabel(lvl) + ' (' + (v.risk_score != null ? v.risk_score : '?') + ')',
+                        detail: (v.flags && v.flags.length ? v.flags.slice(0, 2).join('; ') : 'MMSI ' + v.mmsi),
+                        color: RISK_COLORS[lvl] || RISK_COLORS.normal,
+                        risk_level: lvl, risk_score: v.risk_score, frameIdx: -1
+                    });
+                });
+
                 const ep = data.exercise_prediction || {};
                 (ep.daily_merged || []).forEach(d => {
                     if (!d.date) return;
@@ -1580,6 +1737,7 @@
         renderTimelineEvents();
         renderContextStrip();
         renderEventMarkers(Anim.currentIdx);
+        renderEventLog();
         updateContextReadout(Anim.currentIdx);
         // Suspicious set is only known after data.json loads → refresh the
         // per-period suspicious chart and recolor the current frame's markers.
@@ -1619,7 +1777,7 @@
         if (!Anim.showEvents || n <= 1 || !Gray.events.length) return;
 
         // Aggregate events by frame index to avoid hundreds of overlapping ticks
-        const PRIORITY = { cable_fault: 3, sts: 2, identity: 1 };
+        const PRIORITY = { cable_fault: 4, highrisk: 3, sts: 2, identity: 1 };
         const byFrame = new Map();
         Gray.events.forEach(ev => {
             if (ev.frameIdx < 0) return;
@@ -1658,7 +1816,7 @@
             const ctx = Context.byDate[date];
             if (!ctx || !ctx.sorties) return;
             const s = ctx.sorties;
-            const color = s >= 20 ? '#ff3366' : s >= 10 ? '#ff9d2e' : '#00f5ff';
+            const color = s >= 20 ? '#ff2d55' : s >= 10 ? '#ff7847' : '#00f5ff';
             const bar = document.createElement('div');
             bar.className = 'ctx-bar';
             bar.style.left = (i / (n - 1)) * 100 + '%';
@@ -1703,7 +1861,10 @@
         const caption = document.getElementById('eventCaption');
         if (!Anim.showEvents) { if (caption) caption.classList.remove('show'); return; }
 
-        const active = Gray.events.filter(ev => ev.frameIdx === idx);
+        // High-risk vessels already render as red markers each frame, so keep them
+        // out of the event rings/caption to avoid clutter (they stay on the
+        // timeline + event log).
+        const active = Gray.events.filter(ev => ev.frameIdx === idx && ev.type !== 'highrisk');
         active.forEach(ev => {
             const icon = L.divIcon({
                 className: 'event-ring',
@@ -1732,6 +1893,60 @@
         }
     }
 
+    /**
+     * Render the textual event log: the main-page high-risk vessel list +
+     * gray-zone events in range. Rows are clickable (focus vessel / jump to frame).
+     */
+    function renderEventLog() {
+        const body = document.getElementById('eventLogBody');
+        if (!body) return;
+        let html = '';
+
+        // High-risk vessels (same list flagged on the main dashboard), top score first
+        const profs = [...Gray.profiles.values()]
+            .sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
+        html += '<div class="elog-section">⚠ ' + i18n.t('ais_anim.elog_highrisk') +
+                ' <span class="elog-count">' + profs.length + '</span></div>';
+        if (!profs.length) {
+            html += '<div class="elog-empty">' + i18n.t('ais_anim.elog_no_hr') + '</div>';
+        } else {
+            html += profs.slice(0, 50).map(p => {
+                const lvl = p.risk_level || 'normal';
+                const nm = (p.names && p.names.length) ? p.names[p.names.length - 1] : String(p.mmsi);
+                const flag = (p.flags && p.flags.length) ? p.flags[0] : '';
+                return '<div class="elog-row" onclick="enterFocus(\'' + p.mmsi + '\')">' +
+                    '<span class="risk-badge ' + lvl + '">' + (p.risk_score != null ? p.risk_score : '--') + '</span>' +
+                    '<span class="elog-main"><span class="elog-name">' + nm + '</span>' +
+                    '<span class="elog-sub">' + p.mmsi + (flag ? ' · ' + flag : '') + '</span></span>' +
+                    '<button class="focus-btn" onclick="event.stopPropagation();enterFocus(\'' + p.mmsi + '\')">' +
+                        i18n.t('ais_anim.focus_btn') + '</button>' +
+                    '</div>';
+            }).join('');
+        }
+
+        // Gray-zone events mapped into the current range
+        const evs = Gray.events
+            .filter(e => e.frameIdx >= 0 && e.type !== 'highrisk')
+            .sort((a, b) => a.frameIdx - b.frameIdx);
+        html += '<div class="elog-section">' + i18n.t('ais_anim.events_label') +
+                ' <span class="elog-count">' + evs.length + '</span></div>';
+        if (!evs.length) {
+            html += '<div class="elog-empty">' + i18n.t('ais_anim.evt_none') + '</div>';
+        } else {
+            html += evs.map(e => {
+                const ts = ((Anim.filteredFrames[e.frameIdx] || {}).timestamp || '').slice(5, 16).replace('T', ' ');
+                return '<div class="elog-row" onclick="pause();renderFrame(' + e.frameIdx + ')">' +
+                    '<span class="ce-dot" style="background:' + e.color + '"></span>' +
+                    '<span class="elog-main"><span class="elog-name">' +
+                        i18n.t('ais_anim.evt_' + e.type) + ' · ' + e.label + '</span>' +
+                    '<span class="elog-sub">' + ts + (e.detail ? ' · ' + e.detail : '') + '</span></span>' +
+                    '</div>';
+            }).join('');
+        }
+
+        body.innerHTML = html;
+    }
+
     function toggleEvents() {
         Anim.showEvents = document.getElementById('showEvents').checked;
         renderTimelineEvents();
@@ -1741,6 +1956,15 @@
 
     function toggleLoop() {
         Anim.loop = document.getElementById('loopPlay').checked;
+    }
+
+    // Collapse/expand the researcher-tools group (draw / export / going-dark).
+    function toggleTools() {
+        const tools = document.getElementById('researchTools');
+        const btn = document.getElementById('toolsToggle');
+        const hidden = tools.classList.toggle('tools-hidden');
+        btn.classList.toggle('active', !hidden);
+        btn.setAttribute('aria-expanded', String(!hidden));
     }
 
     // =========================================================================
@@ -1862,7 +2086,7 @@
         pause();
         updateSlider();
         updateChart();
-        if (Gray.loaded) { buildEventFrameIndex(); renderTimelineEvents(); renderContextStrip(); }
+        if (Gray.loaded) { buildEventFrameIndex(); renderTimelineEvents(); renderContextStrip(); renderEventLog(); }
         renderFrame(0);
         if (Anim.aoi || Anim.tripwire) recomputeAreaMetrics();
         syncUrl();
@@ -2007,6 +2231,31 @@
         });
     }
 
+    // Anchoring vessel symbol: a filled disc carrying a white anchor glyph.
+    // Suspicious anchoring vessels get a red ring so the threat still reads.
+    function createAnchorIcon(emphasis, suspicious) {
+        const d = emphasis ? 22 : 18;
+        const ring = suspicious ? '#ff3366' : 'rgba(255,255,255,0.85)';
+        const ringW = suspicious ? 2.2 : 1.4;
+        const svg = '<svg width="' + d + '" height="' + d + '" viewBox="0 0 24 24" ' +
+            'xmlns="http://www.w3.org/2000/svg">' +
+            '<circle cx="12" cy="12" r="11" fill="' + ANCHOR_COLOR + '" ' +
+                'fill-opacity="0.95" stroke="' + ring + '" stroke-width="' + ringW + '"/>' +
+            '<g fill="none" stroke="#fff" stroke-width="1.7" ' +
+                'stroke-linecap="round" stroke-linejoin="round">' +
+            '<circle cx="12" cy="6" r="1.7"/>' +              // ring
+            '<path d="M12 7.7 V17.6"/>' +                      // shank
+            '<path d="M8.4 10 H15.6"/>' +                      // stock
+            '<path d="M6.4 13 A6 6 0 0 0 17.6 13"/>' +         // flukes arc
+            '<path d="M6.4 13 l-1.1 -1.1 M6.4 13 l1.6 0.4"/>' +
+            '<path d="M17.6 13 l1.1 -1.1 M17.6 13 l-1.6 0.4"/>' +
+            '</g></svg>';
+        return L.divIcon({
+            html: svg, className: 'vessel-icon anchor-icon',
+            iconSize: [d, d], iconAnchor: [d / 2, d / 2], popupAnchor: [0, -d / 2]
+        });
+    }
+
     // =========================================================================
     // Frame rendering
     // =========================================================================
@@ -2068,7 +2317,10 @@
 
             const emphasis = isSusp || hasDetection || (focus && String(v.mmsi) === focus);
             const stationary = (v.speed !== undefined && v.speed !== null && v.speed < 0.5);
-            const icon = createVesselIcon(color, emphasis, heading, stationary);
+            const anchoring = tags.some(t => t.type === 'anchor');
+            const icon = anchoring
+                ? createAnchorIcon(emphasis, isSusp)
+                : createVesselIcon(color, emphasis, heading, stationary);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(Anim.markerLayer);
 
             const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
@@ -2081,7 +2333,7 @@
                 '<div style="font-size:14px;line-height:1.8;min-width:180px">' +
                 '<b style="color:' + color + ';font-size:15px">' + (v.name || v.mmsi) + '</b><br>' +
                 'MMSI: ' + v.mmsi + '<br>' +
-                ((v.mmsi || '').startsWith('898') ? '<span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span><br>' : '') +
+                ((v.mmsi || '').startsWith('898') ? '<span style="color:#8aa4c8;font-weight:600">🎣 可能為魚網標記</span><br>' : '') +
                 i18n.t('ais_anim.popup_type') + ': ' + v.type_name + '<br>' +
                 i18n.t('ais_anim.popup_speed') + ': ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
                 '航向: ' + headingText + '<br>' +
@@ -2368,6 +2620,8 @@
                 { const set = detectZigzag(); return vessels.filter(v => set.has(v.mmsi)); }
             case 'near_cable':
                 { const set = detectNearCable(Anim.currentIdx); return vessels.filter(v => set.has(v.mmsi)); }
+            case 'anchored':
+                { const set = detectAnchored(); return vessels.filter(v => set.has(v.mmsi)); }
             case 'dark':
                 { const info = detectGoingDark(); return vessels.filter(v => info.has(v.mmsi)); }
             default:
@@ -2491,7 +2745,8 @@
 
     const BEH_KEYS = {
         sts: 'ais_anim.beh_sts', identity: 'ais_anim.beh_identity', cable: 'ais_anim.beh_cable',
-        loiter: 'ais_anim.beh_loiter', zigzag: 'ais_anim.beh_zigzag', dark: 'ais_anim.beh_dark'
+        loiter: 'ais_anim.beh_loiter', zigzag: 'ais_anim.beh_zigzag', dark: 'ais_anim.beh_dark',
+        anchor: 'ais_anim.beh_anchor'
     };
     let behTip = null;
     function initBehaviorTips() {
@@ -2850,6 +3105,7 @@
         const reopen = document.getElementById('gzReopen');
         if (reopen) reopen.textContent = i18n.t('ais_anim.intro_reopen');
         renderTimelineEvents();
+        if (Gray.loaded) renderEventLog();
         if (Anim.filteredFrames.length) renderFrame(Anim.currentIdx);
         if (Anim.focusMmsi) renderCaseNarrative(Anim.focusMmsi);
         if (Anim.aoi || Anim.tripwire) recomputeAreaMetrics();
@@ -2884,6 +3140,8 @@
     initIntro();
     initBehaviorTips();
     document.getElementById('caseExit').addEventListener('click', exitFocus);
+    // Collapse the researcher-tools group by default on small screens.
+    if (window.matchMedia('(max-width: 900px)').matches) toggleTools();
     loadData();
     </script>
     <script src="js/mobile-nav.js"></script>

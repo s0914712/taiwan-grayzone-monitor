@@ -298,11 +298,13 @@ const i18n = (function () {
         'ais_anim.filter_loiter':    { zh: '滯留偵測', en: 'Loitering' },
         'ais_anim.filter_zigzag':    { zh: 'Z字型航行', en: 'Zigzag' },
         'ais_anim.filter_near_cable':{ zh: '電纜周邊', en: 'Near Cable' },
+        'ais_anim.filter_anchored':  { zh: '錨泊船', en: 'At Anchor' },
         'ais_anim.layer_cables':     { zh: '海底電纜', en: 'Submarine Cables' },
         'ais_anim.cable_buffer':     { zh: '電纜緩衝區 (海浬)', en: 'Cable Buffer (nm)' },
         'ais_anim.detect_loiter':    { zh: '滯留', en: 'Loiter' },
         'ais_anim.detect_zigzag':    { zh: 'Z字型', en: 'Zigzag' },
         'ais_anim.detect_cable':     { zh: '近電纜', en: 'Near Cable' },
+        'ais_anim.detect_anchor':    { zh: '錨泊', en: 'At Anchor' },
         'ais_anim.loiter_hours':     { zh: '滯留 {0}h', en: 'Loiter {0}h' },
 
         // ── 灰區動畫強化 Gray Zone Animation Enhancements ──
@@ -319,14 +321,20 @@ const i18n = (function () {
         'ais_anim.beh_zigzag':       { zh: 'Z字型航行：反覆大幅轉向，可能為拖錨破壞海纜或反偵察機動。', en: 'Zigzag: repeated sharp turns, possibly anchor-dragging on cables or counter-surveillance maneuvering.' },
         'ais_anim.beh_dark':         { zh: '走暗/AIS造假：關閉或偽造 AIS 訊號，刻意隱藏行蹤與位置。', en: 'Going dark / AIS spoofing: disabling or faking AIS signals to deliberately hide movement and position.' },
         'ais_anim.beh_dark_chip':    { zh: '走暗/造假', en: 'Dark/Spoof' },
+        'ais_anim.beh_anchor':       { zh: '錨泊：船舶報告「錨泊/繫泊」或長時間原地停留。在海纜或敏感海域附近錨泊，可能藉拋錨/拖錨破壞海底纜線。', en: 'Anchoring: vessel reports "at anchor/moored" or stays put for long. Anchoring near cables or sensitive waters can mask anchor-dragging cable sabotage.' },
         // 事件時間軸 Event timeline
         'ais_anim.events_label':     { zh: '灰區事件', en: 'Gray Zone Events' },
         'ais_anim.evt_sts':          { zh: '旁靠補給', en: 'STS Transfer' },
         'ais_anim.evt_identity':     { zh: '身分變更', en: 'Identity Change' },
         'ais_anim.evt_cable_fault':  { zh: '海纜故障', en: 'Cable Fault' },
+        'ais_anim.evt_highrisk':     { zh: '高風險船舶', en: 'High-Risk Vessel' },
         'ais_anim.evt_at':           { zh: '距 {0}m · {1}h', en: '{0}m apart · {1}h' },
         'ais_anim.evt_none':         { zh: '此範圍內無標註事件', en: 'No annotated events in range' },
         'ais_anim.show_events':      { zh: '事件標註', en: 'Event Markers' },
+        // 事件清單面板 Event log panel
+        'ais_anim.elog_title':       { zh: '📋 事件清單：高風險船舶與灰區事件', en: '📋 Event Log: High-Risk Vessels & Gray-Zone Events' },
+        'ais_anim.elog_highrisk':    { zh: '高風險船舶', en: 'High-Risk Vessels' },
+        'ais_anim.elog_no_hr':       { zh: '目前無高風險船舶', en: 'No high-risk vessels' },
         // 聚焦敘事 Focus / case narrative
         'ais_anim.focus_btn':        { zh: '🎯 聚焦', en: '🎯 Focus' },
         'ais_anim.focus_exit':       { zh: '← 退出聚焦', en: '← Exit Focus' },
@@ -349,7 +357,7 @@ const i18n = (function () {
         'ais_anim.type_cargo':       { zh: '貨船', en: 'Cargo' },
         'ais_anim.type_tanker':      { zh: '油輪', en: 'Tanker' },
         'ais_anim.type_lng':         { zh: 'LNG', en: 'LNG' },
-        'ais_anim.stationary':       { zh: '靜止/錨泊', en: 'Stationary' },
+        'ais_anim.stationary':       { zh: '靜止/漂流', en: 'Stationary/Drifting' },
 
         // ── 研究工具 Researcher tools ──
         // 事件對照 Event correlation
@@ -364,6 +372,7 @@ const i18n = (function () {
         'ais_anim.export_geojson':   { zh: 'GeoJSON (軌跡+事件)', en: 'GeoJSON (track+events)' },
         'ais_anim.export_csv':       { zh: 'CSV (軌跡點)', en: 'CSV (track points)' },
         'ais_anim.export_need_focus':{ zh: '請先聚焦一艘船再匯出', en: 'Focus a vessel first to export' },
+        'ais_anim.tools_toggle':     { zh: '⚙ 研究工具', en: '⚙ Tools' },
         // AOI / 絆線 Area of interest / tripwire
         'ais_anim.draw_area':        { zh: '✏️ 畫區域', en: '✏️ Draw area' },
         'ais_anim.draw_line':        { zh: '📏 畫絆線', en: '📏 Draw tripwire' },
