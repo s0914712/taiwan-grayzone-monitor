@@ -87,7 +87,10 @@ Applied to **behavioral scores only** (criteria 1-3, 5). High-threat indicators 
 |------|-----------|-----------|
 | cargo, tanker, lng | ×1.0 | Long anchor chains, high tonnage → real cable damage risk |
 | fishing | ×0.2 | Small, routine operations, low cable threat |
+| coastguard | ×0.5 | China Coast Guard state vessels — large hulls but official law-enforcement |
 | other, unknown | ×0.5 | Uncertain |
+
+**Coast Guard detection:** `is_coast_guard_vessel(name, mmsi)` in `fetch_ais_data.py` flags China Coast Guard ships by name keyword (`COAST GUARD`, `CCG\d*`, `HAIJING`, `海警`, `CHINA COAST`); on match `type_name` → `coastguard` and an `is_coast_guard` flag is set. MMSI-prefix matching is deliberately **not** used (block `413875xxx` is shared with civilian vessels). Frontend renders these white with a glow + 🛡️ badge; `plot_coast_guard_tracks.py` renders their combined historical tracks to `docs/coast_guard_tracks.png`.
 
 ### Combo Bonuses (also multiplied by vessel type)
 - Cable proximity + zigzag: +3 (possible anchor dragging)
