@@ -11,6 +11,7 @@ const MapModule = (function() {
         fishingHotspots: null,
         vessels: null,
         suspiciousVessels: null,
+        govVessels: null,
         darkVessels: null,
         submarineCables: null,
         vesselRoutes: null,
@@ -344,6 +345,7 @@ const MapModule = (function() {
         layers.fishingHotspots = L.layerGroup().addTo(map);
         layers.vessels = L.layerGroup().addTo(map);
         layers.suspiciousVessels = L.layerGroup().addTo(map);
+        layers.govVessels = L.layerGroup().addTo(map);
         layers.darkVessels = L.layerGroup().addTo(map);
         layers.submarineCables = L.layerGroup();
         layers.vesselRoutes = L.layerGroup().addTo(map);
@@ -746,17 +748,8 @@ const MapModule = (function() {
                 : govType ? VESSEL_COLORS[govType]
                 : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
 
-            // Add glow ring for China public-service vessels (海警/海巡/海救)
-            if (govType) {
-                L.circleMarker([v.lat, v.lon], {
-                    radius: 13,
-                    fillColor: VESSEL_COLORS[govType],
-                    color: VESSEL_COLORS[govType],
-                    weight: 1.5,
-                    opacity: 0.5,
-                    fillOpacity: 0.12
-                }).addTo(layers.vessels);
-            }
+            // Gov / special-interest vessels get a persistent white circle on a
+            // dedicated layer (see displayGovVessels) — no extra glow here.
 
             // Add glow effect for suspicious vessels
             if (isSuspicious) {
@@ -921,12 +914,8 @@ const MapModule = (function() {
                 : govType ? VESSEL_COLORS[govType]
                 : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
 
-            if (govType) {
-                L.circleMarker([v.lat, v.lon], {
-                    radius: 13, fillColor: VESSEL_COLORS[govType], color: VESSEL_COLORS[govType],
-                    weight: 1.5, opacity: 0.5, fillOpacity: 0.12
-                }).addTo(layers.vessels);
-            }
+            // Gov / special-interest vessels: persistent white circle drawn by
+            // displayGovVessels on a dedicated layer — no extra glow here.
 
             if (isSuspicious) {
                 L.circleMarker([v.lat, v.lon], {
@@ -1385,6 +1374,44 @@ const MapModule = (function() {
     }
 
     /**
+     * Display China gov / special-interest vessels (海警/海巡/海救/科研) as
+     * white circle markers on a dedicated layer that survives zoom/pan/cluster,
+     * mirroring the high-risk vessel treatment (white ring instead of red).
+     */
+    function displayGovVessels(vesselList) {
+        if (!layers.govVessels) return;
+        layers.govVessels.clearLayers();
+        if (!vesselList) return;
+
+        const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+
+        vesselList.forEach(v => {
+            const govType = getGovType(v);
+            if (!govType || v.lat == null || v.lon == null) return;
+
+            L.circleMarker([v.lat, v.lon], {
+                radius: 9,
+                fillColor: '#ffffff',
+                color: '#ffffff',
+                weight: 2,
+                opacity: 0.95,
+                fillOpacity: 0.25
+            }).addTo(layers.govVessels).bindPopup(() => {
+                const flagName = getMidFlag(v.mmsi);
+                const flagLine = flagName ? '<br>' + t('app.flag') + ' ' + flagName : '';
+                const headingText = (v.heading !== undefined && v.heading !== null)
+                    ? v.heading.toFixed(0) + '°' : 'N/A';
+                return '<b style="color:' + (VESSEL_COLORS[govType] || '#ffffff') + '">' +
+                        (GOV_BADGE_ICON[govType] || '') + ' ' + (v.name || v.mmsi) + '</b><br>' +
+                    '<b>' + govLabel(govType) + '</b>' + flagLine + '<br>' +
+                    t('app.mmsi') + ' ' + v.mmsi + '<br>' +
+                    t('app.speed') + ' ' + (v.speed || 0).toFixed(1) + ' kn　航向: ' + headingText +
+                    '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
+            });
+        });
+    }
+
+    /**
      * Toggle layer visibility
      */
     function toggleLayer(layerName, visible) {
@@ -1393,13 +1420,16 @@ const MapModule = (function() {
         } else {
             map.removeLayer(layers[layerName]);
         }
-        // Suspicious vessels follow the vessels layer toggle
-        if (layerName === 'vessels' && layers.suspiciousVessels) {
-            if (visible) {
-                map.addLayer(layers.suspiciousVessels);
-            } else {
-                map.removeLayer(layers.suspiciousVessels);
-            }
+        // Suspicious + gov vessels follow the vessels layer toggle
+        if (layerName === 'vessels') {
+            [layers.suspiciousVessels, layers.govVessels].forEach(lyr => {
+                if (!lyr) return;
+                if (visible) {
+                    map.addLayer(lyr);
+                } else {
+                    map.removeLayer(lyr);
+                }
+            });
         }
     }
 
@@ -1881,6 +1911,7 @@ const MapModule = (function() {
         renderVesselsForZoom,
         displayDarkVessels,
         displaySuspiciousVessels,
+        displayGovVessels,
         toggleLayer,
         focusVessel,
         focusPosition,
