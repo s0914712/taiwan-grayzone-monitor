@@ -84,6 +84,9 @@ VESSEL_TYPE_MULTIPLIER = {
     'lng': 1.0,
     'fishing': 0.2,
     'coastguard': 0.5,  # 海警公務船：大型船體有拖錨風險，但屬國家公務船，給中性權重
+    'msa': 0.5,         # 海巡（海事局）公務船
+    'rescue': 0.5,      # 海救（救助打撈局）公務船
+    'research': 0.5,    # 科研/情報船（科考、海洋調查）
     'other': 0.5,
     'unknown': 0.5,
 }

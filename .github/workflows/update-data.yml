@@ -94,7 +94,19 @@ jobs:
       - name: Generate dashboard data
         run: |
           python src/generate_dashboard.py
-          
+
+      - name: Generate China gov/special-interest vessel track map (once daily, 00 UTC)
+        run: |
+          HOUR=$(date -u +%H)
+          if [ "$HOUR" = "00" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            pip install matplotlib
+            sudo apt-get update -qq && sudo apt-get install -y -qq fonts-wqy-zenhei
+            python src/plot_gov_vessel_tracks.py
+          else
+            echo "Skip gov vessel track map — runs once daily at 00 UTC (current hour=$HOUR)"
+          fi
+        continue-on-error: true
+
       - name: Save large data cache
         uses: actions/cache/save@v4
         if: always()
