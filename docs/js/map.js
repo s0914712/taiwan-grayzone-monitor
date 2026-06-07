@@ -245,10 +245,44 @@ const MapModule = (function() {
         cargo: '#00f5ff',
         tanker: '#ff5e8a',    // Rose — kept off the warm severity ramp
         lng: '#c8ff3d',       // Lime for LNG/gas vessels (clears cable yellow)
-        coastguard: '#ffffff', // White — China Coast Guard / state law-enforcement hulls
+        coastguard: '#ffffff', // White — China Coast Guard (海警) hulls
+        msa: '#4d9fff',        // Blue — China MSA patrol (海巡 / 海事局)
+        rescue: '#ff9500',     // Orange — China Rescue & Salvage (海救 / 救助局)
+        research: '#c77dff',   // Purple — China research / intel vessels (科研/情報船)
         other: '#ff3366',
         unknown: '#888888'
     };
+
+    // China government / special-interest vessel detection (海警/海巡/海救/科研).
+    // Mirrors classify_gov_vessel() in src/fetch_ais_data.py — backend sets
+    // v.gov_type / type_name; the name regex is a frontend fallback.
+    const GOV_REGEX = {
+        coastguard: /COAST\s*GUARD|\bCCG\d*\b|HAI\s*JING|海警/i,
+        msa: /HAI\s*XUN|海巡/i,
+        rescue: /(DONG|NAN|BEI)\s*HAI\s*JIU|[东東南北]海救|海救/i,
+        research: /XIANG\s*YANG\s*HONG|DONG\s*FANG\s*HONG|\bTONG\s*JI\b|\bKE\s*XUE\b|\bSHI\s*YAN|\bTAN\s*SUO|ZHU\s*HAI\s*YUN|向阳红|向陽紅|东方红|東方紅|同济|同濟|科学考察|科考|勘探|海洋调查|海洋調查|实验|實驗|探索/i
+    };
+    const GOV_TYPES = ['coastguard', 'msa', 'rescue', 'research'];
+    const GOV_BADGE_ICON = { coastguard: '🛡️', msa: '⚓', rescue: '🛟', research: '🔬' };
+
+    function getGovType(v) {
+        if (v.gov_type) return v.gov_type;
+        if (GOV_TYPES.indexOf(v.type_name) !== -1) return v.type_name;
+        const n = v.name || '';
+        for (let i = 0; i < GOV_TYPES.length; i++) {
+            if (GOV_REGEX[GOV_TYPES[i]].test(n)) return GOV_TYPES[i];
+        }
+        return null;
+    }
+
+    function govLabel(t) {
+        const tr = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+        if (t === 'coastguard') return tr('app.coastguard');
+        if (t === 'msa') return tr('app.msa');
+        if (t === 'rescue') return tr('app.rescue');
+        if (t === 'research') return tr('app.research');
+        return '';
+    }
 
     // Flag of Convenience (FOC) MID prefixes - top flag states with strict commercial regulation
     // These are MMSI Maritime Identification Digits for major open-registry states
@@ -708,19 +742,18 @@ const MapModule = (function() {
 
             const isSuspicious = v.suspicious;
             const isLng = v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '');
-            const isCoastGuard = v.is_coast_guard || v.type_name === 'coastguard' ||
-                /COAST\s*GUARD|\bCCG\d*\b|HAI\s*JING|海警/i.test(v.name || '');
+            const govType = getGovType(v);
             const color = isSuspicious ? '#ff3366'
-                : isCoastGuard ? VESSEL_COLORS.coastguard
+                : govType ? VESSEL_COLORS[govType]
                 : isLng ? VESSEL_COLORS.lng
                 : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
 
-            // Add glow ring for coast guard (state law-enforcement) vessels
-            if (isCoastGuard) {
+            // Add glow ring for China public-service vessels (海警/海巡/海救)
+            if (govType) {
                 L.circleMarker([v.lat, v.lon], {
                     radius: 13,
-                    fillColor: VESSEL_COLORS.coastguard,
-                    color: VESSEL_COLORS.coastguard,
+                    fillColor: VESSEL_COLORS[govType],
+                    color: VESSEL_COLORS[govType],
                     weight: 1.5,
                     opacity: 0.5,
                     fillOpacity: 0.12
@@ -753,7 +786,7 @@ const MapModule = (function() {
             }
 
             const heading = v.heading !== undefined && v.heading !== null ? v.heading : null;
-            const icon = createVesselIcon(color, isSuspicious || isLng || isCoastGuard, heading);
+            const icon = createVesselIcon(color, isSuspicious || isLng || !!govType, heading);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(layers.vessels);
 
             const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
@@ -774,8 +807,8 @@ const MapModule = (function() {
             const lngBadge = isLng
                 ? '<br><b style="color:' + VESSEL_COLORS.lng + '">⛽ LNG/Gas Carrier</b>'
                 : '';
-            const coastGuardBadge = isCoastGuard
-                ? '<br><b style="color:' + VESSEL_COLORS.coastguard + '">🛡️ ' + t('app.coastguard') + '</b>'
+            const coastGuardBadge = govType
+                ? '<br><b style="color:' + VESSEL_COLORS[govType] + '">' + GOV_BADGE_ICON[govType] + ' ' + govLabel(govType) + '</b>'
                 : '';
 
             // External lookup: MarineTraffic by MMSI for from/destination details
@@ -900,15 +933,14 @@ const MapModule = (function() {
             vessels.set(v.mmsi, v);
 
             const isSuspicious = v.suspicious;
-            const isCoastGuard = v.is_coast_guard || v.type_name === 'coastguard' ||
-                /COAST\s*GUARD|\bCCG\d*\b|HAI\s*JING|海警/i.test(v.name || '');
+            const govType = getGovType(v);
             const color = isSuspicious ? '#ff3366'
-                : isCoastGuard ? VESSEL_COLORS.coastguard
+                : govType ? VESSEL_COLORS[govType]
                 : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
 
-            if (isCoastGuard) {
+            if (govType) {
                 L.circleMarker([v.lat, v.lon], {
-                    radius: 13, fillColor: VESSEL_COLORS.coastguard, color: VESSEL_COLORS.coastguard,
+                    radius: 13, fillColor: VESSEL_COLORS[govType], color: VESSEL_COLORS[govType],
                     weight: 1.5, opacity: 0.5, fillOpacity: 0.12
                 }).addTo(layers.vessels);
             }
@@ -921,7 +953,7 @@ const MapModule = (function() {
             }
 
             const heading = v.heading !== undefined && v.heading !== null ? v.heading : null;
-            const icon = createVesselIcon(color, isSuspicious || isCoastGuard, heading);
+            const icon = createVesselIcon(color, isSuspicious || !!govType, heading);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(layers.vessels);
 
             const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
@@ -940,8 +972,8 @@ const MapModule = (function() {
                 v.mmsi + '" target="_blank" rel="noopener">🔎 From / Dest 查詢</a>';
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
             var netMarkerNote2 = (v.mmsi || '').startsWith('898') ? '<br><span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span>' : '';
-            var coastGuardBadge2 = isCoastGuard
-                ? '<br><b style="color:' + VESSEL_COLORS.coastguard + '">🛡️ ' + t('app.coastguard') + '</b>'
+            var coastGuardBadge2 = govType
+                ? '<br><b style="color:' + VESSEL_COLORS[govType] + '">' + GOV_BADGE_ICON[govType] + ' ' + govLabel(govType) + '</b>'
                 : '';
             var flagName2 = getMidFlag(v.mmsi);
             var flagLine2 = flagName2 ? '<br>' + t('app.flag') + ' ' + flagName2 : '';
@@ -1589,14 +1621,12 @@ const MapModule = (function() {
             if (type === 'suspicious') {
                 return v.suspicious;
             }
-            if (type === 'coastguard') {
-                return v.is_coast_guard || v.type_name === 'coastguard' ||
-                    /COAST\s*GUARD|\bCCG\d*\b|HAI\s*JING|海警/i.test(v.name || '');
+            if (GOV_TYPES.indexOf(type) !== -1) {
+                return getGovType(v) === type;
             }
             if (type === 'other') {
                 const isLng = v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '');
-                const isCg = v.is_coast_guard || v.type_name === 'coastguard';
-                return !isLng && !isCg && !v.suspicious && !['fishing', 'cargo', 'tanker'].includes(v.type_name);
+                return !isLng && !getGovType(v) && !v.suspicious && !['fishing', 'cargo', 'tanker'].includes(v.type_name);
             }
             return v.type_name === type;
         });
@@ -1609,10 +1639,9 @@ const MapModule = (function() {
             return;
         }
 
-        // Coast Guard: show a clickable list panel
-        if (type === 'coastguard') {
-            var cgTitle = '🛡️ ' + (typeof i18n !== 'undefined' ? i18n.t('app.coastguard') : 'Coast Guard');
-            showVesselListPanel(matched, VESSEL_COLORS.coastguard, cgTitle);
+        // China public-service vessels (海警/海巡/海救): show a clickable list panel
+        if (GOV_TYPES.indexOf(type) !== -1) {
+            showVesselListPanel(matched, VESSEL_COLORS[type], GOV_BADGE_ICON[type] + ' ' + govLabel(type));
             return;
         }
 
