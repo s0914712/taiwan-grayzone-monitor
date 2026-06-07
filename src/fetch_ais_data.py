@@ -226,6 +226,30 @@ def _is_lng_vessel(name, type_code):
     return False
 
 
+# --- 海警船偵測 (Coast Guard) ---
+# AIS 船種碼無法可靠識別海警船：實測中國海警船會廣播 type 90(other)、
+# 甚至 30-39(漁船) 等不實船種，因此改以「船名關鍵字」判定。
+# 聚焦中國海警（China Coast Guard, CCG），不納入台灣海巡（海巡署）關鍵字，
+# 以免將我方公務船誤併入同一灰色地帶分類。
+#
+# 註：曾考慮以 MMSI 區段（如 413875xxx）輔助判定，但實測該號段與民用船共用
+# （例：HUAHANG10DP / 413875213 並非海警船），會造成誤判，故僅採船名關鍵字。
+_COAST_GUARD_NAME_KEYWORDS = re.compile(
+    r'COAST\s*GUARD|\bCCG\d*\b|HAI\s*JING|海警|中国海警|中國海警|CHINA\s*COAST',
+    re.I,
+)
+
+
+def is_coast_guard_vessel(name, mmsi=None):
+    """判斷是否為（中國）海警公務船，以船名關鍵字判定。
+
+    mmsi 參數保留以利未來擴充，目前不參與判定（號段與民用船共用會誤判）。
+    """
+    if name and _COAST_GUARD_NAME_KEYWORDS.search(name):
+        return True
+    return False
+
+
 # --- 資料收集 ---
 
 def collect_ais_data():
@@ -317,6 +341,12 @@ def collect_ais_data():
         # LNG / 天然氣船偵測
         is_lng = _is_lng_vessel(ship_name, type_code)
 
+        # 海警船偵測（船名關鍵字 + 已知 MMSI 區段）
+        # 命中時覆寫 type_name，修正 AIS 將海警船誤報為漁船/其他的問題
+        is_coast_guard = is_coast_guard_vessel(ship_name, mmsi)
+        if is_coast_guard:
+            type_name = 'coastguard'
+
         vessels[mmsi] = {
             'mmsi': mmsi,
             'name': ship_name if ship_name else f'MMSI-{mmsi}',
@@ -331,6 +361,7 @@ def collect_ais_data():
             'nav_status': str(props.get("Navigational_Status", "")),
             'destination': destination,
             'is_lng': is_lng,
+            'is_coast_guard': is_coast_guard,
             'in_fishing_hotspot': fishing_hotspot,
             'suspicious': suspicious,
             'record_time': record_time,
@@ -347,6 +378,7 @@ def analyze_data(vessels):
     stats = {
         'total_vessels': len(vessels),
         'fishing_vessels': sum(1 for v in vessels.values() if v['type_name'] == 'fishing'),
+        'coast_guard_vessels': sum(1 for v in vessels.values() if v.get('is_coast_guard')),
         'suspicious_count': 0,
         'avg_speed': 0.0,
         'by_type': defaultdict(int),
@@ -628,9 +660,11 @@ def save_all(vessels, stats):
             # frontend animation classify anchoring separately. Omitted otherwise
             # to keep this browser-served file small.
             **({'anc': 1} if str(v.get('nav_status', '')) in ('1', '5') else {}),
+            # 海警船旗標 — 供前端動畫/軌跡特別標示中國海警公務船
+            **({'cg': 1} if v.get('is_coast_guard') else {}),
         }
         for v in vessel_list
-        if is_cn_fishing_vessel(v.get('name')) or v.get('suspicious')
+        if is_cn_fishing_vessel(v.get('name')) or v.get('suspicious') or v.get('is_coast_guard')
     ]
 
     track_entry = {
