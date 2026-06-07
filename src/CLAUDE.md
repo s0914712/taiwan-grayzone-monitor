@@ -28,6 +28,7 @@ fetch_ais_data.py → fetch_gfw_data.py → detect_ship_transfers.py
 |------|---------|
 | `lookup_itu_mars.py` | ITU MARS ship station registry scraper. CLI: `python3 lookup_itu_mars.py <MMSI>`. Batch mode with 2s rate limit. Cache in `data/itu_mars_cache.json` (30-day expiry). |
 | `extract_vessel_route.py` | CLI utility to extract single vessel route by MMSI |
+| `plot_coast_guard_tracks.py` | Scan `docs/vessel_routes/` for (China) Coast Guard vessels and render their combined 14-day tracks to a dark-themed PNG. CLI: `python3 plot_coast_guard_tracks.py [-o out.png]` (default `docs/coast_guard_tracks.png`). Requires matplotlib. |
 | `generate_summary.py` | Generate daily/weekly text summary reports |
 | `publish_threads.py` | Generate charts + maps, publish to Threads (requires `THREADS_*` secrets) |
 
@@ -73,3 +74,4 @@ fetch_ais_data.py → fetch_gfw_data.py → detect_ship_transfers.py
 - Monitoring bbox: lat 20-28°N, lon 112-128°E
 - Track points deduplicated by consecutive identical lat/lon
 - `classify_vessel_type(code)` maps AIS type codes → `fishing`/`cargo`/`tanker`/`lng`/`other`/`unknown`
+- Coast Guard detection: `is_coast_guard_vessel(name, mmsi)` in `fetch_ais_data.py` flags (China) Coast Guard ships by **name keyword only** (`COAST GUARD`, `CCG\d*`, `HAIJING`, `海警`, `CHINA COAST`). MMSI-prefix matching was rejected — block `413875xxx` is shared with civilian vessels (e.g. HUAHANG10DP). On match, `type_name` is overridden to `coastguard` (fixes AIS mis-reporting CCG ships as fishing/other) and a `is_coast_guard` bool is set on the snapshot vessel; tier-1 tracks gain a compact `cg:1` flag and CCG vessels are always retained in tier-1 (so routes accumulate). Taiwan CGA (海巡) is intentionally excluded to avoid mislabeling friendly vessels.

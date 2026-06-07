@@ -245,6 +245,7 @@ const MapModule = (function() {
         cargo: '#00f5ff',
         tanker: '#ff5e8a',    // Rose — kept off the warm severity ramp
         lng: '#c8ff3d',       // Lime for LNG/gas vessels (clears cable yellow)
+        coastguard: '#ffffff', // White — China Coast Guard / state law-enforcement hulls
         other: '#ff3366',
         unknown: '#888888'
     };
@@ -707,7 +708,24 @@ const MapModule = (function() {
 
             const isSuspicious = v.suspicious;
             const isLng = v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '');
-            const color = isSuspicious ? '#ff3366' : isLng ? VESSEL_COLORS.lng : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
+            const isCoastGuard = v.is_coast_guard || v.type_name === 'coastguard' ||
+                /COAST\s*GUARD|\bCCG\d*\b|HAI\s*JING|海警/i.test(v.name || '');
+            const color = isSuspicious ? '#ff3366'
+                : isCoastGuard ? VESSEL_COLORS.coastguard
+                : isLng ? VESSEL_COLORS.lng
+                : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
+
+            // Add glow ring for coast guard (state law-enforcement) vessels
+            if (isCoastGuard) {
+                L.circleMarker([v.lat, v.lon], {
+                    radius: 13,
+                    fillColor: VESSEL_COLORS.coastguard,
+                    color: VESSEL_COLORS.coastguard,
+                    weight: 1.5,
+                    opacity: 0.5,
+                    fillOpacity: 0.12
+                }).addTo(layers.vessels);
+            }
 
             // Add glow effect for suspicious vessels
             if (isSuspicious) {
@@ -735,7 +753,7 @@ const MapModule = (function() {
             }
 
             const heading = v.heading !== undefined && v.heading !== null ? v.heading : null;
-            const icon = createVesselIcon(color, isSuspicious || isLng, heading);
+            const icon = createVesselIcon(color, isSuspicious || isLng || isCoastGuard, heading);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(layers.vessels);
 
             const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
@@ -756,6 +774,9 @@ const MapModule = (function() {
             const lngBadge = isLng
                 ? '<br><b style="color:' + VESSEL_COLORS.lng + '">⛽ LNG/Gas Carrier</b>'
                 : '';
+            const coastGuardBadge = isCoastGuard
+                ? '<br><b style="color:' + VESSEL_COLORS.coastguard + '">🛡️ ' + t('app.coastguard') + '</b>'
+                : '';
 
             // External lookup: MarineTraffic by MMSI for from/destination details
             const mtLink = '<br><a class="mt-lookup-link" href="https://www.marinetraffic.com/en/ais/index/search/all?mmsi=' +
@@ -771,7 +792,7 @@ const MapModule = (function() {
                 ${t('app.mmsi')} ${v.mmsi}${imoInfo}<br>
                 ${t('app.type')} ${v.type_name || t('common.unknown')}${flagLine}<br>
                 ${t('app.speed')} ${(v.speed || 0).toFixed(1)} kn<br>
-                航向: ${headingText}${navInfo}${lngBadge}${destInfo}${suspiciousInfo}${sanctionInfo}${routeLink}${mtLink}${netMarkerNote}
+                航向: ${headingText}${navInfo}${coastGuardBadge}${lngBadge}${destInfo}${suspiciousInfo}${sanctionInfo}${routeLink}${mtLink}${netMarkerNote}
             `);
 
             vesselMarkers[v.mmsi] = marker;
@@ -879,7 +900,18 @@ const MapModule = (function() {
             vessels.set(v.mmsi, v);
 
             const isSuspicious = v.suspicious;
-            const color = isSuspicious ? '#ff3366' : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
+            const isCoastGuard = v.is_coast_guard || v.type_name === 'coastguard' ||
+                /COAST\s*GUARD|\bCCG\d*\b|HAI\s*JING|海警/i.test(v.name || '');
+            const color = isSuspicious ? '#ff3366'
+                : isCoastGuard ? VESSEL_COLORS.coastguard
+                : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
+
+            if (isCoastGuard) {
+                L.circleMarker([v.lat, v.lon], {
+                    radius: 13, fillColor: VESSEL_COLORS.coastguard, color: VESSEL_COLORS.coastguard,
+                    weight: 1.5, opacity: 0.5, fillOpacity: 0.12
+                }).addTo(layers.vessels);
+            }
 
             if (isSuspicious) {
                 L.circleMarker([v.lat, v.lon], {
@@ -889,7 +921,7 @@ const MapModule = (function() {
             }
 
             const heading = v.heading !== undefined && v.heading !== null ? v.heading : null;
-            const icon = createVesselIcon(color, isSuspicious, heading);
+            const icon = createVesselIcon(color, isSuspicious || isCoastGuard, heading);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(layers.vessels);
 
             const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
@@ -908,6 +940,9 @@ const MapModule = (function() {
                 v.mmsi + '" target="_blank" rel="noopener">🔎 From / Dest 查詢</a>';
             const routeLink = '<br><button class="route-lookup-btn" onclick="MapModule.loadVesselRoute(\'' + v.mmsi + '\'); return false;">' + t('app.show_track') + '</button>';
             var netMarkerNote2 = (v.mmsi || '').startsWith('898') ? '<br><span style="color:#ffa500;font-weight:600">🎣 可能為魚網標記</span>' : '';
+            var coastGuardBadge2 = isCoastGuard
+                ? '<br><b style="color:' + VESSEL_COLORS.coastguard + '">🛡️ ' + t('app.coastguard') + '</b>'
+                : '';
             var flagName2 = getMidFlag(v.mmsi);
             var flagLine2 = flagName2 ? '<br>' + t('app.flag') + ' ' + flagName2 : '';
 
@@ -916,7 +951,7 @@ const MapModule = (function() {
                 t('app.mmsi') + ' ' + v.mmsi + imoInfo2 + '<br>' +
                 t('app.type') + ' ' + (v.type_name || t('common.unknown')) + flagLine2 + '<br>' +
                 t('app.speed') + ' ' + (v.speed || 0).toFixed(1) + ' kn<br>' +
-                '航向: ' + headingText + navInfo2 + destInfo2 + suspiciousInfo + sanctionInfo2 + routeLink + mtLink2 + netMarkerNote2
+                '航向: ' + headingText + navInfo2 + coastGuardBadge2 + destInfo2 + suspiciousInfo + sanctionInfo2 + routeLink + mtLink2 + netMarkerNote2
             );
 
             vesselMarkers[v.mmsi] = marker;
@@ -1502,13 +1537,13 @@ const MapModule = (function() {
      * Show a floating vessel list panel near the legend.
      * Clicking an item zooms to that vessel and opens its popup.
      */
-    function showVesselListPanel(vessels, color) {
+    function showVesselListPanel(vessels, color, title) {
         // Remove any existing panel
         dismissVesselListPanel();
 
         const panel = document.createElement('div');
         panel.className = 'vessel-list-panel';
-        panel.innerHTML = '<div class="vlp-title">⛽ LNG/Gas (' + vessels.length + ')</div>';
+        panel.innerHTML = '<div class="vlp-title">' + (title || '⛽ LNG/Gas') + ' (' + vessels.length + ')</div>';
 
         vessels.slice(0, 5).forEach((v, i) => {
             const row = document.createElement('div');
@@ -1554,9 +1589,14 @@ const MapModule = (function() {
             if (type === 'suspicious') {
                 return v.suspicious;
             }
+            if (type === 'coastguard') {
+                return v.is_coast_guard || v.type_name === 'coastguard' ||
+                    /COAST\s*GUARD|\bCCG\d*\b|HAI\s*JING|海警/i.test(v.name || '');
+            }
             if (type === 'other') {
                 const isLng = v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '');
-                return !isLng && !v.suspicious && !['fishing', 'cargo', 'tanker'].includes(v.type_name);
+                const isCg = v.is_coast_guard || v.type_name === 'coastguard';
+                return !isLng && !isCg && !v.suspicious && !['fishing', 'cargo', 'tanker'].includes(v.type_name);
             }
             return v.type_name === type;
         });
@@ -1565,7 +1605,14 @@ const MapModule = (function() {
 
         // LNG: show a clickable list panel instead of just zooming
         if (type === 'lng') {
-            showVesselListPanel(matched, VESSEL_COLORS.lng);
+            showVesselListPanel(matched, VESSEL_COLORS.lng, '⛽ LNG/Gas');
+            return;
+        }
+
+        // Coast Guard: show a clickable list panel
+        if (type === 'coastguard') {
+            var cgTitle = '🛡️ ' + (typeof i18n !== 'undefined' ? i18n.t('app.coastguard') : 'Coast Guard');
+            showVesselListPanel(matched, VESSEL_COLORS.coastguard, cgTitle);
             return;
         }
 

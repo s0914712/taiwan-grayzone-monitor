@@ -83,6 +83,7 @@ VESSEL_TYPE_MULTIPLIER = {
     'tanker': 1.0,
     'lng': 1.0,
     'fishing': 0.2,
+    'coastguard': 0.5,  # 海警公務船：大型船體有拖錨風險，但屬國家公務船，給中性權重
     'other': 0.5,
     'unknown': 0.5,
 }
