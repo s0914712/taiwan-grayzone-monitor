@@ -1,4 +1,53 @@
+# Taiwan Gray Zone Monitor — robots.txt
+# All standard crawlers welcome.
 User-agent: *
+Allow: /
+
+# --- AI / LLM answer-engine crawlers (explicitly allowed for GEO) ---
+# OpenAI
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+# Google (Gemini / AI Overviews extended access)
+User-agent: Google-Extended
+Allow: /
+
+# Common Crawl (feeds many open LLMs)
+User-agent: CCBot
+Allow: /
+
+# Apple Intelligence
+User-agent: Applebot-Extended
+Allow: /
+
+# Others
+User-agent: Bytespider
+Allow: /
+
+User-agent: Amazonbot
 Allow: /
 
 Sitemap: https://s0914712.github.io/taiwan-grayzone-monitor/sitemap.xml

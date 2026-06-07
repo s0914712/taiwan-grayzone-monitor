@@ -1589,6 +1589,50 @@ body {
     margin-bottom: 14px;
 }
 
+/* FAQ question headings */
+.intro-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 18px 0 6px;
+}
+
+/* HowTo numbered steps */
+.howto-steps {
+    list-style: none;
+    counter-reset: howto;
+    padding: 0;
+    margin: 0;
+}
+
+.howto-steps > li {
+    position: relative;
+    counter-increment: howto;
+    padding: 4px 0 4px 44px;
+    margin-bottom: 14px;
+}
+
+.howto-steps > li::before {
+    content: counter(howto);
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent-cyan);
+    color: var(--bg-primary);
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.howto-steps > li h3 {
+    margin: 2px 0 4px;
+}
+
 .intro-tools-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
