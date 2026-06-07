@@ -28,7 +28,7 @@ fetch_ais_data.py → fetch_gfw_data.py → detect_ship_transfers.py
 |------|---------|
 | `lookup_itu_mars.py` | ITU MARS ship station registry scraper. CLI: `python3 lookup_itu_mars.py <MMSI>`. Batch mode with 2s rate limit. Cache in `data/itu_mars_cache.json` (30-day expiry). |
 | `extract_vessel_route.py` | CLI utility to extract single vessel route by MMSI |
-| `plot_gov_vessel_tracks.py` | Scan `docs/vessel_routes/` for China gov / special-interest vessels (海警/海巡/海救/科研) and render their combined 14-day tracks to a dark-themed PNG, colored by sub-category. CLI: `python3 plot_gov_vessel_tracks.py [-o out.png]` (default `docs/cn_gov_vessel_tracks.png`). Requires matplotlib (CJK labels need WenQuanYi/Noto, else fall back to DejaVu). |
+| `plot_gov_vessel_tracks.py` | Scan `docs/vessel_routes/` for China gov / special-interest vessels (海警/海巡/海救/科研) and render their combined 14-day tracks to a dark-themed PNG, colored by sub-category, with place-name labels + per-track vessel name/position. CLI: `python3 plot_gov_vessel_tracks.py [-o out.png]` (default `docs/cn_gov_vessel_tracks.png`). Requires matplotlib (CJK labels need WenQuanYi/Noto, else fall back to DejaVu). **Runs once daily (00:00 UTC) in `update-data.yml`** — committed & deployed with the rest of `docs/`. |
 | `generate_summary.py` | Generate daily/weekly text summary reports |
 | `publish_threads.py` | Generate charts + maps, publish to Threads (requires `THREADS_*` secrets) |
 
