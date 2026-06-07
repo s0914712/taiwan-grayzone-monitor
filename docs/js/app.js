@@ -624,6 +624,9 @@ const App = (function () {
 
                 ChartsModule.updateAisStats(result.stats);
 
+                // White-circle markers for gov/research vessels (always visible)
+                MapModule.displayGovVessels(rawVesselList);
+
                 updateVesselList();
                 updateBottomSheetStats(result.stats);
                 updateGovVesselList();
