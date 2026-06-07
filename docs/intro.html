@@ -7,7 +7,22 @@
     <title>關於本站 | About — Taiwan Gray Zone Monitor</title>
     <meta name="description" content="了解台灣周邊灰色地帶活動、海底電纜安全，以及本站提供的開源監測工具。">
     <meta name="keywords" content="灰色地帶,gray zone,台灣海峽,海底電纜,submarine cable,暗船,dark vessel,AIS,maritime surveillance">
+    <meta name="author" content="Taiwan Gray Zone Monitor">
+    <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/intro.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="關於本站 | About — Taiwan Gray Zone Monitor">
+    <meta property="og:description" content="了解台灣周邊灰色地帶活動、海底電纜安全，以及本站提供的開源監測工具。常見問題與使用教學。">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/intro.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone Monitor">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="關於本站 | About — Taiwan Gray Zone Monitor">
+    <meta name="twitter:description" content="了解台灣周邊灰色地帶活動、海底電纜安全，以及本站提供的開源監測工具。常見問題與使用教學。">
 
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -20,7 +35,82 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/main.css">
 
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a0f1c">
+
+    <!-- Structured Data: AboutPage + FAQPage + HowTo + Breadcrumb -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "AboutPage",
+                "name": "關於本站 | About — Taiwan Gray Zone Monitor",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/intro.html",
+                "description": "了解台灣周邊灰色地帶活動、海底電纜安全，以及本站提供的開源監測工具。常見問題與使用教學。",
+                "inLanguage": "zh-TW",
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" }
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "首頁 Home", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/" },
+                    { "@type": "ListItem", "position": 2, "name": "關於本站 About", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/intro.html" }
+                ]
+            },
+            {
+                "@type": "HowTo",
+                "name": "如何使用台灣灰色地帶監測站",
+                "description": "從即時地圖、圖層切換、可疑船隻清單到軌跡動畫與統計分析的完整使用流程。",
+                "inLanguage": "zh-TW",
+                "step": [
+                    { "@type": "HowToStep", "position": 1, "name": "開啟即時監測地圖", "text": "從首頁即時地圖進入，查看台灣周邊海域的即時船舶位置、暗船偵測點與海底電纜路線。", "url": "https://s0914712.github.io/taiwan-grayzone-monitor/index.html" },
+                    { "@type": "HowToStep", "position": 2, "name": "切換地圖圖層", "text": "使用圖層控制開關，顯示或隱藏船舶、暗船、海底電纜與漁撈熱點，聚焦你關注的資訊。", "url": "https://s0914712.github.io/taiwan-grayzone-monitor/index.html" },
+                    { "@type": "HowToStep", "position": 3, "name": "查看可疑船隻清單", "text": "在側邊欄或底部面板檢視依威脅分數排序的可疑船隻，點選任一船隻即可查看詳細資訊與風險指標。", "url": "https://s0914712.github.io/taiwan-grayzone-monitor/index.html" },
+                    { "@type": "HowToStep", "position": 4, "name": "回放軌跡動畫", "text": "開啟軌跡動畫頁面，動態回放船舶過去數日的航跡，觀察走暗、徘徊或海上旁靠等異常行為。", "url": "https://s0914712.github.io/taiwan-grayzone-monitor/ais-animation.html" },
+                    { "@type": "HowToStep", "position": 5, "name": "對照統計與軍演預測", "text": "在統計分析頁面查看暗船趨勢圖表與軍事演習預測指標，判讀整體海域態勢。", "url": "https://s0914712.github.io/taiwan-grayzone-monitor/statistics.html" }
+                ]
+            },
+            {
+                "@type": "FAQPage",
+                "inLanguage": "zh-TW",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "什麼是「暗船」(dark vessel)？",
+                        "acceptedAnswer": { "@type": "Answer", "text": "暗船是指關閉 AIS（船舶自動識別系統）訊號、無法被一般船舶追蹤系統偵測的船隻。本站透過 SAR 合成孔徑雷達衛星影像偵測這些未發送 AIS 訊號的船隻，並與 AIS 數據交叉比對，找出刻意「走暗」的可疑目標。" }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "資料從哪裡來？",
+                        "acceptedAnswer": { "@type": "Answer", "text": "船舶位置資料來自台灣港務局公開的 AIS 數據；暗船偵測來自 Global Fishing Watch 的 SAR 衛星影像；威脅評分方法則參考美國智庫 CSIS「Signals in the Swarm」報告的灰色地帶分析方法論。所有資料皆為開源公開資訊（OSINT）。" }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "資料多久更新一次？",
+                        "acceptedAnswer": { "@type": "Answer", "text": "AIS 船舶資料每 2 小時自動更新一次；完整資料管線（含暗船偵測、威脅評分、軌跡分析）每 12 小時執行一次；統計報告每週彙整。所有時間以 UTC（協調世界時）標示。" }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "如何判定一艘船「可疑」？",
+                        "acceptedAnswer": { "@type": "Answer", "text": "本站採用 8 項指標的加權評分系統，包括：靠近海底電纜並低速徘徊、之字形異常航行、頻繁變更船名或呼號（身分操弄）、長時間關閉 AIS（走暗）、AIS 位置造假、海上旁靠（STS）等。分數達到門檻的船隻會被標記為可疑並列入清單。" }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "海底電纜為什麼重要？",
+                        "acceptedAnswer": { "@type": "Answer", "text": "台灣超過 95% 的對外網路通訊依賴海底電纜，這些電纜密集通過台灣海峽。拖網漁船的錨泊與作業是電纜損壞的主因之一；當不明船隻在電纜路線附近長時間徘徊，便構成基礎設施安全威脅。" }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "這是官方政府網站嗎？",
+                        "acceptedAnswer": { "@type": "Answer", "text": "不是。本站是獨立的開源情報（OSINT）專案，所有資料來自公開來源，分析方法與程式碼皆公開於 GitHub，不代表任何政府或官方機構立場。" }
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
 </head>
 
 <body>
@@ -127,6 +217,94 @@
         </a>
     </div>
 
+    <!-- Section 4: How to Use (HowTo) -->
+    <section class="intro-section intro-howto">
+        <div class="lang-zh-only">
+            <h2>🧭 如何使用本監測站</h2>
+            <ol class="howto-steps">
+                <li>
+                    <h3>步驟 1：開啟即時監測地圖</h3>
+                    <p>從<a href="index.html">首頁即時地圖</a>進入，查看台灣周邊海域的即時船舶位置、暗船偵測點與海底電纜路線。</p>
+                </li>
+                <li>
+                    <h3>步驟 2：切換地圖圖層</h3>
+                    <p>使用圖層控制開關，顯示或隱藏船舶、暗船、海底電纜與漁撈熱點，聚焦你關注的資訊。</p>
+                </li>
+                <li>
+                    <h3>步驟 3：查看可疑船隻清單</h3>
+                    <p>在側邊欄或底部面板檢視依威脅分數排序的可疑船隻，點選任一船隻即可查看詳細資訊與風險指標。</p>
+                </li>
+                <li>
+                    <h3>步驟 4：回放軌跡動畫</h3>
+                    <p>開啟<a href="ais-animation.html">軌跡動畫</a>頁面，動態回放船舶過去數日的航跡，觀察走暗、徘徊或海上旁靠等異常行為。</p>
+                </li>
+                <li>
+                    <h3>步驟 5：對照統計與軍演預測</h3>
+                    <p>在<a href="statistics.html">統計分析</a>頁面查看暗船趨勢圖表與軍事演習預測指標，判讀整體海域態勢。</p>
+                </li>
+            </ol>
+        </div>
+        <div class="lang-en-only">
+            <h2>🧭 How to Use This Monitor</h2>
+            <ol class="howto-steps">
+                <li>
+                    <h3>Step 1: Open the live map</h3>
+                    <p>Start from the <a href="index.html">live monitoring map</a> to see real-time vessel positions, dark-vessel detections, and submarine cable routes around Taiwan.</p>
+                </li>
+                <li>
+                    <h3>Step 2: Toggle map layers</h3>
+                    <p>Use the layer controls to show or hide vessels, dark vessels, submarine cables, and fishing hotspots — focus on what matters to you.</p>
+                </li>
+                <li>
+                    <h3>Step 3: Review the suspicious-vessel list</h3>
+                    <p>In the sidebar or bottom panel, browse vessels ranked by threat score. Click any vessel to see its detailed risk indicators.</p>
+                </li>
+                <li>
+                    <h3>Step 4: Replay the track animation</h3>
+                    <p>Open the <a href="ais-animation.html">AIS track animation</a> to replay vessel paths over recent days and spot going-dark, loitering, or ship-to-ship behavior.</p>
+                </li>
+                <li>
+                    <h3>Step 5: Cross-check statistics &amp; exercise prediction</h3>
+                    <p>On the <a href="statistics.html">statistics</a> page, review dark-vessel trend charts and military-exercise prediction indicators to read the overall picture.</p>
+                </li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- Section 5: FAQ (FAQPage) -->
+    <section class="intro-section intro-faq">
+        <div class="lang-zh-only">
+            <h2>❓ 常見問題 FAQ</h2>
+            <h3>什麼是「暗船」(dark vessel)？</h3>
+            <p>暗船是指關閉 AIS（船舶自動識別系統）訊號、無法被一般船舶追蹤系統偵測的船隻。本站透過 SAR 合成孔徑雷達衛星影像偵測這些未發送 AIS 訊號的船隻，並與 AIS 數據交叉比對，找出刻意「走暗」的可疑目標。</p>
+            <h3>資料從哪裡來？</h3>
+            <p>船舶位置資料來自台灣港務局公開的 AIS 數據；暗船偵測來自 Global Fishing Watch 的 SAR 衛星影像；威脅評分方法則參考美國智庫 CSIS「Signals in the Swarm」報告的灰色地帶分析方法論。所有資料皆為開源公開資訊（OSINT）。</p>
+            <h3>資料多久更新一次？</h3>
+            <p>AIS 船舶資料每 2 小時自動更新一次；完整資料管線（含暗船偵測、威脅評分、軌跡分析）每 12 小時執行一次；統計報告每週彙整。所有時間以 UTC（協調世界時）標示。</p>
+            <h3>如何判定一艘船「可疑」？</h3>
+            <p>本站採用 8 項指標的加權評分系統，包括：靠近海底電纜並低速徘徊、之字形異常航行、頻繁變更船名或呼號（身分操弄）、長時間關閉 AIS（走暗）、AIS 位置造假、海上旁靠（STS）等。分數達到門檻的船隻會被標記為可疑並列入清單。</p>
+            <h3>海底電纜為什麼重要？</h3>
+            <p>台灣超過 95% 的對外網路通訊依賴海底電纜，這些電纜密集通過台灣海峽。拖網漁船的錨泊與作業是電纜損壞的主因之一；當不明船隻在電纜路線附近長時間徘徊，便構成基礎設施安全威脅。</p>
+            <h3>這是官方政府網站嗎？</h3>
+            <p>不是。本站是獨立的開源情報（OSINT）專案，所有資料來自公開來源，分析方法與程式碼皆公開於 GitHub，不代表任何政府或官方機構立場。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>❓ Frequently Asked Questions</h2>
+            <h3>What is a "dark vessel"?</h3>
+            <p>A dark vessel is a ship that has switched off its AIS (Automatic Identification System) transponder so it cannot be tracked by ordinary vessel-tracking systems. This site detects them using SAR (synthetic aperture radar) satellite imagery and cross-references the detections against AIS data to surface targets that have deliberately "gone dark."</p>
+            <h3>Where does the data come from?</h3>
+            <p>Vessel positions come from the Taiwan Port Bureau's public AIS feed; dark-vessel detections come from Global Fishing Watch SAR satellite imagery; and the threat-scoring methodology is based on the CSIS "Signals in the Swarm" report on gray-zone analysis. All sources are open-source intelligence (OSINT).</p>
+            <h3>How often is the data updated?</h3>
+            <p>AIS vessel data refreshes every 2 hours; the full pipeline (dark-vessel detection, threat scoring, track analysis) runs every 12 hours; and statistical reports are compiled weekly. All timestamps are in UTC.</p>
+            <h3>How is a vessel flagged as suspicious?</h3>
+            <p>The site uses a weighted 8-criterion scoring system: loitering at low speed near submarine cables, zigzag navigation, frequent name/call-sign changes (identity manipulation), long AIS gaps (going dark), AIS position spoofing, ship-to-ship (STS) transfers, and more. Vessels that cross the score threshold are flagged and listed.</p>
+            <h3>Why do submarine cables matter?</h3>
+            <p>Over 95% of Taiwan's international internet traffic relies on submarine cables that pass densely through the Taiwan Strait. Anchor dragging by trawlers is a leading cause of cable damage, so unidentified vessels loitering near cable routes pose an infrastructure-security threat.</p>
+            <h3>Is this an official government website?</h3>
+            <p>No. This is an independent open-source intelligence (OSINT) project. All data comes from public sources, and the analysis methods and code are published on GitHub. It does not represent any government or official body.</p>
+        </div>
+    </section>
+
     <!-- CTA -->
     <div class="intro-cta">
         <a href="index.html" class="lang-zh-only" data-i18n="intro.cta">開始監測 →</a>
@@ -137,12 +315,12 @@
         <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
     </footer>
 
-    <script src="js/i18n.js"></script>
+    <script defer src="js/i18n.js"></script>
     <style>
         body.lang-en .lang-zh-only { display: none !important; }
         body:not(.lang-en) .lang-en-only { display: none !important; }
     </style>
-    <script src="js/mobile-nav.js"></script>
+    <script defer src="js/mobile-nav.js"></script>
 </body>
 
 </html>

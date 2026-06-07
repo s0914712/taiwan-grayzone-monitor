@@ -35,19 +35,45 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
         rel="stylesheet">
 
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="css/main.css">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebPage",
+                "name": "軌跡動畫 | AIS Track Animation",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/ais-animation.html",
+                "description": "台灣周邊可疑船隻 AIS 軌跡動畫，追蹤可疑漁船位置變化與灰色地帶事件",
+                "inLanguage": "zh-TW",
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" }
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "首頁 Home", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/" },
+                    { "@type": "ListItem", "position": 2, "name": "軌跡動畫 AIS Animation", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/ais-animation.html" }
+                ]
+            }
+        ]
+    }
+    </script>
 
     <style>
         body {
@@ -1033,7 +1059,7 @@
         <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
     </footer>
 
-    <script src="js/i18n.js"></script>
+    <script defer src="js/i18n.js"></script>
     <script>
     // =========================================================================
     // Fishing hotspots (same as fetch_ais_data.py)
@@ -3134,17 +3160,19 @@
     });
 
     // =========================================================================
-    // Initialize
+    // Initialize (wait for deferred Leaflet / modules to load)
     // =========================================================================
-    initMap();
-    initIntro();
-    initBehaviorTips();
-    document.getElementById('caseExit').addEventListener('click', exitFocus);
-    // Collapse the researcher-tools group by default on small screens.
-    if (window.matchMedia('(max-width: 900px)').matches) toggleTools();
-    loadData();
+    document.addEventListener('DOMContentLoaded', function () {
+        initMap();
+        initIntro();
+        initBehaviorTips();
+        document.getElementById('caseExit').addEventListener('click', exitFocus);
+        // Collapse the researcher-tools group by default on small screens.
+        if (window.matchMedia('(max-width: 900px)').matches) toggleTools();
+        loadData();
+    });
     </script>
-    <script src="js/mobile-nav.js"></script>
+    <script defer src="js/mobile-nav.js"></script>
 </body>
 
 </html>
