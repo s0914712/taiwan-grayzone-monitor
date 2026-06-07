@@ -182,7 +182,7 @@ const i18n = (function () {
         'idx.about_refs':        { zh: '參考文獻', en: 'References' },
 
         // ── Introduction 頁面 ──
-        'intro.hero_title':      { zh: '台灣周邊海域灰色地帶監測', en: 'Gray Zone Activity Monitor around Taiwan' },
+        'intro.hero_title':      { zh: '台灣周邊海域灰色地帶與海底電纜監測', en: 'Gray Zone & Submarine Cable Monitor around Taiwan' },
         'intro.hero_subtitle':   { zh: '開源衛星數據 • 即時船舶追蹤 • 海纜安全', en: 'Open Satellite Data • Real-time Vessel Tracking • Cable Security' },
         'intro.gz_title':        { zh: '🌊 什麼是灰色地帶活動？', en: '🌊 What is Gray Zone Activity?' },
         'intro.gz_p1':           { zh: '「灰色地帶」是指介於和平與戰爭之間的模糊狀態。在台灣周邊海域，這包括：大量漁船越界作業、船隻關閉 AIS 定位訊號成為「暗船」、海上民兵偽裝為漁船活動，以及與軍事演習高度相關的異常船舶行為。', en: 'The "gray zone" refers to the ambiguous space between peace and war. Around Taiwan, this includes: fishing fleets crossing maritime boundaries, vessels disabling AIS transponders to become "dark ships," maritime militia disguised as fishing boats, and anomalous vessel behavior closely correlated with military exercises.' },
