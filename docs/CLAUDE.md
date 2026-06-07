@@ -38,9 +38,9 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 ```
 
 ### Vessel Type Colors
-`fishing: #00ff88` `cargo: #00f5ff` `tanker: #ff6b35` `lng: #f0e130` `coastguard: #ffffff` `other: #ff3366` `unknown: #888`
+`fishing: #00ff88` `cargo: #00f5ff` `tanker: #ff6b35` `lng: #f0e130` `coastguard: #ffffff` `msa: #4d9fff` `rescue: #ff9500` `research: #c77dff` `other: #ff3366` `unknown: #888`
 
-Coast Guard vessels (China Coast Guard) render white with a glow ring + enlarged icon, a 🛡️ popup badge, and a clickable legend entry (`data-vessel-type="coastguard"` → `locateVesselType` shows a list panel). Detection in `map.js` uses the backend `is_coast_guard` flag / `type_name === 'coastguard'`, falling back to a name regex.
+China gov / special-interest vessels render with a glow ring + enlarged icon + popup badge + clickable legend entry, by sub-category: 海警 coastguard (white 🛡️), 海巡 msa (blue ⚓), 海救 rescue (orange 🛟), 科研/情報 research (purple 🔬). `map.js` resolves the category via `getGovType(v)` (backend `gov_type` / `type_name`, falling back to `GOV_REGEX`); `locateVesselType` shows a per-category list panel. Keep `GOV_REGEX` in sync with `classify_gov_vessel()` in `src/fetch_ais_data.py`.
 
 ### Responsive Breakpoints
 - `@media (max-width: 900px)` — Main mobile threshold (sidebar → drawer, bottom sheet appears)
@@ -111,4 +111,4 @@ Each animation HTML page has **self-contained inline JS** (not shared modules). 
 | `cable_status.json` | Submarine cable status | Manual |
 | `taiwan_cables.json` | Cable route GeoJSON. Feature `properties`: `slug` (fault-match key, must stay in sync with `fetch_cable_status.py` `CABLE_NAME_TO_SLUG`), `color` (hex, no `#`), plus optional metadata rendered in the map popup: `name`, `status`, `cable_type`, `length`, `rfs`, `owners`, `tw_landings`, `cn_landings`. Planned cables (`status` 規劃中) render dashed. | Manual |
 | `vessel_routes/{mmsi}.json` | Per-vessel route files (1,000+) | `extract_all_routes.py` |
-| `coast_guard_tracks.png` | Combined 14-day track map of detected China Coast Guard vessels | `plot_coast_guard_tracks.py` |
+| `cn_gov_vessel_tracks.png` | Combined 14-day track map of China gov / special-interest vessels (海警/海巡/海救/科研), colored by sub-category | `plot_gov_vessel_tracks.py` |

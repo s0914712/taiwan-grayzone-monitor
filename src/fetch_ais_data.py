@@ -226,28 +226,49 @@ def _is_lng_vessel(name, type_code):
     return False
 
 
-# --- 海警船偵測 (Coast Guard) ---
-# AIS 船種碼無法可靠識別海警船：實測中國海警船會廣播 type 90(other)、
-# 甚至 30-39(漁船) 等不實船種，因此改以「船名關鍵字」判定。
-# 聚焦中國海警（China Coast Guard, CCG），不納入台灣海巡（海巡署）關鍵字，
-# 以免將我方公務船誤併入同一灰色地帶分類。
+# --- 中國公務/特殊關注船偵測 (Government / Special-interest Vessels) ---
+# AIS 船種碼無法可靠識別這類船：實測會廣播 type 90(other)、50-59(special)、
+# 甚至 30-39(漁船) 等不實船種，因此改以「船名關鍵字」判定，並細分子類別：
+#   coastguard 海警 (China Coast Guard, CCG)
+#   msa        海巡 (海事局 Maritime Safety Administration)
+#   rescue     海救 (救助打撈局 Rescue & Salvage：東/南/北海救)
+#   research   科研/情報船 (科學考察/海洋調查船，常涉疑似違法投放儀器或闖入限制海域，
+#              例：向陽紅18、東方紅3、同濟、實驗、科學、探索)
+# 這些常以「编队」形式或單獨行動，同屬灰色地帶工具。
+# 聚焦中國船，不納入台灣海巡署關鍵字，以免誤併我方公務船。
 #
 # 註：曾考慮以 MMSI 區段（如 413875xxx）輔助判定，但實測該號段與民用船共用
 # （例：HUAHANG10DP / 413875213 並非海警船），會造成誤判，故僅採船名關鍵字。
-_COAST_GUARD_NAME_KEYWORDS = re.compile(
-    r'COAST\s*GUARD|\bCCG\d*\b|HAI\s*JING|海警|中国海警|中國海警|CHINA\s*COAST',
-    re.I,
-)
+# 研究船關鍵字以詞界（\b）限制，避免誤抓（例：AN TONG JING TANG 不應命中 TONG JI）。
+_GOV_VESSEL_PATTERNS = [
+    ('coastguard', re.compile(
+        r'COAST\s*GUARD|\bCCG\d*\b|HAI\s*JING|海警|中国海警|中國海警|CHINA\s*COAST',
+        re.I)),
+    ('msa', re.compile(r'HAI\s*XUN|海巡', re.I)),
+    ('rescue', re.compile(
+        r'(DONG|NAN|BEI)\s*HAI\s*JIU|[东東南北]海救|海救', re.I)),
+    ('research', re.compile(
+        r'XIANG\s*YANG\s*HONG|DONG\s*FANG\s*HONG|\bTONG\s*JI\b|\bKE\s*XUE\b|'
+        r'\bSHI\s*YAN|\bTAN\s*SUO|ZHU\s*HAI\s*YUN|'
+        r'向阳红|向陽紅|东方红|東方紅|同济|同濟|科学考察|科考|勘探|'
+        r'海洋调查|海洋調查|实验|實驗|探索',
+        re.I)),
+]
+
+
+def classify_gov_vessel(name):
+    """回傳子類別 'coastguard'/'msa'/'rescue'/'research'，非目標船回傳 None。"""
+    if not name:
+        return None
+    for category, pat in _GOV_VESSEL_PATTERNS:
+        if pat.search(name):
+            return category
+    return None
 
 
 def is_coast_guard_vessel(name, mmsi=None):
-    """判斷是否為（中國）海警公務船，以船名關鍵字判定。
-
-    mmsi 參數保留以利未來擴充，目前不參與判定（號段與民用船共用會誤判）。
-    """
-    if name and _COAST_GUARD_NAME_KEYWORDS.search(name):
-        return True
-    return False
+    """相容舊介面：判斷是否為海警船（coastguard 子類）。mmsi 不參與判定。"""
+    return classify_gov_vessel(name) == 'coastguard'
 
 
 # --- 資料收集 ---
@@ -341,11 +362,12 @@ def collect_ais_data():
         # LNG / 天然氣船偵測
         is_lng = _is_lng_vessel(ship_name, type_code)
 
-        # 海警船偵測（船名關鍵字 + 已知 MMSI 區段）
-        # 命中時覆寫 type_name，修正 AIS 將海警船誤報為漁船/其他的問題
-        is_coast_guard = is_coast_guard_vessel(ship_name, mmsi)
-        if is_coast_guard:
-            type_name = 'coastguard'
+        # 中國公務船偵測（海警/海巡/海救），命中時覆寫 type_name，
+        # 修正 AIS 將公務船誤報為漁船/special/other 的問題
+        gov_type = classify_gov_vessel(ship_name)
+        is_coast_guard = gov_type == 'coastguard'
+        if gov_type:
+            type_name = gov_type
 
         vessels[mmsi] = {
             'mmsi': mmsi,
@@ -362,6 +384,7 @@ def collect_ais_data():
             'destination': destination,
             'is_lng': is_lng,
             'is_coast_guard': is_coast_guard,
+            'gov_type': gov_type,
             'in_fishing_hotspot': fishing_hotspot,
             'suspicious': suspicious,
             'record_time': record_time,
@@ -379,6 +402,7 @@ def analyze_data(vessels):
         'total_vessels': len(vessels),
         'fishing_vessels': sum(1 for v in vessels.values() if v['type_name'] == 'fishing'),
         'coast_guard_vessels': sum(1 for v in vessels.values() if v.get('is_coast_guard')),
+        'gov_vessels': sum(1 for v in vessels.values() if v.get('gov_type')),
         'suspicious_count': 0,
         'avg_speed': 0.0,
         'by_type': defaultdict(int),
@@ -660,11 +684,11 @@ def save_all(vessels, stats):
             # frontend animation classify anchoring separately. Omitted otherwise
             # to keep this browser-served file small.
             **({'anc': 1} if str(v.get('nav_status', '')) in ('1', '5') else {}),
-            # 海警船旗標 — 供前端動畫/軌跡特別標示中國海警公務船
-            **({'cg': 1} if v.get('is_coast_guard') else {}),
+            # 公務船旗標 — 供前端動畫/軌跡特別標示中國公務船(海警/海巡/海救)
+            **({'gov': v['gov_type']} if v.get('gov_type') else {}),
         }
         for v in vessel_list
-        if is_cn_fishing_vessel(v.get('name')) or v.get('suspicious') or v.get('is_coast_guard')
+        if is_cn_fishing_vessel(v.get('name')) or v.get('suspicious') or v.get('gov_type')
     ]
 
     track_entry = {
