@@ -285,9 +285,10 @@ PORTS = {
 }
 
 # ── 大陸沿岸主要港口/錨地（監測範圍內）──────────────────
-# 大陸漁船多在自家港口/錨地旁靠補給、整補，屬例行作業而非對台灰色地帶活動，
-# 應與台灣港口一併排除（使用較大半徑涵蓋大型商港的外海錨地）。
-# 涵蓋福建沿岸（正對台灣）為主，並含粵東、浙南鄰近海域。
+# 大陸漁船多在自家港口/錨地/灣內旁靠補給、整補，屬例行作業而非對台灰色地帶活動，
+# 應與台灣港口一併排除。值為 (lat, lon) 預設 8km，或 (lat, lon, 半徑km) 指定半徑。
+# 涵蓋福建沿岸（正對台灣）為主，並含粵東、浙南鄰近海域；所有區域皆位於海峽中線
+# 以西，半徑經過驗證不會觸及澎湖或海峽中央的開放海域。
 CN_PORTS = {
     # ── 浙江南部 South Zhejiang ──
     "溫州 Wenzhou":          (27.9000, 120.8500),
@@ -296,13 +297,19 @@ CN_PORTS = {
     "寧德三都澳 Ningde":      (26.6600, 119.5500),
     "福州馬尾 Fuzhou-Mawei":  (26.0500, 119.4500),
     "福州江陰 Fuzhou-Jiangyin":(25.9500, 119.6200),
+    "福清灣/海壇 Fuqing":     (25.9200, 119.4000, 12.0),
     "平潭 Pingtan":           (25.5000, 119.7900),
     "莆田湄洲灣 Putian":      (25.0800, 119.1000),
+    "湄洲灣泉港 Meizhouwan":  (24.9600, 119.0200, 9.0),
     "泉州 Quanzhou":          (24.8100, 118.6900),
     "廈門 Xiamen":            (24.4500, 118.0700),
+    "同安灣/廈門灣北 Tongan": (24.5800, 118.1200, 11.0),
+    "大嶝/圍頭灣 Weitou":     (24.5500, 118.2500, 10.0),
+    "深滬灣/圍頭東 Shenhu":   (24.5900, 118.4100, 10.0),
     "漳州東山 Dongshan":      (23.7000, 117.5000),
     # ── 廣東東部 East Guangdong ──
     "汕頭 Shantou":           (23.3500, 116.6800),
+    "汕頭港外 Shantou-appr":  (23.2600, 116.8000, 8.0),
     "惠來 Huilai":            (23.0300, 116.3000),
 }
 
@@ -330,12 +337,15 @@ def haversine_km(lat1, lon1, lat2, lon2):
 
 
 def is_in_port(lat, lon):
-    """檢查是否在任何港口排除區域內（台灣港口 2km；大陸沿岸大型港口/錨地 8km）"""
+    """檢查是否在任何港口排除區域內（台灣港口 2km；大陸沿岸港口/灣內預設 8km，
+    部分大型灣澳以 CN_PORTS 第三元素指定半徑）"""
     for name, (plat, plon) in PORTS.items():
         if haversine_km(lat, lon, plat, plon) < PORT_EXCLUSION_KM:
             return name
-    for name, (plat, plon) in CN_PORTS.items():
-        if haversine_km(lat, lon, plat, plon) < CN_PORT_EXCLUSION_KM:
+    for name, coords in CN_PORTS.items():
+        plat, plon = coords[0], coords[1]
+        radius = coords[2] if len(coords) > 2 else CN_PORT_EXCLUSION_KM
+        if haversine_km(lat, lon, plat, plon) < radius:
             return name
     return None
 
