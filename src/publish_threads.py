@@ -520,6 +520,42 @@ def _load_eternal1_context():
     return ""
 
 
+def _collect_gov_vessels_context(data):
+    """彙整目前在監測海域的中國公務/關注船（海警/海巡/海救/科研），供 LLM 撰文。"""
+    try:
+        sys.path.insert(0, str(SRC_DIR))
+        from fetch_ais_data import classify_gov_vessel
+    except Exception:
+        return ""
+
+    vessels = (data.get("ais_snapshot", {}) or {}).get("vessels", []) or []
+    cat_label = {
+        "coastguard": "海警船",
+        "msa": "海巡（海事局）公務船",
+        "rescue": "海救（救助局）公務船",
+        "research": "科研／情報船",
+    }
+    groups = {k: [] for k in cat_label}
+    for v in vessels:
+        cat = classify_gov_vessel(v.get("name", ""))
+        if cat in groups:
+            groups[cat].append(v)
+    if not any(groups.values()):
+        return ""
+
+    lines = ["\n\n目前在監測海域的中國公務／關注船（依船名關鍵字辨識）："]
+    for cat, label in cat_label.items():
+        vs = groups[cat]
+        if not vs:
+            continue
+        names = []
+        for v in vs[:6]:
+            nm = (v.get("name") or "").strip() or f"MMSI-{v.get('mmsi')}"
+            names.append(f"{nm}（{round(v.get('lat', 0), 2)}N,{round(v.get('lon', 0), 2)}E）")
+        lines.append(f"- {label}：{len(vs)} 艘 — " + "；".join(names))
+    return "\n".join(lines)
+
+
 def generate_llm_post(summary, data, top_vessels=None):
     """Use Gemini API to generate a witty, informative 5-day briefing for Threads."""
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -577,6 +613,7 @@ def generate_llm_post(summary, data, top_vessels=None):
 
     has_vessel_images = bool(top_vessels)
     eternal1_context = _load_eternal1_context()
+    gov_context = _collect_gov_vessels_context(data)
 
     prompt = f"""你是一條養在 GitHub 上的蝦子，每天被煮人狂操，工作根本做不完。
 請用這個角色設定，根據以下近 5 天的數據，用**中文**撰寫一則 Threads 週報貼文。
@@ -589,14 +626,18 @@ def generate_llm_post(summary, data, top_vessels=None):
 1. 開頭讓蝦子大聲抱怨工作排程有多爆：每 2 小時、每 12 小時、每週 Threads，煮人到底有沒有在考慮蝦子的感受
 2. 中間自然帶出偵測邏輯：分數怎麼算的、這週有沒有高風險船隻、蝦子的看法
 3. 重點報告本周商船危險係數最高者
-4. 結尾蝦子小聲吐槽：「附帶一提，現在幫我生這篇文的是 Gemini。但煮人你看看這串 context 有多長，Gemini 的 token 根本不夠用啊。下次能不能麻煩用 Claude token 來餵我？蝦子謝謝。」
-5. 語氣：詼諧幽默、知性、帶點怨氣但不失專業，就是一條工作過量快崩潰的蝦子
-6. 長度：{"100~200 字" if has_vessel_images else "200~350 字"}
-7. emoji 只用一次 🦐，放在最合適的地方
-8. 最後一行加上: https://s0914712.github.io/taiwan-grayzone-monitor/
-9. 不要用 markdown 格式，純文字即可
+4. 若資料中出現中國公務／關注船（海警、海巡、海救、科研／情報船），務必用一段話點名說明牠們的「入侵」意涵：
+   - 海警船：以執法為名在台灣周邊海域常態化巡弋、施壓，是典型灰色地帶脅迫手段
+   - 科研／情報船（如「同濟號」「向陽紅18號」「東方紅3號」）：名為海洋科研，實則曾涉嫌違法投放儀器、闖入台灣限制水域進行水文與海底地形測繪，具軍事偵察用途
+   只描述資料中實際出現的船種，沒出現的就別硬掰
+5. 結尾蝦子小聲吐槽：「附帶一提，現在幫我生這篇文的是 Gemini。但煮人你看看這串 context 有多長，Gemini 的 token 根本不夠用啊。下次能不能麻煩用 Claude token 來餵我？蝦子謝謝。」
+6. 語氣：詼諧幽默、知性、帶點怨氣但不失專業，就是一條工作過量快崩潰的蝦子
+7. 長度：{"150~250 字" if has_vessel_images else "250~400 字"}
+8. emoji 只用一次 🦐，放在最合適的地方
+9. 最後一行加上: https://s0914712.github.io/taiwan-grayzone-monitor/
+10. 不要用 markdown 格式，純文字即可
 
-{context}{vessel_context}{eternal1_context}
+{context}{vessel_context}{gov_context}{eternal1_context}
 
 直接輸出貼文內容，不要加任何前言或解釋。"""
 

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-海警船歷史航跡圖產生器 — Taiwan Gray Zone Monitor
+中國公務/特殊關注船歷史航跡圖產生器 — Taiwan Gray Zone Monitor
 
-掃描 docs/vessel_routes/ 內所有逐船航跡檔，挑出（中國）海警公務船，
+掃描 docs/vessel_routes/ 內所有逐船航跡檔，挑出中國公務/特殊關注船並依子類別
+（海警 coastguard / 海巡 msa / 海救 rescue / 科研·情報 research）著色，
 將其 14 天歷史航跡疊繪於同一張暗色主題地圖上（含台灣輪廓與海底電纜背景）。
 
 用法：
-    python3 src/plot_coast_guard_tracks.py [-o 輸出路徑.png]
+    python3 src/plot_gov_vessel_tracks.py [-o 輸出路徑.png]
 
-預設輸出：docs/coast_guard_tracks.png
+預設輸出：docs/cn_gov_vessel_tracks.png
 """
 import argparse
 import glob
@@ -24,7 +25,7 @@ SRC_DIR = BASE_DIR / "src"
 ROUTES_DIR = DOCS_DIR / "vessel_routes"
 
 sys.path.insert(0, str(SRC_DIR))
-from fetch_ais_data import is_coast_guard_vessel  # noqa: E402
+from fetch_ais_data import classify_gov_vessel  # noqa: E402
 
 # 台灣本島簡化輪廓座標 (lat, lon) — 與 publish_threads.py 一致
 TAIWAN_COASTLINE = [
@@ -39,11 +40,20 @@ TAIWAN_COASTLINE = [
     (25.10, 121.25), (25.29, 121.57),
 ]
 
-# 每艘海警船的航跡配色（白底海警船以亮色系區分）
-TRACK_COLORS = [
-    '#ffd700', '#00f5ff', '#ff6b35', '#c8ff3d',
-    '#ff5e8a', '#9d7bff', '#00ff88', '#ff3366',
-]
+# 各子類別配色（與前端 docs/js/map.js VESSEL_COLORS 一致）
+CATEGORY_COLOR = {
+    'coastguard': '#ffffff',  # 海警 (white)
+    'msa':        '#4d9fff',  # 海巡 (blue)
+    'rescue':     '#ff9500',  # 海救 (orange)
+    'research':   '#c77dff',  # 科研/情報 (purple)
+}
+CATEGORY_LABEL = {
+    'coastguard': 'Coast Guard (海警)',
+    'msa':        'MSA Patrol (海巡)',
+    'rescue':     'Rescue & Salvage (海救)',
+    'research':   'Research / Intel (科研)',
+}
+CATEGORY_ORDER = ['coastguard', 'msa', 'rescue', 'research']
 
 
 def _load_cable_segments():
@@ -68,8 +78,8 @@ def _load_cable_segments():
     return segments
 
 
-def find_coast_guard_routes():
-    """掃描所有逐船航跡檔，回傳海警船航跡清單（依航跡點數排序）。"""
+def find_gov_routes():
+    """掃描所有逐船航跡檔，回傳公務/關注船航跡清單（含 category）。"""
     vessels = []
     for path in glob.glob(str(ROUTES_DIR / "*.json")):
         try:
@@ -77,15 +87,21 @@ def find_coast_guard_routes():
                 d = json.load(f)
         except Exception:
             continue
-        name = d.get('name', '')
-        mmsi = d.get('mmsi', '')
-        if not is_coast_guard_vessel(name, mmsi):
+        category = classify_gov_vessel(d.get('name', ''))
+        if not category:
             continue
         track = d.get('track', [])
         if not track:
             continue
-        vessels.append({'name': name, 'mmsi': mmsi, 'track': track})
-    vessels.sort(key=lambda v: len(v['track']), reverse=True)
+        vessels.append({
+            'name': d.get('name', ''),
+            'mmsi': d.get('mmsi', ''),
+            'category': category,
+            'track': track,
+        })
+    # 依類別、再依航跡點數排序
+    order = {c: i for i, c in enumerate(CATEGORY_ORDER)}
+    vessels.sort(key=lambda v: (order.get(v['category'], 9), -len(v['track'])))
     return vessels
 
 
@@ -93,9 +109,15 @@ def plot_tracks(vessels, output_path):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
+
+    # 啟用 CJK 字型（若系統有 WenQuanYi/Noto，否則退回 DejaVu）
+    plt.rcParams['font.sans-serif'] = [
+        'WenQuanYi Zen Hei', 'Noto Sans CJK TC', 'Noto Sans CJK SC', 'DejaVu Sans']
+    plt.rcParams['axes.unicode_minus'] = False
 
     if not vessels:
-        print("⚠️ 找不到任何海警船航跡，略過繪圖")
+        print("⚠️ 找不到任何公務/關注船航跡，略過繪圖")
         return None
 
     cable_segments = _load_cable_segments()
@@ -127,39 +149,48 @@ def plot_tracks(vessels, output_path):
             ax.plot(clons, clats, color='#00f5ff', alpha=0.18, linewidth=0.7,
                     linestyle='--', zorder=2)
 
-    # 逐艘海警船航跡
-    for i, v in enumerate(vessels):
-        color = TRACK_COLORS[i % len(TRACK_COLORS)]
+    # 逐艘航跡（依子類別著色）
+    for v in vessels:
+        color = CATEGORY_COLOR.get(v['category'], '#888888')
         lats = [p['lat'] for p in v['track']]
         lons = [p['lon'] for p in v['track']]
-        label = f"{v['name']} ({v['mmsi']})"
-        ax.plot(lons, lats, color=color, linewidth=1.8, alpha=0.9,
-                marker='o', markersize=3, zorder=3, label=label)
-        # 起點（圓）/ 終點（方）
-        ax.plot(lons[0], lats[0], 'o', color=color, markersize=8, zorder=4,
+        ax.plot(lons, lats, color=color, linewidth=1.6, alpha=0.9,
+                marker='o', markersize=2.5, zorder=3)
+        ax.plot(lons[0], lats[0], 'o', color=color, markersize=7, zorder=4,
                 markeredgecolor='white', markeredgewidth=0.6)
-        ax.plot(lons[-1], lats[-1], 's', color=color, markersize=8, zorder=4,
+        ax.plot(lons[-1], lats[-1], 's', color=color, markersize=7, zorder=4,
                 markeredgecolor='white', markeredgewidth=0.6)
 
-    # 標題與資訊框
-    spans = []
+    # 資訊框
+    spans = [p.get('t', '') for v in vessels for p in v['track'] if p.get('t')]
+    counts = {}
     for v in vessels:
-        ts = [p.get('t', '') for p in v['track'] if p.get('t')]
-        spans.extend(ts)
+        counts[v['category']] = counts.get(v['category'], 0) + 1
     info_lines = [
-        f"China Coast Guard Tracks  ({len(vessels)} vessels)",
-    ]
+        f"China Gov / Special-interest Vessel Tracks  ({len(vessels)} vessels)"]
     if spans:
         info_lines.append(f"Track window: {min(spans)[:10]} → {max(spans)[:10]}")
+    summary = "  ".join(f"{CATEGORY_LABEL[c].split(' (')[0]}: {counts[c]}"
+                        for c in CATEGORY_ORDER if c in counts)
+    if summary:
+        info_lines.append(summary)
     ax.text(0.02, 0.98, "\n".join(info_lines), transform=ax.transAxes,
             fontsize=9, color='#e8eef7', verticalalignment='top',
             bbox=dict(boxstyle='round,pad=0.5', facecolor='#141e32', alpha=0.9,
                       edgecolor='#2a3a5a'), zorder=5)
 
-    ax.plot([], [], '--', color='#00f5ff', alpha=0.4, linewidth=1,
-            label='Submarine cables')
-    ax.legend(loc='lower right', fontsize=7, facecolor='#141e32',
-              edgecolor='#2a3a5a', labelcolor='#8aa4c8')
+    # 類別圖例（只列出現的類別）
+    legend_handles = [
+        Line2D([0], [0], color=CATEGORY_COLOR[c], lw=2, marker='o',
+               markeredgecolor='white', markeredgewidth=0.5,
+               label=CATEGORY_LABEL[c])
+        for c in CATEGORY_ORDER if c in counts
+    ]
+    legend_handles.append(
+        Line2D([0], [0], color='#00f5ff', lw=1, ls='--', alpha=0.5,
+               label='Submarine cables'))
+    ax.legend(handles=legend_handles, loc='lower right', fontsize=7,
+              facecolor='#141e32', edgecolor='#2a3a5a', labelcolor='#8aa4c8')
 
     ax.set_xlim(lon_min, lon_max)
     ax.set_ylim(lat_min, lat_max)
@@ -174,20 +205,22 @@ def plot_tracks(vessels, output_path):
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     fig.savefig(output_path, dpi=200, bbox_inches='tight', facecolor='#0a1628')
     plt.close(fig)
-    print(f"✅ 海警船航跡圖已輸出: {output_path}")
+    print(f"✅ 公務/關注船航跡圖已輸出: {output_path}")
     return output_path
 
 
 def main():
-    ap = argparse.ArgumentParser(description="產生海警船歷史航跡圖")
-    ap.add_argument('-o', '--output', default=str(DOCS_DIR / "coast_guard_tracks.png"),
+    ap = argparse.ArgumentParser(description="產生中國公務/關注船歷史航跡圖")
+    ap.add_argument('-o', '--output',
+                    default=str(DOCS_DIR / "cn_gov_vessel_tracks.png"),
                     help="輸出 PNG 路徑")
     args = ap.parse_args()
 
-    vessels = find_coast_guard_routes()
-    print(f"🔎 偵測到 {len(vessels)} 艘海警船:")
+    vessels = find_gov_routes()
+    print(f"🔎 偵測到 {len(vessels)} 艘公務/關注船:")
     for v in vessels:
-        print(f"   - {v['name']} ({v['mmsi']}) | {len(v['track'])} 航跡點")
+        print(f"   - [{v['category']:10}] {v['name']} ({v['mmsi']}) | "
+              f"{len(v['track'])} 航跡點")
     plot_tracks(vessels, args.output)
 
 
