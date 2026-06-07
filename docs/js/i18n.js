@@ -49,7 +49,7 @@ const i18n = (function () {
         'common.unknown':        { zh: '未知', en: 'Unknown' },
 
         // ── 頁面標題 Page Titles ──
-        'title.index':           { zh: '🛰️ 台灣灰色地帶監測', en: '🛰️ Taiwan Gray Zone Monitor' },
+        'title.index':           { zh: '🛰️ 台灣灰色地帶與海底電纜監測', en: '🛰️ Taiwan Gray Zone & Submarine Cable Monitor' },
         'title.dark':            { zh: '🔦 暗船偵測 Dark Vessel Detection', en: '🔦 Dark Vessel Detection' },
         'title.stats':           { zh: '📊 統計分析 Statistics', en: '📊 Statistical Analysis' },
         'title.anim':            { zh: '🎬 暗船動畫 Dark Vessel Animation', en: '🎬 Dark Vessel Animation' },
@@ -183,7 +183,7 @@ const i18n = (function () {
         'idx.about_refs':        { zh: '參考文獻', en: 'References' },
 
         // ── Introduction 頁面 ──
-        'intro.hero_title':      { zh: '台灣周邊海域灰色地帶監測', en: 'Gray Zone Activity Monitor around Taiwan' },
+        'intro.hero_title':      { zh: '台灣周邊海域灰色地帶與海底電纜監測', en: 'Gray Zone & Submarine Cable Monitor around Taiwan' },
         'intro.hero_subtitle':   { zh: '開源衛星數據 • 即時船舶追蹤 • 海纜安全', en: 'Open Satellite Data • Real-time Vessel Tracking • Cable Security' },
         'intro.gz_title':        { zh: '🌊 什麼是灰色地帶活動？', en: '🌊 What is Gray Zone Activity?' },
         'intro.gz_p1':           { zh: '「灰色地帶」是指介於和平與戰爭之間的模糊狀態。在台灣周邊海域，這包括：大量漁船越界作業、船隻關閉 AIS 定位訊號成為「暗船」、海上民兵偽裝為漁船活動，以及與軍事演習高度相關的異常船舶行為。', en: 'The "gray zone" refers to the ambiguous space between peace and war. Around Taiwan, this includes: fishing fleets crossing maritime boundaries, vessels disabling AIS transponders to become "dark ships," maritime militia disguised as fishing boats, and anomalous vessel behavior closely correlated with military exercises.' },
@@ -465,7 +465,7 @@ const i18n = (function () {
         'ob.done':               { zh: '開始使用', en: 'Get Started' },
         'ob.step':               { zh: '{0} / {1}', en: '{0} / {1}' },
 
-        'ob.t1':                 { zh: '歡迎使用台灣灰色地帶監測', en: 'Welcome to Taiwan Gray Zone Monitor' },
+        'ob.t1':                 { zh: '歡迎使用台灣灰色地帶與海底電纜監測', en: 'Welcome to Taiwan Gray Zone & Submarine Cable Monitor' },
         'ob.d1':                 { zh: '本系統整合 AIS 船舶資料與 SAR 衛星影像，即時監控台灣周邊海域的灰色地帶活動。以下快速介紹主要功能。', en: 'This system integrates AIS vessel data and SAR satellite imagery to monitor gray zone maritime activity around Taiwan in real time. Here\'s a quick tour of key features.' },
 
         'ob.t2':                 { zh: '海纜威脅偵測', en: 'Cable Threat Detection' },
