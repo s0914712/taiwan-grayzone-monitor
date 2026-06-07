@@ -49,7 +49,7 @@ const i18n = (function () {
         'common.unknown':        { zh: '未知', en: 'Unknown' },
 
         // ── 頁面標題 Page Titles ──
-        'title.index':           { zh: '🛰️ 台灣灰色地帶監測', en: '🛰️ Taiwan Gray Zone Monitor' },
+        'title.index':           { zh: '🛰️ 台灣灰色地帶與海底電纜監測', en: '🛰️ Taiwan Gray Zone & Submarine Cable Monitor' },
         'title.dark':            { zh: '🔦 暗船偵測 Dark Vessel Detection', en: '🔦 Dark Vessel Detection' },
         'title.stats':           { zh: '📊 統計分析 Statistics', en: '📊 Statistical Analysis' },
         'title.anim':            { zh: '🎬 暗船動畫 Dark Vessel Animation', en: '🎬 Dark Vessel Animation' },
@@ -463,7 +463,7 @@ const i18n = (function () {
         'ob.done':               { zh: '開始使用', en: 'Get Started' },
         'ob.step':               { zh: '{0} / {1}', en: '{0} / {1}' },
 
-        'ob.t1':                 { zh: '歡迎使用台灣灰色地帶監測', en: 'Welcome to Taiwan Gray Zone Monitor' },
+        'ob.t1':                 { zh: '歡迎使用台灣灰色地帶與海底電纜監測', en: 'Welcome to Taiwan Gray Zone & Submarine Cable Monitor' },
         'ob.d1':                 { zh: '本系統整合 AIS 船舶資料與 SAR 衛星影像，即時監控台灣周邊海域的灰色地帶活動。以下快速介紹主要功能。', en: 'This system integrates AIS vessel data and SAR satellite imagery to monitor gray zone maritime activity around Taiwan in real time. Here\'s a quick tour of key features.' },
 
         'ob.t2':                 { zh: '海纜威脅偵測', en: 'Cable Threat Detection' },
