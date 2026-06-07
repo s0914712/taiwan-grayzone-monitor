@@ -15,6 +15,7 @@ import argparse
 import glob
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -54,6 +55,28 @@ CATEGORY_LABEL = {
     'research':   'Research / Intel (科研)',
 }
 CATEGORY_ORDER = ['coastguard', 'msa', 'rescue', 'research']
+
+# 地理參考點 (lat, lon, 標籤) — 只繪製落在當前視野內者
+LANDMARKS = [
+    (23.75, 120.95, '台灣 Taiwan'),
+    (24.10, 119.30, '台灣海峽'),
+    (24.43, 118.32, '金門'),
+    (26.16, 119.95, '馬祖'),
+    (23.57, 119.62, '澎湖'),
+    (22.45, 117.60, '台灣淺灘'),
+    (21.60, 120.95, '巴士海峽'),
+    (25.10, 119.45, '閩江口'),
+    (25.10, 118.30, '福建'),
+    (27.80, 122.00, '東海'),
+    (21.40, 117.80, '南海北部'),
+]
+
+
+def _short_name(name):
+    """縮短船名以利在航跡旁標示。"""
+    s = re.sub(r'\s+', ' ', (name or '').strip())
+    s = re.sub(r'CHINA\s*COAST\s*GUARD', 'CCG', s, flags=re.I)
+    return s or '?'
 
 
 def _load_cable_segments():
@@ -109,6 +132,7 @@ def plot_tracks(vessels, output_path):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+    import matplotlib.patheffects as pe
     from matplotlib.lines import Line2D
 
     # 啟用 CJK 字型（若系統有 WenQuanYi/Noto，否則退回 DejaVu）
@@ -149,7 +173,17 @@ def plot_tracks(vessels, output_path):
             ax.plot(clons, clats, color='#00f5ff', alpha=0.18, linewidth=0.7,
                     linestyle='--', zorder=2)
 
-    # 逐艘航跡（依子類別著色）
+    # 地理參考地名（僅繪製視野內者）
+    for la, lo, label in LANDMARKS:
+        if lat_min <= la <= lat_max and lon_min <= lo <= lon_max:
+            ax.text(lo, la, label, fontsize=8, color='#6b86b0',
+                    style='italic', ha='center', va='center', zorder=2,
+                    alpha=0.85)
+
+    # 描邊樣式，讓航跡旁的船名在暗底上清晰可讀
+    stroke = [pe.withStroke(linewidth=2.2, foreground='#0a1628')]
+
+    # 逐艘航跡（依子類別著色，並在終點旁標示船名 + 位置）
     for v in vessels:
         color = CATEGORY_COLOR.get(v['category'], '#888888')
         lats = [p['lat'] for p in v['track']]
@@ -160,6 +194,12 @@ def plot_tracks(vessels, output_path):
                 markeredgecolor='white', markeredgewidth=0.6)
         ax.plot(lons[-1], lats[-1], 's', color=color, markersize=7, zorder=4,
                 markeredgecolor='white', markeredgewidth=0.6)
+        # 航跡旁標示：船名 + 最新位置座標（終點＝方形標記）
+        label = f"{_short_name(v['name'])}\n{lats[-1]:.2f}N,{lons[-1]:.2f}E"
+        ax.annotate(label, (lons[-1], lats[-1]),
+                    textcoords='offset points', xytext=(6, 5),
+                    fontsize=6, color=color, zorder=6,
+                    path_effects=stroke)
 
     # 資訊框
     spans = [p.get('t', '') for v in vessels for p in v['track'] if p.get('t')]
