@@ -11,7 +11,7 @@ Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates A
 - `docs/` — Frontend (GitHub Pages root). HTML, CSS, JS, and JSON data files
 - `src/` — Python data pipeline scripts (fetch, analyze, generate)
 - `data/` — Working/intermediate data (not served to frontend)
-- `.github/workflows/` — 3 CI workflows (AIS every 2h, full pipeline every 12h, Threads weekly)
+- `.github/workflows/` — 3 CI workflows (AIS every 2h, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, Threads weekly)
 
 ## Tech Stack
 - **Frontend:** Vanilla HTML/CSS/JS, Leaflet 1.9.4 (maps), Chart.js 4.4.0 (charts)
