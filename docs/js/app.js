@@ -812,7 +812,7 @@ const App = (function () {
         const dark = document.getElementById('ovDarkVessels')?.textContent || '--';
         const susp = document.getElementById('ovSuspicious')?.textContent || '--';
         const date = new Date().toLocaleDateString('zh-TW');
-        return '🛰️ 台灣灰色地帶監測 ' + date +
+        return '🛰️ 台灣灰色地帶與海底電纜監測 ' + date +
                '\nAIS 船隻: ' + ais +
                ' | 暗船: ' + dark +
                ' | 可疑: ' + susp +
