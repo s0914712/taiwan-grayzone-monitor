@@ -90,7 +90,7 @@ const App = (function () {
                     ChartsModule.updateAisStats(result.stats);
 
                     updateVesselList();
-                    updateBottomSheetLng();
+                    updateGovVesselList();
                 }
             });
         }
@@ -194,7 +194,7 @@ const App = (function () {
             </div>`;
         }
 
-        // Stats + suspicious + LNG section (only on index)
+        // Stats + gov/research vessels + suspicious section (only on index)
         if (isIndex) {
             sheetHTML += `
             <div class="bottom-sheet-section">
@@ -207,8 +207,8 @@ const App = (function () {
                 </div>
             </div>
             <div class="bottom-sheet-section">
-                <div class="bottom-sheet-title">⛽ LNG/Gas 船隻</div>
-                <div id="bsLngList" class="bs-lng-list"><span style="color:var(--text-secondary);font-size:13px">載入中...</span></div>
+                <div class="bottom-sheet-title" data-i18n="idx.gov_title">🛡️ 中國公務／科研船追蹤</div>
+                <div id="bsGovList" class="bs-lng-list"><span style="color:var(--text-secondary);font-size:13px">載入中...</span></div>
             </div>
             <div class="bottom-sheet-section">
                 <div class="bottom-sheet-title" data-i18n="bs.suspicious">可疑船隻</div>
@@ -276,7 +276,7 @@ const App = (function () {
 
                     updateVesselList();
                     updateBottomSheetStats(result.stats);
-                    updateBottomSheetLng();
+                    updateGovVesselList();
                 }
             });
         }
@@ -360,28 +360,56 @@ const App = (function () {
     }
 
     /**
-     * Update bottom sheet LNG vessel list
+     * Update China gov / research vessel tracking list (sidebar + bottom sheet).
+     * Scans the full AIS snapshot (rawVesselList) so vessels are listed even
+     * when the map is zoomed out into cluster mode.
      */
-    function updateBottomSheetLng() {
-        const list = document.getElementById('bsLngList');
-        if (!list) return;
+    function updateGovVesselList() {
+        const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+        const getGov = MapModule.getGovType;
+        const govLabel = MapModule.govLabel;
+        const icon = MapModule.GOV_BADGE_ICON || {};
 
-        const lngVessels = Array.from(vessels.values()).filter(v =>
-            v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '')
-        );
+        const govVessels = (rawVesselList || [])
+            .map(v => ({ v: v, cat: getGov(v) }))
+            .filter(o => o.cat);
 
-        if (lngVessels.length === 0) {
-            list.innerHTML = '<span style="color:var(--text-secondary);font-size:13px">目前無 LNG/Gas 船隻</span>';
-            return;
+        // Order by category (coastguard → msa → rescue → research)
+        const order = MapModule.GOV_TYPES || ['coastguard', 'msa', 'rescue', 'research'];
+        govVessels.sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
+
+        const section = document.getElementById('govVesselSection');
+        if (section) section.style.display = govVessels.length ? '' : 'none';
+
+        const rowHtml = (o) => {
+            const v = o.v;
+            const color = MapModule.VESSEL_COLORS[o.cat] || MapModule.VESSEL_COLORS.other;
+            return '<div class="suspicious-item" onclick="App.focusVessel(\'' + v.mmsi + '\')" ' +
+                'title="' + govLabel(o.cat) + '">' +
+                '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+                    (icon[o.cat] || '') + ' ' + (v.name || 'Unknown').substring(0, 16) +
+                '</span>' +
+                '<span class="risk-badge" style="background:' + color + ';color:#0a0f1c">' +
+                    govLabel(o.cat) +
+                '</span>' +
+            '</div>';
+        };
+
+        const emptyMsg = '<div style="font-size:12px;color:var(--text-secondary);padding:8px">' +
+            t('idx.gov_none') + '</div>';
+
+        const sideList = document.getElementById('govVesselList');
+        if (sideList) {
+            sideList.innerHTML = govVessels.length
+                ? govVessels.slice(0, 15).map(rowHtml).join('')
+                : emptyMsg;
         }
-
-        list.innerHTML = lngVessels.slice(0, 5).map((v, i) =>
-            '<div class="bs-lng-item" onclick="App.focusVessel(\'' + v.mmsi + '\')">' +
-                '<span class="bs-lng-num">' + (i + 1) + '</span>' +
-                '<span class="bs-lng-name">' + (v.name || 'Unknown').substring(0, 18) + '</span>' +
-                '<span class="bs-lng-speed">' + (v.speed || 0).toFixed(1) + ' kn</span>' +
-            '</div>'
-        ).join('');
+        const bsList = document.getElementById('bsGovList');
+        if (bsList) {
+            bsList.innerHTML = govVessels.length
+                ? govVessels.slice(0, 10).map(rowHtml).join('')
+                : emptyMsg;
+        }
     }
 
     /**
@@ -598,7 +626,7 @@ const App = (function () {
 
                 updateVesselList();
                 updateBottomSheetStats(result.stats);
-                updateBottomSheetLng();
+                updateGovVesselList();
 
                 setDataStatus(typeof i18n !== 'undefined' ? i18n.t('app.ais_sat_loaded') : '✅ AIS + 衛星資料已載入', true);
             } else if (data.vessel_monitoring) {
