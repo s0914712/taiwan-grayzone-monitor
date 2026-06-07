@@ -741,11 +741,9 @@ const MapModule = (function() {
             stats.total++;
 
             const isSuspicious = v.suspicious;
-            const isLng = v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '');
             const govType = getGovType(v);
             const color = isSuspicious ? '#ff3366'
                 : govType ? VESSEL_COLORS[govType]
-                : isLng ? VESSEL_COLORS.lng
                 : (VESSEL_COLORS[v.type_name] || VESSEL_COLORS.other);
 
             // Add glow ring for China public-service vessels (海警/海巡/海救)
@@ -773,20 +771,8 @@ const MapModule = (function() {
                 }).addTo(layers.vessels);
             }
 
-            // Add glow for LNG vessels
-            if (isLng) {
-                L.circleMarker([v.lat, v.lon], {
-                    radius: 14,
-                    fillColor: VESSEL_COLORS.lng,
-                    color: VESSEL_COLORS.lng,
-                    weight: 1,
-                    opacity: 0.25,
-                    fillOpacity: 0.10
-                }).addTo(layers.vessels);
-            }
-
             const heading = v.heading !== undefined && v.heading !== null ? v.heading : null;
-            const icon = createVesselIcon(color, isSuspicious || isLng || !!govType, heading);
+            const icon = createVesselIcon(color, isSuspicious || !!govType, heading);
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(layers.vessels);
 
             const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
@@ -804,9 +790,6 @@ const MapModule = (function() {
             const navLabel = _decodeNavStatus(v.nav_status);
             const navInfo = navLabel ? '<br>狀態: ' + navLabel : '';
             const imoInfo = v.imo && v.imo !== '0' ? '<br>IMO: ' + v.imo : '';
-            const lngBadge = isLng
-                ? '<br><b style="color:' + VESSEL_COLORS.lng + '">⛽ LNG/Gas Carrier</b>'
-                : '';
             const coastGuardBadge = govType
                 ? '<br><b style="color:' + VESSEL_COLORS[govType] + '">' + GOV_BADGE_ICON[govType] + ' ' + govLabel(govType) + '</b>'
                 : '';
@@ -825,7 +808,7 @@ const MapModule = (function() {
                 ${t('app.mmsi')} ${v.mmsi}${imoInfo}<br>
                 ${t('app.type')} ${v.type_name || t('common.unknown')}${flagLine}<br>
                 ${t('app.speed')} ${(v.speed || 0).toFixed(1)} kn<br>
-                航向: ${headingText}${navInfo}${coastGuardBadge}${lngBadge}${destInfo}${suspiciousInfo}${sanctionInfo}${routeLink}${mtLink}${netMarkerNote}
+                航向: ${headingText}${navInfo}${coastGuardBadge}${destInfo}${suspiciousInfo}${sanctionInfo}${routeLink}${mtLink}${netMarkerNote}
             `);
 
             vesselMarkers[v.mmsi] = marker;
@@ -1563,7 +1546,7 @@ const MapModule = (function() {
 
     /**
      * Locate and zoom to vessels of a specific type
-     * @param {string} type - 'fishing', 'cargo', 'tanker', 'lng', 'suspicious', 'other'
+     * @param {string} type - 'fishing','cargo','tanker','coastguard','msa','rescue','research','suspicious','other'
      */
     /**
      * Show a floating vessel list panel near the legend.
@@ -1615,9 +1598,6 @@ const MapModule = (function() {
         if (!map || cachedVesselList.length === 0) return;
 
         const matched = cachedVesselList.filter(v => {
-            if (type === 'lng') {
-                return v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '');
-            }
             if (type === 'suspicious') {
                 return v.suspicious;
             }
@@ -1625,19 +1605,12 @@ const MapModule = (function() {
                 return getGovType(v) === type;
             }
             if (type === 'other') {
-                const isLng = v.is_lng || /\b(LNG|LPG|FSRU|GAS)\b/i.test(v.name || '');
-                return !isLng && !getGovType(v) && !v.suspicious && !['fishing', 'cargo', 'tanker'].includes(v.type_name);
+                return !getGovType(v) && !v.suspicious && !['fishing', 'cargo', 'tanker'].includes(v.type_name);
             }
             return v.type_name === type;
         });
 
         if (matched.length === 0) return;
-
-        // LNG: show a clickable list panel instead of just zooming
-        if (type === 'lng') {
-            showVesselListPanel(matched, VESSEL_COLORS.lng, '⛽ LNG/Gas');
-            return;
-        }
 
         // China public-service vessels (海警/海巡/海救): show a clickable list panel
         if (GOV_TYPES.indexOf(type) !== -1) {
@@ -1924,6 +1897,10 @@ const MapModule = (function() {
         setSuspiciousData,
         showVesselInfoCard,
         getMidFlag,
+        getGovType,
+        govLabel,
+        GOV_BADGE_ICON,
+        GOV_TYPES,
         FISHING_HOTSPOTS,
         VESSEL_COLORS,
         REGION_COLORS,

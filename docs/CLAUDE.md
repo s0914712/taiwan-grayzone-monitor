@@ -40,7 +40,9 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 ### Vessel Type Colors
 `fishing: #00ff88` `cargo: #00f5ff` `tanker: #ff6b35` `lng: #f0e130` `coastguard: #ffffff` `msa: #4d9fff` `rescue: #ff9500` `research: #c77dff` `other: #ff3366` `unknown: #888`
 
-China gov / special-interest vessels render with a glow ring + enlarged icon + popup badge + clickable legend entry, by sub-category: 海警 coastguard (white 🛡️), 海巡 msa (blue ⚓), 海救 rescue (orange 🛟), 科研/情報 research (purple 🔬). `map.js` resolves the category via `getGovType(v)` (backend `gov_type` / `type_name`, falling back to `GOV_REGEX`); `locateVesselType` shows a per-category list panel. Keep `GOV_REGEX` in sync with `classify_gov_vessel()` in `src/fetch_ais_data.py`.
+China gov / special-interest vessels render with a glow ring + enlarged icon + popup badge + clickable legend entry, by sub-category: 海警 coastguard (white 🛡️), 海巡 msa (blue ⚓), 海救 rescue (orange 🛟), 科研/情報 research (purple 🔬). `map.js` resolves the category via `getGovType(v)` (exported; backend `gov_type` / `type_name`, falling back to `GOV_REGEX`); `locateVesselType` shows a per-category list panel. Keep `GOV_REGEX` in sync with `classify_gov_vessel()` in `src/fetch_ais_data.py`.
+
+The index homepage has a dedicated **公務／科研船追蹤** section (`#govVesselSection` sidebar + `#bsGovList` bottom sheet), filled by `updateGovVesselList()` (app.js) which scans the full AIS snapshot (`rawVesselList`) — so gov vessels are listed even when the map is zoomed out into cluster mode (single ships are otherwise invisible). The `lng`/LNG-Gas special marking (glow, badge, legend, list panel) was **removed**; the `VESSEL_COLORS.lng` constant remains but is unused.
 
 ### Responsive Breakpoints
 - `@media (max-width: 900px)` — Main mobile threshold (sidebar → drawer, bottom sheet appears)
