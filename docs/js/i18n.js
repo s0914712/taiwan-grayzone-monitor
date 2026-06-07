@@ -132,6 +132,8 @@ const i18n = (function () {
         'idx.sparkline':         { zh: '每日 SAR 偵測量', en: 'Daily SAR Detections' },
         'idx.suspicious_title':  { zh: '🔍 可疑船隻（海纜威脅偵測）', en: '🔍 Suspicious Vessels (Cable Threat)' },
         'idx.suspicious_wait':   { zh: '累積觀測資料中...', en: 'Accumulating data...' },
+        'idx.gov_title':         { zh: '🛡️ 中國公務／科研船追蹤', en: '🛡️ China Gov / Research Vessels' },
+        'idx.gov_none':          { zh: '目前海域無公務／科研船', en: 'No gov / research vessels in area' },
         'idx.identity_title':    { zh: '🔄 AIS 身分變更', en: '🔄 AIS Identity Changes' },
         'idx.identity_24h':      { zh: '24h 事件', en: '24h Events' },
         'idx.identity_7d':       { zh: '7d 事件', en: '7d Events' },
