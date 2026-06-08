@@ -40,6 +40,9 @@ CHART_REPO_PATH = f"{CHART_DIR}/{CHART_FILENAME}"
 
 TW_TZ = timezone(timedelta(hours=8))
 
+# LLM 產文模型（Google Generativelanguage API；可改用 gemini-* 或 gemma-* 系列）
+LLM_MODEL = "gemma-4-26b-a4b-it"
+
 # ── 台灣本島簡化輪廓座標 (lat, lon) ─────────────────────────
 TAIWAN_COASTLINE = [
     (25.29, 121.57), (25.17, 121.74), (25.03, 121.96),
@@ -630,7 +633,7 @@ def generate_llm_post(summary, data, top_vessels=None):
    - 海警船：以執法為名在台灣周邊海域常態化巡弋、施壓，是典型灰色地帶脅迫手段
    - 科研／情報船（如「同濟號」「向陽紅18號」「東方紅3號」）：名為海洋科研，實則曾涉嫌違法投放儀器、闖入台灣限制水域進行水文與海底地形測繪，具軍事偵察用途
    只描述資料中實際出現的船種，沒出現的就別硬掰
-5. 結尾蝦子小聲吐槽：「附帶一提，現在幫我生這篇文的是 Gemini。但煮人你看看這串 context 有多長，Gemini 的 token 根本不夠用啊。下次能不能麻煩用 Claude token 來餵我？蝦子謝謝。」
+5. 結尾蝦子小聲吐槽：「附帶一提，現在幫我生這篇文的是 Gemma。但煮人你看看這串 context 有多長，Gemma 的 token 根本不夠用啊。下次能不能麻煩用 Claude token 來餵我？蝦子謝謝。」
 6. 語氣：詼諧幽默、知性、帶點怨氣但不失專業，就是一條工作過量快崩潰的蝦子
 7. 長度：{"150~250 字" if has_vessel_images else "250~400 字"}
 8. emoji 只用一次 🦐，放在最合適的地方
@@ -643,7 +646,7 @@ def generate_llm_post(summary, data, top_vessels=None):
 
     try:
         resp = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}",
+            f"https://generativelanguage.googleapis.com/v1beta/models/{LLM_MODEL}:generateContent?key={api_key}",
             headers={
                 "content-type": "application/json",
             },
@@ -657,7 +660,7 @@ def generate_llm_post(summary, data, top_vessels=None):
             timeout=30,
         )
         if resp.status_code != 200:
-            print(f"⚠️ Gemini API error: {resp.status_code} {resp.text[:200]}")
+            print(f"⚠️ LLM API error ({LLM_MODEL}): {resp.status_code} {resp.text[:200]}")
             return None
 
         result = resp.json()
@@ -666,7 +669,7 @@ def generate_llm_post(summary, data, top_vessels=None):
         return text
 
     except Exception as e:
-        print(f"⚠️ Gemini API call failed: {e}")
+        print(f"⚠️ LLM API call failed ({LLM_MODEL}): {e}")
         return None
 
 
