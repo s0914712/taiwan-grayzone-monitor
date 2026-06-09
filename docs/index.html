@@ -40,9 +40,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link
+    <link rel="preload" as="style"
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
-        rel="stylesheet">
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"></noscript>
 
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -103,7 +105,6 @@
     <meta name="theme-color" content="#0a0f1c">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="google-site-verification" content="Cffizh3BczQNW2ywZA34H-c9DJiZOm5mrL1WC-ECW8w" />
 </head>
 
 <body>
