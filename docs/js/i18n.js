@@ -33,6 +33,7 @@ const i18n = (function () {
         'nav.mob_identity':      { zh: '身分', en: 'ID' },
         'nav.transfers':         { zh: '旁靠偵測', en: 'STS Transfer' },
         'nav.mob_transfers':     { zh: '旁靠', en: 'STS' },
+        'nav.research':          { zh: '研究報告', en: 'Research' },
 
         // ── Bottom Sheet ──
         'bs.route_search':       { zh: '航跡查詢', en: 'Route Search' },
@@ -55,6 +56,7 @@ const i18n = (function () {
         'title.anim':            { zh: '🎬 暗船動畫 Dark Vessel Animation', en: '🎬 Dark Vessel Animation' },
         'title.identity':        { zh: '🔄 AIS 身分變更追蹤', en: '🔄 AIS Identity Tracking' },
         'title.transfers':       { zh: '🚢 旁靠偵測 Ship-to-Ship Transfer', en: '🚢 Ship-to-Ship Transfer Detection' },
+        'title.research':        { zh: '📜 海底電纜法律分析', en: '📜 Submarine Cable Legal Analysis' },
 
         // ── 旁靠偵測 Ship-to-Ship Transfer ──
         'sts.active':            { zh: '進行中旁靠', en: 'Active Transfers' },
@@ -557,6 +559,7 @@ const i18n = (function () {
         // 設定 body class 供 CSS 控制語言可見性
         document.body.classList.remove('lang-zh', 'lang-en');
         document.body.classList.add('lang-' + currentLang);
+        document.documentElement.lang = currentLang === 'en' ? 'en' : 'zh-TW';
 
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
