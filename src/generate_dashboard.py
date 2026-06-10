@@ -7,6 +7,7 @@ Generate dashboard-ready data from vessel monitoring
 """
 
 import json
+import re
 import shutil
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -292,5 +293,37 @@ def main():
         print(f"📊 已複製 SCFI 歷史資料至 docs/scfi_history.json")
 
 
+def update_structured_data_dates():
+    """Update dateModified in JSON-LD and <lastmod> in sitemap to today's UTC date."""
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+
+    html_files = [
+        'dark-vessels.html', 'statistics.html',
+        'identity-history.html', 'ship-transfers.html',
+    ]
+    date_re = re.compile(r'"dateModified"\s*:\s*"[0-9]{4}-[0-9]{2}-[0-9]{2}"')
+    for fname in html_files:
+        fpath = DOCS_DIR / fname
+        if not fpath.exists():
+            continue
+        text = fpath.read_text(encoding='utf-8')
+        new_text = date_re.sub(f'"dateModified": "{today}"', text)
+        if new_text != text:
+            fpath.write_text(new_text, encoding='utf-8')
+
+    sitemap = DOCS_DIR / 'sitemap.xml'
+    if sitemap.exists():
+        text = sitemap.read_text(encoding='utf-8')
+        new_text = re.sub(
+            r'(<lastmod>)[0-9]{4}-[0-9]{2}-[0-9]{2}(</lastmod>)',
+            rf'\g<1>{today}\2',
+            text,
+        )
+        if new_text != text:
+            sitemap.write_text(new_text, encoding='utf-8')
+            print(f"📅 已更新 sitemap.xml lastmod → {today}")
+
+
 if __name__ == "__main__":
     main()
+    update_structured_data_dates()
