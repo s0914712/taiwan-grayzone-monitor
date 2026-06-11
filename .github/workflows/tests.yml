@@ -1,0 +1,45 @@
+name: Tests
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'docs/js/**'
+      - '.github/workflows/tests.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'docs/js/**'
+      - '.github/workflows/tests.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests pytest
+
+      - name: Run Python tests
+        run: python -m pytest tests/ -v
+
+      - name: Run frontend smoke test
+        run: node tests/frontend-smoke.js
+
+      - name: Compile all pipeline scripts
+        run: python -m py_compile src/*.py
+
+      - name: Validate workflow YAML
+        run: |
+          pip install pyyaml
+          python -c "import yaml,glob; [yaml.safe_load(open(p)) for p in glob.glob('.github/workflows/*.yml')]; print('YAML OK')"
