@@ -44,7 +44,7 @@
         playing: false,
         speed: 1,
         intervalId: null,
-        selectedRange: 14,
+        selectedRange: 7,
         markerLayer: null,
         trailLayer: null,
         showTrails: true,
@@ -986,7 +986,10 @@
             document.getElementById('loadingDetail').textContent =
                 '正在下載 AIS 軌跡資料...';
 
-            const res = await fetch('ais_track_history.json?' + Date.now());
+            // 優先抓 7 天動畫精簡檔（約為完整檔一半大小）；
+            // 尚未產生時 fallback 到 14 天完整檔
+            let res = await fetch('ais_track_animation.json?' + Date.now());
+            if (!res.ok) res = await fetch('ais_track_history.json?' + Date.now());
             if (!res.ok) throw new Error('HTTP ' + res.status);
 
             document.getElementById('loadingDetail').textContent =
@@ -1975,7 +1978,7 @@
         clearTimeout(_urlTimer);
         _urlTimer = setTimeout(() => {
             const p = new URLSearchParams();
-            if (Anim.selectedRange !== 14) p.set('range', Anim.selectedRange);
+            if (Anim.selectedRange !== 7) p.set('range', Anim.selectedRange);
             if (Anim.vesselFilter !== 'all') p.set('filter', Anim.vesselFilter);
             if (!Anim.showEvents) p.set('events', '0');
             if (Anim.showDark) p.set('dark', '1');
@@ -1995,7 +1998,7 @@
     function applyUrlState() {
         const p = new URLSearchParams(location.search);
         const range = parseInt(p.get('range'));
-        if ([1, 3, 7, 14].includes(range)) setRange(range);
+        if ([1, 3, 7].includes(range)) setRange(range);
         const filter = p.get('filter');
         if (filter) { const sel = document.getElementById('vesselFilter'); if (sel) sel.value = filter; setVesselFilter(filter); }
         if (p.get('events') === '0') { document.getElementById('showEvents').checked = false; toggleEvents(); }

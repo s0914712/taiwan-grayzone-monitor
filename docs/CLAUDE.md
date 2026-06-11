@@ -110,7 +110,8 @@ Animation page logic lives in external scripts `js/ais-animation.js` (~2,100 lin
 |------|-------------|------------|
 | `data.json` | Main consolidated dataset (AIS snapshot + suspicious analysis + dark vessels + predictions) | `generate_dashboard.py` |
 | `ais_history.json` | 90-day AIS snapshots (max 1,080 entries) | `fetch_ais_data.py` |
-| `ais_track_history.json` | Tier-1: 28-day CN fishing + suspicious tracks | `fetch_ais_data.py` |
+| `ais_track_history.json` | Tier-1: 14-day CN fishing + suspicious tracks (analysis + route lookups) | `fetch_ais_data.py` |
+| `ais_track_animation.json` | 7-day subset of tier-1 for the animation pages (fetched first; tier-1 is the fallback). Animation range buttons: 1/3/7 days, default 7. | `fetch_ais_data.py` |
 | `ais_track_commercial.json` | Tier-2: 28-day cargo/tanker/LNG tracks | `fetch_ais_data.py` |
 | `identity_events.json` | AIS identity change events (max 5,000) | `fetch_ais_data.py` |
 | `weekly_dark_vessels.json` | 90-day SAR detections for animation | `fetch_weekly_dark_vessels.py` |

@@ -34,6 +34,7 @@ HISTORY_FILE = os.path.join(DATA_DIR, 'vessel_history.json')
 VESSEL_PROFILES_FILE = os.path.join(DATA_DIR, 'vessel_profiles.json')
 AIS_HISTORY_FILE = os.path.join(DATA_DIR, 'ais_history.json')
 AIS_TRACK_FILE = os.path.join(DOCS_DIR, 'ais_track_history.json')
+AIS_TRACK_ANIMATION_FILE = os.path.join(DOCS_DIR, 'ais_track_animation.json')
 AIS_TRACK_COMMERCIAL_FILE = os.path.join(DATA_DIR, 'ais_track_commercial.json')
 DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
 IDENTITY_EVENTS_FILE = os.path.join(DATA_DIR, 'identity_events.json')
@@ -44,9 +45,11 @@ IDENTITY_EVENTS_MAX = 5000
 # AIS 歷史快照：每天保留 12 筆（每 2 小時一筆），共保留 90 天 = 1080 筆
 AIS_HISTORY_MAX_ENTRIES = 1080
 # AIS 軌跡歷史：保留 14 天，每 2 小時一筆 = 168 筆
-# (此檔會送到前端動畫頁；動畫最大範圍為 14 天，故保留 14 天即足夠，
-#  同時將檔案大小減半以避免行動裝置載入/解析失敗)
+# (14 天完整檔供 analyze_suspicious / detect_ship_transfers / 航跡查詢使用)
 AIS_TRACK_MAX_ENTRIES = 168
+# 動畫專用精簡檔：僅最近 7 天，檔案約減半，加速動畫頁載入
+# (前端 ais-animation / cn-fishing-animation 優先抓此檔)
+AIS_TRACK_ANIMATION_DAYS = 7
 # 商船軌跡歷史：同 28 天
 AIS_TRACK_COMMERCIAL_MAX_ENTRIES = 336
 
@@ -667,6 +670,12 @@ def save_all(vessels, stats):
     # Compact JSON: file is large, whitespace adds ~40% overhead
     atomic_write_json(AIS_TRACK_FILE, track_history, compact=True)
     print(f"  🎬 軌跡歷史已更新: {AIS_TRACK_FILE} ({len(track_history)} 筆, {len(track_vessels)} 艘船)")
+
+    # 2c-1. 動畫專用精簡檔（僅最近 7 天）— 動畫頁載入加速
+    anim_cutoff = (datetime.now(timezone.utc) - timedelta(days=AIS_TRACK_ANIMATION_DAYS)).isoformat()
+    anim_history = [e for e in track_history if e.get('timestamp', '') >= anim_cutoff]
+    atomic_write_json(AIS_TRACK_ANIMATION_FILE, anim_history, compact=True)
+    print(f"  🎬 動畫軌跡已更新: {AIS_TRACK_ANIMATION_FILE} ({len(anim_history)} 筆, 近 {AIS_TRACK_ANIMATION_DAYS} 天)")
 
     # 2d. 商船/油輪軌跡歷史 (Tier-2: cargo, tanker, LNG, 身分變更船舶)
     # 載入近 7 天有身分變更的 MMSI
