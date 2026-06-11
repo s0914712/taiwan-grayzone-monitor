@@ -41,6 +41,9 @@ jobs:
           npm install --no-save --no-package-lock jsdom leaflet@1.9.4
           node tests/map-integration.js
 
+      - name: Run animation pages smoke test
+        run: node tests/animation-smoke.js
+
       - name: Compile all pipeline scripts
         run: python -m py_compile src/*.py
 

@@ -102,7 +102,7 @@ i18n.t('idx.ago_h', 24)   // {0} replacement
 - Responds to `langchange` event for live language switch
 
 ### Animation Pages
-Each animation HTML page has **self-contained inline JS** (not shared modules). Each creates its own Leaflet map + playback controls.
+Animation page logic lives in external scripts `js/ais-animation.js` (~2,100 lines) and `js/cn-fishing-animation.js` (~1,130 lines), loaded with `defer` after `i18n.js` (extracted verbatim from the former inline `<script>` blocks). Each creates its own Leaflet map + playback controls and bootstraps on `DOMContentLoaded`. Regression gate: `node tests/animation-smoke.js` (jsdom + real Leaflet).
 
 ## Data Files in docs/
 
