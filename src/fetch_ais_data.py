@@ -15,6 +15,8 @@ import urllib3
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 
+from io_utils import atomic_write_json, load_json
+
 # 船隻 profile 保留天數：最近 N 天未再出現即剔除，避免檔案無限成長
 VESSEL_PROFILE_RETENTION_DAYS = 90
 
@@ -496,19 +498,11 @@ def save_all(vessels, stats):
         'statistics': stats,
         'vessels': vessel_list,
     }
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-        json.dump(full_output, f, ensure_ascii=False, indent=2)
+    atomic_write_json(OUTPUT_FILE, full_output)
     print(f"  📄 快照已儲存: {OUTPUT_FILE} ({len(vessel_list)} 艘)")
 
     # 2. 更新歷史紀錄 (追加每日摘要)
-    history = []
-    if os.path.exists(HISTORY_FILE):
-        try:
-            with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
-                loaded = json.load(f)
-            history = loaded if isinstance(loaded, list) else []
-        except Exception:
-            history = []
+    history = load_json(HISTORY_FILE, [], expect_type=list)
 
     history.append({
         'timestamp': now_str,
@@ -520,37 +514,19 @@ def save_all(vessels, stats):
 
     # 保留最近 1000 筆歷史
     history = history[-1000:]
-    with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
-        json.dump(history, f, ensure_ascii=False, indent=2)
+    atomic_write_json(HISTORY_FILE, history)
 
     # 2a. 更新船隻行為 profile（供 analyze_suspicious.py CSIS 分析使用）
-    profiles = {}
-    if os.path.exists(VESSEL_PROFILES_FILE):
-        try:
-            with open(VESSEL_PROFILES_FILE, 'r', encoding='utf-8') as f:
-                profiles = json.load(f)
-            if not isinstance(profiles, dict):
-                profiles = {}
-        except Exception:
-            profiles = {}
+    profiles = load_json(VESSEL_PROFILES_FILE, {}, expect_type=dict)
 
     # 2a-1. 偵測身分變更（必須在更新 profile 之前）
     new_events = detect_identity_changes(vessels, profiles)
     if new_events:
         # 載入既有事件，追加新事件，保留上限
-        id_events = []
-        if os.path.exists(IDENTITY_EVENTS_FILE):
-            try:
-                with open(IDENTITY_EVENTS_FILE, 'r', encoding='utf-8') as f:
-                    id_events = json.load(f)
-                if not isinstance(id_events, list):
-                    id_events = []
-            except Exception:
-                id_events = []
+        id_events = load_json(IDENTITY_EVENTS_FILE, [], expect_type=list)
         id_events.extend(new_events)
         id_events = id_events[-IDENTITY_EVENTS_MAX:]
-        with open(IDENTITY_EVENTS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(id_events, f, ensure_ascii=False, indent=2)
+        atomic_write_json(IDENTITY_EVENTS_FILE, id_events)
         print(f"  🔄 偵測到 {len(new_events)} 筆身分變更事件 (累計 {len(id_events)} 筆)")
 
     # 2a-2. 更新 profile（含 last_* 追蹤欄位）
@@ -605,8 +581,7 @@ def save_all(vessels, stats):
     pruned = before_count - len(profiles)
 
     # Compact JSON (no indent) — file is large, whitespace waste matters
-    with open(VESSEL_PROFILES_FILE, 'w', encoding='utf-8') as f:
-        json.dump(profiles, f, ensure_ascii=False, separators=(',', ':'))
+    atomic_write_json(VESSEL_PROFILES_FILE, profiles, compact=True)
     print(f"  👤 船隻 profile 已更新: {VESSEL_PROFILES_FILE} ({len(profiles)} 艘, pruned {pruned} 艘 >{VESSEL_PROFILE_RETENTION_DAYS}d)")
 
     # 2b. AIS 歷史快照（每天 12 筆，每 2 小時一筆，供前端趨勢圖使用）
@@ -643,15 +618,7 @@ def save_all(vessels, stats):
         'suspicious_vessels': suspicious_vessels,
     }
 
-    ais_history = []
-    if os.path.exists(AIS_HISTORY_FILE):
-        try:
-            with open(AIS_HISTORY_FILE, 'r', encoding='utf-8') as f:
-                ais_history = json.load(f)
-            if not isinstance(ais_history, list):
-                ais_history = []
-        except Exception:
-            ais_history = []
+    ais_history = load_json(AIS_HISTORY_FILE, [], expect_type=list)
 
     # 同一時段（date + period）多次執行只保留最新一筆
     ais_history = [s for s in ais_history if s.get('period_key', s.get('date')) != period_key]
@@ -659,8 +626,7 @@ def save_all(vessels, stats):
 
     # 保留最近 360 筆（90 天 × 4 筆/天）
     ais_history = ais_history[-AIS_HISTORY_MAX_ENTRIES:]
-    with open(AIS_HISTORY_FILE, 'w', encoding='utf-8') as f:
-        json.dump(ais_history, f, ensure_ascii=False, indent=2)
+    atomic_write_json(AIS_HISTORY_FILE, ais_history)
     print(f"  📅 歷史快照已更新: {AIS_HISTORY_FILE} ({len(ais_history)} 筆, period={period:02d}h)")
 
     # 2c. AIS 軌跡歷史（記錄大陸漁船 + 可疑船位置，供動畫播放）
@@ -698,37 +664,27 @@ def save_all(vessels, stats):
         'vessels': track_vessels,
     }
 
-    track_history = []
-    if os.path.exists(AIS_TRACK_FILE):
-        try:
-            with open(AIS_TRACK_FILE, 'r', encoding='utf-8') as f:
-                track_history = json.load(f)
-            if not isinstance(track_history, list):
-                track_history = []
-        except Exception:
-            track_history = []
+    track_history = load_json(AIS_TRACK_FILE, [], expect_type=list)
 
     track_history.append(track_entry)
     track_history = track_history[-AIS_TRACK_MAX_ENTRIES:]
     # Compact JSON: file is large, whitespace adds ~40% overhead
-    with open(AIS_TRACK_FILE, 'w', encoding='utf-8') as f:
-        json.dump(track_history, f, ensure_ascii=False, separators=(',', ':'))
+    atomic_write_json(AIS_TRACK_FILE, track_history, compact=True)
     print(f"  🎬 軌跡歷史已更新: {AIS_TRACK_FILE} ({len(track_history)} 筆, {len(track_vessels)} 艘船)")
 
     # 2d. 商船/油輪軌跡歷史 (Tier-2: cargo, tanker, LNG, 身分變更船舶)
     # 載入近 7 天有身分變更的 MMSI
     identity_mmsis = set()
-    if os.path.exists(IDENTITY_EVENTS_FILE):
+    id_events = load_json(IDENTITY_EVENTS_FILE, [], expect_type=list)
+    if id_events:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
         try:
-            with open(IDENTITY_EVENTS_FILE, 'r', encoding='utf-8') as f:
-                id_events = json.load(f)
-            cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
             identity_mmsis = {
                 e['mmsi'] for e in id_events
                 if e.get('timestamp', '') >= cutoff
             }
-        except Exception:
-            pass
+        except (TypeError, KeyError) as e:
+            print(f"⚠️ 解析 {IDENTITY_EVENTS_FILE} 身分事件失敗: {e}")
 
     # 已在 tier-1 的 MMSI
     tier1_mmsis = {v['mmsi'] for v in track_vessels}
@@ -757,31 +713,16 @@ def save_all(vessels, stats):
         'vessels': commercial_vessels,
     }
 
-    commercial_history = []
-    if os.path.exists(AIS_TRACK_COMMERCIAL_FILE):
-        try:
-            with open(AIS_TRACK_COMMERCIAL_FILE, 'r', encoding='utf-8') as f:
-                commercial_history = json.load(f)
-            if not isinstance(commercial_history, list):
-                commercial_history = []
-        except Exception:
-            commercial_history = []
+    commercial_history = load_json(AIS_TRACK_COMMERCIAL_FILE, [], expect_type=list)
 
     commercial_history.append(commercial_entry)
     commercial_history = commercial_history[-AIS_TRACK_COMMERCIAL_MAX_ENTRIES:]
     # Compact JSON (see tier-1 note)
-    with open(AIS_TRACK_COMMERCIAL_FILE, 'w', encoding='utf-8') as f:
-        json.dump(commercial_history, f, ensure_ascii=False, separators=(',', ':'))
+    atomic_write_json(AIS_TRACK_COMMERCIAL_FILE, commercial_history, compact=True)
     print(f"  🚢 商船軌跡已更新: {AIS_TRACK_COMMERCIAL_FILE} ({len(commercial_history)} 筆, {len(commercial_vessels)} 艘船)")
 
     # 3. 更新 Dashboard 資料（與 generate_dashboard.py 格式一致）
-    existing = {}
-    if os.path.exists(DASHBOARD_FILE):
-        try:
-            with open(DASHBOARD_FILE, 'r', encoding='utf-8') as f:
-                existing = json.load(f)
-        except Exception:
-            pass
+    existing = load_json(DASHBOARD_FILE, {}, expect_type=dict)
 
     existing['updated_at'] = now_str
     existing['ais_snapshot'] = {
@@ -791,8 +732,7 @@ def save_all(vessels, stats):
         'vessels': vessel_list,
     }
 
-    with open(DASHBOARD_FILE, 'w', encoding='utf-8') as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
+    atomic_write_json(DASHBOARD_FILE, existing)
     print(f"  📊 Dashboard 已更新: {DASHBOARD_FILE}")
 
 

@@ -22,6 +22,8 @@ import requests
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from io_utils import atomic_write_json, make_retry_session
+
 # =============================================================================
 # 設定
 # =============================================================================
@@ -105,7 +107,7 @@ def fetch_sar_data(region_geojson, start_date, end_date):
     }
 
     try:
-        response = requests.post(
+        response = make_retry_session().post(
             f"{BASE_URL}/4wings/report",
             params=params,
             json={"geojson": region_geojson},
@@ -250,8 +252,7 @@ def main():
     }
 
     # 儲存
-    with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    atomic_write_json(OUTPUT_PATH, output)
 
     print(f"\n✅ 動畫資料已儲存: {OUTPUT_PATH}")
     print(f"   偵測天數: {len(days_list)}")

@@ -28,6 +28,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from geo_utils import haversine_km, calc_bearing
+from io_utils import atomic_write_json
 
 DATA_DIR = Path("data")
 DOCS_DIR = Path("docs")
@@ -173,6 +174,9 @@ EXCLUSION_RULES = [
 ]
 
 
+_exclusion_rule_warned = set()
+
+
 def check_exclusion_rules(mmsi, names):
     """
     檢查 MMSI / 船名是否符合任一排除規則。
@@ -184,7 +188,11 @@ def check_exclusion_rules(mmsi, names):
         try:
             if rule['check'](mmsi, names):
                 matched.append({'id': rule['id'], 'label': rule['label']})
-        except Exception:
+        except Exception as e:
+            # 每條規則只警告一次，避免在數千艘船的迴圈中洗版
+            if rule['id'] not in _exclusion_rule_warned:
+                _exclusion_rule_warned.add(rule['id'])
+                print(f"⚠️ 排除規則 {rule['id']} 檢查失敗: {e}")
             continue
     return len(matched) > 0, matched
 
@@ -1476,8 +1484,7 @@ def main():
         'all_classifications': classifications[:200],
     }
 
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    atomic_write_json(OUTPUT_FILE, output)
 
     print(f"\n📋 分析結果:")
     print(f"   分析船隻數: {len(all_mmsi)}")
