@@ -29,6 +29,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from scipy import stats
 
+from io_utils import make_retry_session
+
 DATA_DIR = Path("data")
 CHARTS_DIR = DATA_DIR / "charts"
 CHARTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -52,7 +54,7 @@ def fetch_pla_sorties() -> pd.DataFrame:
     """從 GitHub 下載 PLA 架次 CSV，回傳每日架次 DataFrame。"""
     print("   📥 下載 PLA 架次資料...")
     try:
-        resp = requests.get(PLA_CSV_URL, timeout=30)
+        resp = make_retry_session().get(PLA_CSV_URL, timeout=30)
         resp.raise_for_status()
     except requests.RequestException as e:
         print(f"   ❌ 下載失敗: {e}")

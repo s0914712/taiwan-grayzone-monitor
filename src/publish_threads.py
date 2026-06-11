@@ -27,6 +27,8 @@ from pathlib import Path
 
 import requests
 
+from geo_utils import haversine_km as _haversine_km
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 DOCS_DIR = BASE_DIR / "docs"
 DATA_DIR = BASE_DIR / "data"
@@ -57,16 +59,6 @@ TAIWAN_COASTLINE = [
 ]
 
 MIN_TRACK_POINTS = 15
-
-
-def _haversine_km(lat1, lon1, lat2, lon2):
-    """兩點間距離（公里）"""
-    R = 6371.0
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * \
-        math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
-    return R * 2 * math.asin(math.sqrt(a))
 
 
 def _point_near_any_cable(lat, lon, cable_segments, threshold_km=5.0):

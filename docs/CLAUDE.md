@@ -20,8 +20,13 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 
 | File | LOC | Responsibility |
 |------|-----|----------------|
-| `app.js` | ~830 | Main controller: init, data loading, sidebar, bottom sheet, mobile nav, vessel list, suspicious list. Entry: `document.addEventListener('DOMContentLoaded', App.init)` |
-| `map.js` | ~1390 | Leaflet map: vessel rendering (zoom-based clusters vs detail), suspicious vessel markers, layer toggles, fishing hotspots, submarine cables, route loading. Exports `MapModule`. |
+| `app.js` | ~900 | Main controller: init, data loading, freshness indicator, sidebar, bottom sheet, mobile nav, vessel list, suspicious list. Entry: `document.addEventListener('DOMContentLoaded', App.init)` |
+| `map-data.js` | ~480 | Static lookup tables (MID flag table, vessel colors, fishing hotspots, gov regex, FOC MIDs, region colors, territorial basepoints) + pure helpers (`getMidFlag`, `getGovType`, `govLabel`, `createVesselIcon`, `debounce`, `offsetPolygonNm`, `_decodeNavStatus`). Exports `MapData`. |
+| `map-baseline.js` | ~180 | Territorial baseline / 12nm / 24nm rendering. Exports `MapBaselineFactory(map, layers)`. |
+| `map-vessels.js` | ~830 | Vessel rendering (cluster + detail), dark/suspicious/gov layers, vessel list panel, info cards, FOC filter, sanctions matching. Exports `MapVesselsFactory(map, layers)`. |
+| `map-routes.js` | ~330 | Route loading (pre-generated + history fallback), polyline rendering, track info panel, map snapshot. Exports `MapRoutesFactory(map, layers)`. |
+| `map-cables.js` | ~140 | Submarine cable GeoJSON layer + MODA fault status. Exports `MapCablesFactory(map, layers)`. |
+| `map.js` | ~180 | Core: Leaflet init, layer groups, factory instantiation, public `MapModule` API (delegates to sub-modules). **HTML script order: map-data → map-baseline → map-vessels → map-routes → map-cables → map.js** (all `defer`). Regression gate: `node tests/map-integration.js` (jsdom + real Leaflet). |
 | `charts.js` | ~345 | Chart.js: AIS stats pie chart, overlay cards, trend charts. Exports `ChartsModule`. |
 | `i18n.js` | ~490 | Translation dict + auto-detect + toggle. Keys: `namespace.key` (e.g., `nav.grayzone`, `ob.t1`). `localStorage('lang')`. Fires `langchange` CustomEvent. |
 | `mobile-nav.js` | ~50 | Mobile hamburger menu toggle |
@@ -97,7 +102,7 @@ i18n.t('idx.ago_h', 24)   // {0} replacement
 - Responds to `langchange` event for live language switch
 
 ### Animation Pages
-Each animation HTML page has **self-contained inline JS** (not shared modules). Each creates its own Leaflet map + playback controls.
+Animation page logic lives in external scripts `js/ais-animation.js` (~2,100 lines) and `js/cn-fishing-animation.js` (~1,130 lines), loaded with `defer` after `i18n.js` (extracted verbatim from the former inline `<script>` blocks). Each creates its own Leaflet map + playback controls and bootstraps on `DOMContentLoaded`. Regression gate: `node tests/animation-smoke.js` (jsdom + real Leaflet).
 
 ## Data Files in docs/
 

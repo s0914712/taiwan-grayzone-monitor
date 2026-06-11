@@ -116,16 +116,17 @@ jobs:
             data/ais_track_commercial.json
           key: large-data-${{ runner.os }}-${{ github.run_id }}
 
+      # 驗證關鍵輸出檔；失敗的檔案以 --restore 還原上次好版本再 commit，
+      # 並於最後一步讓整個 job 顯示失敗（取代原 inline VESSEL_COUNT 守衛）
+      - name: Validate pipeline outputs
+        id: validate
+        run: python src/validate_outputs.py --restore
+        continue-on-error: true
+
       - name: Commit and push changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          # 如果 AIS 快照為空 (0 艘船)，還原以保留上次有效資料
-          VESSEL_COUNT=$(python3 -c "import json; d=json.load(open('data/ais_snapshot.json')); print(len(d.get('vessels',[])))" 2>/dev/null || echo "0")
-          if [ "$VESSEL_COUNT" = "0" ]; then
-            echo "⚠️ AIS snapshot has 0 vessels, restoring previous version"
-            git checkout -- data/ais_snapshot.json docs/data.json 2>/dev/null || true
-          fi
           git add data/ docs/
           git diff --staged --quiet || git commit -m "🛰️ Update vessel data $(date +'%Y-%m-%d %H:%M') UTC"
           # 拉取遠端最新，自動產生的 data 檔衝突時以本地為主
@@ -135,6 +136,12 @@ jobs:
             git pull -X ours origin main
           }
           git push
+
+      - name: Fail if validation failed
+        if: steps.validate.outcome == 'failure'
+        run: |
+          echo "::error::管線輸出驗證失敗 — 詳見 Validate pipeline outputs 步驟。壞檔已還原為上次好版本後才 commit。"
+          exit 1
           
   deploy:
     needs: update-data

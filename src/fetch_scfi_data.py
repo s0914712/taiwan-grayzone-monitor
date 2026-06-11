@@ -24,6 +24,8 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
+from io_utils import atomic_write_json, make_retry_session
+
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 OUTPUT_FILE = DATA_DIR / "scfi_history.json"
@@ -150,7 +152,7 @@ def fetch_from_sse() -> list:
     """從 SSE 英文版爬取 SCFI 資料"""
     print(f"   📥 嘗試從 {SCFI_URL} 爬取 SCFI...")
     try:
-        resp = requests.get(SCFI_URL, headers=HEADERS, timeout=30)
+        resp = make_retry_session().get(SCFI_URL, headers=HEADERS, timeout=30)
         resp.raise_for_status()
     except requests.RequestException as e:
         print(f"   ⚠️ 下載失敗: {e}")
@@ -271,8 +273,7 @@ def save(entries: list):
         "entry_count": len(entries),
         "data": entries,
     }
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
+    atomic_write_json(OUTPUT_FILE, payload)
     print(f"   💾 已儲存 {len(entries)} 筆 → {OUTPUT_FILE}")
 
 

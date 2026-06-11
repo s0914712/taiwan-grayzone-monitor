@@ -12,6 +12,8 @@ import shutil
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from io_utils import atomic_write_json
+
 DATA_DIR = Path("data")
 DOCS_DIR = Path("docs")
 DOCS_DIR.mkdir(exist_ok=True)
@@ -69,8 +71,7 @@ def refresh_vessel_monitoring_daily(vessel_data, dark_vessels_data):
 
     # 5. 持久化
     try:
-        with open(DARK_HISTORY_PATH, 'w', encoding='utf-8') as f:
-            json.dump(history, f, ensure_ascii=False, indent=2)
+        atomic_write_json(DARK_HISTORY_PATH, history)
     except IOError as e:
         print(f"⚠️ 寫入 {DARK_HISTORY_PATH.name} 失敗: {e}")
 
@@ -250,8 +251,7 @@ def main():
     }
 
     # 儲存至 docs 目錄（供 GitHub Pages 使用）
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(dashboard, f, ensure_ascii=False, indent=2)
+    atomic_write_json(output_path, dashboard)
 
     print(f"✅ Dashboard 資料已儲存: {output_path}")
 
