@@ -36,6 +36,11 @@ jobs:
       - name: Run frontend smoke test
         run: node tests/frontend-smoke.js
 
+      - name: Run map integration test (jsdom + real Leaflet)
+        run: |
+          npm install --no-save --no-package-lock jsdom leaflet@1.9.4
+          node tests/map-integration.js
+
       - name: Compile all pipeline scripts
         run: python -m py_compile src/*.py
 
