@@ -370,6 +370,12 @@ const MapModule = (function() {
             mmsiInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') searchVesselRoute();
             });
+            // Debounced auto-search: fire only on full 9-digit MMSI
+            // (5-8 digit MMSIs still searchable via Enter / the 查詢 button)
+            mmsiInput.addEventListener('input', debounce(function() {
+                var v = mmsiInput.value.trim();
+                if (/^\d{9}$/.test(v)) loadVesselRoute(v);
+            }, 600));
         }
 
         // Load UN sanctions list for vessel warnings
@@ -649,9 +655,22 @@ const MapModule = (function() {
     }
 
     /**
-     * Create a MarineTraffic-style triangle SVG icon
+     * Simple trailing-edge debounce
      */
-    function createVesselIcon(color, isSuspicious, heading) {
+    function debounce(fn, ms) {
+        var timer = null;
+        return function() {
+            var args = arguments;
+            clearTimeout(timer);
+            timer = setTimeout(function() { fn.apply(null, args); }, ms);
+        };
+    }
+
+    /**
+     * Create a MarineTraffic-style triangle SVG icon
+     * @param {string} [label] - accessible name for the marker (defaults to 'vessel')
+     */
+    function createVesselIcon(color, isSuspicious, heading, label) {
         const w = isSuspicious ? 10 : 7;
         const h = isSuspicious ? 20 : 16;
         const rotation = heading !== null && heading !== undefined ? heading : 0;
@@ -675,8 +694,10 @@ const MapModule = (function() {
                     'stroke="' + color + '" stroke-width="' + sw + '" stroke-opacity="0.9"/>';
         }
 
+        const ariaLabel = (label || 'vessel').replace(/"/g, '&quot;');
         const svg = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" ' +
                     'xmlns="http://www.w3.org/2000/svg" ' +
+                    'role="img" aria-label="' + ariaLabel + '" ' +
                     'style="transform:rotate(' + rotation + 'deg)">' +
                     shape + '</svg>';
 
@@ -765,7 +786,7 @@ const MapModule = (function() {
             }
 
             const heading = v.heading !== undefined && v.heading !== null ? v.heading : null;
-            const icon = createVesselIcon(color, isSuspicious || !!govType, heading);
+            const icon = createVesselIcon(color, isSuspicious || !!govType, heading, (v.name || v.mmsi || 'vessel') + '');
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(layers.vessels);
 
             const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
@@ -925,7 +946,7 @@ const MapModule = (function() {
             }
 
             const heading = v.heading !== undefined && v.heading !== null ? v.heading : null;
-            const icon = createVesselIcon(color, isSuspicious || !!govType, heading);
+            const icon = createVesselIcon(color, isSuspicious || !!govType, heading, (v.name || v.mmsi || 'vessel') + '');
             const marker = L.marker([v.lat, v.lon], { icon: icon }).addTo(layers.vessels);
 
             const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;

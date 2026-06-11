@@ -133,7 +133,7 @@
                     style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.identity">身分追蹤</a>
                 <a href="research-submarine-cable-legal.html"
                     style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.research">研究報告</a>
-                <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+                <button id="langToggle" onclick="i18n.toggle()" aria-label="切換語言 / Switch language" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
                 <div class="data-status" id="dataStatus" data-i18n="common.loading">⏳ 載入中...</div>
             </div>
         </header>
@@ -141,9 +141,9 @@
         <div class="map-section">
             <div id="map"></div>
 
-            <div class="route-search">
-                <input type="text" id="mmsiSearchInput" placeholder="MMSI 查詢航跡..." maxlength="9" inputmode="numeric" pattern="[0-9]*">
-                <button onclick="MapModule.searchVesselRoute()">查詢</button>
+            <div class="route-search" role="search">
+                <input type="text" id="mmsiSearchInput" placeholder="MMSI 查詢航跡..." aria-label="MMSI 查詢航跡 / Search vessel route by MMSI" maxlength="9" inputmode="numeric" pattern="[0-9]*">
+                <button onclick="MapModule.searchVesselRoute()" aria-label="查詢航跡 / Search route">查詢</button>
             </div>
 
             <div class="map-overlay">

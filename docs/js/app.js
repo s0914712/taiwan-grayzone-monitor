@@ -165,7 +165,7 @@ const App = (function () {
         const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
         const isIndex = currentPage === 'index.html';
 
-        let sheetHTML = `<div class="bottom-sheet-handle"></div>`;
+        let sheetHTML = `<div class="bottom-sheet-handle" role="button" aria-label="拖曳展開面板 / Drag to expand panel"></div>`;
 
         // Route search section (only on pages with maps)
         const hasMap = document.getElementById('map');
@@ -477,6 +477,58 @@ const App = (function () {
         }).join('');
     }
 
+    // 資料新鮮度：data.json 的 updated_at（loadData 時記錄，每分鐘重繪）
+    let lastUpdatedAt = null;
+    let freshnessTimer = null;
+    const STALE_THRESHOLD_HOURS = 4;
+
+    /**
+     * Format data freshness relative label, e.g. "(12 分鐘前)"
+     * Returns { label, isStale }
+     */
+    function formatFreshness(isoStr) {
+        try {
+            const diffMin = Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
+            if (isNaN(diffMin)) return { label: '', isStale: false };
+            const t = (k, v) => typeof i18n !== 'undefined'
+                ? i18n.t(k).replace('{0}', v)
+                : ('' + v);
+            if (diffMin < 1) return { label: t('common.ago_just_now'), isStale: false };
+            if (diffMin < 60) return { label: t('common.ago_m', diffMin), isStale: false };
+            const hours = Math.floor(diffMin / 60);
+            return { label: t('common.ago_h', hours), isStale: hours >= STALE_THRESHOLD_HOURS };
+        } catch (_) {
+            return { label: '', isStale: false };
+        }
+    }
+
+    /**
+     * Re-render the update-time labels + stale warning from lastUpdatedAt
+     */
+    function refreshFreshness() {
+        if (!lastUpdatedAt) return;
+        const updateTime = new Date(lastUpdatedAt).toLocaleString();
+        const fresh = formatFreshness(lastUpdatedAt);
+        const updateLabel = (typeof i18n !== 'undefined' ? i18n.t('common.updated') : '更新:')
+            + ' ' + updateTime + (fresh.label ? ' (' + fresh.label + ')' : '');
+        const updateEl = document.getElementById('updateInfo');
+        if (updateEl) updateEl.textContent = updateLabel;
+        const bsUpdate = document.getElementById('bsUpdateInfo');
+        if (bsUpdate) bsUpdate.textContent = updateLabel;
+
+        const statusEl = document.getElementById('dataStatus');
+        if (statusEl) {
+            statusEl.classList.toggle('stale', fresh.isStale);
+            if (fresh.isStale) {
+                const hours = Math.floor((Date.now() - new Date(lastUpdatedAt).getTime()) / 3600000);
+                statusEl.textContent = typeof i18n !== 'undefined'
+                    ? i18n.t('common.stale_warning').replace('{0}', hours)
+                    : '⚠️ 資料逾 ' + hours + ' 小時未更新';
+                statusEl.classList.remove('live');
+            }
+        }
+    }
+
     /**
      * Format time-ago string
      */
@@ -569,12 +621,12 @@ const App = (function () {
             const res = await fetch('data.json?' + Date.now());
             const data = await res.json();
 
-            const updateTime = new Date(data.updated_at).toLocaleString();
-            const updateLabel = (typeof i18n !== 'undefined' ? i18n.t('common.updated') : '更新:') + ' ' + updateTime;
-            const updateEl = document.getElementById('updateInfo');
-            if (updateEl) updateEl.textContent = updateLabel;
-            const bsUpdate = document.getElementById('bsUpdateInfo');
-            if (bsUpdate) bsUpdate.textContent = updateLabel;
+            lastUpdatedAt = data.updated_at;
+            refreshFreshness();
+            if (!freshnessTimer) {
+                freshnessTimer = setInterval(refreshFreshness, 60000);
+                window.addEventListener('langchange', refreshFreshness);
+            }
 
             // Load GFW satellite monitoring data
             if (data.vessel_monitoring) {
