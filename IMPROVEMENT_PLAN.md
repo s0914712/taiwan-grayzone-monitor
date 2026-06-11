@@ -59,9 +59,12 @@
 - ✅ map.js 第一階段拆分：~430 行靜態資料表與純函式抽至 `docs/js/map-data.js`（MapData 模組），map.js 1,967 → 1,537 行；service worker 快取 bump 至 v2 並預快取新檔
 - ✅ pytest 測試套件（geo_utils / io_utils / validate_outputs / 排除規則，27 項）+ node 前端煙霧測試 + `.github/workflows/tests.yml` CI
 
+**已完成（第三輪）：**
+- ✅ map.js 第二階段拆分：核心縮至 ~180 行，邏輯移入四個 factory 模組（map-baseline / map-vessels / map-routes / map-cables），函式本體原封搬移、MapModule 公開 API 不變；以 jsdom + 真實 Leaflet 整合測試（tests/map-integration.js）驗證拆分前後行為一致
+- ✅ 動畫頁 inline JS 外移：ais-animation.html 3,193 → 1,082 行、cn-fishing-animation.html 1,837 → 708 行，邏輯原封移至 js/ais-animation.js、js/cn-fishing-animation.js（defer 載入，可快取、可 lint）；tests/animation-smoke.js 驗證完整 bootstrap
+
 **待辦：**
-- map.js 第二階段拆分（vessel-renderer / route-loader / layer-manager）— 涉及共享可變狀態（map、layers、caches），需瀏覽器實測，建議搭配本地開發環境進行
-- 兩個動畫頁（ais-animation 3,193 行、cn-fishing-animation 1,837 行）inline JS 模組化 — 同樣需瀏覽器實測
+- 兩個動畫頁腳本間的重複 helper 去重（外移後已可逐步比對合併，風險低於先前）
 - **git 歷史帳密清除**（filter-repo + force push）— 需使用者決策：force push 會影響所有 clone，且 CI 自動 commit 流程需暫停配合；無論是否清除，**pingproxies 憑證都必須先在供應商端輪換**
 - **repo 膨脹**（pack 216MB；`docs/vessel_routes/` 23,012 檔 129MB）— 需架構決策：選項包括 (a) 軌跡檔搬到獨立資料分支、(b) GitHub Actions artifacts + 前端改 API 載入、(c) 合併為依 MMSI 前綴分片的大檔。各選項都會改變前端載入路徑
 - `data.json`（3.6MB）按主題分割 / 分頁載入 — 改善首屏載入，需同步調整各頁面 fetch 邏輯
