@@ -163,7 +163,6 @@ def is_cn_fishing_vessel(name):
 # --- SOCKS5 代理設定 ---
 # 從環境變數 POOL 或 PROXY_LIST 讀取代理清單
 # 格式: 每行一筆 host:port:user:pass（POOL 用換行分隔，PROXY_LIST 用逗號分隔）
-# 若都無法讀取，使用內建備用清單
 
 # 嘗試連線的代理數量上限
 MAX_PROXY_ATTEMPTS = 10
@@ -178,7 +177,7 @@ def _parse_proxy_line(line):
 
 
 def get_proxy_list():
-    """從環境變數 POOL / PROXY_LIST / 備用清單取得 SOCKS5 代理列表"""
+    """從環境變數 POOL / PROXY_LIST 取得 SOCKS5 代理列表"""
     # 1. POOL 環境變數（換行分隔，最高優先）
     pool_val = os.environ.get('POOL', '').strip()
     if pool_val:
@@ -198,15 +197,9 @@ def get_proxy_list():
             print(f"  📋 使用 PROXY_LIST 環境變數代理清單 ({len(proxies)} 個)")
             return proxies
 
-    # 3. 備用清單
-    print(f"  ⚠️ 未設定 POOL 環境變數，使用備用代理清單")
-    return [
-        {"host": "residential.pingproxies.com", "port": 8253, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_82K1Q977SLB9H76Q", "pass": "47yKTElrP2"},
-        {"host": "residential.pingproxies.com", "port": 8901, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_AZ1PX916DV90HJFS", "pass": "47yKTElrP2"},
-        {"host": "residential.pingproxies.com", "port": 8353, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_WZ0Q1FVPVDFZF9G8", "pass": "47yKTElrP2"},
-        {"host": "residential.pingproxies.com", "port": 8970, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_Y60AXR2HBJNRXGU9", "pass": "47yKTElrP2"},
-        {"host": "residential.pingproxies.com", "port": 8999, "user": "103521_YHYhJ_c_tw_city_taipei_asn_3462_m_size_s_DGCW7X66DDUGQDZR", "pass": "47yKTElrP2"},
-    ]
+    print("  ❌ 未設定 POOL 或 PROXY_LIST 環境變數 — 無法透過代理擷取 AIS。"
+          "請設定 secrets.POOL（每行一筆 host:port:user:pass）")
+    return []
 
 
 # --- LNG / 天然氣船偵測 ---
@@ -282,6 +275,9 @@ def collect_ais_data():
     if use_proxy:
         print(f"🚀 正在透過 SOCKS5 代理從航港局擷取 AIS 資料...")
         proxy_list = get_proxy_list()
+        if not proxy_list:
+            # 無代理可用：回傳空 dict，main 會保留上次快照（CI 沿用舊資料）
+            return {}
         random.shuffle(proxy_list)
         geojson = None
         last_error = None
