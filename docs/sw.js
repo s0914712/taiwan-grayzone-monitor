@@ -3,13 +3,15 @@
  * Provides offline support and caching
  */
 
-const CACHE_NAME = 'taiwan-grayzone-v1';
+const CACHE_NAME = 'taiwan-grayzone-v2';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
     '/dark-vessels.html',
     '/statistics.html',
     '/css/main.css',
+    '/js/i18n.js',
+    '/js/map-data.js',
     '/js/map.js',
     '/js/charts.js',
     '/js/app.js'
