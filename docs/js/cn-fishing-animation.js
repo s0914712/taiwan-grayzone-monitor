@@ -35,7 +35,7 @@
         playing: false,
         speed: 1,
         intervalId: null,
-        selectedRange: 14,
+        selectedRange: 7,
         markerLayer: null,
         trailLayer: null,
         showTrails: true,
@@ -559,10 +559,12 @@
                 '正在下載 AIS 軌跡資料...';
 
             // Load AIS data and PLA CSV in parallel
-            const [res, csvRes] = await Promise.all([
-                fetch('ais_track_history.json?' + Date.now()),
+            // 優先抓 7 天動畫精簡檔；尚未產生時 fallback 到 14 天完整檔
+            let [res, csvRes] = await Promise.all([
+                fetch('ais_track_animation.json?' + Date.now()),
                 fetch(CSV_URL).catch(() => null)
             ]);
+            if (!res.ok) res = await fetch('ais_track_history.json?' + Date.now());
             if (!res.ok) throw new Error('HTTP ' + res.status);
 
             // Parse CSV sorties data

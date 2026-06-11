@@ -63,7 +63,8 @@ fetch_ais_data.py → fetch_gfw_data.py → detect_ship_transfers.py
 ```
 
 ### Track Tiers
-- **Tier-1** (`docs/ais_track_history.json`): CN fishing + suspicious vessels, max 168 entries (14 days). Served to the frontend animation (max display range 14 days); kept compact (rounded coords, no per-vessel `suspicious` flag) to avoid mobile load/parse failures. Suspicion is resolved frontend-side from `data.json` (`suspicious_analysis`).
+- **Tier-1** (`docs/ais_track_history.json`): CN fishing + suspicious vessels, max 168 entries (14 days). Used by analyze_suspicious / detect_ship_transfers / route extraction / per-MMSI route lookups; kept compact (rounded coords, no per-vessel `suspicious` flag). Suspicion is resolved frontend-side from `data.json` (`suspicious_analysis`).
+- **Animation subset** (`docs/ais_track_animation.json`): last 7 days of tier-1, written alongside it by `fetch_ais_data.py` (`AIS_TRACK_ANIMATION_DAYS = 7`). The animation pages fetch this first and fall back to the full tier-1 file — roughly halves the animation download.
 - **Tier-2** (`docs/ais_track_commercial.json`): cargo/tanker/LNG + identity-changed, max 336 entries (28 days)
 - Identity-changed MMSIs loaded from `data/identity_events.json` (last 7 days)
 - Large accumulating files (`vessel_profiles.json`, `ais_track_history.json`, `ais_track_commercial.json`) are written to `docs/` as compact JSON (no indent) to stay under GitHub's 100 MiB per-file limit. `data/` counterparts are gitignored.
