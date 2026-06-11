@@ -16,6 +16,8 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
+from io_utils import atomic_write_json, make_retry_session
+
 # ── Paths ──
 DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
 OUTPUT_FILE = DOCS_DIR / "cable_status.json"
@@ -192,7 +194,7 @@ def _determine_status(fault_desc: str, repair_date_str: str) -> str:
 def scrape_moda() -> list:
     """Scrape MODA submarine cable fault table."""
     print(f"🌐 正在請求 MODA 海纜障礙頁面: {MODA_URL}")
-    resp = requests.get(MODA_URL, headers=HEADERS, timeout=30)
+    resp = make_retry_session().get(MODA_URL, headers=HEADERS, timeout=30)
     resp.encoding = "utf-8"
     resp.raise_for_status()
 
@@ -311,8 +313,7 @@ def main():
     }
 
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    atomic_write_json(OUTPUT_FILE, output)
 
     print(f"\n✅ 已更新 {OUTPUT_FILE}")
     print(f"   障礙中: {len(active)}")

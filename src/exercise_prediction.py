@@ -22,6 +22,8 @@ import pandas as pd
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from io_utils import atomic_write_json, make_retry_session
+
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 
@@ -72,7 +74,7 @@ def fetch_pla_sorties() -> pd.DataFrame:
     """從 GitHub 下載 PLA 架次 CSV"""
     print("   📥 下載 PLA 架次資料...")
     try:
-        resp = requests.get(PLA_CSV_URL, timeout=30)
+        resp = make_retry_session().get(PLA_CSV_URL, timeout=30)
         resp.raise_for_status()
     except requests.RequestException as e:
         print(f"   ❌ 下載失敗: {e}")
@@ -339,8 +341,7 @@ def main():
             "status": "insufficient_data",
         }
         out_path = DATA_DIR / "exercise_prediction.json"
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(output, f, ensure_ascii=False, indent=2)
+        atomic_write_json(out_path, output)
         print(f"✅ 已儲存: {out_path}")
         return
 
@@ -362,8 +363,7 @@ def main():
             "sorties_range": f"{sorties_df['date'].min():%Y-%m-%d} ~ {sorties_df['date'].max():%Y-%m-%d}",
         }
         out_path = DATA_DIR / "exercise_prediction.json"
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(output, f, ensure_ascii=False, indent=2)
+        atomic_write_json(out_path, output)
         print(f"✅ 已儲存: {out_path}")
         return
 
@@ -444,8 +444,7 @@ def main():
     }
 
     out_path = DATA_DIR / "exercise_prediction.json"
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    atomic_write_json(out_path, output)
 
     print(f"\n✅ 分析結果已儲存: {out_path}")
 

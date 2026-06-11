@@ -87,7 +87,8 @@ def _load_cable_segments():
     try:
         with open(cable_file, 'r', encoding='utf-8') as f:
             geo = json.load(f)
-    except Exception:
+    except Exception as e:
+        print(f"⚠️ 讀取 {cable_file} 失敗: {e}")
         return []
     segments = []
     for feat in geo.get('features', []):
@@ -104,11 +105,13 @@ def _load_cable_segments():
 def find_gov_routes():
     """掃描所有逐船航跡檔，回傳公務/關注船航跡清單（含 category）。"""
     vessels = []
+    unreadable = 0
     for path in glob.glob(str(ROUTES_DIR / "*.json")):
         try:
             with open(path, 'r', encoding='utf-8') as f:
                 d = json.load(f)
         except Exception:
+            unreadable += 1
             continue
         category = classify_gov_vessel(d.get('name', ''))
         if not category:
@@ -122,6 +125,8 @@ def find_gov_routes():
             'category': category,
             'track': track,
         })
+    if unreadable:
+        print(f"⚠️ {unreadable} 個航跡檔無法解析，已略過")
     # 依類別、再依航跡點數排序
     order = {c: i for i, c in enumerate(CATEGORY_ORDER)}
     vessels.sort(key=lambda v: (order.get(v['category'], 9), -len(v['track'])))

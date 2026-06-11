@@ -27,6 +27,9 @@ import re
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from geo_utils import haversine_km, calc_bearing
+from io_utils import atomic_write_json
+
 DATA_DIR = Path("data")
 DOCS_DIR = Path("docs")
 # vessel_profiles + ais_track_commercial: pipeline-only, live in data/ (Actions cache).
@@ -171,6 +174,9 @@ EXCLUSION_RULES = [
 ]
 
 
+_exclusion_rule_warned = set()
+
+
 def check_exclusion_rules(mmsi, names):
     """
     檢查 MMSI / 船名是否符合任一排除規則。
@@ -182,7 +188,11 @@ def check_exclusion_rules(mmsi, names):
         try:
             if rule['check'](mmsi, names):
                 matched.append({'id': rule['id'], 'label': rule['label']})
-        except Exception:
+        except Exception as e:
+            # 每條規則只警告一次，避免在數千艘船的迴圈中洗版
+            if rule['id'] not in _exclusion_rule_warned:
+                _exclusion_rule_warned.add(rule['id'])
+                print(f"⚠️ 排除規則 {rule['id']} 檢查失敗: {e}")
             continue
     return len(matched) > 0, matched
 
@@ -247,16 +257,6 @@ def load_cable_segments():
     return _cable_segments
 
 
-def haversine_km(lat1, lon1, lat2, lon2):
-    """兩點間距離（公里）"""
-    R = 6371.0
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * \
-        math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
-    return R * 2 * math.asin(math.sqrt(a))
-
-
 def point_to_segment_distance_km(plat, plon, lat1, lon1, lat2, lon2):
     """點到線段的最短距離（公里），用投影法"""
     dx = lat2 - lat1
@@ -268,17 +268,6 @@ def point_to_segment_distance_km(plat, plon, lat1, lon1, lat2, lon2):
     proj_lat = lat1 + t * dx
     proj_lon = lon1 + t * dy
     return haversine_km(plat, plon, proj_lat, proj_lon)
-
-
-def calc_bearing(lat1, lon1, lat2, lon2):
-    """計算兩點間方位角 (0-360°)"""
-    dlon = math.radians(lon2 - lon1)
-    lat1r = math.radians(lat1)
-    lat2r = math.radians(lat2)
-    x = math.sin(dlon) * math.cos(lat2r)
-    y = math.cos(lat1r) * math.sin(lat2r) - \
-        math.sin(lat1r) * math.cos(lat2r) * math.cos(dlon)
-    return (math.degrees(math.atan2(x, y)) + 360) % 360
 
 
 def angular_diff(a, b):
@@ -1495,8 +1484,7 @@ def main():
         'all_classifications': classifications[:200],
     }
 
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    atomic_write_json(OUTPUT_FILE, output)
 
     print(f"\n📋 分析結果:")
     print(f"   分析船隻數: {len(all_mmsi)}")

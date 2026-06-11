@@ -48,6 +48,10 @@ const i18n = (function () {
         'common.updated':        { zh: '更新:', en: 'Updated:' },
         'common.error_load':     { zh: '❌ 資料載入失敗', en: '❌ Data loading failed' },
         'common.unknown':        { zh: '未知', en: 'Unknown' },
+        'common.ago_just_now':   { zh: '剛剛更新', en: 'just now' },
+        'common.ago_m':          { zh: '{0} 分鐘前', en: '{0} min ago' },
+        'common.ago_h':          { zh: '{0} 小時前', en: '{0} h ago' },
+        'common.stale_warning':  { zh: '⚠️ 資料逾 {0} 小時未更新', en: '⚠️ Data stale: >{0}h old' },
 
         // ── 頁面標題 Page Titles ──
         'title.index':           { zh: '🛰️ 台灣灰色地帶與海底電纜監測', en: '🛰️ Taiwan Gray Zone & Submarine Cable Monitor' },

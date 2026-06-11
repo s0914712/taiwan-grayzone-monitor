@@ -38,6 +38,8 @@ except ImportError:
     print("⚠️ 需安裝 requests 和 beautifulsoup4: pip install requests beautifulsoup4")
     sys.exit(1)
 
+from io_utils import atomic_write_json, load_json, make_retry_session
+
 # ── 設定 ──────────────────────────────────────────────────
 DATA_DIR = Path("data")
 CACHE_FILE = DATA_DIR / "itu_mars_cache.json"
@@ -73,22 +75,14 @@ def _load_cache():
     if _cache is not None:
         return _cache
 
-    if CACHE_FILE.exists():
-        try:
-            with open(CACHE_FILE, 'r', encoding='utf-8') as f:
-                _cache = json.load(f)
-        except Exception:
-            _cache = {}
-    else:
-        _cache = {}
+    _cache = load_json(CACHE_FILE, {}, expect_type=dict)
     return _cache
 
 
 def _save_cache():
     """儲存快取至檔案"""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    with open(CACHE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(_cache, f, ensure_ascii=False, indent=2)
+    atomic_write_json(CACHE_FILE, _cache)
 
 
 def _is_cache_valid(entry):
@@ -103,8 +97,8 @@ def _is_cache_valid(entry):
 # ── ITU MARS 查詢 ────────────────────────────────────────
 
 def _create_session():
-    """建立帶 WAF cookie 管理的 requests session"""
-    session = requests.Session()
+    """建立帶 WAF cookie 管理 + 自動 retry 的 requests session"""
+    session = make_retry_session()
     session.headers.update(HEADERS)
     return session
 

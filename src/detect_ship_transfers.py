@@ -12,6 +12,9 @@ import math
 from datetime import datetime, timezone
 from pathlib import Path
 
+from geo_utils import haversine_km
+from io_utils import atomic_write_json
+
 DATA_DIR = Path("data")
 DOCS_DIR = Path("docs")
 # tier-1 軌跡歷史已搬至 docs/
@@ -324,17 +327,6 @@ FISHING_HOTSPOTS = {
 
 
 # ── 工具函式 ────────────────────────────────────────────
-
-def haversine_km(lat1, lon1, lat2, lon2):
-    """兩點間距離（公里）"""
-    R = 6371.0
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = (math.sin(dlat / 2) ** 2 +
-         math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) *
-         math.sin(dlon / 2) ** 2)
-    return R * 2 * math.asin(math.sqrt(a))
-
 
 def is_in_port(lat, lon):
     """檢查是否在任何港口排除區域內（台灣港口 2km；大陸沿岸港口/灣內預設 8km，
@@ -691,8 +683,7 @@ def main():
         }
     }
 
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    atomic_write_json(OUTPUT_FILE, output)
 
     print(f"✅ 旁靠偵測完成: {len(active_transfers)} 進行中, "
           f"{len(history_transfers)} 歷史, "
