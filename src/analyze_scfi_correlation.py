@@ -26,6 +26,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from io_utils import atomic_write_json
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DOCS_DIR = ROOT / "docs"
@@ -419,8 +421,7 @@ def main():
                 "en": "Missing data sources; analysis skipped",
             },
         }
-        with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-            json.dump(output, f, ensure_ascii=False, indent=2)
+        atomic_write_json(OUTPUT_FILE, output)
         return
 
     # 聚合 AIS 為週資料
@@ -457,8 +458,7 @@ def main():
                 "en": f"Insufficient overlap ({len(merged)} weeks) between SCFI and AIS data",
             },
         }
-        with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-            json.dump(output, f, ensure_ascii=False, indent=2)
+        atomic_write_json(OUTPUT_FILE, output)
         print(f"   ⚠️ 重疊不足，寫入 {OUTPUT_FILE}")
         return
 
@@ -558,8 +558,7 @@ def main():
         "weekly_series": weekly_series,
     }
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    atomic_write_json(OUTPUT_FILE, output)
 
     print(f"   💾 已儲存 → {OUTPUT_FILE}")
     print(f"   📝 結論: {conclusion['zh'][:80]}...")
@@ -574,10 +573,9 @@ if __name__ == "__main__":
         print(f"❌ 分析失敗: {e}", file=sys.stderr)
         traceback.print_exc()
         # 即使失敗也產出狀態檔
-        with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-            json.dump({
-                "status": "error",
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-                "error": str(e),
-            }, f, ensure_ascii=False, indent=2)
+        atomic_write_json(OUTPUT_FILE, {
+            "status": "error",
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "error": str(e),
+        })
         sys.exit(0)

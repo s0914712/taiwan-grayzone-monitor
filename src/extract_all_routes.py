@@ -12,6 +12,8 @@ import json
 import os
 import glob
 
+from io_utils import atomic_write_json
+
 
 def load_track_file(path, all_vessels):
     """Load a track history JSON and accumulate vessel data."""
@@ -120,8 +122,7 @@ def main():
         }
 
         out_path = os.path.join(out_dir, f'{mmsi}.json')
-        with open(out_path, 'w') as f:
-            json.dump(output, f, ensure_ascii=False, separators=(',', ':'))
+        atomic_write_json(out_path, output, compact=True)
         written_mmsis.add(mmsi)
 
     # Clean stale files

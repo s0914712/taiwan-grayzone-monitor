@@ -60,6 +60,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from io_utils import atomic_write_json, make_retry_session
+
 # =============================================================================
 # 設定
 # =============================================================================
@@ -169,7 +171,7 @@ def fetch_sar_data(region_geojson, start_date, end_date):
     }
 
     try:
-        resp = requests.post(
+        resp = make_retry_session().post(
             f"{BASE_URL}/4wings/report",
             params=params,
             json={"geojson": region_geojson},
@@ -337,8 +339,7 @@ def main():
         },
     }
 
-    with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    atomic_write_json(OUTPUT_PATH, output)
 
     print("\n" + "=" * 70)
     print(f"✅ 已儲存: {OUTPUT_PATH}")

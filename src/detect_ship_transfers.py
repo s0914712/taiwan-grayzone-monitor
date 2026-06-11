@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from geo_utils import haversine_km
+from io_utils import atomic_write_json
 
 DATA_DIR = Path("data")
 DOCS_DIR = Path("docs")
@@ -682,8 +683,7 @@ def main():
         }
     }
 
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    atomic_write_json(OUTPUT_FILE, output)
 
     print(f"✅ 旁靠偵測完成: {len(active_transfers)} 進行中, "
           f"{len(history_transfers)} 歷史, "
