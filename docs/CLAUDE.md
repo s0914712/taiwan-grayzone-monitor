@@ -20,8 +20,9 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 
 | File | LOC | Responsibility |
 |------|-----|----------------|
-| `app.js` | ~830 | Main controller: init, data loading, sidebar, bottom sheet, mobile nav, vessel list, suspicious list. Entry: `document.addEventListener('DOMContentLoaded', App.init)` |
-| `map.js` | ~1390 | Leaflet map: vessel rendering (zoom-based clusters vs detail), suspicious vessel markers, layer toggles, fishing hotspots, submarine cables, route loading. Exports `MapModule`. |
+| `app.js` | ~900 | Main controller: init, data loading, freshness indicator, sidebar, bottom sheet, mobile nav, vessel list, suspicious list. Entry: `document.addEventListener('DOMContentLoaded', App.init)` |
+| `map-data.js` | ~440 | Static lookup tables (MID flag table, vessel colors, fishing hotspots, gov regex, FOC MIDs, region colors, territorial basepoints) + pure helpers (`getMidFlag`, `getGovType`, `govLabel`, `createVesselIcon`, `debounce`, `offsetPolygonNm`, `_decodeNavStatus`). Exports `MapData`. **Must load before map.js** (script order in HTML). |
+| `map.js` | ~1540 | Leaflet map: vessel rendering (zoom-based clusters vs detail), suspicious vessel markers, layer toggles, fishing hotspots, submarine cables, route loading. Destructures statics from `MapData`. Exports `MapModule`. |
 | `charts.js` | ~345 | Chart.js: AIS stats pie chart, overlay cards, trend charts. Exports `ChartsModule`. |
 | `i18n.js` | ~490 | Translation dict + auto-detect + toggle. Keys: `namespace.key` (e.g., `nav.grayzone`, `ob.t1`). `localStorage('lang')`. Fires `langchange` CustomEvent. |
 | `mobile-nav.js` | ~50 | Mobile hamburger menu toggle |
