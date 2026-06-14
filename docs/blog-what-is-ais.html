@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>AIS 是什麼？船舶自動識別系統與海底電纜監測 | What Is AIS — Taiwan Gray Zone &amp; Submarine Cable Monitor</title>
+    <meta name="description" content="AIS（自動識別系統）是追蹤海上船舶的關鍵技術。了解 AIS 的工作原理、MMSI 號碼、去黑化（going dark）、AIS 造假、以及為何它對保護台灣海底電纜至關重要。">
+    <meta name="keywords" content="AIS,自動識別系統,automatic identification system,MMSI,海底電纜,submarine cable,台灣,going dark,AIS spoofing,影子船隊,shadow fleet,Global Fishing Watch,SAR衛星">
+    <meta name="author" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ais.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="AIS 是什麼？船舶自動識別系統與海底電纜監測">
+    <meta property="og:description" content="當一艘船關閉它的 AIS 訊號，它在螢幕上就消失了。了解 AIS 的工作原理、去黑化威脅、位置造假，以及衛星 SAR 如何補充 AIS 的不足，共同守護台灣海底電纜。">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ais.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="AIS 是什麼？船舶自動識別系統與海底電纜監測">
+    <meta name="twitter:description" content="當一艘船關閉它的 AIS 訊號，它在螢幕上就消失了。了解 AIS 的工作原理、去黑化威脅、位置造假，以及 SAR 衛星如何補充 AIS 監測台灣海底電纜威脅。">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+    <link rel="stylesheet" href="css/main.css">
+
+    <style>
+    .article-meta { display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:16px 20px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:8px;margin:16px auto;max-width:900px;font-size:11px;color:var(--text-secondary); }
+    .meta-label { color:var(--accent-cyan);font-weight:600;font-family:'JetBrains Mono',monospace;font-size:10px; }
+    .keyword-badge { display:inline-block;padding:2px 8px;background:rgba(0,245,255,0.1);border:1px solid rgba(0,245,255,0.3);border-radius:3px;font-size:10px;color:var(--accent-cyan);font-family:'JetBrains Mono',monospace; }
+    .legal-highlight { border-left:3px solid var(--accent-cyan);padding:12px 16px;margin:12px 0;background:rgba(0,245,255,0.05);border-radius:0 6px 6px 0;font-size:12px;line-height:1.7; }
+    .legal-highlight strong { color:var(--accent-cyan); }
+    .gray-zone-table { width:100%;border-collapse:collapse;font-size:11px;margin:12px 0; }
+    .gray-zone-table th { text-align:left;padding:8px 10px;background:var(--bg-secondary);color:var(--accent-cyan);font-weight:600;border-bottom:1px solid var(--border-glow);font-size:10px; }
+    .gray-zone-table td { padding:6px 10px;border-bottom:1px solid rgba(0,245,255,0.05);color:var(--text-primary); }
+    .blog-nav { display:flex;justify-content:space-between;align-items:center;padding:16px 20px;margin:0 auto 24px;max-width:900px;gap:12px;flex-wrap:wrap; }
+    .blog-nav a { color:var(--accent-cyan);text-decoration:none;font-size:12px;font-family:'JetBrains Mono',monospace;border:1px solid var(--accent-cyan);padding:6px 12px;border-radius:4px; }
+    .blog-nav a:hover { background:rgba(0,245,255,0.1); }
+    .ais-field-table { width:100%;border-collapse:collapse;font-size:11px;margin:12px 0; }
+    .ais-field-table th { text-align:left;padding:8px 10px;background:var(--bg-secondary);color:var(--accent-cyan);font-weight:600;border-bottom:1px solid var(--border-glow);font-size:10px; }
+    .ais-field-table td { padding:6px 10px;border-bottom:1px solid rgba(0,245,255,0.05); }
+    .ais-field-table td:first-child { font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:10px;white-space:nowrap; }
+    .ais-field-table td:nth-child(2) { color:var(--text-primary); }
+    .ais-field-table td:nth-child(3) { color:var(--text-secondary);font-size:10px; }
+    .story-pullquote { border:1px solid rgba(255,107,53,0.4);background:rgba(255,107,53,0.05);border-radius:8px;padding:16px 20px;margin:16px 0;font-size:13px;line-height:1.8;color:var(--text-primary);font-style:italic; }
+    .dark-warning { background:rgba(255,51,102,0.08);border:1px solid rgba(255,51,102,0.3);border-radius:8px;padding:14px 18px;margin:14px 0;font-size:12px;line-height:1.7; }
+    .dark-warning strong { color:var(--sev-critical); }
+    .mmsi-demo { background:var(--bg-secondary);border:1px solid var(--border-glow);border-radius:8px;padding:16px 20px;margin:14px 0;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:2; }
+    .mmsi-demo .mmsi-num { color:var(--accent-cyan);font-size:20px;font-weight:700;letter-spacing:2px; }
+    .mmsi-demo .mmsi-seg { display:inline-block;padding:0 2px; }
+    .mmsi-demo .mmsi-mid { color:var(--accent-yellow); }
+    .mmsi-demo .mmsi-rest { color:var(--text-primary); }
+    </style>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0f1c">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "BlogPosting",
+                "headline": "AIS 船舶自動識別系統：追蹤海上威脅的關鍵技術",
+                "alternativeHeadline": "AIS: The Technology Behind Maritime Threat Tracking",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ais.html",
+                "datePublished": "2026-06-14",
+                "dateModified": "2026-06-14",
+                "inLanguage": ["zh-TW", "en"],
+                "publisher": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#org" },
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" },
+                "author": { "@type": "Organization", "name": "Taiwan Gray Zone & Submarine Cable Monitor" },
+                "about": [
+                    { "@type": "Thing", "name": "Automatic Identification System" },
+                    { "@type": "Thing", "name": "Maritime Surveillance" },
+                    { "@type": "Thing", "name": "AIS Spoofing" },
+                    { "@type": "Thing", "name": "SAR Satellite Imagery" },
+                    { "@type": "Thing", "name": "Submarine Cable Protection" }
+                ],
+                "keywords": "AIS, 自動識別系統, MMSI, going dark, AIS spoofing, 影子船隊, SAR衛星, 海底電纜保護"
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "首頁 Home", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/" },
+                    { "@type": "ListItem", "position": 2, "name": "部落格 Blog", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/blog.html" },
+                    { "@type": "ListItem", "position": 3, "name": "AIS 是什麼？", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ais.html" }
+                ]
+            },
+            {
+                "@type": "FAQPage",
+                "inLanguage": "zh-TW",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "什麼是 AIS「去黑化」（going dark）？",
+                        "acceptedAnswer": { "@type": "Answer", "text": "「去黑化」指船舶關閉或停止傳輸 AIS 訊號，使其從監測系統上消失。在本監測站的威脅評分系統中，超過18小時的 AIS 訊號缺口視為可疑行為。影子船隊在進行海底電纜破壞行動前，通常會先關閉 AIS，如2025年1月興順39號切斷台亞美海纜時即關閉了 AIS 訊號。" }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "AIS 可以被造假嗎？",
+                        "acceptedAnswer": { "@type": "Answer", "text": "可以。AIS 訊號可以被偽造或操縱，包括廣播虛假位置（不可能的物理行為，如計算速度超過100公里/小時）、盒型航跡（box pattern）、圓形航跡（circle pattern），以及更換船名、船旗或 MMSI 號碼。本監測站使用多重演算法偵測這些造假行為。" }
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
+</head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <header class="header" style="position:sticky;top:0;z-index:100">
+        <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
+        <div class="header-info">
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <div class="intro-hero">
+        <h1 class="lang-zh-only">AIS 船舶自動識別系統：追蹤海上威脅的關鍵技術</h1>
+        <h1 class="lang-en-only">AIS: The Technology Behind Maritime Threat Tracking</h1>
+        <p class="subtitle lang-zh-only">去黑化 &#x2022; AIS 造假 &#x2022; MMSI &#x2022; 衛星 SAR 互補 &#x2022; 海底電纜保護</p>
+        <p class="subtitle lang-en-only">Going Dark &#x2022; AIS Spoofing &#x2022; MMSI &#x2022; SAR Complementarity &#x2022; Cable Protection</p>
+    </div>
+
+    <!-- Article Meta -->
+    <div class="article-meta">
+        <div>
+            <span class="meta-label">PUBLISHED</span><br>
+            <span class="lang-zh-only">2026年6月14日</span>
+            <span class="lang-en-only">June 14, 2026</span>
+        </div>
+        <div>
+            <span class="meta-label">CATEGORY</span><br>
+            <span class="lang-zh-only">技術解析</span>
+            <span class="lang-en-only">Technical Explainer</span>
+        </div>
+        <div>
+            <span class="meta-label">READING TIME</span><br>
+            <span class="lang-zh-only">約12分鐘</span>
+            <span class="lang-en-only">~12 min</span>
+        </div>
+        <div>
+            <span class="keyword-badge">AIS</span>
+            <span class="keyword-badge">MMSI</span>
+            <span class="keyword-badge">going dark</span>
+            <span class="keyword-badge">AIS spoofing</span>
+            <span class="keyword-badge">SAR衛星</span>
+            <span class="keyword-badge">影子船隊</span>
+        </div>
+    </div>
+
+    <!-- Section 1: Story Lead -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>第一節：消失的船隻</h2>
+
+            <p>海上有一種「隱形斗篷」——當一艘船關閉它的 AIS 訊號，它在螢幕上就消失了。</p>
+
+            <p>2025年1月3日，一艘名為「興順39號」（Xing Shun 39）的貨輪正在台灣北部海域航行。這艘懸掛坦尚尼亞旗幟、由香港公司實際控制的船隻，在接近台亞美海底電纜（Taiwan-Asia-US Cable）路線附近時，做了一件事：關閉 AIS。</p>
+
+            <div class="story-pullquote">
+                在岸上的監控螢幕上，興順39號消失了。沒有位置更新，沒有速度資訊，沒有任何蹤跡。幾個小時後，台亞美海底電纜中斷的警報響起。
+            </div>
+
+            <p>這不是故障，也不是偶然。興順39號在切斷電纜期間刻意關閉了自動識別系統，讓自己成為一艘「幽靈船」——在技術上存在，在系統上消失。</p>
+
+            <p>要理解這為什麼是問題，你需要先了解 AIS 是什麼，它能做什麼，以及它無法做什麼。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Section 1: The Disappearing Ship</h2>
+
+            <p>There is an "invisibility cloak" at sea — when a ship turns off its AIS signal, it vanishes from the screen.</p>
+
+            <p>On January 3, 2025, a cargo vessel named "Xing Shun 39" was sailing in waters north of Taiwan. Flying a Tanzanian flag and controlled by a Hong Kong company, as it approached the route of the Taiwan-Asia-US Cable, it did one thing: turned off its AIS.</p>
+
+            <div class="story-pullquote">
+                On monitoring screens ashore, Xing Shun 39 disappeared. No position updates, no speed data, no trace whatsoever. Hours later, alerts came in: the Taiwan-Asia-US Cable was severed.
+            </div>
+
+            <p>This was not a malfunction or coincidence. Xing Shun 39 deliberately disabled its automatic identification system while cutting the cable, making itself a "ghost ship" — physically present, but absent from monitoring systems.</p>
+
+            <p>To understand why this is a problem, you first need to know what AIS is, what it can do, and what it cannot.</p>
+        </div>
+    </section>
+
+    <!-- Section 2: What Is AIS? -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>第二節：AIS 是什麼？</h2>
+
+            <p>AIS 是「自動識別系統」（Automatic Identification System）的縮寫。簡單說，它是一套船舶主動廣播自身資訊的技術——就像飛機的應答機（transponder），只不過是在海上運作，而且使用的是 VHF 無線電頻率（161.975 MHz 和 162.025 MHz）。</p>
+
+            <h3>AIS 廣播什麼？</h3>
+
+            <table class="ais-field-table">
+                <thead>
+                    <tr><th>欄位</th><th>內容</th><th>說明</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>MMSI</td><td>9位數識別碼</td><td>Maritime Mobile Service Identity，船舶的唯一身分號碼</td></tr>
+                    <tr><td>船名</td><td>最長20字元</td><td>可被更改，影子船隊常用此手段</td></tr>
+                    <tr><td>船型代碼</td><td>數字代碼（如 70=貨船）</td><td>可被偽報，用於規避特定檢查</td></tr>
+                    <tr><td>位置</td><td>緯度／經度</td><td>GPS 定位，精度通常在10公尺以內</td></tr>
+                    <tr><td>SOG</td><td>對地航速（節）</td><td>Speed Over Ground，船舶實際移動速度</td></tr>
+                    <tr><td>COG</td><td>對地航向（度）</td><td>Course Over Ground，船舶實際移動方向</td></tr>
+                    <tr><td>船艏向</td><td>艦艏所指方向（度）</td><td>與 COG 可能不同（側風、水流影響）</td></tr>
+                    <tr><td>目的地</td><td>最長20字元</td><td>申報目的港，可能虛報</td></tr>
+                    <tr><td>呼號</td><td>ITU 無線電呼號</td><td>可與 ITU MARS 資料庫交叉比對</td></tr>
+                    <tr><td>IMO 編號</td><td>7位數唯一編號</td><td>船舶建造時永久賦予，理論上不可更改</td></tr>
+                </tbody>
+            </table>
+
+            <h3>MMSI 號碼：解讀船舶身分</h3>
+
+            <div class="mmsi-demo">
+                <div class="mmsi-num"><span class="mmsi-mid">413</span><span class="mmsi-rest">875001</span></div>
+                <div style="font-size:11px;color:var(--text-secondary);margin-top:6px">
+                    前3位 <span style="color:var(--accent-yellow)">413</span> = MID（海事識別碼）= 中華人民共和國<br>
+                    後6位 <span style="color:var(--text-primary)">875001</span> = 船舶序號（由旗幟國分配）<br>
+                    特殊前綴：<span style="color:var(--text-secondary)">9xx = AtoN浮標 | 8xx = 捕魚網標記</span>
+                </div>
+            </div>
+
+            <p>MMSI 的前3位是「海事識別碼」（MID），由國際電信聯盟（ITU）分配給各國。透過 MID，我們可以快速判斷一艘船的登記旗幟國。中國（PRC）的 MID 為 412、413、414；台灣的 MID 為 416；美國的 MID 為 338、367、368、369。</p>
+
+            <h3>誰必須裝備 AIS？</h3>
+
+            <p>根據國際海事組織（IMO）的 SOLAS 公約規定：</p>
+            <ul style="font-size:13px;line-height:2;color:var(--text-secondary);padding-left:20px;margin:8px 0">
+                <li>所有從事國際航行的300總噸以上船舶</li>
+                <li>所有從事國際航行的貨船（500總噸以上）</li>
+                <li>所有客船（不限噸位）</li>
+            </ul>
+
+            <p>Class A 轉發器（大型商船使用）每2至10秒廣播一次位置，每6分鐘更新一次靜態資訊；Class B 轉發器（小型船舶、遊艇使用）廣播頻率較低，每30秒至3分鐘一次。漁船通常使用 Class B，或根本不安裝——這正是漁船監控的一大盲點。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Section 2: What Is AIS?</h2>
+
+            <p>AIS stands for Automatic Identification System. Simply put, it is a technology by which vessels actively broadcast their own information — like an aircraft transponder, but operating at sea via VHF radio frequencies (161.975 MHz and 162.025 MHz).</p>
+
+            <h3>What Does AIS Broadcast?</h3>
+
+            <table class="ais-field-table">
+                <thead>
+                    <tr><th>Field</th><th>Content</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>MMSI</td><td>9-digit identifier</td><td>Maritime Mobile Service Identity — the vessel's unique ID</td></tr>
+                    <tr><td>Vessel Name</td><td>Up to 20 characters</td><td>Can be changed; shadow fleets exploit this</td></tr>
+                    <tr><td>Vessel Type Code</td><td>Numeric code (e.g. 70=cargo)</td><td>Can be falsely reported to evade specific checks</td></tr>
+                    <tr><td>Position</td><td>Latitude / Longitude</td><td>GPS-based; typically accurate to within 10 meters</td></tr>
+                    <tr><td>SOG</td><td>Speed Over Ground (knots)</td><td>Actual movement speed of the vessel</td></tr>
+                    <tr><td>COG</td><td>Course Over Ground (degrees)</td><td>Actual direction of movement</td></tr>
+                    <tr><td>Heading</td><td>Bow direction (degrees)</td><td>May differ from COG due to wind/current</td></tr>
+                    <tr><td>Destination</td><td>Up to 20 characters</td><td>Reported destination port; may be falsified</td></tr>
+                    <tr><td>Call Sign</td><td>ITU radio call sign</td><td>Cross-referenceable with ITU MARS registry</td></tr>
+                    <tr><td>IMO Number</td><td>7-digit unique number</td><td>Assigned at build; theoretically permanent</td></tr>
+                </tbody>
+            </table>
+
+            <h3>The MMSI Number: Reading a Vessel's Identity</h3>
+
+            <div class="mmsi-demo">
+                <div class="mmsi-num"><span class="mmsi-mid">413</span><span class="mmsi-rest">875001</span></div>
+                <div style="font-size:11px;color:var(--text-secondary);margin-top:6px">
+                    First 3 digits <span style="color:var(--accent-yellow)">413</span> = MID (Maritime ID Digit) = People's Republic of China<br>
+                    Last 6 digits <span style="color:var(--text-primary)">875001</span> = Vessel serial number (assigned by flag state)<br>
+                    Special prefixes: <span style="color:var(--text-secondary)">9xx = AtoN buoys | 8xx = fishing net markers</span>
+                </div>
+            </div>
+
+            <p>The first 3 digits of an MMSI number are the "Maritime ID Digit" (MID), assigned to each country by the ITU. The MID lets us instantly identify a vessel's registered flag state. China (PRC) MIDs include 412, 413, 414; Taiwan's is 416; US MIDs include 338, 367, 368, 369.</p>
+
+            <h3>Who Must Carry AIS?</h3>
+
+            <p>Under the IMO SOLAS Convention:</p>
+            <ul style="font-size:13px;line-height:2;color:var(--text-secondary);padding-left:20px;margin:8px 0">
+                <li>All vessels of 300+ gross tons engaged in international voyages</li>
+                <li>All cargo ships of 500+ GT on international voyages</li>
+                <li>All passenger ships, regardless of size</li>
+            </ul>
+
+            <p>Class A transponders (used by large commercial ships) broadcast position every 2–10 seconds and update static data every 6 minutes. Class B transponders (smaller vessels, yachts) broadcast at lower frequency — every 30 seconds to 3 minutes. Fishing vessels typically use Class B, or carry no AIS at all — a major surveillance blind spot.</p>
+        </div>
+    </section>
+
+    <!-- Section 3: Limits of AIS -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>第三節：AIS 的局限性</h2>
+
+            <p>AIS 是一套「誠信系統」——它完全依賴船舶自願且誠實地廣播資訊。這帶來了幾個關鍵的局限性：</p>
+
+            <h3>一、可以被關閉</h3>
+
+            <p>從技術上說，AIS 轉發器只是一個電子設備，隨時可以切斷電源。在公海上，沒有任何強制機制能確保船舶保持 AIS 開啟。雖然 SOLAS 公約要求相關船舶「持續」廣播 AIS，但缺乏即時執法機制，違規往往不會立即被發現。</p>
+
+            <div class="dark-warning">
+                <strong>「去黑化」（Going Dark）定義</strong>：本監測站將超過<strong>18小時</strong>的 AIS 訊號缺口定義為可疑的「去黑化」行為。在正常情況下，海洋商船不應有如此長時間的訊號中斷。
+            </div>
+
+            <h3>二、可以被造假</h3>
+
+            <p>AIS 訊號本身缺乏密碼學驗證機制。這意味著任何擁有軟體定義無線電（SDR）設備的人，都可以廣播偽造的 AIS 訊號，讓虛假的船舶「出現」在螢幕上，或讓真實的船舶「出現在不同的位置」。</p>
+
+            <h3>三、地面接收站有距離限制</h3>
+
+            <p>地面 AIS 接收站的有效接收範圍約為40至60海里（74至111公里）。在遠離岸邊的公海上，地面站根本無法接收到訊號，船舶的動態就此中斷。這是衛星 AIS 出現的原因——衛星可以從太空接收 AIS 廣播，覆蓋遠洋區域。但即使是衛星 AIS，也有衛星過境頻率的限制，難以實現完全即時的追蹤。</p>
+
+            <h3>四、身分資料可以被竄改</h3>
+
+            <p>AIS 靜態資訊（船名、呼號、IMO 號碼）在理論上可被船方自行修改。影子船隊藉此頻繁更換船名與旗幟國，讓監控系統難以建立持續一致的船舶身分記錄。</p>
+
+            <table class="gray-zone-table">
+                <thead>
+                    <tr><th>AIS 局限性</th><th>潛在影響</th><th>應對技術</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>可被關閉（going dark）</td><td>船舶從監控消失</td><td>SAR 衛星偵測暗船</td></tr>
+                    <tr><td>可被造假（spoofing）</td><td>位置、身分資訊失真</td><td>物理行為異常演算法偵測</td></tr>
+                    <tr><td>接收距離限制</td><td>遠海盲區</td><td>衛星 AIS（S-AIS）</td></tr>
+                    <tr><td>身分資料可竄改</td><td>難以追蹤個別船舶</td><td>IMO 號碼 + ITU MARS 比對</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="lang-en-only">
+            <h2>Section 3: The Limits of AIS</h2>
+
+            <p>AIS is an "honor system" — it depends entirely on vessels voluntarily and honestly broadcasting their information. This creates several critical limitations:</p>
+
+            <h3>1. It Can Be Turned Off</h3>
+
+            <p>Technically, an AIS transponder is just an electronic device that can be unplugged at any time. On the high seas, no enforcement mechanism can compel a vessel to keep AIS running. While SOLAS requires relevant vessels to "continuously" broadcast AIS, there is no real-time enforcement mechanism, and violations often go undetected immediately.</p>
+
+            <div class="dark-warning">
+                <strong>"Going Dark" Definition</strong>: This monitoring site defines an AIS signal gap of more than <strong>18 hours</strong> as a suspicious "going dark" event. Under normal circumstances, ocean-going commercial vessels should not have such prolonged signal interruptions.
+            </div>
+
+            <h3>2. It Can Be Spoofed</h3>
+
+            <p>AIS signals lack cryptographic authentication. This means anyone with a software-defined radio (SDR) device can broadcast fake AIS signals — making ghost vessels "appear" on screens, or making real vessels "appear at different locations."</p>
+
+            <h3>3. Terrestrial Receivers Have Range Limits</h3>
+
+            <p>Ground-based AIS reception stations have an effective range of about 40–60 nautical miles (74–111 km). On the open ocean far from shore, ground stations simply cannot receive signals, and a vessel's movement data disappears. This is why satellite AIS exists — satellites can receive AIS broadcasts from space, covering oceanic areas. But even satellite AIS is limited by satellite pass frequency, making fully real-time tracking difficult.</p>
+
+            <h3>4. Identity Data Can Be Falsified</h3>
+
+            <p>AIS static information (vessel name, call sign, IMO number) can technically be modified by the vessel crew. Shadow fleets exploit this to frequently change vessel names and flag states, making it hard for monitoring systems to build consistent vessel identity records.</p>
+
+            <table class="gray-zone-table">
+                <thead>
+                    <tr><th>AIS Limitation</th><th>Potential Impact</th><th>Countermeasure</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Can be turned off (going dark)</td><td>Vessel disappears from monitoring</td><td>SAR satellite detection of dark vessels</td></tr>
+                    <tr><td>Can be spoofed</td><td>Position/identity data distorted</td><td>Impossible-physics anomaly algorithms</td></tr>
+                    <tr><td>Reception range limit</td><td>Far-sea blind spots</td><td>Satellite AIS (S-AIS)</td></tr>
+                    <tr><td>Identity data can be falsified</td><td>Hard to track individual vessels</td><td>IMO number + ITU MARS cross-check</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Section 4: Why AIS Matters for Cable Protection -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>第四節：為何 AIS 對海底電纜保護至關重要</h2>
+
+            <p>儘管有種種局限性，AIS 仍是保護海底電纜最核心的技術工具之一。原因在於：即使 AIS 不完美，它提供了足以讓演算法偵測威脅行為的資料流。</p>
+
+            <h3>航跡與電纜路線的交叉比對</h3>
+
+            <p>本監測站將每一艘船的 AIS 航跡與台灣周邊海底電纜的 GeoJSON 路線資料進行空間比對，計算船舶在電纜附近的時間、距離與行為特徵。當一艘船在電纜路線附近5公里範圍內徘徊、且速度低於8節超過3小時，這個行為模式會觸發「電纜徘徊」警報，在威脅評分上加3分。</p>
+
+            <h3>錨拖航跡的辨識</h3>
+
+            <p>一艘正在拖錨行進的船（有意識或無意識地），會在 AIS 航跡上呈現特定特徵：速度異常緩慢（通常低於3節），航向不穩定，位置在電纜路線上緩慢移動。這種「鋸齒形航跡」（zigzag pattern）——≥3次超過45°的轉向——是我們的演算法主動偵測的危險信號。</p>
+
+            <div class="legal-highlight">
+                <strong>CSIS「訊號在蜂群中」方法論</strong>：本監測站所使用的分析框架來自美國智庫 CSIS（戰略與國際研究中心）的「Signals in the Swarm」報告，結合 AIS 行為分析、電纜鄰近度計算與船舶身分異常偵測，形成多維度的威脅評估體系。
+            </div>
+
+            <h3>身分異常偵測</h3>
+
+            <p>影子船隊的典型手法是頻繁更換身分。本監測站追蹤以下異常：</p>
+            <ul style="font-size:13px;line-height:2;color:var(--text-secondary);padding-left:20px;margin:8px 0">
+                <li>船名更改次數 ≥2次（在7天窗口內）</li>
+                <li>船型代碼更改（例如從漁船突然變為貨船）</li>
+                <li>MMSI 號碼更換</li>
+                <li>與 ITU MARS 國際電信聯盟船舶登記資料庫不符（+3分）</li>
+                <li>與聯合國制裁船舶名單比對（+8分）</li>
+            </ul>
+        </div>
+        <div class="lang-en-only">
+            <h2>Section 4: Why AIS Matters for Cable Protection</h2>
+
+            <p>Despite its limitations, AIS remains one of the most essential technical tools for protecting submarine cables. The reason: even imperfect AIS provides a data stream sufficient for algorithms to detect threatening behavior patterns.</p>
+
+            <h3>Cross-Referencing Vessel Tracks with Cable Routes</h3>
+
+            <p>This monitoring site spatially cross-references every vessel's AIS track against the GeoJSON route data for submarine cables around Taiwan, calculating each vessel's time, distance, and behavioral patterns near cables. When a vessel loiters within 5 km of a cable route at speeds below 8 knots for more than 3 hours, this behavior pattern triggers a "cable loitering" alert and adds 3 points to the threat score.</p>
+
+            <h3>Identifying Anchor-Drag Tracks</h3>
+
+            <p>A vessel dragging its anchor — deliberately or not — leaves a distinctive AIS track: anomalously slow speed (usually under 3 knots), unstable heading, slowly moving position along a cable route. This "zigzag pattern" — ≥3 turns of ≥45° — is a danger signal our algorithms actively detect, adding 1 point to the threat score.</p>
+
+            <div class="legal-highlight">
+                <strong>CSIS "Signals in the Swarm" Methodology</strong>: The analytical framework used by this monitoring site is derived from the CSIS (Center for Strategic and International Studies) report "Signals in the Swarm," combining AIS behavioral analysis, cable proximity calculations, and vessel identity anomaly detection into a multi-dimensional threat assessment system.
+            </div>
+
+            <h3>Identity Anomaly Detection</h3>
+
+            <p>A hallmark of shadow fleet operations is frequent identity changes. This site tracks the following anomalies:</p>
+            <ul style="font-size:13px;line-height:2;color:var(--text-secondary);padding-left:20px;margin:8px 0">
+                <li>Vessel name changes ≥2 times (within a 7-day window)</li>
+                <li>Vessel type code changes (e.g., suddenly switching from fishing to cargo)</li>
+                <li>MMSI number changes</li>
+                <li>Mismatch with ITU MARS (ITU ship registry database): +3 pts</li>
+                <li>Match with UN sanctions vessel list: +8 pts</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Section 5: Going Dark and AIS Spoofing -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>第五節：「去黑化」與 AIS 造假——現代海上偽裝術</h2>
+
+            <p>如果說 AIS 是海上的「身分證」，那麼影子船隊就是精通偽造、隱匿、銷毀身分證的高手。「去黑化」與「AIS 造假」是他們最常用的兩種手段。</p>
+
+            <h3>去黑化：最簡單的消失術</h3>
+
+            <p>去黑化（going dark）是指船舶關閉或停止廣播 AIS 訊號。在技術上，這只需要關掉轉發器的電源——操作比關一盞燈還簡單。</p>
+
+            <p>從 AIS 角度看，去黑化船舶就像消失在海面上。沒有位置，沒有速度，沒有方向。雖然雷達仍可偵測到船體的金屬反射，但在廣闊的海域上，岸基雷達覆蓋有限；而且，船舶可以主張「設備故障」，為關閉 AIS 提供看似合理的藉口。</p>
+
+            <div class="dark-warning">
+                <strong>典型案例：興順39號</strong>——2025年1月，這艘坦尚尼亞籍貨輪在接近台亞美海纜時關閉 AIS，事後 AIS 訊號重新出現，但電纜已遭切斷。這種「出現→消失→重現」的模式，正是本監測站威脅偵測系統標記的核心行為特徵之一。
+            </div>
+
+            <h3>AIS 造假：更複雜的欺騙術</h3>
+
+            <p>造假比去黑化更複雜，但也更難被察覺。AIS 造假的類型包括：</p>
+
+            <h3>1. 不可能的物理行為（Impossible Physics）</h3>
+            <p>計算兩個 AIS 位置點之間的速度，若超過100公里/小時，這在物理上不可能（任何商船都做不到）。本監測站的演算法持續監測這類「電傳位移」——瞬間從A點出現在B點，兩點之間的計算速度遠超真實上限。</p>
+
+            <h3>2. 盒型航跡（Box Pattern）</h3>
+            <p>船舶在一個矩形路線上循環行駛，每次轉彎接近90°，且起始點與結束點幾乎重合（距離小於5公里）或邊界框小於5公里。這是 GPS 欺騙訓練或刻意偽裝錨泊的典型特徵。</p>
+
+            <h3>3. 圓形航跡（Circle Pattern）</h3>
+            <p>船舶以幾乎完美的圓形路徑行進，圓心到各軌跡點的距離變化極小（變異係數 &lt; 0.25），且圓弧覆蓋超過270°。半徑範圍在0.1至5公里時最為可疑（排除 GPS 漂移與正常航行）。</p>
+
+            <div class="legal-highlight">
+                <strong>造假偵測加分</strong>：本監測站對每種造假類型各加4分。這是高威脅指標，不受船型乘數的稀釋影響，直接累加至最終威脅分數。
+            </div>
+
+            <h3>身分操縱：多層偽裝</h3>
+
+            <p>影子船隊最複雜的規避手法是「多層身分偽裝」：在不同時間點，同一艘船可能廣播不同的船名、不同的旗幟國 MMSI、甚至不同的 IMO 號碼（儘管 IMO 號碼理論上是永久性的）。</p>
+
+            <p>這讓傳統的「黑名單」追蹤方式失效——當你把一艘船加入黑名單，它下個月就換了名字和 MMSI，從技術上成了一艘「新船」。這正是為什麼有效的監控需要結合 AIS 資料、衛星影像、港口進出記錄、保險資料庫等多元資料來源，進行跨時間的持續追蹤。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Section 5: Going Dark and AIS Spoofing — Modern Maritime Disguise</h2>
+
+            <p>If AIS is the sea's "ID card," shadow fleets are experts at forging, concealing, and destroying those IDs. "Going dark" and "AIS spoofing" are their two most common techniques.</p>
+
+            <h3>Going Dark: The Simplest Disappearing Act</h3>
+
+            <p>Going dark means a vessel shuts off or stops broadcasting its AIS signal. Technically, this is as simple as cutting power to the transponder — easier than switching off a light.</p>
+
+            <p>From an AIS perspective, a dark vessel simply vanishes from the sea surface. No position, no speed, no heading. Radar can still detect the metallic hull reflection, but coastal radar coverage is limited across broad ocean areas; vessels can also claim "equipment malfunction" as a plausible excuse for the AIS blackout.</p>
+
+            <div class="dark-warning">
+                <strong>Case Study: Xing Shun 39</strong> — In January 2025, this Tanzanian-flagged cargo vessel turned off its AIS while approaching the Taiwan-Asia-US cable route, then reappeared after the cable was severed. This "appear → vanish → reappear" pattern is one of the core behavioral signatures flagged by this monitoring site's threat detection system.
+            </div>
+
+            <h3>AIS Spoofing: More Complex Deception</h3>
+
+            <p>Spoofing is more sophisticated than going dark, and harder to detect. Types of AIS spoofing include:</p>
+
+            <h3>1. Impossible Physics</h3>
+            <p>Computing the speed implied by two AIS position points: if the result exceeds 100 km/h, it is physically impossible for any commercial vessel. This site's algorithms continuously monitor for such "teleportation" — instant appearance from point A to point B with implied speed far beyond any real-world maximum.</p>
+
+            <h3>2. Box Pattern</h3>
+            <p>A vessel traveling in a rectangular loop, with each turn near 90°, and the start/end points nearly coinciding (within 5 km) or the bounding box under 5 km. This is characteristic of GPS deception exercises or deliberate anchoring concealment.</p>
+
+            <h3>3. Circle Pattern</h3>
+            <p>A vessel moving in a near-perfect circular path, with very low variation in distance from the centroid to track points (coefficient of variation &lt; 0.25) and arc coverage exceeding 270°. Most suspicious when radius falls between 0.1 and 5 km (excluding GPS drift and normal sailing).</p>
+
+            <div class="legal-highlight">
+                <strong>Spoofing Detection Scoring</strong>: This monitoring site adds 4 points for each spoofing type detected. These are high-threat indicators not diluted by vessel type multipliers — they add directly to the final threat score.
+            </div>
+
+            <h3>Identity Manipulation: Multi-Layer Disguise</h3>
+
+            <p>The most sophisticated shadow fleet evasion tactic is "multi-layer identity disguise": at different times, the same vessel may broadcast different names, different flag-state MMSIs, and even different IMO numbers (though IMO numbers are theoretically permanent).</p>
+
+            <p>This defeats traditional blacklist-based tracking — add a vessel to a blacklist, and next month it has a new name and MMSI, technically becoming a "new ship." This is precisely why effective monitoring must combine AIS data, satellite imagery, port call records, and insurance databases for continuous cross-time tracking.</p>
+        </div>
+    </section>
+
+    <!-- Section 6: SAR Complementarity -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>第六節：衛星 AIS 與 SAR——讓隱形船無所遁形</h2>
+
+            <p>AIS 的最大弱點是「可以被關閉」。如何在沒有 AIS 訊號的情況下，仍然偵測到一艘船的存在？答案是合成孔徑雷達（SAR）衛星。</p>
+
+            <h3>什麼是 SAR 衛星？</h3>
+
+            <p>SAR（Synthetic Aperture Radar，合成孔徑雷達）是一種主動式微波雷達成像技術。與傳統光學衛星不同，SAR 衛星不依賴日光，也能穿透雲層——它從太空向地面（或海面）發射微波脈衝，接收反射訊號，並根據訊號的相位差異建構高解析度影像。</p>
+
+            <p>在海面上，一艘金屬船體會強烈反射 SAR 的微波訊號，形成一個明亮的亮點。即使這艘船完全關閉了 AIS，它依然在 SAR 影像上清晰可見。</p>
+
+            <h3>Global Fishing Watch：SAR 與 AIS 的結合</h3>
+
+            <p>本監測站整合了 Global Fishing Watch（GFW）提供的 SAR 暗船偵測數據。GFW 透過衛星 SAR 影像偵測海上所有可見的船舶，然後與同時段的 AIS 數據進行比對：</p>
+
+            <ul style="font-size:13px;line-height:2;color:var(--text-secondary);padding-left:20px;margin:8px 0">
+                <li><strong style="color:var(--text-primary)">有 AIS + SAR 偵測到</strong>：正常船舶，兩者吻合</li>
+                <li><strong style="color:var(--text-primary)">有 AIS + SAR 未偵測到</strong>：可能 AIS 造假（虛報位置）</li>
+                <li><strong style="color:var(--text-primary)">無 AIS + SAR 偵測到</strong>：「暗船」（dark vessel）——去黑化的可疑船舶</li>
+            </ul>
+
+            <div class="legal-highlight">
+                <strong>技術整合重點</strong>：將 SAR 偵測到的「暗船」位置與已知電纜路線疊加，可以識別出在電纜附近活動卻刻意關閉 AIS 的船舶——這些是最高威脅等級的監控對象。
+            </div>
+
+            <h3>數據延遲與覆蓋的挑戰</h3>
+
+            <p>SAR 衛星有軌道週期，不能像閉路電視一樣全天候監控同一區域。實際上，台灣周邊海域的 SAR 覆蓋頻率為每幾小時至數天一次，取決於衛星過境時間表與氣象條件（強降雨會干擾 SAR 影像）。這意味著即使結合了衛星 AIS 與 SAR，仍存在監控盲區——尤其是在快速行動的破壞任務中。</p>
+
+            <p>這也是為什麼本監測站同時使用多重 AIS 行為特徵分析、而非單純依賴「是否出現在 SAR 影像」來評估威脅——行為模式的累積，往往比單一時間點的位置資訊更能揭示威脅意圖。</p>
+
+            <h3>想要深入了解台灣海底電纜的現況？</h3>
+
+            <p>下一篇文章將帶你完整了解台灣14條國際電纜的現況、馬祖困境的深層分析、2023至2025年斷纜事件時間軸，以及政府的應對措施。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Section 6: Satellite AIS and SAR — Making Invisible Ships Visible</h2>
+
+            <p>AIS's greatest weakness is that it can be switched off. How can a vessel still be detected when AIS is dark? The answer: Synthetic Aperture Radar (SAR) satellites.</p>
+
+            <h3>What Is SAR Satellite?</h3>
+
+            <p>SAR (Synthetic Aperture Radar) is an active microwave radar imaging technology. Unlike optical satellites, SAR satellites do not depend on sunlight and can penetrate cloud cover — they transmit microwave pulses toward the sea surface from orbit, capture reflected signals, and construct high-resolution imagery from phase differences in the return signal.</p>
+
+            <p>At sea, a metal ship hull strongly reflects SAR microwaves, appearing as a bright spot on the image. Even if a vessel has completely shut off its AIS, it remains clearly visible in SAR imagery.</p>
+
+            <h3>Global Fishing Watch: Combining SAR and AIS</h3>
+
+            <p>This monitoring site integrates SAR dark vessel detection data from Global Fishing Watch (GFW). GFW uses satellite SAR imagery to detect all visible vessels at sea, then cross-references with concurrent AIS data:</p>
+
+            <ul style="font-size:13px;line-height:2;color:var(--text-secondary);padding-left:20px;margin:8px 0">
+                <li><strong style="color:var(--text-primary)">AIS present + SAR detected</strong>: Normal vessel, two sources match</li>
+                <li><strong style="color:var(--text-primary)">AIS present + SAR not detected</strong>: Possible AIS spoofing (false position reported)</li>
+                <li><strong style="color:var(--text-primary)">No AIS + SAR detected</strong>: "Dark vessel" — a vessel that has gone dark</li>
+            </ul>
+
+            <div class="legal-highlight">
+                <strong>Key Integration Point</strong>: Overlaying SAR-detected "dark vessel" positions with known cable routes can identify vessels operating near cables while deliberately suppressing AIS — the highest-threat-tier monitoring targets.
+            </div>
+
+            <h3>Challenges of Latency and Coverage</h3>
+
+            <p>SAR satellites have orbital periods and cannot monitor the same area 24/7 like CCTV. In practice, SAR coverage of Taiwan's surrounding waters occurs every few hours to several days, depending on satellite pass schedules and weather conditions (heavy rain can degrade SAR imagery). This means that even combining satellite AIS and SAR, monitoring blind spots still exist — especially during fast-moving sabotage operations.</p>
+
+            <p>This is also why this monitoring site uses multi-dimensional AIS behavioral analysis rather than relying solely on "SAR image presence" for threat assessment — cumulative behavioral patterns typically reveal threat intent far better than position data from a single moment in time.</p>
+
+            <h3>Want to Dive Deeper into Taiwan's Cable Status?</h3>
+
+            <p>The next article provides a comprehensive look at Taiwan's 14 international cables, deep analysis of the Matsu dilemma, the 2023–2025 cable break incident timeline, and government response measures.</p>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <div class="intro-cta">
+        <a href="index.html" class="lang-zh-only">查看即時監測地圖 →</a>
+        <a href="index.html" class="lang-en-only">View Real-Time Monitoring Map →</a>
+    </div>
+
+    <!-- Blog Nav -->
+    <div class="blog-nav">
+        <a href="blog-what-is-submarine-cable.html" class="lang-zh-only">← 上一篇：什麼是海底電纜？</a>
+        <a href="blog-what-is-submarine-cable.html" class="lang-en-only">← Prev: What Are Submarine Cables?</a>
+        <a href="blog.html" class="lang-zh-only">返回文章列表</a>
+        <a href="blog.html" class="lang-en-only">Back to Blog</a>
+        <a href="blog-taiwan-cable-status.html" class="lang-zh-only">下一篇：台灣海纜現況 →</a>
+        <a href="blog-taiwan-cable-status.html" class="lang-en-only">Next: Taiwan Cable Status →</a>
+    </div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+
+    <script defer src="js/i18n.js"></script>
+    <style>
+        body.lang-en .lang-zh-only { display: none !important; }
+        body:not(.lang-en) .lang-en-only { display: none !important; }
+    </style>
+    <script defer src="js/mobile-nav.js"></script>
+</body>
+</html>
