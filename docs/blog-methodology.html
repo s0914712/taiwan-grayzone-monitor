@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>本網站所使用之方法 | Our Methodology — Taiwan Gray Zone &amp; Submarine Cable Monitor</title>
+    <meta name="description" content="本站開源情報與威脅偵測方法論完整說明：AIS 與 SAR 資料來源、雙層軌跡儲存、九大威脅評分準則、船型乘數、暗船偵測與 AIS 造假偵測（不可能物理、方框與圓形軌跡）。">
+    <meta name="keywords" content="方法論,OSINT,開源情報,威脅評分,AIS,SAR,暗船偵測,AIS造假,spoofing,CSIS,Signals in the Swarm">
+    <meta name="author" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="本網站所使用之方法 | Our Methodology">
+    <meta property="og:description" content="威脅評分系統、AIS暗船偵測、AIS造假偵測的完整技術說明。">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="本網站所使用之方法 | Our Methodology">
+    <meta name="twitter:description" content="威脅評分系統、AIS暗船偵測、AIS造假偵測的完整技術說明。">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+    .article-meta { display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:16px 20px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:8px;margin:16px auto;max-width:900px;font-size:11px;color:var(--text-secondary); }
+    .meta-label { color:var(--accent-cyan);font-weight:600;font-family:'JetBrains Mono',monospace;font-size:10px; }
+    .keyword-badge { display:inline-block;padding:2px 8px;background:rgba(0,245,255,0.1);border:1px solid rgba(0,245,255,0.3);border-radius:3px;font-size:10px;color:var(--accent-cyan);font-family:'JetBrains Mono',monospace; }
+    .legal-highlight { border-left:3px solid var(--accent-cyan);padding:12px 16px;margin:12px 0;background:rgba(0,245,255,0.05);border-radius:0 6px 6px 0;font-size:12px;line-height:1.7; }
+    .legal-highlight strong { color:var(--accent-cyan); }
+    .gray-zone-table { width:100%;border-collapse:collapse;font-size:11px;margin:12px 0; }
+    .gray-zone-table th { text-align:left;padding:8px 10px;background:var(--bg-secondary);color:var(--accent-cyan);font-weight:600;border-bottom:1px solid var(--border-glow);font-size:10px; }
+    .gray-zone-table td { padding:6px 10px;border-bottom:1px solid rgba(0,245,255,0.05);color:var(--text-primary); }
+    .blog-nav { display:flex;justify-content:space-between;align-items:center;padding:16px 20px;margin:0 auto 24px;max-width:900px;gap:12px;flex-wrap:wrap; }
+    .blog-nav a { color:var(--accent-cyan);text-decoration:none;font-size:12px;font-family:'JetBrains Mono',monospace;border:1px solid var(--accent-cyan);padding:6px 12px;border-radius:4px; }
+    .blog-nav a:hover { background:rgba(0,245,255,0.1); }
+    .intro-section blockquote { border-left:3px solid var(--accent-orange);padding:14px 18px;margin:18px 0;background:rgba(255,107,53,0.06);border-radius:0 6px 6px 0;font-size:15px;line-height:1.9;color:var(--text-primary);font-style:italic; }
+    .flow-box { font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;background:var(--bg-secondary);border:1px solid var(--border-glow);border-radius:8px;padding:16px 18px;margin:14px 0;color:var(--accent-green);overflow-x:auto; }
+    </style>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0f1c">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "TechArticle",
+                "headline": "本網站如何運作：開源情報與威脅偵測方法論",
+                "description": "AIS 與 SAR 資料來源、雙層軌跡儲存、九大威脅評分準則、暗船偵測與 AIS 造假偵測的完整技術說明。",
+                "inLanguage": "zh-TW",
+                "author": { "@type": "Organization", "name": "Taiwan Gray Zone & Submarine Cable Monitor" },
+                "publisher": { "@type": "Organization", "name": "Taiwan Gray Zone & Submarine Cable Monitor" },
+                "mainEntityOfPage": "https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html"
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "首頁 Home", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/" },
+                    { "@type": "ListItem", "position": 2, "name": "知識庫 Blog", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/blog.html" },
+                    { "@type": "ListItem", "position": 3, "name": "本網站方法論", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html" }
+                ]
+            }
+        ]
+    }
+    </script>
+</head>
+<body>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <header class="header" style="position:sticky;top:0;z-index:100">
+        <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
+        <div class="header-info">
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+        </div>
+    </header>
+
+    <div class="intro-hero">
+        <h1 class="lang-zh-only">本網站如何運作：開源情報與威脅偵測方法論</h1>
+        <h1 class="lang-en-only">How This Site Works: OSINT and Threat Detection Methodology</h1>
+        <p class="subtitle lang-zh-only">從衛星數據到 AI 演算法，揭開威脅偵測的內部機制</p>
+        <p class="subtitle lang-en-only">From satellite data to AI algorithms — inside the threat-detection engine</p>
+    </div>
+
+    <div class="article-meta">
+        <span><span class="meta-label">系列 SERIES:</span> 海底電纜知識庫 Submarine Cable Knowledge Base</span>
+        <span><span class="meta-label">文章 ARTICLE:</span> 06 / 06</span>
+        <span><span class="meta-label">關鍵字 KEYWORDS:</span></span>
+        <span class="keyword-badge">OSINT</span>
+        <span class="keyword-badge">威脅評分</span>
+        <span class="keyword-badge">SAR</span>
+        <span class="keyword-badge">AIS造假</span>
+        <span class="keyword-badge">CSIS</span>
+    </div>
+
+    <!-- Section 1: Needle in the Ocean -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>🔍 大海撈針的科學</h2>
+            <blockquote>我們如何從每天數以萬計的船舶訊號中，找出那幾艘真正可能威脅海底電纜的影子船隻？答案是一套結合衛星數據、AI 演算法與開源情報的多層次威脅偵測系統。</blockquote>
+            <p>台灣周邊海域每天有數萬筆 AIS 船舶訊號流動——漁船、貨輪、油輪、客輪、公務船交織成一張密密麻麻的軌跡網。其中絕大多數都是合法、例行的航行。真正可能威脅海底電纜的影子船隻，可能只有寥寥數艘，藏身於這片數據汪洋之中。</p>
+            <p>要在如此龐大的雜訊中精準辨識出可疑目標，靠人工逐艘檢視顯然不可行。本站的做法，是把美國智庫 CSIS「Signals in the Swarm」報告所提出的灰色地帶分析方法論，轉化為一套可自動化、可重複、可量化的演算法流程：從多個開源數據源擷取資料，逐艘船比對其行為特徵，依九大準則加權評分，最終把每一艘船分類為正常、中等、高、或極高風險。</p>
+            <p>本文將完整揭開這套系統的內部運作——從資料怎麼來、軌跡怎麼存、分數怎麼算，到暗船與造假如何偵測，以及我們對自身局限性的坦白說明。所有方法皆基於公開資訊（OSINT），所有程式碼皆開源於 GitHub。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>🔍 The Science of Finding a Needle in the Ocean</h2>
+            <blockquote>How do we find, among tens of thousands of daily vessel signals, the few shadow ships that may genuinely threaten submarine cables? The answer is a multi-layered threat-detection system combining satellite data, AI algorithms and open-source intelligence.</blockquote>
+            <p>Every day, tens of thousands of AIS vessel signals flow through the waters around Taiwan — fishing boats, cargo ships, tankers, passenger ferries and government vessels weaving a dense web of tracks. The vast majority are lawful, routine voyages. The shadow ships that may truly threaten submarine cables might number only a handful, hidden within this ocean of data.</p>
+            <p>To precisely identify suspicious targets amid such enormous noise, manual ship-by-ship inspection is clearly impractical. This site's approach is to convert the gray-zone analysis methodology of the CSIS report "Signals in the Swarm" into an automated, repeatable, quantifiable algorithmic pipeline: ingest data from multiple open sources, compare each ship's behavioural signatures, weight-score them against nine criteria, and finally classify each ship as normal, medium, high or critical risk.</p>
+            <p>This article fully reveals the inner workings of this system — where the data comes from, how tracks are stored, how scores are computed, how dark vessels and spoofing are detected, and an honest account of our own limitations. All methods are based on open-source intelligence (OSINT), and all code is open-sourced on GitHub.</p>
+        </div>
+    </section>
+
+    <!-- Section 2: Data Sources -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>📡 資料來源</h2>
+            <p>本站不依賴任何機密或專屬情資，所有分析皆建立在公開、可查證的開源資料之上：</p>
+            <p><strong>台灣港務局 AIS 數據（每 2 小時）：</strong>船舶自動識別系統（AIS）位置資料來自台灣港務局公開資源，每 2 小時自動擷取一次，提供船隻的即時位置、速度、航向、船名與類型等核心資訊。</p>
+            <p><strong>Global Fishing Watch SAR 衛星暗船偵測：</strong>透過合成孔徑雷達（SAR）衛星影像，偵測那些關閉了 AIS、無法被一般系統追蹤的「暗船」。SAR 不受雲層與晝夜影響，能在影像上直接捕捉到海面上的金屬船體回波。</p>
+            <p><strong>CSIS「Signals in the Swarm」方法論：</strong>威脅評分的整體架構參考美國智庫 CSIS 的同名報告，採用其對灰色地帶活動的分析框架——電纜鄰近、之字形、走暗、身分操弄等指標。</p>
+            <p><strong>ITU MARS 登記資料（30 天快取）：</strong>國際電信聯盟（ITU）的海上船舶電台（MARS）登記資料庫，用於比對船舶申報的船名、IMO 號碼與呼號是否與官方登記相符；資料快取 30 天以減少查詢負擔。</p>
+            <p><strong>聯合國制裁船舶清單：</strong>比對船舶是否名列聯合國制裁名單，作為高威脅指標之一。</p>
+            <p>整體資料流程完全自動化，部署於 GitHub Actions 排程：</p>
+            <div class="flow-box">GitHub Actions（排程）<br>&nbsp;&nbsp;→ 擷取 AIS／SAR 資料（fetch）<br>&nbsp;&nbsp;→ 偵測海上旁靠／威脅評分（analyze）<br>&nbsp;&nbsp;→ 彙整產生 data.json（generate）<br>&nbsp;&nbsp;→ 部署至 GitHub Pages</div>
+        </div>
+        <div class="lang-en-only">
+            <h2>📡 Data Sources</h2>
+            <p>This site relies on no classified or proprietary intelligence; all analysis is built on public, verifiable open-source data:</p>
+            <p><strong>Taiwan Port Bureau AIS data (every 2 hours):</strong> Automatic Identification System (AIS) position data comes from the Taiwan Port Bureau's public resources, fetched automatically every 2 hours, providing each ship's real-time position, speed, heading, name and type.</p>
+            <p><strong>Global Fishing Watch SAR satellite dark-vessel detection:</strong> Using synthetic aperture radar (SAR) satellite imagery, it detects "dark vessels" that have switched off AIS and cannot be tracked by ordinary systems. SAR works through clouds and at night, capturing the radar return of metal hulls on the sea surface directly in imagery.</p>
+            <p><strong>CSIS "Signals in the Swarm" methodology:</strong> The overall architecture of threat scoring draws on the CSIS report of the same name, adopting its analytical framework for gray-zone activity — cable proximity, zigzag, going dark, identity manipulation and more.</p>
+            <p><strong>ITU MARS registry (30-day cache):</strong> The International Telecommunication Union (ITU) Maritime mobile Access and Retrieval System (MARS) registry is used to check whether a ship's declared name, IMO number and call sign match the official record; the data is cached for 30 days to reduce query load.</p>
+            <p><strong>UN sanctions vessel list:</strong> Ships are checked against the UN sanctions list as one of the high-threat indicators.</p>
+            <p>The entire data pipeline is fully automated, deployed on a GitHub Actions schedule:</p>
+            <div class="flow-box">GitHub Actions (scheduled)<br>&nbsp;&nbsp;→ fetch AIS / SAR data<br>&nbsp;&nbsp;→ detect ship-to-ship / threat scoring (analyze)<br>&nbsp;&nbsp;→ consolidate into data.json (generate)<br>&nbsp;&nbsp;→ deploy to GitHub Pages</div>
+        </div>
+    </section>
+
+    <!-- Section 3: Two-Tier Track Storage -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>🗂️ 雙層軌跡儲存</h2>
+            <p>不同類型的船舶威脅輪廓不同，所需的資料保留策略也不同。本站採用「雙層軌跡儲存」架構，平衡分析深度與儲存效率：</p>
+            <p><strong>第一層（Tier-1）：</strong>儲存中國漁船與所有可疑船舶的軌跡，保留 14 天，同時用於<strong>動畫回放與威脅分析</strong>。這些是最需要密切觀察的對象。</p>
+            <p><strong>第二層（Tier-2）：</strong>儲存貨輪、油輪、LNG 船以及曾變更身分的船舶軌跡，保留 28 天，<strong>僅用於分析</strong>（不納入動畫）。這些大噸位船因擁有長錨鏈，對電纜具有真實的物理破壞風險。</p>
+            <p><strong>排除規則（Exclusion Rules）：</strong>為避免雜訊干擾，系統會在分析前先排除明顯非威脅的目標，這些目標會「提早返回」、跳過所有昂貴的分析運算：</p>
+            <ul style="font-size:15px;line-height:1.9;color:var(--text-secondary);">
+                <li>MMSI 以 <strong>9</strong> 開頭——助航設備／浮標（AtoN）</li>
+                <li>MMSI 以 <strong>898</strong> 開頭——漁網標示器</li>
+                <li>船名含 <strong>%</strong>、含 <strong>BUOY</strong>、或以電壓樣式（如 12.5V）結尾——漁網信標</li>
+            </ul>
+            <p>透過提早排除這些浮標與信標，系統得以把運算資源集中在真正值得分析的船舶上。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>🗂️ Two-Tier Track Storage</h2>
+            <p>Different vessel types have different threat profiles and therefore need different data-retention strategies. This site uses a "two-tier track storage" architecture to balance analytical depth with storage efficiency:</p>
+            <p><strong>Tier-1:</strong> Stores tracks of Chinese fishing vessels and all suspicious vessels, retained for 14 days, used for both <strong>animation playback and threat analysis</strong>. These are the targets that most need close observation.</p>
+            <p><strong>Tier-2:</strong> Stores tracks of cargo ships, tankers, LNG carriers and vessels that have changed identity, retained for 28 days, <strong>used for analysis only</strong> (not included in animation). These high-tonnage ships, with their long anchor chains, pose a real physical risk of cable damage.</p>
+            <p><strong>Exclusion rules:</strong> To avoid noise, the system first excludes obvious non-threats before analysis; these targets "return early" and skip all expensive computation:</p>
+            <ul style="font-size:15px;line-height:1.9;color:var(--text-secondary);">
+                <li>MMSI starting with <strong>9</strong> — aids to navigation / buoys (AtoN)</li>
+                <li>MMSI starting with <strong>898</strong> — fishing net markers</li>
+                <li>Name containing <strong>%</strong>, containing <strong>BUOY</strong>, or ending in a voltage pattern (e.g. 12.5V) — fishing net beacons</li>
+            </ul>
+            <p>By excluding these buoys and beacons early, the system concentrates its computing resources on the vessels truly worth analysing.</p>
+        </div>
+    </section>
+
+    <!-- Section 4: Threat Scoring System -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>🎯 威脅評分系統</h2>
+            <p>系統的核心，是一套九大準則的加權評分機制。每艘船依其行為特徵累積分數，分數越高代表威脅越大。以下以白話說明每一項準則：</p>
+            <table class="gray-zone-table">
+                <thead><tr><th>#</th><th>準則</th><th>判定方式</th><th>分數</th></tr></thead>
+                <tbody>
+                    <tr><td>1</td><td>靠近電纜 Cable Proximity</td><td>軌跡點位於海底電纜 5 公里內</td><td>+2</td></tr>
+                    <tr><td>2</td><td>在電纜附近徘徊 Loitering</td><td>於電纜附近以 &lt;8 節低速停留逾 3 小時</td><td>+3</td></tr>
+                    <tr><td>3</td><td>之字形航行 Zigzag</td><td>≥3 次、每次 ≥45° 的轉向</td><td>+1</td></tr>
+                    <tr><td>4</td><td>200 米等深線 Depth Contour</td><td>軌跡 ≥30% 時間貼近大陸棚邊緣</td><td>+1</td></tr>
+                    <tr><td>5</td><td>AIS 異常 Anomalies</td><td>變更船名 ≥2 次、走暗 &gt;18 小時、變更船型</td><td>+1 至 +3</td></tr>
+                    <tr><td>6</td><td>非主要旗籍國 Non-Top-10 Flag</td><td>MMSI 國碼不在前十大旗籍國之列</td><td>+1</td></tr>
+                    <tr><td>7</td><td>聯合國制裁 UN Sanctions</td><td>IMO 或船名命中制裁名單</td><td>+8</td></tr>
+                    <tr><td>8</td><td>AIS 造假 Spoofing</td><td>不可能物理／方框／圓形軌跡（每項）</td><td>+4</td></tr>
+                    <tr><td>9</td><td>ITU MARS 不符 Mismatch</td><td>船名、IMO 或呼號與 ITU 登記不符</td><td>+3</td></tr>
+                    <tr><td>10</td><td>海上換貨／旁靠 STS Transfer</td><td>涉及船對船旁靠（可疑 +5／一般 +2）</td><td>+2／+5</td></tr>
+                </tbody>
+            </table>
+            <p><strong>船型乘數：</strong>行為類分數（準則 1–3、5）會依船型乘上不同係數，因為不同船型對電纜的實際威脅差異極大。高威脅指標（4、6–9）則<strong>不</strong>乘係數。</p>
+            <table class="gray-zone-table">
+                <thead><tr><th>船型</th><th>乘數</th><th>理由</th></tr></thead>
+                <tbody>
+                    <tr><td>貨輪 / 油輪 / LNG</td><td>×1.0</td><td>長錨鏈、高噸位，具真實斷纜風險</td></tr>
+                    <tr><td>漁船</td><td>×0.2</td><td>船小、例行作業，對電纜威脅低</td></tr>
+                    <tr><td>海警 / 海巡 / 海救 / 科研</td><td>×0.5</td><td>中國公務／特殊利益船</td></tr>
+                    <tr><td>其他 / 未知</td><td>×0.5</td><td>不確定</td></tr>
+                </tbody>
+            </table>
+            <p><strong>組合加分（同樣乘船型）：</strong>靠近電纜 ＋ 之字形 = +3（疑似拖錨）；靠近電纜 ＋ 徘徊 = +2。</p>
+            <div class="legal-highlight"><strong>最終分數公式：</strong>final_score = round(行為類分數 × 船型乘數) ＋ 高威脅指標分數</div>
+            <p><strong>風險等級：</strong></p>
+            <table class="gray-zone-table">
+                <thead><tr><th>等級</th><th>分數</th><th>意義</th></tr></thead>
+                <tbody>
+                    <tr><td>critical 極高</td><td>≥ 12</td><td>多項強烈指標</td></tr>
+                    <tr><td>high 高</td><td>≥ 8</td><td>可疑——列入清單（門檻）</td></tr>
+                    <tr><td>medium 中等</td><td>≥ 5</td><td>偏高但未達可疑</td></tr>
+                    <tr><td>normal 正常</td><td>&lt; 5</td><td>無須處置</td></tr>
+                </tbody>
+            </table>
+            <p>分數達到 <strong>8 分</strong>即被標記為「可疑」，列入監測清單。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>🎯 Threat Scoring System</h2>
+            <p>At the core of the system is a weighted scoring mechanism with nine criteria. Each ship accumulates points based on its behavioural signatures — the higher the score, the greater the threat. Here is each criterion in plain language:</p>
+            <table class="gray-zone-table">
+                <thead><tr><th>#</th><th>Criterion</th><th>Detection</th><th>Score</th></tr></thead>
+                <tbody>
+                    <tr><td>1</td><td>Cable Proximity</td><td>Track point within 5 km of a submarine cable</td><td>+2</td></tr>
+                    <tr><td>2</td><td>Cable Loitering</td><td>Low speed (&lt;8 kn) near cable for &gt;3 hr</td><td>+3</td></tr>
+                    <tr><td>3</td><td>Zigzag</td><td>≥3 turns of ≥45° heading change</td><td>+1</td></tr>
+                    <tr><td>4</td><td>200 m Depth Contour</td><td>≥30% of track near continental shelf edge</td><td>+1</td></tr>
+                    <tr><td>5</td><td>AIS Anomalies</td><td>Name changes ≥2, dark &gt;18 hr, type changes</td><td>+1 to +3</td></tr>
+                    <tr><td>6</td><td>Non-Top-10 Flag</td><td>MMSI country code not in top-10 flag states</td><td>+1</td></tr>
+                    <tr><td>7</td><td>UN Sanctions</td><td>IMO or name matches sanctions list</td><td>+8</td></tr>
+                    <tr><td>8</td><td>AIS Spoofing</td><td>Impossible physics / box / circle pattern (each)</td><td>+4</td></tr>
+                    <tr><td>9</td><td>ITU MARS Mismatch</td><td>Name, IMO or call sign differs from ITU registry</td><td>+3</td></tr>
+                    <tr><td>10</td><td>STS Transfer</td><td>Involved in ship-to-ship rendezvous (susp. +5 / any +2)</td><td>+2／+5</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Vessel type multiplier:</strong> Behavioural scores (criteria 1–3, 5) are multiplied by a type-specific factor, because different vessel types pose vastly different real risks to cables. High-threat indicators (4, 6–9) are <strong>not</strong> multiplied.</p>
+            <table class="gray-zone-table">
+                <thead><tr><th>Type</th><th>Multiplier</th><th>Rationale</th></tr></thead>
+                <tbody>
+                    <tr><td>cargo / tanker / LNG</td><td>×1.0</td><td>Long anchor chains, high tonnage, real break risk</td></tr>
+                    <tr><td>fishing</td><td>×0.2</td><td>Small, routine operations, low cable threat</td></tr>
+                    <tr><td>coastguard / MSA / rescue / research</td><td>×0.5</td><td>China public-service / special-interest vessels</td></tr>
+                    <tr><td>other / unknown</td><td>×0.5</td><td>Uncertain</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Combo bonuses (also multiplied by type):</strong> Cable proximity + zigzag = +3 (possible anchor dragging); cable proximity + loitering = +2.</p>
+            <div class="legal-highlight"><strong>Final score formula:</strong> final_score = round(behavioural score × type multiplier) + high-threat indicators</div>
+            <p><strong>Risk levels:</strong></p>
+            <table class="gray-zone-table">
+                <thead><tr><th>Level</th><th>Score</th><th>Meaning</th></tr></thead>
+                <tbody>
+                    <tr><td>critical</td><td>≥ 12</td><td>Multiple strong indicators</td></tr>
+                    <tr><td>high</td><td>≥ 8</td><td>Suspicious — flagged (threshold)</td></tr>
+                    <tr><td>medium</td><td>≥ 5</td><td>Elevated but not suspicious</td></tr>
+                    <tr><td>normal</td><td>&lt; 5</td><td>No action</td></tr>
+                </tbody>
+            </table>
+            <p>A score of <strong>8</strong> or above flags a vessel as "suspicious" and adds it to the watch list.</p>
+        </div>
+    </section>
+
+    <!-- Section 5: Dark Vessel Detection -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>🔦 暗船偵測</h2>
+            <p>影子船隊最常用的規避手法，就是關閉 AIS——也就是「走暗」。一旦 AIS 關閉，船隻便從一般追蹤系統上消失。然而，物理上的船體並不會消失，這正是 SAR 衛星發揮作用的地方。</p>
+            <p><strong>SAR 如何運作：</strong>合成孔徑雷達（SAR）是一種主動式雷達衛星，會向海面發射微波並接收回波。海水表面相對平滑，回波微弱（在影像上呈暗色）；而金屬船體會強烈反射雷達波（在影像上呈現明亮的亮點）。因此，即使一艘船完全沒有發送 AIS，它的船體仍會在 SAR 影像上「現形」。</p>
+            <p><strong>交叉比對找出暗船：</strong>本站取得 SAR 偵測到的所有船體亮點後，會與同一時間、同一海域的 AIS 訊號進行交叉比對。凡是 SAR 上有、AIS 上卻沒有對應訊號的船體，就高度可能是一艘刻意「走暗」的暗船。SAR 的另一大優勢是不受雲層遮蔽與晝夜影響，能在任何天候下穿透雲層成像，這是光學衛星做不到的。</p>
+            <p>暗船偵測讓我們得以揭露那些自以為「隱形」的船舶，是對抗影子船隊灰色地帶手法的關鍵一環。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>🔦 Dark Vessel Detection</h2>
+            <p>The most common evasion tactic of shadow fleets is to switch off AIS — to "go dark." Once AIS is off, a ship vanishes from ordinary tracking systems. Physically, however, the hull does not disappear — and this is exactly where SAR satellites come in.</p>
+            <p><strong>How SAR works:</strong> Synthetic aperture radar (SAR) is an active radar satellite that emits microwaves toward the sea surface and receives the echoes. The sea surface is relatively smooth and reflects weakly (appearing dark in imagery), while a metal hull strongly reflects radar waves (appearing as a bright spot). So even if a ship sends no AIS at all, its hull still "shows up" in SAR imagery.</p>
+            <p><strong>Cross-referencing to find dark vessels:</strong> After obtaining all hull bright-spots detected by SAR, this site cross-references them with AIS signals from the same time and area. Any hull that appears in SAR but has no corresponding AIS signal is highly likely to be a deliberately "dark" vessel. Another major advantage of SAR is that it is unaffected by cloud cover and works day or night, imaging through clouds in any weather — something optical satellites cannot do.</p>
+            <p>Dark-vessel detection lets us expose ships that believe themselves "invisible," a key element in countering the gray-zone tactics of shadow fleets.</p>
+        </div>
+    </section>
+
+    <!-- Section 6: Spoofing Detection Details -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>🛰️ 造假偵測詳述</h2>
+            <p>除了關閉 AIS，更狡猾的手法是「偽造」AIS——發送虛假的位置訊號，讓船看起來在別處，或製造出根本不存在的航跡。本站設計了三種演算法來識破這類造假，每偵測到一種即加 +4 分：</p>
+            <div class="legal-highlight">
+                <strong>不可能的物理（Impossible Physics）</strong><br>
+                • <strong>瞬間移動</strong>：兩個連續軌跡點之間的計算航速 &gt; 100 公里/小時——船舶不可能達到的速度。<br>
+                • <strong>速度不符</strong>：計算航速與回報航速（SOG）的比值 &gt; 3 倍或 &lt; 0.33 倍。<br>
+                • <strong>航向不符</strong>：計算航向與回報航向（COG）相差 &gt; 60°。<br>
+                （演算法會跳過 &gt;18 小時的走暗間隔，以避免誤判。）
+            </div>
+            <div class="legal-highlight">
+                <strong>方框軌跡（Box Pattern）</strong><br>
+                • ≥3 次接近 90° 的轉向（容差 65°–115°）。<br>
+                • 路徑封閉（起點與終點相距 &lt; 5 公里）或整體邊界框 &lt; 5 公里。<br>
+                這類過於規律的方形軌跡，往往是訊號產生器偽造的痕跡，而非真實航行。（會先濾除速度 &lt; 0.5 節的靜止點。）
+            </div>
+            <div class="legal-highlight">
+                <strong>圓形軌跡（Circle Pattern）</strong><br>
+                • 以軌跡質心計算，半徑變異係數（CV）&lt; 0.25——表示半徑變化極小、過於對稱。<br>
+                • 弧線涵蓋 &gt; 270°——接近完整圓圈。<br>
+                • 半徑落在 0.1–5.0 公里之間——排除 GPS 漂移與正常航行。<br>
+                如此完美的圓，幾乎不可能是真實船舶自然航行的結果。
+            </div>
+            <p>這三種演算法共同構成本站對 AIS 造假的偵測核心，使刻意製造假訊號的船舶無所遁形。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>🛰️ Spoofing Detection Details</h2>
+            <p>Beyond switching off AIS, a craftier tactic is to "spoof" AIS — broadcasting false position signals to make a ship appear elsewhere, or fabricating tracks that never happened. This site designs three algorithms to expose such spoofing, each adding +4 points when detected:</p>
+            <div class="legal-highlight">
+                <strong>Impossible Physics</strong><br>
+                • <strong>Teleportation:</strong> calculated speed between two consecutive points &gt; 100 km/h — a speed no ship can reach.<br>
+                • <strong>Speed mismatch:</strong> ratio of calculated speed to reported SOG &gt; 3× or &lt; 0.33×.<br>
+                • <strong>Bearing mismatch:</strong> calculated bearing differs from reported COG by &gt; 60°.<br>
+                (The algorithm skips going-dark gaps of &gt;18 hours to avoid false positives.)
+            </div>
+            <div class="legal-highlight">
+                <strong>Box Pattern</strong><br>
+                • ≥3 near-90° turns (tolerance 65°–115°).<br>
+                • Path closed (start–end &lt; 5 km) or overall bounding box &lt; 5 km.<br>
+                Such overly regular square tracks are often the fingerprint of a signal generator, not real navigation. (Stationary points below 0.5 kn are filtered out first.)
+            </div>
+            <div class="legal-highlight">
+                <strong>Circle Pattern</strong><br>
+                • Centroid-based radius coefficient of variation (CV) &lt; 0.25 — meaning the radius varies very little and is too symmetric.<br>
+                • Arc coverage &gt; 270° — a near-complete circle.<br>
+                • Radius between 0.1–5.0 km — excluding GPS drift and normal sailing.<br>
+                Such a perfect circle is almost impossible as the result of a real ship sailing naturally.
+            </div>
+            <p>Together these three algorithms form the core of this site's AIS-spoofing detection, leaving ships that deliberately fabricate signals nowhere to hide.</p>
+        </div>
+    </section>
+
+    <!-- Section 7: Limitations and Transparency -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>⚖️ 局限性與透明度</h2>
+            <p>任何負責任的開源情報專案，都必須坦白說明自身的局限。本站亦然：</p>
+            <p><strong>AIS 涵蓋的缺口：</strong>AIS 資料的接收依賴岸基與衛星接收站，在某些海域可能存在覆蓋死角；船舶也可能因設備故障（而非惡意）而短暫中斷訊號。因此「走暗」的判定本身存在不確定性。</p>
+            <p><strong>可能的誤報（False Positives）：</strong>演算法是基於行為樣態的統計推論，並非百分之百準確。一艘合法船舶可能因避風、等待泊位或正常作業而呈現徘徊或繞圈，從而被系統誤標為可疑。我們寧可「寧錯勿漏」，但這也意味著清單上的船舶並非全都是真正的威脅。</p>
+            <div class="legal-highlight"><strong>並非所有可疑船舶都是真正的威脅。</strong>本站的分數是「值得進一步關注」的指標，而非「有罪」的定論。最終的判斷仍須結合更多情資與人工研判。</div>
+            <p><strong>完全開源與 OSINT：</strong>本站所有程式碼皆公開於 GitHub，任何人都可檢視、複現、質疑我們的方法。所有資料來源皆為公開的開源情報（OSINT），不涉及任何機密或非法取得的資訊。我們相信，透明本身就是公信力的基礎——唯有方法可被檢驗，結論才值得信賴。</p>
+            <p>這正是本系列文章的終點，也是整個監測專案的初衷：用公開的數據、透明的方法、可檢驗的演算法，為台灣的海底電纜安全，點亮一盞雖然微小、卻始終不滅的燈。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>⚖️ Limitations and Transparency</h2>
+            <p>Any responsible open-source intelligence project must be candid about its own limitations. This site is no exception:</p>
+            <p><strong>AIS coverage gaps:</strong> Receiving AIS data depends on shore-based and satellite stations, and some sea areas may have coverage blind spots; ships may also briefly lose signal due to equipment failure (rather than malice). The determination of "going dark" therefore carries inherent uncertainty.</p>
+            <p><strong>Possible false positives:</strong> The algorithms are statistical inferences based on behavioural patterns, not 100% accurate. A lawful ship may loiter or circle while sheltering from weather, awaiting a berth, or conducting normal operations, and thus be mislabelled as suspicious. We prefer "better safe than sorry," but that also means not every ship on the list is a genuine threat.</p>
+            <div class="legal-highlight"><strong>Not all suspicious vessels are actual threats.</strong> This site's scores are indicators of "worth further attention," not verdicts of "guilt." Final judgement still requires combining more intelligence and human assessment.</div>
+            <p><strong>Fully open source and OSINT:</strong> All of this site's code is public on GitHub; anyone can inspect, reproduce and challenge our methods. All data sources are public open-source intelligence (OSINT), involving no classified or illegally obtained information. We believe transparency itself is the foundation of credibility — only when methods can be examined do conclusions deserve trust.</p>
+            <p>This is the end of the series, and also the founding intent of the whole monitoring project: to use public data, transparent methods and verifiable algorithms to light a small but undying lamp for the security of Taiwan's submarine cables.</p>
+        </div>
+    </section>
+
+    <div class="blog-nav">
+        <a href="blog-enforcement-framework.html">← <span class="lang-zh-only">上一篇：執法框架與挑戰</span><span class="lang-en-only">Prev: Enforcement Framework</span></a>
+        <a href="blog.html"><span class="lang-zh-only">知識庫首頁</span><span class="lang-en-only">Blog Index</span></a>
+        <a href="index.html"><span class="lang-zh-only">前往即時監測 →</span><span class="lang-en-only">Go to Live Monitor →</span></a>
+    </div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+
+    <script defer src="js/i18n.js"></script>
+    <style>
+        body.lang-en .lang-zh-only { display: none !important; }
+        body:not(.lang-en) .lang-en-only { display: none !important; }
+    </style>
+    <script defer src="js/mobile-nav.js"></script>
+</body>
+</html>
