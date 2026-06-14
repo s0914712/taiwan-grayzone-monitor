@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>部落格 | Blog | Taiwan Gray Zone &amp; Submarine Cable Monitor</title>
+    <meta name="description" content="深入了解海底電纜安全、AIS 技術、台灣離島脆弱性與灰色地帶威脅。從馬祖斷纜到影子船隊——完整知識庫。">
+    <meta name="keywords" content="海底電纜,submarine cable,AIS,灰色地帶,gray zone,台灣,Taiwan,馬祖,Matsu,影子船隊,shadow fleet,UNCLOS,威脅評分,監測方法">
+    <meta name="author" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog.html">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="部落格 | Blog — Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:description" content="深入了解海底電纜安全、AIS 技術、台灣離島脆弱性與灰色地帶威脅。從馬祖斷纜到影子船隊——完整知識庫。">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/blog.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:locale" content="zh_TW">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="部落格 | Blog — Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta name="twitter:description" content="深入了解海底電纜安全、AIS 技術、台灣離島脆弱性與灰色地帶威脅。從馬祖斷纜到影子船隊——完整知識庫。">
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+    .blog-highlight {
+        border-left: 3px solid var(--accent-cyan);
+        padding: 12px 16px;
+        margin: 12px 0;
+        background: rgba(0,245,255,0.05);
+        border-radius: 0 6px 6px 0;
+        font-size: 13px;
+        line-height: 1.7;
+    }
+    .blog-highlight strong { color: var(--accent-cyan); }
+    .stat-box {
+        display: inline-block;
+        padding: 16px 24px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-glow);
+        border-radius: 8px;
+        text-align: center;
+        margin: 8px;
+    }
+    .stat-number { font-size: 2em; font-weight: 700; color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace; }
+    .stat-label { font-size: 11px; color: var(--text-secondary); }
+    .blog-nav { display: flex; justify-content: space-between; padding: 20px; max-width: 900px; margin: 0 auto; }
+    .blog-nav a { color: var(--accent-cyan); text-decoration: none; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+    .article-tag { display: inline-block; padding: 2px 8px; background: rgba(0,245,255,0.1); border: 1px solid rgba(0,245,255,0.3); border-radius: 3px; font-size: 10px; color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace; margin: 2px; }
+    .blog-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        padding: 20px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0f1c">
+</head>
+<body>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <header class="header" style="position:sticky;top:0;z-index:100">
+        <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
+        <div class="header-info">
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+        </div>
+    </header>
+    <div class="intro-hero">
+        <h1 class="lang-zh-only">海底電纜知識庫</h1>
+        <h1 class="lang-en-only">Submarine Cable Knowledge Hub</h1>
+        <p class="subtitle lang-zh-only">深入了解海底電纜安全、灰色地帶威脅與監測方法</p>
+        <p class="subtitle lang-en-only">Deep dives into submarine cable security, gray zone threats &amp; monitoring methods</p>
+    </div>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>📚 關於本知識庫</h2>
+            <p>台灣的海底電纜不只是技術基礎設施——它們是這個國家數位存亡的命脈。從馬祖斷纜事件到影子船隊在台灣海峽的活動，海底電纜正面臨前所未有的灰色地帶威脅。本知識庫整合了技術說明、地緣政治分析與監測方法，幫助讀者從多個角度理解這一複雜議題。</p>
+            <p>無論你是對海洋安全感興趣的研究者、關心台灣局勢的公民，還是想深入了解本站監測方法的技術用戶，都能在這裡找到深入、可信賴的參考資料。所有文章均提供繁體中文與英文版本。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>📚 About This Knowledge Hub</h2>
+            <p>Taiwan's submarine cables are more than technical infrastructure — they are the digital lifeline on which this nation's existence depends. From the Matsu cable cut to shadow fleet operations in the Taiwan Strait, submarine cables face unprecedented gray zone threats. This knowledge hub integrates technical explainers, geopolitical analysis, and monitoring methodology to help readers understand this complex issue from multiple angles.</p>
+            <p>Whether you're a researcher interested in maritime security, a citizen concerned about Taiwan's situation, or a technical user wanting to understand this site's monitoring methods — you'll find in-depth, trustworthy reference material here. All articles are available in both Traditional Chinese and English.</p>
+        </div>
+    </section>
+
+    <div class="blog-grid">
+        <a href="blog-what-is-submarine-cable.html" class="intro-tool-card">
+            <div class="tool-icon">🔌</div>
+            <h3>
+                <span class="lang-zh-only">什麼是海底電纜，為什麼重要？</span>
+                <span class="lang-en-only">What Are Submarine Cables and Why Do They Matter?</span>
+            </h3>
+            <p>
+                <span class="lang-zh-only">從馬祖斷纜事件出發，認識海底電纜的物理構造、歷史與全球重要性</span>
+                <span class="lang-en-only">From the Matsu cable cut to global internet infrastructure — the physical, historical, and strategic importance of submarine cables</span>
+            </p>
+        </a>
+        <a href="blog-what-is-ais.html" class="intro-tool-card">
+            <div class="tool-icon">📡</div>
+            <h3>
+                <span class="lang-zh-only">AIS 是什麼？</span>
+                <span class="lang-en-only">What Is AIS?</span>
+            </h3>
+            <p>
+                <span class="lang-zh-only">船舶自動識別系統如何運作，以及為何「走暗」行為是灰色地帶威脅的關鍵訊號</span>
+                <span class="lang-en-only">How the Automatic Identification System works and why "going dark" is a critical gray zone threat signal</span>
+            </p>
+        </a>
+        <a href="blog-taiwan-cable-status.html" class="intro-tool-card">
+            <div class="tool-icon">🗺️</div>
+            <h3>
+                <span class="lang-zh-only">我國海底電纜現況</span>
+                <span class="lang-en-only">Taiwan's Submarine Cable Network</span>
+            </h3>
+            <p>
+                <span class="lang-zh-only">台灣14條國際電纜、離島脆弱性，以及斷纜頻率急升的現象</span>
+                <span class="lang-en-only">Taiwan's 14 international cables, outlying island vulnerabilities, and the alarming rise in cable break incidents</span>
+            </p>
+        </a>
+        <a href="blog-cable-threats.html" class="intro-tool-card">
+            <div class="tool-icon">⚠️</div>
+            <h3>
+                <span class="lang-zh-only">海底電纜面臨的威脅</span>
+                <span class="lang-en-only">Threats to Submarine Cables</span>
+            </h3>
+            <p>
+                <span class="lang-zh-only">自然災害、意外損壞到蓄意灰色地帶攻擊：影子船隊如何以錨作為武器</span>
+                <span class="lang-en-only">From natural hazards and accidental damage to deliberate gray zone attacks — how shadow fleets use anchors as weapons</span>
+            </p>
+        </a>
+        <a href="blog-enforcement-framework.html" class="intro-tool-card">
+            <div class="tool-icon">⚖️</div>
+            <h3>
+                <span class="lang-zh-only">我國執法框架與挑戰</span>
+                <span class="lang-en-only">Taiwan's Enforcement Framework</span>
+            </h3>
+            <p>
+                <span class="lang-zh-only">為什麼抓到犯船卻無法執法？UNCLOS、旗幟國管轄與台灣的困境</span>
+                <span class="lang-en-only">Why can't Taiwan arrest vessels caught damaging cables? UNCLOS, flag state jurisdiction, and Taiwan's enforcement dilemma</span>
+            </p>
+        </a>
+        <a href="blog-methodology.html" class="intro-tool-card">
+            <div class="tool-icon">🔬</div>
+            <h3>
+                <span class="lang-zh-only">本網站所使用之方法</span>
+                <span class="lang-en-only">Our Monitoring Methodology</span>
+            </h3>
+            <p>
+                <span class="lang-zh-only">威脅評分、AIS異常偵測、SAR暗船識別——我們如何從海量數據中找出影子船隻</span>
+                <span class="lang-en-only">Threat scoring, AIS anomaly detection, SAR dark vessel identification — how we find shadow ships in massive datasets</span>
+            </p>
+        </a>
+    </div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+    <script defer src="js/i18n.js"></script>
+    <style>
+        body.lang-en .lang-zh-only { display: none !important; }
+        body:not(.lang-en) .lang-en-only { display: none !important; }
+    </style>
+    <script defer src="js/mobile-nav.js"></script>
+</body>
+</html>
