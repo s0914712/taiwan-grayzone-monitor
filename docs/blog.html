@@ -10,64 +10,555 @@
     <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog.html">
     <meta property="og:type" content="website">
     <meta property="og:title" content="深度文章 | Blog — Taiwan Gray Zone &amp; Submarine Cable Monitor">
-    <meta property="og:description" content="深入了解台灣海底電纜安全、AIS船舶監控、灰色地帶戰術與本站監測方法。">
+    <meta property="og:description" content="深入了解台灣海底電纜安全、AIS船舶監控、灰色地帶戰術與本站監測方法。6篇系列文章＋學術研究報告。">
     <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/blog.html">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="深度文章 | Blog">
+    <meta name="twitter:title" content="深度文章 | Blog — Taiwan Gray Zone Monitor">
+
+    <!-- GTM -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@700;900&display=swap"></noscript>
     <link rel="stylesheet" href="css/main.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a0f1c">
+
+    <!-- JSON-LD: ItemList + BreadcrumbList -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"ItemList","name":"Taiwan Gray Zone Monitor — 深度文章系列","description":"六篇系列文章深入探討台灣海底電纜安全、AIS監控、灰色地帶威脅與執法挑戰","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html","numberOfItems":7,"itemListElement":[{"@type":"ListItem","position":1,"url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-submarine-cable.html","name":"什麼是海底電纜？海底電纜之重要性"},{"@type":"ListItem","position":2,"url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ais.html","name":"AIS 是什麼？為什麼與海底電纜相關"},{"@type":"ListItem","position":3,"url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-cable-status.html","name":"我國海底電纜現況"},{"@type":"ListItem","position":4,"url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-cable-threats.html","name":"海底電纜所受到的威脅"},{"@type":"ListItem","position":5,"url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-enforcement.html","name":"我國執法框架與挑戰"},{"@type":"ListItem","position":6,"url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html","name":"本網站所使用之方法"},{"@type":"ListItem","position":7,"url":"https://s0914712.github.io/taiwan-grayzone-monitor/research-submarine-cable-legal.html","name":"無形戰爭的關鍵點：中共對臺海底電纜的破壞"}]}
+    </script>
+
     <style>
-    .blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;max-width:900px;margin:24px auto;padding:0 16px}
-    .blog-card{background:var(--bg-card);border:1px solid var(--border-glow);border-radius:8px;padding:20px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;transition:border-color .2s,background .2s;position:relative;overflow:hidden}
-    .blog-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent-cyan),transparent);opacity:0;transition:opacity .2s}
-    .blog-card:hover{border-color:var(--accent-cyan);background:rgba(0,245,255,.03)}
-    .blog-card:hover::before{opacity:1}
-    .card-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.4);font-weight:600;letter-spacing:2px}
-    .card-title-zh{font-size:16px;font-weight:700;color:var(--text-primary);line-height:1.4}
-    .card-title-en{font-size:11px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace}
-    .card-desc{font-size:12px;color:var(--text-secondary);line-height:1.7;flex:1}
-    .card-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px}
-    .card-tag{padding:2px 7px;background:rgba(0,245,255,.08);border:1px solid rgba(0,245,255,.2);border-radius:3px;font-size:10px;color:var(--accent-cyan);font-family:'JetBrains Mono',monospace}
-    .card-reading{font-size:10px;color:rgba(255,255,255,.3);font-family:'JetBrains Mono',monospace;margin-left:auto}
-    .card-special{border-color:rgba(255,165,0,.2)}
-    .card-special:hover{border-color:rgba(255,165,0,.6)}
+    /* ── Hero ── */
+    .blog-hero {
+        position: relative;
+        padding: 64px 24px 52px;
+        text-align: center;
+        overflow: hidden;
+        border-bottom: 1px solid rgba(0,245,255,.1);
+    }
+    .blog-hero::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -100%; right: -100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, #00f5ff 40%, #c77dff 60%, transparent 100%);
+        animation: heroLine 5s ease-in-out infinite;
+    }
+    @keyframes heroLine {
+        0%   { transform: translateX(-30%); opacity: .4; }
+        50%  { transform: translateX(30%);  opacity: 1; }
+        100% { transform: translateX(-30%); opacity: .4; }
+    }
+    .hero-canvas {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        pointer-events: none;
+    }
+    .hero-content { position: relative; z-index: 1; }
+    .hero-eyebrow {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 4px;
+        color: rgba(0,245,255,.45);
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+    .hero-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: clamp(30px, 7vw, 60px);
+        font-weight: 900;
+        line-height: 1.1;
+        margin: 0 0 18px;
+        background: linear-gradient(135deg, #e8eef7 30%, #00f5ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -1px;
+    }
+    .hero-sub {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.8;
+        max-width: 500px;
+        margin: 0 auto 36px;
+    }
+    .hero-stats {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        flex-wrap: wrap;
+    }
+    .hero-stat { text-align: center; }
+    .h-stat-num {
+        display: block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--accent-cyan);
+        line-height: 1;
+        text-shadow: 0 0 20px rgba(0,245,255,.35);
+    }
+    .h-stat-label {
+        display: block;
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-top: 6px;
+        letter-spacing: .5px;
+    }
+
+    /* ── Series Track ── */
+    .series-track {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 18px 24px;
+        gap: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+        border-bottom: 1px solid rgba(0,245,255,.07);
+        background: rgba(0,245,255,.015);
+    }
+    .series-track::-webkit-scrollbar { display: none; }
+    .series-dot {
+        flex-shrink: 0;
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        border: 2px solid rgba(0,245,255,.2);
+        background: var(--bg-secondary);
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px; font-weight: 700;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: border-color .2s, color .2s, transform .2s, background .2s, box-shadow .2s;
+        position: relative;
+    }
+    .series-dot:hover {
+        border-color: var(--accent-cyan);
+        color: var(--accent-cyan);
+        background: rgba(0,245,255,.1);
+        transform: scale(1.12);
+        box-shadow: 0 0 12px rgba(0,245,255,.2);
+    }
+    .series-dot-label {
+        position: absolute;
+        bottom: -20px;
+        left: 50%; transform: translateX(-50%);
+        font-size: 9px;
+        color: rgba(0,245,255,.3);
+        white-space: nowrap;
+        pointer-events: none;
+        transition: color .2s;
+    }
+    .series-dot:hover .series-dot-label { color: rgba(0,245,255,.7); }
+    .series-line {
+        flex: 1;
+        min-width: 20px; max-width: 56px;
+        height: 2px;
+        background: linear-gradient(90deg, rgba(0,245,255,.15), rgba(0,245,255,.08));
+        flex-shrink: 0;
+    }
+
+    /* ── Filter Bar ── */
+    .filter-bar {
+        display: flex;
+        gap: 8px;
+        padding: 14px 24px 10px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        border-bottom: 1px solid rgba(0,245,255,.07);
+        background: rgba(10,15,28,.6);
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-bar-label {
+        flex-shrink: 0;
+        font-size: 9px;
+        font-family: 'JetBrains Mono', monospace;
+        color: rgba(0,245,255,.3);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        align-self: center;
+        margin-right: 4px;
+    }
+    .filter-btn {
+        flex-shrink: 0;
+        padding: 4px 14px;
+        background: transparent;
+        border: 1px solid rgba(0,245,255,.15);
+        border-radius: 20px;
+        font-size: 11px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-family: 'Noto Sans TC', sans-serif;
+        transition: border-color .2s, color .2s, background .2s;
+        white-space: nowrap;
+    }
+    .filter-btn:hover, .filter-btn.active {
+        border-color: var(--accent-cyan);
+        color: var(--accent-cyan);
+        background: rgba(0,245,255,.07);
+    }
+
+    /* ── Blog Grid ── */
+    .blog-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+        gap: 18px;
+        max-width: 1120px;
+        margin: 28px auto;
+        padding: 0 20px 8px;
+    }
+
+    /* ── Card ── */
+    .blog-card {
+        background: var(--bg-card);
+        border: 1px solid rgba(0,245,255,.12);
+        border-radius: 10px;
+        padding: 24px;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+        overflow: hidden;
+        transition: border-color .25s, transform .28s cubic-bezier(.22,.61,.36,1), box-shadow .25s, background .25s;
+        /* entrance animation */
+        opacity: 0;
+        transform: translateY(22px);
+    }
+    .blog-card.card-visible {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity .55s ease, transform .55s cubic-bezier(.22,.61,.36,1),
+                    border-color .25s, box-shadow .25s, background .25s;
+    }
+    /* top accent line */
+    .blog-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, var(--accent-cyan) 0%, transparent 80%);
+        opacity: 0;
+        transition: opacity .25s;
+    }
+    .blog-card:hover {
+        border-color: rgba(0,245,255,.4);
+        background: rgba(0,245,255,.025);
+        transform: translateY(-4px);
+        box-shadow: 0 10px 36px rgba(0,245,255,.07), 0 4px 12px rgba(0,0,0,.4);
+    }
+    .blog-card:hover::before { opacity: 1; }
+
+    /* large bg number watermark */
+    .card-bg-num {
+        position: absolute;
+        bottom: -12px; right: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 90px;
+        font-weight: 900;
+        color: rgba(0,245,255,.04);
+        line-height: 1;
+        pointer-events: none;
+        user-select: none;
+        transition: color .25s;
+    }
+    .blog-card:hover .card-bg-num { color: rgba(0,245,255,.07); }
+
+    .card-num {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: rgba(0,245,255,.5);
+        font-weight: 700;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+    }
+    .card-title-zh {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.4;
+        transition: color .2s;
+    }
+    .blog-card:hover .card-title-zh { color: var(--accent-cyan); }
+    .card-title-en {
+        font-size: 11px;
+        color: rgba(138,164,200,.6);
+        font-family: 'JetBrains Mono', monospace;
+        margin-top: -4px;
+    }
+    .card-desc {
+        font-size: 12.5px;
+        color: var(--text-secondary);
+        line-height: 1.85;
+        flex: 1;
+    }
+    .card-meta {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-top: 6px;
+    }
+    .card-tag {
+        padding: 2px 9px;
+        background: rgba(0,245,255,.06);
+        border: 1px solid rgba(0,245,255,.16);
+        border-radius: 12px;
+        font-size: 10px;
+        color: var(--accent-cyan);
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+    }
+    .card-reading {
+        font-size: 10px;
+        color: rgba(255,255,255,.22);
+        font-family: 'JetBrains Mono', monospace;
+        margin-left: auto;
+        white-space: nowrap;
+    }
+    /* hover arrow */
+    .card-arrow {
+        position: absolute;
+        bottom: 18px; right: 18px;
+        color: var(--accent-cyan);
+        font-size: 16px;
+        font-family: 'JetBrains Mono', monospace;
+        opacity: 0;
+        transform: translateX(-10px);
+        transition: opacity .22s, transform .22s;
+        pointer-events: none;
+    }
+    .blog-card:hover .card-arrow { opacity: 1; transform: translateX(0); }
+
+    /* Research card — gold treatment */
+    .card-research {
+        border-color: rgba(255,165,0,.18);
+        background: rgba(255,140,0,.015);
+    }
+    .card-research::before {
+        background: linear-gradient(90deg, rgba(255,165,0,.65) 0%, transparent 80%);
+    }
+    .card-research:hover {
+        border-color: rgba(255,165,0,.45);
+        background: rgba(255,140,0,.03);
+        box-shadow: 0 10px 36px rgba(255,140,0,.07), 0 4px 12px rgba(0,0,0,.4);
+    }
+    .card-research .card-num { color: rgba(255,165,0,.6); }
+    .card-research .card-bg-num { color: rgba(255,165,0,.04); }
+    .card-research:hover .card-bg-num { color: rgba(255,165,0,.07); }
+    .card-research:hover .card-title-zh { color: rgba(255,165,0,.9); }
+    .card-research .card-tag {
+        border-color: rgba(255,165,0,.25);
+        color: rgba(255,165,0,.85);
+        background: rgba(255,165,0,.06);
+    }
+    .card-research .card-arrow { color: rgba(255,165,0,.8); }
+
+    /* ── Section Label ── */
+    .section-label {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 8px 20px 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 3px;
+        color: rgba(0,245,255,.3);
+        text-transform: uppercase;
+        border-top: 1px solid rgba(0,245,255,.07);
+        padding-top: 24px;
+    }
+    .section-label.gold { color: rgba(255,165,0,.4); border-color: rgba(255,165,0,.1); }
+
+    /* ── CTA ── */
+    .blog-cta {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding: 12px 24px 56px;
+    }
+    .cta-primary {
+        padding: 13px 30px;
+        background: linear-gradient(135deg, rgba(0,245,255,.12), rgba(0,245,255,.04));
+        border: 1px solid var(--accent-cyan);
+        border-radius: 6px;
+        color: var(--accent-cyan);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: .5px;
+        transition: background .22s, transform .22s, box-shadow .22s;
+    }
+    .cta-primary:hover {
+        background: rgba(0,245,255,.18);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,245,255,.15);
+    }
+    .cta-secondary {
+        padding: 13px 24px;
+        border: 1px solid rgba(0,245,255,.15);
+        border-radius: 6px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 13px;
+        transition: border-color .22s, color .22s;
+    }
+    .cta-secondary:hover {
+        border-color: rgba(138,164,200,.5);
+        color: var(--text-primary);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+        .hero-title { font-size: 28px; }
+        .hero-stats { gap: 24px; }
+        .h-stat-num { font-size: 28px; }
+        .blog-grid { padding: 0 12px; gap: 12px; }
+        .series-track { padding: 14px 16px; }
+        .blog-hero { padding: 44px 16px 40px; }
+    }
     </style>
 </head>
+
 <body>
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- ── Header ── -->
     <header class="header" style="position:sticky;top:0;z-index:100">
         <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
         <div class="header-info">
-            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
+            <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
+            <a href="ais-animation.html" data-i18n="nav.animation">軌跡動畫</a>
+            <a href="ship-transfers.html" data-i18n="nav.transfers">旁靠偵測</a>
+            <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
+            <a href="research-submarine-cable-legal.html" data-i18n="nav.research">研究報告</a>
+            <a href="blog.html" class="active" data-i18n="nav.blog">深度文章</a>
+            <button id="langToggle" onclick="i18n.toggle()" aria-label="切換語言 / Switch language" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
         </div>
     </header>
 
-    <div class="intro-hero">
-        <h1 class="lang-zh-only">深度文章</h1>
-        <h1 class="lang-en-only">In-Depth Articles</h1>
-        <p class="subtitle lang-zh-only">從海底電纜的本質到台灣的安全挑戰——六篇系列文章帶你認識這場無形的海底戰爭</p>
-        <p class="subtitle lang-en-only">Six articles on submarine cables, AIS, gray zone threats &amp; Taiwan's security challenge</p>
+    <!-- ── Hero ── -->
+    <section class="blog-hero" aria-label="深度文章總覽">
+        <canvas class="hero-canvas" id="heroCanvas" aria-hidden="true"></canvas>
+        <div class="hero-content">
+            <div class="hero-eyebrow">KNOWLEDGE BASE · TAIWAN GRAY ZONE MONITOR</div>
+            <h1 class="hero-title lang-zh-only">深度文章</h1>
+            <h1 class="hero-title lang-en-only">In-Depth Articles</h1>
+            <p class="hero-sub lang-zh-only">從海底電纜的本質到台灣的安全挑戰<br>六篇系列帶你認識這場無形的海底戰爭</p>
+            <p class="hero-sub lang-en-only">From submarine cable fundamentals to Taiwan's security challenges — six articles on the invisible underwater war</p>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <span class="h-stat-num">6</span>
+                    <span class="h-stat-label lang-zh-only">系列文章</span>
+                    <span class="h-stat-label lang-en-only">Series Articles</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="h-stat-num">63</span>
+                    <span class="h-stat-label lang-zh-only">分鐘閱讀</span>
+                    <span class="h-stat-label lang-en-only">Min. Reading</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="h-stat-num">1</span>
+                    <span class="h-stat-label lang-zh-only">學術研究報告</span>
+                    <span class="h-stat-label lang-en-only">Research Report</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Series Progress Track ── -->
+    <nav class="series-track" aria-label="文章系列導覽">
+        <a href="blog-what-is-submarine-cable.html" class="series-dot" title="01 什麼是海底電纜">
+            01
+            <span class="series-dot-label lang-zh-only">海底電纜</span>
+            <span class="series-dot-label lang-en-only">Cables</span>
+        </a>
+        <div class="series-line" aria-hidden="true"></div>
+        <a href="blog-what-is-ais.html" class="series-dot" title="02 AIS 是什麼">
+            02
+            <span class="series-dot-label lang-zh-only">AIS</span>
+            <span class="series-dot-label lang-en-only">AIS</span>
+        </a>
+        <div class="series-line" aria-hidden="true"></div>
+        <a href="blog-taiwan-cable-status.html" class="series-dot" title="03 我國海底電纜現況">
+            03
+            <span class="series-dot-label lang-zh-only">現況</span>
+            <span class="series-dot-label lang-en-only">Status</span>
+        </a>
+        <div class="series-line" aria-hidden="true"></div>
+        <a href="blog-cable-threats.html" class="series-dot" title="04 海底電纜所受到的威脅">
+            04
+            <span class="series-dot-label lang-zh-only">威脅</span>
+            <span class="series-dot-label lang-en-only">Threats</span>
+        </a>
+        <div class="series-line" aria-hidden="true"></div>
+        <a href="blog-taiwan-enforcement.html" class="series-dot" title="05 我國執法框架與挑戰">
+            05
+            <span class="series-dot-label lang-zh-only">執法</span>
+            <span class="series-dot-label lang-en-only">Law</span>
+        </a>
+        <div class="series-line" aria-hidden="true"></div>
+        <a href="blog-methodology.html" class="series-dot" title="06 本網站所使用之方法">
+            06
+            <span class="series-dot-label lang-zh-only">方法論</span>
+            <span class="series-dot-label lang-en-only">Method</span>
+        </a>
+    </nav>
+
+    <!-- ── Filter Bar ── -->
+    <div class="filter-bar" role="group" aria-label="文章篩選">
+        <span class="filter-bar-label lang-zh-only">篩選</span>
+        <span class="filter-bar-label lang-en-only">FILTER</span>
+        <button class="filter-btn active" data-filter="all">全部 / All</button>
+        <button class="filter-btn" data-filter="基礎">基礎知識</button>
+        <button class="filter-btn" data-filter="AIS">AIS / 暗船</button>
+        <button class="filter-btn" data-filter="威脅">威脅分析</button>
+        <button class="filter-btn" data-filter="執法">執法法律</button>
+        <button class="filter-btn" data-filter="方法">方法論</button>
+        <button class="filter-btn" data-filter="學術">學術研究</button>
     </div>
 
-    <div class="blog-grid">
-        <a href="blog-what-is-submarine-cable.html" class="blog-card">
+    <!-- ── Section label: Series ── -->
+    <div class="section-label lang-zh-only">系列文章 — ARTICLE SERIES</div>
+    <div class="section-label lang-en-only">ARTICLE SERIES</div>
+
+    <!-- ── Blog Grid ── -->
+    <div class="blog-grid" id="blogGrid">
+
+        <!-- Article 01 -->
+        <a href="blog-what-is-submarine-cable.html" class="blog-card" data-tags="基礎,海底電纜">
+            <div class="card-bg-num" aria-hidden="true">01</div>
             <div class="card-num">ARTICLE 01</div>
             <div class="card-title-zh lang-zh-only">什麼是海底電纜？<br>海底電纜之重要性</div>
             <div class="card-title-zh lang-en-only">What Are Submarine Cables?</div>
             <div class="card-title-en lang-zh-only">Submarine Cables 101</div>
             <div class="card-title-en lang-en-only">The World's Invisible Backbone</div>
             <div class="card-desc lang-zh-only">你剛傳的那條訊息，正在 4,000 公尺深的海底以光速旅行。從 1850 年的電報線到今天每日承載 10 兆美元金融交易的光纖電纜，海底電纜是現代文明隱形的脊梁。</div>
-            <div class="card-desc lang-en-only">The message you just sent is traveling at the speed of light, 4,000 meters beneath the ocean. From the 1850 telegraph cable to today's fiber carrying $10 trillion in daily transactions — submarine cables are civilization's invisible backbone.</div>
-            <div class="card-meta"><span class="card-tag">基礎知識</span><span class="card-tag">海底電纜</span><span class="card-reading">8 min</span></div>
+            <div class="card-desc lang-en-only">The message you just sent is traveling at the speed of light, 4,000 meters beneath the ocean. From the 1850 telegraph cable to fiber carrying $10 trillion in daily transactions — civilization's invisible backbone.</div>
+            <div class="card-meta">
+                <span class="card-tag">基礎知識</span>
+                <span class="card-tag">海底電纜</span>
+                <span class="card-reading">8 min ⏱</span>
+            </div>
+            <span class="card-arrow" aria-hidden="true">→</span>
         </a>
 
-        <a href="blog-what-is-ais.html" class="blog-card">
+        <!-- Article 02 -->
+        <a href="blog-what-is-ais.html" class="blog-card" data-tags="AIS,暗船,SAR">
+            <div class="card-bg-num" aria-hidden="true">02</div>
             <div class="card-num">ARTICLE 02</div>
             <div class="card-title-zh lang-zh-only">AIS 是什麼？<br>為什麼與海底電纜相關</div>
             <div class="card-title-zh lang-en-only">What Is AIS?</div>
@@ -75,78 +566,220 @@
             <div class="card-title-en lang-en-only">Ship Tracking &amp; Dark Vessels</div>
             <div class="card-desc lang-zh-only">每艘大型船隻都必須廣播自己的位置——除非有人偷偷關掉訊號。「走暗」的船隻為何是海底電纜最大的隱憂？衛星又如何在黑暗中找到它們？</div>
             <div class="card-desc lang-en-only">Every large vessel must broadcast its position — unless someone switches it off. Why are "dark vessels" a top concern for cable security? How do satellites find them when they go silent?</div>
-            <div class="card-meta"><span class="card-tag">AIS</span><span class="card-tag">暗船</span><span class="card-tag">SAR</span><span class="card-reading">10 min</span></div>
+            <div class="card-meta">
+                <span class="card-tag">AIS</span>
+                <span class="card-tag">暗船</span>
+                <span class="card-tag">SAR</span>
+                <span class="card-reading">10 min ⏱</span>
+            </div>
+            <span class="card-arrow" aria-hidden="true">→</span>
         </a>
 
-        <a href="blog-taiwan-cable-status.html" class="blog-card">
+        <!-- Article 03 -->
+        <a href="blog-taiwan-cable-status.html" class="blog-card" data-tags="台灣海纜,現況,基礎">
+            <div class="card-bg-num" aria-hidden="true">03</div>
             <div class="card-num">ARTICLE 03</div>
             <div class="card-title-zh lang-zh-only">我國海底電纜現況</div>
             <div class="card-title-zh lang-en-only">Taiwan's Cable Situation</div>
             <div class="card-title-en lang-zh-only">14 條國際海纜，幾條備援？</div>
             <div class="card-title-en lang-en-only">14 International Cables, Growing Fragility</div>
             <div class="card-desc lang-zh-only">2023 年 2 月，馬祖兩條電纜同時斷裂，1.3 萬人失聯近兩個月。台灣僅佔全球 0.13% 海洋面積，卻承擔了全球 10% 的斷纜事故——這不是巧合。</div>
-            <div class="card-desc lang-en-only">Feb 2023, Matsu: both cables severed, 13,000 people offline for nearly 2 months. Taiwan represents just 0.13% of the world's ocean area but accounts for ~10% of global cable incidents — that's not a coincidence.</div>
-            <div class="card-meta"><span class="card-tag">台灣海纜</span><span class="card-tag">馬祖</span><span class="card-tag">基礎設施</span><span class="card-reading">9 min</span></div>
+            <div class="card-desc lang-en-only">Feb 2023, Matsu: both cables severed, 13,000 people offline for nearly 2 months. Taiwan represents just 0.13% of ocean area but accounts for ~10% of global cable incidents.</div>
+            <div class="card-meta">
+                <span class="card-tag">台灣海纜</span>
+                <span class="card-tag">馬祖</span>
+                <span class="card-tag">基礎設施</span>
+                <span class="card-reading">9 min ⏱</span>
+            </div>
+            <span class="card-arrow" aria-hidden="true">→</span>
         </a>
 
-        <a href="blog-cable-threats.html" class="blog-card">
+        <!-- Article 04 -->
+        <a href="blog-cable-threats.html" class="blog-card" data-tags="威脅,影子船隊,灰色地帶">
+            <div class="card-bg-num" aria-hidden="true">04</div>
             <div class="card-num">ARTICLE 04</div>
             <div class="card-title-zh lang-zh-only">海底電纜所受到的威脅</div>
             <div class="card-title-zh lang-en-only">Threats to Submarine Cables</div>
             <div class="card-title-en lang-zh-only">從天災到灰色戰爭</div>
             <div class="card-title-en lang-en-only">Natural Disasters to Gray Zone Warfare</div>
             <div class="card-desc lang-zh-only">全球每年 100–200 起電纜損壞事故。41% 來自漁業，16% 來自船錨，9% 是「第三方活動」——但台灣附近的這個類別，正以驚人速度增長。興順 39 號、鴻泰 58 號、伊鵬三號。</div>
-            <div class="card-desc lang-en-only">100–200 cable damage incidents globally each year. 41% fishing, 16% anchors, 9% "third-party activities" — but near Taiwan, that last category is growing alarmingly fast. Xing Shun 39, Hong Tai 58, Yi Peng 3.</div>
-            <div class="card-meta"><span class="card-tag">威脅分析</span><span class="card-tag">影子船隊</span><span class="card-tag">灰色地帶</span><span class="card-reading">11 min</span></div>
+            <div class="card-desc lang-en-only">100–200 cable damage incidents globally each year. 41% fishing, 16% anchors, 9% "third-party activities" — but near Taiwan, that last category is growing alarmingly fast.</div>
+            <div class="card-meta">
+                <span class="card-tag">威脅分析</span>
+                <span class="card-tag">影子船隊</span>
+                <span class="card-tag">灰色地帶</span>
+                <span class="card-reading">11 min ⏱</span>
+            </div>
+            <span class="card-arrow" aria-hidden="true">→</span>
         </a>
 
-        <a href="blog-taiwan-enforcement.html" class="blog-card">
+        <!-- Article 05 -->
+        <a href="blog-taiwan-enforcement.html" class="blog-card" data-tags="執法,UNCLOS,法律">
+            <div class="card-bg-num" aria-hidden="true">05</div>
             <div class="card-num">ARTICLE 05</div>
             <div class="card-title-zh lang-zh-only">我國執法框架與挑戰</div>
             <div class="card-title-zh lang-en-only">Taiwan's Enforcement Framework</div>
             <div class="card-title-en lang-zh-only">法律的邊界在哪裡？</div>
             <div class="card-title-en lang-en-only">Where Does the Law End?</div>
             <div class="card-desc lang-zh-only">2025 年 1 月，海巡署趕到現場，「興順 39 號」早已駛離。電信管理法、UNCLOS 船旗國管轄、1884 年公約……台灣的執法手臂究竟能伸多遠？</div>
-            <div class="card-desc lang-en-only">January 2025: the Coast Guard arrived. Xing Shun 39 had already sailed away. The Telecom Act, UNCLOS flag-state jurisdiction, the 1884 Convention — just how far can Taiwan's enforcement arm actually reach?</div>
-            <div class="card-meta"><span class="card-tag">執法</span><span class="card-tag">UNCLOS</span><span class="card-tag">海巡署</span><span class="card-reading">12 min</span></div>
+            <div class="card-desc lang-en-only">January 2025: the Coast Guard arrived. Xing Shun 39 had already sailed away. The Telecom Act, UNCLOS flag-state jurisdiction, the 1884 Convention — just how far can Taiwan's arm reach?</div>
+            <div class="card-meta">
+                <span class="card-tag">執法</span>
+                <span class="card-tag">UNCLOS</span>
+                <span class="card-tag">海巡署</span>
+                <span class="card-reading">12 min ⏱</span>
+            </div>
+            <span class="card-arrow" aria-hidden="true">→</span>
         </a>
 
-        <a href="blog-methodology.html" class="blog-card">
+        <!-- Article 06 -->
+        <a href="blog-methodology.html" class="blog-card" data-tags="方法,CSIS,開源">
+            <div class="card-bg-num" aria-hidden="true">06</div>
             <div class="card-num">ARTICLE 06</div>
             <div class="card-title-zh lang-zh-only">本網站所使用之方法</div>
             <div class="card-title-zh lang-en-only">Our Methodology</div>
             <div class="card-title-en lang-zh-only">如何在大海中找出可疑船隻</div>
             <div class="card-title-en lang-en-only">Finding Needles in the Maritime Haystack</div>
             <div class="card-desc lang-zh-only">台灣周邊每天有數千艘船隻往來，本站如何找出那幾艘值得關注的？資料來源、8 項評分指標、AIS 欺騙偵測、自動化管線——完整揭示本站的分析方法。</div>
-            <div class="card-desc lang-en-only">Thousands of vessels transit Taiwan's waters daily. How do we find the ones worth watching? Data sources, 8 threat-scoring criteria, AIS spoofing detection, automated pipeline — our complete methodology.</div>
-            <div class="card-meta"><span class="card-tag">方法論</span><span class="card-tag">CSIS</span><span class="card-tag">開源</span><span class="card-reading">13 min</span></div>
+            <div class="card-desc lang-en-only">Thousands of vessels transit Taiwan's waters daily. How do we find the ones worth watching? Data sources, 8 threat-scoring criteria, AIS spoofing detection, automated pipeline.</div>
+            <div class="card-meta">
+                <span class="card-tag">方法論</span>
+                <span class="card-tag">CSIS</span>
+                <span class="card-tag">開源</span>
+                <span class="card-reading">13 min ⏱</span>
+            </div>
+            <span class="card-arrow" aria-hidden="true">→</span>
         </a>
 
-        <a href="research-submarine-cable-legal.html" class="blog-card card-special">
-            <div class="card-num" style="color:rgba(255,165,0,.5)">RESEARCH REPORT</div>
+    </div><!-- /blog-grid -->
+
+    <!-- ── Research Report (gold) ── -->
+    <div class="section-label gold lang-zh-only">學術研究 — RESEARCH REPORT</div>
+    <div class="section-label gold lang-en-only">RESEARCH REPORT</div>
+
+    <div class="blog-grid" style="margin-top:16px">
+        <a href="research-submarine-cable-legal.html" class="blog-card card-research" data-tags="學術,UNCLOS,研究">
+            <div class="card-bg-num" aria-hidden="true">★</div>
+            <div class="card-num">RESEARCH REPORT</div>
             <div class="card-title-zh lang-zh-only">無形戰爭的關鍵點：<br>中共對臺海底電纜的破壞</div>
-            <div class="card-title-zh lang-en-only">The Invisible War: PRC Shadow Fleet Attacks</div>
-            <div class="card-title-en" style="color:rgba(255,165,0,.7)">Submarine Cable Legal Analysis</div>
-            <div class="card-desc lang-zh-only">國防雜誌學術研究報告。完整分析中共「民用掩護法律戰」、UNCLOS 法律漏洞、1884 年海底電纜保護公約，及我國政策建議。</div>
-            <div class="card-desc lang-en-only">National Defense Journal academic research. Full analysis of PRC civil-exploitation lawfare, UNCLOS legal gaps, the 1884 Submarine Cable Convention, and policy recommendations for Taiwan.</div>
+            <div class="card-title-zh lang-en-only">The Invisible War: PRC Shadow Fleet Attacks on Taiwan's Cables</div>
+            <div class="card-title-en" style="color:rgba(255,165,0,.55)">Submarine Cable Legal Analysis — National Defense Journal</div>
+            <div class="card-desc lang-zh-only">國防雜誌學術研究報告。完整分析中共「民用掩護法律戰」、UNCLOS 法律漏洞、1884 年海底電纜保護公約，及我國政策建議。台灣在非對稱戰爭下的脆弱性完整評估。</div>
+            <div class="card-desc lang-en-only">National Defense Journal academic research. Full analysis of PRC civil-exploitation lawfare, UNCLOS legal gaps, the 1884 Convention, and policy recommendations for Taiwan. A comprehensive vulnerability assessment.</div>
             <div class="card-meta">
-                <span class="card-tag" style="border-color:rgba(255,165,0,.3);color:rgba(255,165,0,.8);background:rgba(255,165,0,.06)">學術研究</span>
-                <span class="card-tag" style="border-color:rgba(255,165,0,.3);color:rgba(255,165,0,.8);background:rgba(255,165,0,.06)">UNCLOS</span>
-                <span class="card-reading" style="color:rgba(255,165,0,.4)">30 min</span>
+                <span class="card-tag">學術研究</span>
+                <span class="card-tag">UNCLOS</span>
+                <span class="card-tag">法律分析</span>
+                <span class="card-reading">30 min ⏱</span>
             </div>
+            <span class="card-arrow" aria-hidden="true">→</span>
         </a>
     </div>
 
-    <div class="intro-cta">
-        <a href="intro.html" class="lang-zh-only">← 回到關於本站</a>
-        <a href="intro.html" class="lang-en-only">← Back to About</a>
+    <!-- ── CTA ── -->
+    <div class="blog-cta">
+        <a href="blog-what-is-submarine-cable.html" class="cta-primary lang-zh-only">開始閱讀 Article 01 →</a>
+        <a href="blog-what-is-submarine-cable.html" class="cta-primary lang-en-only">Start Reading Article 01 →</a>
+        <a href="index.html" class="cta-secondary lang-zh-only">← 返回監測儀表板</a>
+        <a href="index.html" class="cta-secondary lang-en-only">← Back to Dashboard</a>
     </div>
 
     <footer class="site-footer">
         <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
     </footer>
+
     <script defer src="js/i18n.js"></script>
     <style>body.lang-en .lang-zh-only{display:none!important}body:not(.lang-en) .lang-en-only{display:none!important}</style>
     <script defer src="js/mobile-nav.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        /* ── Hero canvas: radar grid + pulsing dots ── */
+        const canvas = document.getElementById('heroCanvas');
+        if (canvas && !prefersReduced) {
+            const ctx = canvas.getContext('2d');
+            function resize() {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+            }
+            resize();
+            new ResizeObserver(resize).observe(canvas.parentElement);
+
+            const dots = Array.from({ length: 55 }, () => ({
+                x: Math.random(), y: Math.random(),
+                phase: Math.random() * Math.PI * 2,
+                speed: 0.0006 + Math.random() * 0.0012,
+                size: 0.5 + Math.random() * 1.8
+            }));
+
+            function draw(t) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                /* grid */
+                ctx.strokeStyle = 'rgba(0,245,255,0.04)';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < canvas.width; x += 48) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+                }
+                for (let y = 0; y < canvas.height; y += 48) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+                }
+                /* dots */
+                for (const d of dots) {
+                    const a = 0.06 + 0.32 * Math.abs(Math.sin(t * d.speed + d.phase));
+                    ctx.beginPath();
+                    ctx.arc(d.x * canvas.width, d.y * canvas.height, d.size, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(0,245,255,' + a + ')';
+                    ctx.fill();
+                }
+                requestAnimationFrame(draw);
+            }
+            requestAnimationFrame(draw);
+        }
+
+        /* ── Staggered card entrance animations ── */
+        const cards = document.querySelectorAll('.blog-card');
+        if (!prefersReduced && 'IntersectionObserver' in window) {
+            const obs = new IntersectionObserver(function (entries) {
+                let delay = 0;
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        (function (el, d) {
+                            setTimeout(function () { el.classList.add('card-visible'); }, d);
+                        })(entry.target, delay);
+                        delay += 85;
+                        obs.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.05, rootMargin: '0px 0px -40px 0px' });
+            cards.forEach(function (c) { obs.observe(c); });
+        } else {
+            cards.forEach(function (c) { c.classList.add('card-visible'); });
+        }
+
+        /* ── Tag filter ── */
+        document.querySelectorAll('.filter-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                var filter = btn.dataset.filter;
+                cards.forEach(function (card) {
+                    var tags = card.dataset.tags || '';
+                    if (filter === 'all' || tags.indexOf(filter) !== -1) {
+                        card.style.display = '';
+                        card.classList.add('card-visible');
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                /* hide empty section labels */
+                document.querySelectorAll('.section-label').forEach(function (el) {
+                    el.style.display = (filter === 'all' || filter !== '學術') ? '' : '';
+                });
+            });
+        });
+    });
+    </script>
 </body>
 </html>
