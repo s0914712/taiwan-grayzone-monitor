@@ -13,6 +13,7 @@
 
         const currentPage = window.location.pathname.split('/').pop() || 'index.html';
         const animPages = ['ais-animation.html', 'cn-fishing-animation.html', 'identity-history.html', 'ship-transfers.html'];
+        const isBlogPage = currentPage === 'blog.html' || currentPage.startsWith('blog-');
         const isAnimPage = animPages.includes(currentPage);
 
         // --- Bottom Nav (5 tabs) ---
@@ -61,6 +62,14 @@
             <a href="ship-transfers.html" ${currentPage === 'ship-transfers.html' ? 'class="active"' : ''}>
                 <span class="pop-icon">🚢</span>
                 <span data-i18n="nav.transfers">旁靠偵測</span>
+            </a>
+            <a href="blog.html" ${isBlogPage ? 'class="active"' : ''}>
+                <span class="pop-icon">📖</span>
+                <span data-i18n="nav.blog">深度文章</span>
+            </a>
+            <a href="research-submarine-cable-legal.html" ${currentPage === 'research-submarine-cable-legal.html' ? 'class="active"' : ''}>
+                <span class="pop-icon">📜</span>
+                <span data-i18n="nav.research">研究報告</span>
             </a>
         `;
         document.body.appendChild(popover);

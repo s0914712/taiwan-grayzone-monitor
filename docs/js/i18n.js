@@ -34,6 +34,8 @@ const i18n = (function () {
         'nav.transfers':         { zh: '旁靠偵測', en: 'STS Transfer' },
         'nav.mob_transfers':     { zh: '旁靠', en: 'STS' },
         'nav.research':          { zh: '研究報告', en: 'Research' },
+        'nav.blog':              { zh: '深度文章', en: 'Articles' },
+        'nav.mob_blog':          { zh: '文章', en: 'Blog' },
 
         // ── Bottom Sheet ──
         'bs.route_search':       { zh: '航跡查詢', en: 'Route Search' },
