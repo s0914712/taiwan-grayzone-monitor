@@ -45,9 +45,23 @@
     .intl-card{background:var(--bg-secondary);border:1px solid rgba(0,245,255,.1);border-radius:8px;padding:14px 18px;margin:10px 0}
     .intl-org{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent-cyan);font-weight:600;margin-bottom:6px}
     .intl-body{font-size:12px;line-height:1.8;color:var(--text-secondary)}
+    .faq-section{margin:16px 0}
+    .faq-item{border:1px solid var(--border-glow);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--bg-card)}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text-primary);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:'+';font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:18px;flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{transform:rotate(45deg)}
+    .faq-item summary:hover{color:var(--accent-cyan)}
+    .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
     </style>
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"Article","headline":"我國執法框架與挑戰","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-enforcement.html","datePublished":"2026-06-14","inLanguage":"zh-TW","about":[{"@type":"Thing","name":"Taiwan Submarine Cable Law"},{"@type":"Thing","name":"UNCLOS Flag State Jurisdiction"},{"@type":"Thing","name":"Gray Zone Enforcement"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"我國執法框架與挑戰","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-enforcement.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"台灣有法律處罰切斷海底電纜嗎？","acceptedAnswer":{"@type":"Answer","text":"有。2023 年修正《電信管理法》第 72 條，故意損壞海底電纜可處 3 年以下有期徒刑、拘役或併科最高 200 萬元罰金。"}},{"@type":"Question","name":"為什麼肇事船隻很少被起訴？","acceptedAnswer":{"@type":"Answer","text":"依《聯合國海洋法公約》第 92 條，公海船舶受船旗國專屬管轄。台灣難以登船檢查或追訴外籍船，且肇事者常透過空殼公司隱匿。"}},{"@type":"Question","name":"1884 年海底電纜公約能保護台灣嗎？","acceptedAnswer":{"@type":"Answer","text":"不能。台灣因外交地位並非締約方，中國也拒絕承認其拘束力，使這個 19 世紀的公約在台海情境形同虛設。"}},{"@type":"Question","name":"台灣目前如何因應？","acceptedAnswer":{"@type":"Answer","text":"建立逾 96 艘可疑船黑名單、與友邦進行非正式海事合作、參與 G7 影子船隊框架，並透過公開可疑 AIS 軌跡建立國際輿論壓力。"}}]}
     </script>
 </head>
 <body>
@@ -322,6 +336,27 @@
                 <li><strong style="color:var(--text-primary)">Multilateral:</strong> Actively engage with G7 shadow fleet frameworks and NATO MARCOM submarine cable protection initiatives to gain substantive inclusion</li>
                 <li><strong style="color:var(--text-primary)">Transparency:</strong> Publicly release AIS tracks and analysis of suspicious incidents (as this site does), building international public pressure</li>
             </ul>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>常見問題 FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>台灣有法律處罰切斷海底電纜嗎？</summary><div class="faq-answer">有。2023 年修正《電信管理法》第 72 條，故意損壞海底電纜可處 3 年以下有期徒刑、拘役或併科最高 200 萬元罰金。</div></details>
+                <details class="faq-item"><summary>為什麼肇事船隻很少被起訴？</summary><div class="faq-answer">依《聯合國海洋法公約》第 92 條，公海船舶受船旗國專屬管轄。台灣難以登船檢查或追訴外籍船，且肇事者常透過空殼公司隱匿。</div></details>
+                <details class="faq-item"><summary>1884 年海底電纜公約能保護台灣嗎？</summary><div class="faq-answer">不能。台灣因外交地位並非締約方，中國也拒絕承認其拘束力，使這個 19 世紀的公約在台海情境形同虛設。</div></details>
+                <details class="faq-item"><summary>台灣目前如何因應？</summary><div class="faq-answer">建立逾 96 艘可疑船黑名單、與友邦進行非正式海事合作、參與 G7 影子船隊框架，並透過公開可疑 AIS 軌跡建立國際輿論壓力。</div></details>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>Does Taiwan have laws punishing cable cutting?</summary><div class="faq-answer">Yes. The 2023 amendment to Telecommunications Management Act Article 72 allows up to 3 years' imprisonment, detention, or a fine up to NT$2 million for intentionally damaging a cable.</div></details>
+                <details class="faq-item"><summary>Why are perpetrators rarely prosecuted?</summary><div class="faq-answer">Under UNCLOS Article 92, vessels on the high seas fall under exclusive flag-state jurisdiction. Taiwan can rarely board or prosecute foreign vessels, and owners often hide behind shell companies.</div></details>
+                <details class="faq-item"><summary>Does the 1884 Submarine Cable Convention protect Taiwan?</summary><div class="faq-answer">No. Taiwan is not a party due to its diplomatic status, and China rejects its binding force — rendering this 19th-century convention effectively inapplicable in the Taiwan Strait.</div></details>
+                <details class="faq-item"><summary>How is Taiwan responding?</summary><div class="faq-answer">By maintaining a blacklist of 96+ suspicious vessels, pursuing informal maritime cooperation with partners, engaging G7 shadow-fleet frameworks, and publishing suspicious AIS tracks to build international pressure.</div></details>
+            </div>
         </div>
     </section>
 
