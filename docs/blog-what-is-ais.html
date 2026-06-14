@@ -43,9 +43,23 @@
     .dark-reason-text strong{color:var(--text-primary);display:block;margin-bottom:2px}
     .alert-box{background:rgba(255,77,77,.06);border:1px solid rgba(255,77,77,.2);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
     .alert-box strong{color:#ff6b6b}
+    .faq-section{margin:16px 0}
+    .faq-item{border:1px solid var(--border-glow);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--bg-card)}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text-primary);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:'+';font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:18px;flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{transform:rotate(45deg)}
+    .faq-item summary:hover{color:var(--accent-cyan)}
+    .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
     </style>
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"Article","headline":"AIS 是什麼？為什麼與海底電纜相關","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ais.html","datePublished":"2026-06-14","inLanguage":"zh-TW","about":[{"@type":"Thing","name":"AIS (Automatic Identification System)"},{"@type":"Thing","name":"Dark Vessel Detection"},{"@type":"Thing","name":"SAR Satellite Imagery"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"AIS 是什麼","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ais.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"AIS 是強制安裝的嗎？","acceptedAnswer":{"@type":"Answer","text":"根據國際海事組織（IMO）SOLAS 公約，300 總噸以上的遠洋船舶及所有客輪都必須裝設並啟動 AIS 自動識別系統，每隔幾秒廣播一次船舶資訊。"}},{"@type":"Question","name":"船隻關閉 AIS 是違法的嗎？","acceptedAnswer":{"@type":"Answer","text":"不一定。某些合法情況下（如海盜出沒區域）船長有理由關閉 AIS。但在台灣周邊海域、靠近海底電纜時無故走暗，是非常值得警戒的信號。"}},{"@type":"Question","name":"看不到 AIS 訊號的「暗船」要怎麼追蹤？","acceptedAnswer":{"@type":"Answer","text":"透過合成孔徑雷達（SAR）衛星偵測水面金屬物體，再與 AIS 資料交叉比對。被 SAR 偵測到卻沒有 AIS 訊號的船，就被標記為暗船（Dark Vessel）。"}},{"@type":"Question","name":"什麼是 AIS 欺騙（AIS Spoofing）？","acceptedAnswer":{"@type":"Answer","text":"船隻廣播假的位置座標、虛報速度，甚至冒用其他船隻的身分，藉此隱匿真實行蹤。這是本站威脅評分系統特別偵測的項目之一。"}}]}
     </script>
 </head>
 <body>
@@ -296,6 +310,27 @@
                 <li>Vessels reaching the score threshold are flagged as "suspicious" and listed on this site</li>
             </ol>
             <p>This logic is the core of our monitoring system. For the full scoring methodology, see <a href="blog-methodology.html" style="color:var(--accent-cyan)">Article 06: Our Methodology</a>.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>常見問題 FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>AIS 是強制安裝的嗎？</summary><div class="faq-answer">根據國際海事組織（IMO）SOLAS 公約，300 總噸以上的遠洋船舶及所有客輪都必須裝設並啟動 AIS 自動識別系統，每隔幾秒廣播一次船舶資訊。</div></details>
+                <details class="faq-item"><summary>船隻關閉 AIS 是違法的嗎？</summary><div class="faq-answer">不一定。某些合法情況下（如海盜出沒區域）船長有理由關閉 AIS。但在台灣周邊海域、靠近海底電纜時無故走暗，是非常值得警戒的信號。</div></details>
+                <details class="faq-item"><summary>看不到 AIS 訊號的「暗船」要怎麼追蹤？</summary><div class="faq-answer">透過合成孔徑雷達（SAR）衛星偵測水面金屬物體，再與 AIS 資料交叉比對。被 SAR 偵測到卻沒有 AIS 訊號的船，就被標記為暗船（Dark Vessel）。</div></details>
+                <details class="faq-item"><summary>什麼是 AIS 欺騙（AIS Spoofing）？</summary><div class="faq-answer">船隻廣播假的位置座標、虛報速度，甚至冒用其他船隻的身分，藉此隱匿真實行蹤。這是本站威脅評分系統特別偵測的項目之一。</div></details>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>Is AIS mandatory?</summary><div class="faq-answer">Under the IMO SOLAS convention, all ocean-going vessels over 300 gross tons and all passenger ships must install and activate AIS, broadcasting vessel information every few seconds.</div></details>
+                <details class="faq-item"><summary>Is turning off AIS illegal?</summary><div class="faq-answer">Not necessarily. There are legitimate reasons (e.g. piracy-prone areas) to disable AIS. But going dark for no reason near a submarine cable in Taiwan's waters is a serious warning signal.</div></details>
+                <details class="faq-item"><summary>How do you track "dark vessels" with no AIS signal?</summary><div class="faq-answer">Synthetic Aperture Radar (SAR) satellites detect metallic objects on the water surface, which are cross-referenced against AIS. A vessel seen by SAR but with no AIS signal is flagged as a dark vessel.</div></details>
+                <details class="faq-item"><summary>What is AIS spoofing?</summary><div class="faq-answer">A vessel broadcasting false position coordinates, fake speeds, or even another ship's identity to conceal its true movements. It is one of the behaviors our threat-scoring system specifically detects.</div></details>
+            </div>
         </div>
     </section>
 

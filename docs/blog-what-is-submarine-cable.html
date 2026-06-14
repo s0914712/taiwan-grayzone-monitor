@@ -44,9 +44,23 @@
     .layer-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent-cyan);font-weight:600;min-width:24px}
     .layer-name{color:var(--text-primary);font-weight:500;min-width:120px}
     .layer-desc{color:var(--text-secondary)}
+    .faq-section{margin:16px 0}
+    .faq-item{border:1px solid var(--border-glow);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--bg-card)}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text-primary);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:'+';font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:18px;flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{transform:rotate(45deg)}
+    .faq-item summary:hover{color:var(--accent-cyan)}
+    .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
     </style>
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"Article","headline":"什麼是海底電纜？海底電纜之重要性","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-submarine-cable.html","datePublished":"2026-06-14","inLanguage":"zh-TW","isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"about":[{"@type":"Thing","name":"Submarine Cable"},{"@type":"Thing","name":"Taiwan Internet Infrastructure"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"什麼是海底電纜","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-submarine-cable.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"海底電纜真的承載了全球大部分網路流量嗎？","acceptedAnswer":{"@type":"Answer","text":"是的。超過 95% 的國際網路流量透過海底電纜傳輸，衛星僅佔極小比例。每一通跨國電話、跨境金融交易與海外網頁載入，幾乎都使用海底電纜。"}},{"@type":"Question","name":"海底電纜為什麼這麼細卻這麼重要？","acceptedAnswer":{"@type":"Answer","text":"深海段電纜直徑僅約 17 毫米，但單條光纖傳輸速度可達每秒數十 Tbps，整條電纜包含數十對光纖，總容量達數百 Tbps，相當於同時傳輸數百萬部 4K 電影。"}},{"@type":"Question","name":"一條海底電纜可以使用多久？","acceptedAnswer":{"@type":"Answer","text":"海底電纜的設計壽命通常約 25 年，但可能因海底地震、漁船拖網或船錨拖拉而提早受損，需要專用海纜維修船進行修復。"}},{"@type":"Question","name":"台灣有多少條海底電纜？","acceptedAnswer":{"@type":"Answer","text":"台灣本島擁有 14 條國際海底電纜及約 10 條國內海纜（連接外離島）。外離島極為脆弱，馬祖僅有 2 條電纜、金門僅 1 條加 1 條備援。"}}]}
     </script>
 </head>
 <body>
@@ -233,6 +247,27 @@
                 <li><strong style="color:var(--text-primary)">Political:</strong> Cutting cables can impose enormous pressure on a specific region without firing a single shot</li>
             </ul>
             <p>This is precisely why submarine cables have become ideal targets for "gray zone conflict": the damage is significant, but the perpetrator can claim "accident" and avoid accountability. The next article explains the AIS vessel tracking system and how we use it to detect suspicious behavior.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>常見問題 FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>海底電纜真的承載了全球大部分網路流量嗎？</summary><div class="faq-answer">是的。超過 95% 的國際網路流量透過海底電纜傳輸，衛星僅佔極小比例。每一通跨國電話、跨境金融交易與海外網頁載入，幾乎都使用海底電纜。</div></details>
+                <details class="faq-item"><summary>海底電纜為什麼這麼細卻這麼重要？</summary><div class="faq-answer">深海段電纜直徑僅約 17 毫米，但單條光纖傳輸速度可達每秒數十 Tbps，整條電纜包含數十對光纖，總容量達數百 Tbps，相當於同時傳輸數百萬部 4K 電影。</div></details>
+                <details class="faq-item"><summary>一條海底電纜可以使用多久？</summary><div class="faq-answer">海底電纜的設計壽命通常約 25 年，但可能因海底地震、漁船拖網或船錨拖拉而提早受損，需要專用海纜維修船進行修復。</div></details>
+                <details class="faq-item"><summary>台灣有多少條海底電纜？</summary><div class="faq-answer">台灣本島擁有 14 條國際海底電纜及約 10 條國內海纜（連接外離島）。外離島極為脆弱，馬祖僅有 2 條電纜、金門僅 1 條加 1 條備援。</div></details>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>Do submarine cables really carry most of the world's internet traffic?</summary><div class="faq-answer">Yes. Over 95% of international internet traffic travels through submarine cables, with satellites carrying only a tiny fraction. Nearly every international call, cross-border transaction, and overseas webpage load uses submarine cables.</div></details>
+                <details class="faq-item"><summary>Why are submarine cables so thin yet so important?</summary><div class="faq-answer">Deep-sea cable sections are only about 17mm in diameter, but a single fiber strand can carry tens of Tbps. A cable holds dozens of fiber pairs for hundreds of Tbps total — equivalent to streaming millions of 4K movies at once.</div></details>
+                <details class="faq-item"><summary>How long does a submarine cable last?</summary><div class="faq-answer">Submarine cables are typically designed for ~25 years, but can be damaged earlier by undersea earthquakes, fishing trawls, or ship anchors — requiring specialized cable repair ships to fix.</div></details>
+                <details class="faq-item"><summary>How many submarine cables does Taiwan have?</summary><div class="faq-answer">Taiwan's main island has 14 international submarine cables and about 10 domestic cables. The outer islands are highly vulnerable: Matsu has only 2 cables, Kinmen just 1 plus 1 backup.</div></details>
+            </div>
         </div>
     </section>
 

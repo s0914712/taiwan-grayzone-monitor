@@ -60,9 +60,23 @@
     .mult-table td{padding:7px 10px;border-bottom:1px solid rgba(0,245,255,.05);color:var(--text-secondary);font-size:11px}
     .mult-table td:first-child{color:var(--text-primary)}
     .mult-table td:nth-child(2){font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent-cyan)}
+    .faq-section{margin:16px 0}
+    .faq-item{border:1px solid var(--border-glow);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--bg-card)}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text-primary);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:'+';font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:18px;flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{transform:rotate(45deg)}
+    .faq-item summary:hover{color:var(--accent-cyan)}
+    .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
     </style>
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"Article","headline":"本網站所使用之方法","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html","datePublished":"2026-06-14","inLanguage":"zh-TW","about":[{"@type":"Thing","name":"AIS Vessel Monitoring"},{"@type":"Thing","name":"Threat Scoring Methodology"},{"@type":"Thing","name":"CSIS Submarine Cable Security"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"本網站所使用之方法","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"本站的資料來自哪裡？","acceptedAnswer":{"@type":"Answer","text":"兩大來源——台灣港務局 AIS 資料（每 2 小時更新）與 Global Fishing Watch 的 SAR 衛星暗船偵測結果，兩者交叉比對。"}},{"@type":"Question","name":"威脅評分高代表這艘船一定有罪嗎？","acceptedAnswer":{"@type":"Answer","text":"不。高分代表行為模式異常，不等於確認破壞意圖。本系統旨在輔助人工研判，不能取代專業情報分析。"}},{"@type":"Question","name":"評分系統有幾項指標？","acceptedAnswer":{"@type":"Answer","text":"共 8 項，包含電纜鄰近、低速徘徊、之字形航行、AIS 異常與欺騙、制裁名單比對、STS 旁靠等，並依船舶類型加權。"}},{"@type":"Question","name":"這個專案是開源的嗎？","acceptedAnswer":{"@type":"Answer","text":"是。所有程式碼以 MIT 授權公開於 GitHub，任何人都可檢視評分邏輯與資料處理方式，並提出改進建議。"}}]}
     </script>
 </head>
 <body>
@@ -448,6 +462,27 @@
             <div class="fact-box">
                 <span class="fact-title">Open Source and Transparent</span>
                 All code for this site is open-sourced under MIT license on <a href="https://github.com/s0914712/taiwan-grayzone-monitor" target="_blank" rel="noopener" style="color:var(--accent-cyan)">GitHub</a>. Anyone can review our scoring logic, data processing methods, and submit improvement suggestions. We believe that in the context of gray zone threats, transparency itself is a form of defense.
+            </div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>常見問題 FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>本站的資料來自哪裡？</summary><div class="faq-answer">兩大來源——台灣港務局 AIS 資料（每 2 小時更新）與 Global Fishing Watch 的 SAR 衛星暗船偵測結果，兩者交叉比對。</div></details>
+                <details class="faq-item"><summary>威脅評分高代表這艘船一定有罪嗎？</summary><div class="faq-answer">不。高分代表行為模式異常，不等於確認破壞意圖。本系統旨在輔助人工研判，不能取代專業情報分析。</div></details>
+                <details class="faq-item"><summary>評分系統有幾項指標？</summary><div class="faq-answer">共 8 項，包含電纜鄰近、低速徘徊、之字形航行、AIS 異常與欺騙、制裁名單比對、STS 旁靠等，並依船舶類型加權。</div></details>
+                <details class="faq-item"><summary>這個專案是開源的嗎？</summary><div class="faq-answer">是。所有程式碼以 MIT 授權公開於 GitHub，任何人都可檢視評分邏輯與資料處理方式，並提出改進建議。</div></details>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>Where does the site's data come from?</summary><div class="faq-answer">Two sources — Taiwan Port Bureau AIS data (updated every 2 hours) and Global Fishing Watch SAR satellite dark-vessel detections, which are cross-referenced.</div></details>
+                <details class="faq-item"><summary>Does a high threat score mean a vessel is guilty?</summary><div class="faq-answer">No. A high score indicates anomalous behavior, not confirmed intent. The system is designed to assist human judgment, not replace professional intelligence analysis.</div></details>
+                <details class="faq-item"><summary>How many scoring criteria are there?</summary><div class="faq-answer">Eight, including cable proximity, low-speed loitering, zigzag navigation, AIS anomalies and spoofing, sanctions matching, and STS rendezvous — weighted by vessel type.</div></details>
+                <details class="faq-item"><summary>Is this project open source?</summary><div class="faq-answer">Yes. All code is published on GitHub under the MIT license, so anyone can review the scoring logic and data processing, and suggest improvements.</div></details>
             </div>
         </div>
     </section>
