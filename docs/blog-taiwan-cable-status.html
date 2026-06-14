@@ -51,9 +51,23 @@
     .island-title{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent-cyan);font-weight:600;margin-bottom:8px}
     .island-body{font-size:12px;line-height:1.8;color:var(--text-secondary)}
     .island-body strong{color:var(--text-primary)}
+    .faq-section{margin:16px 0}
+    .faq-item{border:1px solid var(--border-glow);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--bg-card)}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text-primary);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:'+';font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:18px;flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{transform:rotate(45deg)}
+    .faq-item summary:hover{color:var(--accent-cyan)}
+    .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
     </style>
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"Article","headline":"我國海底電纜現況","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-cable-status.html","datePublished":"2026-06-14","inLanguage":"zh-TW","about":[{"@type":"Thing","name":"Taiwan Submarine Cable Infrastructure"},{"@type":"Thing","name":"Matsu Cable Outage"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"我國海底電纜現況","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-cable-status.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"為什麼馬祖斷網特別嚴重？","acceptedAnswer":{"@type":"Answer","text":"馬祖全島僅靠 2 條海底電纜連接台灣本島。2023 年 2 月這兩條電纜在 6 天內相繼被中國船隻切斷，1.4 萬居民斷網長達約 50 天。"}},{"@type":"Question","name":"海底電纜斷了要修多久？","acceptedAnswer":{"@type":"Answer","text":"視水深與損壞程度，通常需 14 至 60 天。2023 年馬祖斷纜修復約 50 天，因為全球專業海纜維修船僅約 60 艘，往往須排隊。"}},{"@type":"Question","name":"台灣海底電纜斷裂頻率正常嗎？","acceptedAnswer":{"@type":"Answer","text":"全球每年約 100–200 起斷纜，但台灣周邊因地緣因素比例偏高。2023 年達 12 起，2025 年僅 1、2 月就發生 4 起。"}},{"@type":"Question","name":"台灣有多少條國際與國內海纜？","acceptedAnswer":{"@type":"Answer","text":"台灣本島有 14 條國際海底電纜及約 10 條國內海纜，後者連接馬祖、金門、澎湖等外離島。"}}]}
     </script>
 </head>
 <body>
@@ -310,6 +324,27 @@
 
             <div class="alert-box">
                 <strong>The fundamental problem:</strong> Even with a third cable installed, as long as the enforcement gap and flag-state jurisdiction loophole remain unresolved, deliberate saboteurs can repeat the same tactics. Hardware redundancy reduces the impact of any single incident, but cannot prevent the hostile behavior itself. This is the core issue explored in depth in <a href="blog-taiwan-enforcement.html" style="color:#ff6b6b">Article 05: Enforcement Framework and Challenges</a>.
+            </div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>常見問題 FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>為什麼馬祖斷網特別嚴重？</summary><div class="faq-answer">馬祖全島僅靠 2 條海底電纜連接台灣本島。2023 年 2 月這兩條電纜在 6 天內相繼被中國船隻切斷，1.4 萬居民斷網長達約 50 天。</div></details>
+                <details class="faq-item"><summary>海底電纜斷了要修多久？</summary><div class="faq-answer">視水深與損壞程度，通常需 14 至 60 天。2023 年馬祖斷纜修復約 50 天，因為全球專業海纜維修船僅約 60 艘，往往須排隊。</div></details>
+                <details class="faq-item"><summary>台灣海底電纜斷裂頻率正常嗎？</summary><div class="faq-answer">全球每年約 100–200 起斷纜，但台灣周邊因地緣因素比例偏高。2023 年達 12 起，2025 年僅 1、2 月就發生 4 起。</div></details>
+                <details class="faq-item"><summary>台灣有多少條國際與國內海纜？</summary><div class="faq-answer">台灣本島有 14 條國際海底電纜及約 10 條國內海纜，後者連接馬祖、金門、澎湖等外離島。</div></details>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>Why was the Matsu internet outage so severe?</summary><div class="faq-answer">Matsu depends on just 2 submarine cables to the main island. In February 2023 both were cut by Chinese vessels within 6 days, leaving 14,000 residents offline for about 50 days.</div></details>
+                <details class="faq-item"><summary>How long does it take to repair a cut cable?</summary><div class="faq-answer">Typically 14–60 days depending on depth and damage. The 2023 Matsu repair took about 50 days, since only roughly 60 specialized cable repair ships exist worldwide and they often queue.</div></details>
+                <details class="faq-item"><summary>Is Taiwan's cable break frequency normal?</summary><div class="faq-answer">Globally there are ~100–200 breaks a year, but Taiwan's waters see a disproportionate share — 12 incidents in 2023, and 4 in just January–February 2025.</div></details>
+                <details class="faq-item"><summary>How many international and domestic cables does Taiwan have?</summary><div class="faq-answer">Taiwan's main island has 14 international submarine cables and about 10 domestic cables connecting outer islands like Matsu, Kinmen, and Penghu.</div></details>
             </div>
         </div>
     </section>

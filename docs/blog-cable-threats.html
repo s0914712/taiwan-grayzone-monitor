@@ -52,9 +52,23 @@
     .incident-name{font-family:'JetBrains Mono',monospace;font-size:11px;color:#ff6b6b;font-weight:600;margin-bottom:6px}
     .incident-body{font-size:12px;line-height:1.8;color:var(--text-secondary)}
     .incident-body strong{color:var(--text-primary)}
+    .faq-section{margin:16px 0}
+    .faq-item{border:1px solid var(--border-glow);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--bg-card)}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text-primary);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:'+';font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:18px;flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{transform:rotate(45deg)}
+    .faq-item summary:hover{color:var(--accent-cyan)}
+    .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
     </style>
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"Article","headline":"海底電纜所受到的威脅","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-cable-threats.html","datePublished":"2026-06-14","inLanguage":"zh-TW","about":[{"@type":"Thing","name":"Submarine Cable Threats"},{"@type":"Thing","name":"Shadow Fleet"},{"@type":"Thing","name":"Gray Zone Warfare"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"海底電纜所受到的威脅","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-cable-threats.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"海底電纜最大的威脅來源是什麼？","acceptedAnswer":{"@type":"Answer","text":"統計上 41% 來自漁船拖網、16% 來自船錨，多為意外；但灰色地帶蓄意破壞最難追責，是本站監測的核心關切。"}},{"@type":"Question","name":"怎麼分辨意外與蓄意破壞？","acceptedAnswer":{"@type":"Answer","text":"蓄意破壞常偽裝成意外——使用民用漁船或貨船、選在深夜或深海，並在行動前關閉 AIS，使其難以與真正的意外區分。"}},{"@type":"Question","name":"什麼是「影子船隊」？","acceptedAnswer":{"@type":"Answer","text":"指旗籍不明或頻繁更換、所有人結構複雜、AIS 記錄異常的船隊，最初用於規避俄羅斯石油制裁，近年也出現在海底電纜附近。"}},{"@type":"Question","name":"中國有切斷深海電纜的能力嗎？","acceptedAnswer":{"@type":"Answer","text":"據研究報告，中國研究機構已取得深海切割裝備專利，可在遠離正常漁業需求的深海切斷電纜，擴大了「假裝意外」的操作空間。"}}]}
     </script>
 </head>
 <body>
@@ -299,6 +313,27 @@
                 <li>Effects can impose enormous pressure on a target country without triggering NATO Article 5 or UN Charter Article 51</li>
             </ul>
             <p>This is exactly why Taiwan must build a proactive monitoring system rather than waiting to react after incidents occur. The next article explores Taiwan's existing enforcement framework, and the institutional challenges it faces.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>常見問題 FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>海底電纜最大的威脅來源是什麼？</summary><div class="faq-answer">統計上 41% 來自漁船拖網、16% 來自船錨，多為意外；但灰色地帶蓄意破壞最難追責，是本站監測的核心關切。</div></details>
+                <details class="faq-item"><summary>怎麼分辨意外與蓄意破壞？</summary><div class="faq-answer">蓄意破壞常偽裝成意外——使用民用漁船或貨船、選在深夜或深海，並在行動前關閉 AIS，使其難以與真正的意外區分。</div></details>
+                <details class="faq-item"><summary>什麼是「影子船隊」？</summary><div class="faq-answer">指旗籍不明或頻繁更換、所有人結構複雜、AIS 記錄異常的船隊，最初用於規避俄羅斯石油制裁，近年也出現在海底電纜附近。</div></details>
+                <details class="faq-item"><summary>中國有切斷深海電纜的能力嗎？</summary><div class="faq-answer">據研究報告，中國研究機構已取得深海切割裝備專利，可在遠離正常漁業需求的深海切斷電纜，擴大了「假裝意外」的操作空間。</div></details>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>What is the biggest source of cable threats?</summary><div class="faq-answer">Statistically 41% come from fishing trawls and 16% from anchors, mostly accidental — but deliberate gray zone sabotage is the hardest to attribute and the core of our monitoring.</div></details>
+                <details class="faq-item"><summary>How can you tell an accident from deliberate sabotage?</summary><div class="faq-answer">Deliberate sabotage is disguised as an accident — using civilian fishing or cargo vessels, acting at night or in deep water, and disabling AIS beforehand to blur the line.</div></details>
+                <details class="faq-item"><summary>What is a "shadow fleet"?</summary><div class="faq-answer">Vessels with unclear or frequently-changed flags, complex ownership, and anomalous AIS records — first used to evade Russian oil sanctions, and increasingly seen near submarine cables.</div></details>
+                <details class="faq-item"><summary>Does China have deep-sea cable-cutting capability?</summary><div class="faq-answer">According to research, Chinese institutes hold patents for deep-sea cutting equipment able to sever cables far from any plausible fishing need — expanding the "pretend it's an accident" playbook.</div></details>
+            </div>
         </div>
     </section>
 
