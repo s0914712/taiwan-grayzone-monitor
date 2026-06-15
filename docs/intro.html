@@ -124,6 +124,8 @@
     <header class="header" style="position:sticky;top:0;z-index:100">
         <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
         <div class="header-info">
+            <a href="index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="blog.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.blog">深度文章</a>
             <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
         </div>
     </header>
@@ -314,10 +316,76 @@
         </div>
     </section>
 
+    <!-- 深度文章 Section -->
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>📖 深度文章系列</h2>
+            <p>從海底電纜的基礎知識到台灣的執法挑戰——六篇深度文章帶你完整了解這場無形的海底戰爭。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>📖 In-Depth Article Series</h2>
+            <p>From submarine cable fundamentals to Taiwan's enforcement challenges — six articles covering the full picture of the invisible underwater war.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin:14px 0 8px">
+            <a href="blog-what-is-submarine-cable.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">01</span>
+                <div>
+                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">什麼是海底電纜？</div>
+                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">What Are Submarine Cables?</div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">基礎知識 · 8 min</div>
+                </div>
+            </a>
+            <a href="blog-what-is-ais.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">02</span>
+                <div>
+                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">AIS 是什麼？暗船偵測</div>
+                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">What Is AIS? Dark Vessels</div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">AIS · SAR · 10 min</div>
+                </div>
+            </a>
+            <a href="blog-taiwan-cable-status.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">03</span>
+                <div>
+                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">我國海底電纜現況</div>
+                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Taiwan's Cable Situation</div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">台灣 · 馬祖 · 9 min</div>
+                </div>
+            </a>
+            <a href="blog-cable-threats.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">04</span>
+                <div>
+                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">海底電纜所受到的威脅</div>
+                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Threats to Submarine Cables</div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">威脅 · 影子船隊 · 11 min</div>
+                </div>
+            </a>
+            <a href="blog-taiwan-enforcement.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">05</span>
+                <div>
+                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">我國執法框架與挑戰</div>
+                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Taiwan's Enforcement Framework</div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">執法 · UNCLOS · 12 min</div>
+                </div>
+            </a>
+            <a href="blog-methodology.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">06</span>
+                <div>
+                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">本網站所使用之方法</div>
+                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Our Methodology</div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">CSIS · 開源 · 13 min</div>
+                </div>
+            </a>
+        </div>
+        <a href="blog.html" class="lang-zh-only" style="display:inline-block;font-size:12px;color:var(--accent-cyan);text-decoration:none;padding:6px 14px;border:1px solid rgba(0,245,255,.3);border-radius:4px;font-family:'JetBrains Mono',monospace;transition:background .2s">→ 查看全部文章 / All Articles</a>
+        <a href="blog.html" class="lang-en-only" style="display:inline-block;font-size:12px;color:var(--accent-cyan);text-decoration:none;padding:6px 14px;border:1px solid rgba(0,245,255,.3);border-radius:4px;font-family:'JetBrains Mono',monospace;transition:background .2s">→ View All Articles</a>
+    </section>
+
     <!-- CTA -->
     <div class="intro-cta">
         <a href="index.html" class="lang-zh-only" data-i18n="intro.cta">開始監測 →</a>
         <a href="index.html" class="lang-en-only">Start Monitoring →</a>
+        <a href="blog.html" class="lang-zh-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">📖 深度文章</a>
+        <a href="blog.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">📖 In-Depth Articles</a>
     </div>
 
     <footer class="site-footer">
