@@ -2101,3 +2101,52 @@ body {
         padding-bottom: env(safe-area-inset-bottom, 0);
     }
 }
+
+/* ============================================================================
+   Bilingual visibility — show one language at a time (matches the inline rules
+   on the content pages so data pages can use the static lang-only pattern too)
+   ============================================================================ */
+body.lang-en .lang-zh-only { display: none !important; }
+body.lang-zh .lang-en-only { display: none !important; }
+body:not(.lang-en):not(.lang-zh) .lang-en-only { display: none !important; }
+
+/* ============================================================================
+   AI / GEO summary blocks — visible, quotable abstracts for answer engines
+   ============================================================================ */
+.ai-summary {
+    max-width: 1100px;
+    margin: 16px auto;
+    padding: 16px 20px;
+    background: var(--bg-card, rgba(13, 22, 41, 0.7));
+    border: 1px solid var(--border-glow, rgba(0, 245, 255, 0.25));
+    border-left: 3px solid var(--accent-cyan, #00f5ff);
+    border-radius: 10px;
+}
+.ai-summary h2 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    color: var(--accent-cyan, #00f5ff);
+    text-transform: uppercase;
+}
+.ai-summary p {
+    margin: 0 0 10px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--text-primary, #e6edf3);
+}
+.ai-summary ul {
+    margin: 0;
+    padding-left: 18px;
+}
+.ai-summary li {
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--text-secondary, #9fb0c3);
+}
+@media (max-width: 900px) {
+    .ai-summary {
+        margin: 12px;
+        padding: 14px 16px;
+    }
+}
