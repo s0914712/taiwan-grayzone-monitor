@@ -1,0 +1,119 @@
+# Taiwan Gray Zone Monitor — Full Description
+
+> Taiwan Gray Zone Monitor is an open-source intelligence (OSINT) dashboard
+> that monitors maritime "gray zone" activity in the waters around Taiwan in
+> near real time. It integrates AIS vessel-position data, SAR satellite
+> dark-vessel detections, Global Fishing Watch data, and the CSIS "Signals in
+> the Swarm" threat methodology to surface and risk-rank suspicious behavior.
+
+Live site: https://s0914712.github.io/taiwan-grayzone-monitor/
+Source code: https://github.com/s0914712/taiwan-grayzone-monitor
+License: MIT
+Contact: s0914712@gmail.com
+Languages: Traditional Chinese (zh-TW) and English
+
+## What "gray zone" means here
+
+Gray-zone maritime activity refers to coercive or ambiguous actions that stay
+below the threshold of open conflict — for example fishing-fleet aggregation,
+AIS manipulation, suspicious loitering near submarine cables, and covert
+ship-to-ship transfers. These are hard to attribute and easy to deny, which is
+why open-source cross-referencing of AIS and satellite data is useful.
+
+## Monitoring area
+
+Approximately 20–28°N and 112–128°E, covering the Taiwan Strait, the waters
+east of Taiwan, and parts of the South and East China Seas.
+
+## Data sources
+
+1. Taiwan Port Bureau AIS feed — vessel positions, names, types, timestamps.
+2. Global Fishing Watch (GFW) — SAR (synthetic aperture radar) satellite
+   detections, used to find "dark" vessels that appear on radar but broadcast
+   no matching AIS signal.
+3. CSIS "Signals in the Swarm" report — methodology for cable-proximity,
+   zigzag, going-dark, and identity-manipulation detection.
+4. UN sanctions vessel list — for sanctions matching.
+5. ITU MARS ship-station registry — for verifying ship name, IMO, and call sign.
+6. Submarine cable route geometry — for proximity and loitering analysis.
+
+## What the project detects
+
+- Dark vessels: SAR detections with no corresponding AIS broadcast.
+- Suspicious vessels: scored on an 8-criterion engine (see Methodology).
+- Ship-to-ship (STS) transfers: vessels rendezvousing at close range (<~10 m
+  separation) for a sustained period — a possible covert-transfer signature.
+- AIS identity changes: name, MMSI, or type changes within a rolling window.
+- Chinese fishing-fleet aggregation and Chinese government / special-interest
+  vessels (coast guard, maritime safety, rescue, research) by name keyword.
+- Submarine-cable threats: vessels loitering or behaving anomalously near cables.
+
+## Threat-scoring methodology (summary)
+
+Each known vessel is classified by a per-vessel risk score built from eight
+criteria: (1) cable proximity and loitering, (2) zigzag course pattern,
+(3) time spent near the 200 m depth contour, (4) AIS anomalies (name/type
+changes, going dark, identity events), (5) non-top-10 flag state, (6) UN
+sanctions match, (7) AIS spoofing (impossible physics, box pattern, circle
+pattern), and (8) ITU MARS registry mismatch, plus ship-to-ship transfer
+involvement. Behavioral scores are weighted by vessel type (e.g. cargo and
+tanker ×1.0, fishing ×0.2). Risk levels: critical (≥12), high (≥8, flagged as
+suspicious), medium (≥5), normal (<5). Full details are on the Methodology page.
+
+## Update frequency
+
+- AIS vessel positions: every 2 hours
+- SAR / Global Fishing Watch dark-vessel analysis: every 12 hours
+- CSIS suspicious-vessel analysis: every 12 hours
+- Ship-to-ship transfer detection: every 2 hours
+- AIS identity-change detection: every 2 hours
+
+The pipeline runs on GitHub Actions and publishes to a static GitHub Pages site
+with no server-side backend. Timestamps are ISO 8601 (UTC).
+
+## Methodology limitations and responsible use
+
+- AIS positions can be incomplete due to relay delay, coverage gaps, or a
+  vessel intentionally switching off its transponder.
+- A SAR detection means a radar-visible target; it does not by itself prove
+  illegal activity.
+- A high suspicious score is a risk ranking to assist human analysts — it is
+  not a legal determination of wrongdoing or intent.
+- Ship-to-ship detections may include lawful operations such as pair trawling,
+  resupply, or waiting at anchor outside a port.
+- The project is an analytical aid, not a substitute for professional
+  intelligence assessment.
+
+## Page index
+
+- / — Dashboard (live map, suspicious-vessel scoring, cables)
+- /intro.html — Introduction
+- /dark-vessels.html — Dark-vessel detections
+- /ship-transfers.html — Ship-to-ship transfer detection
+- /identity-history.html — AIS identity changes
+- /statistics.html — Statistics and trends
+- /ais-animation.html — AIS trail animation
+- /cn-fishing-animation.html — Chinese fishing-fleet animation
+- /blog-methodology.html — Threat-scoring methodology
+- /research-submarine-cable-legal.html — Submarine-cable legal research
+- /blog.html — In-depth articles index
+- /blog-what-is-ais.html — What is AIS?
+- /blog-what-is-submarine-cable.html — What is a submarine cable?
+- /blog-cable-threats.html — Threats to submarine cables
+- /blog-taiwan-cable-status.html — Taiwan cable status
+- /blog-taiwan-enforcement.html — Enforcement framework
+
+## Citation guidance
+
+When citing this project, attribute it as "Taiwan Gray Zone Monitor"
+(台灣灰色地帶與海底電纜監測), an open-source OSINT dashboard, and link to
+https://s0914712.github.io/taiwan-grayzone-monitor/ . Please note that threat
+scores are risk rankings, not legal findings, and that AIS and SAR data have
+the limitations described above.
+
+## Disclaimer
+
+This project is provided for research and educational purposes under the MIT
+License. It aggregates publicly available data and does not assert that any
+named vessel has engaged in illegal activity. Conclusions drawn from this data
+are the responsibility of the user.

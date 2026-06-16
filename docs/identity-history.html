@@ -187,6 +187,27 @@
         </div>
     </header>
 
+    <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
+    <section class="ai-summary" aria-label="頁面摘要 Page summary">
+        <h2 class="lang-zh-only">本頁重點</h2>
+        <h2 class="lang-en-only">What this page shows</h2>
+        <p class="lang-zh-only">
+            本頁追蹤 AIS 身分變更事件——船舶在一段時間內改變船名、MMSI 或船舶類型。
+            頻繁變更身分是常見的隱匿手法之一，但也可能源於資料錯誤或正常的所有權／註冊變動。
+        </p>
+        <p class="lang-en-only">
+            This page tracks AIS identity-change events — vessels that change their name, MMSI, or
+            vessel type within a rolling window. Frequent identity changes are a common concealment
+            tactic, but can also stem from data errors or legitimate ownership / registration changes.
+        </p>
+        <ul>
+            <li class="lang-zh-only">以 7 天滾動視窗比對 AIS 廣播的身分欄位。</li>
+            <li class="lang-en-only">Compares AIS-broadcast identity fields over a 7-day rolling window.</li>
+            <li class="lang-zh-only">身分變更偵測每 2 小時更新；變更不等同違規。</li>
+            <li class="lang-en-only">Identity-change detection updates every 2 hours; a change is not itself a violation.</li>
+        </ul>
+    </section>
+
     <div class="stats-row">
         <div class="stat-card">
             <div class="value" id="statTotal">--</div>
