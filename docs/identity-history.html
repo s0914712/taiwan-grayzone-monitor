@@ -94,6 +94,33 @@
                     { "@type": "Thing", "name": "Gray Zone Maritime Deception" },
                     { "@type": "Thing", "name": "OSINT Vessel Tracking" }
                 ]
+            },
+            {
+                "@type": "Dataset",
+                "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/identity-history.html#dataset",
+                "name": "Taiwan AIS Identity-Change Events Dataset",
+                "alternateName": "台灣 AIS 身分變更事件資料集",
+                "description": "AIS identity-change events around Taiwan — vessels that changed name, MMSI, or vessel type within a rolling window, a common concealment tactic.",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/identity-history.html",
+                "inLanguage": ["zh-TW", "en"],
+                "isAccessibleForFree": true,
+                "keywords": [
+                    "AIS identity change",
+                    "MMSI",
+                    "vessel name change",
+                    "Taiwan Strait",
+                    "OSINT",
+                    "身分變更"
+                ],
+                "spatialCoverage": { "@type": "Place", "geo": { "@type": "GeoShape", "box": "20 112 28 128" } },
+                "license": "https://github.com/s0914712/taiwan-grayzone-monitor/blob/main/LICENSE",
+                "creator": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#org" },
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" },
+                "distribution": {
+                    "@type": "DataDownload",
+                    "encodingFormat": "application/json",
+                    "contentUrl": "https://s0914712.github.io/taiwan-grayzone-monitor/identity_events.json"
+                }
             }
         ]
     }
