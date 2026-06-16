@@ -10,6 +10,9 @@
     <meta name="author" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html">
+    <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html">
+    <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html?lang=en">
+    <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html">
 
     <!-- Open Graph -->
     <meta property="og:type" content="article">
@@ -18,6 +21,7 @@
     <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html">
     <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
     <meta property="og:locale" content="zh_TW">
+    <meta property="og:locale:alternate" content="en_US">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
@@ -94,6 +98,33 @@
                     { "@type": "Thing", "name": "AIS Spoofing" },
                     { "@type": "Thing", "name": "Taiwan Strait Maritime Surveillance" }
                 ]
+            },
+            {
+                "@type": "Dataset",
+                "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html#dataset",
+                "name": "Taiwan Dark-Vessel Detections Dataset",
+                "alternateName": "台灣暗船偵測資料集",
+                "description": "SAR satellite detections of dark vessels (radar-visible targets with no matching AIS signal) in the waters around Taiwan, with regional breakdown and daily trends.",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html",
+                "inLanguage": ["zh-TW", "en"],
+                "isAccessibleForFree": true,
+                "keywords": [
+                    "dark vessels",
+                    "SAR",
+                    "AIS",
+                    "Taiwan Strait",
+                    "maritime surveillance",
+                    "暗船"
+                ],
+                "spatialCoverage": { "@type": "Place", "geo": { "@type": "GeoShape", "box": "20 112 28 128" } },
+                "license": "https://github.com/s0914712/taiwan-grayzone-monitor/blob/main/LICENSE",
+                "creator": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#org" },
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" },
+                "distribution": {
+                    "@type": "DataDownload",
+                    "encodingFormat": "application/json",
+                    "contentUrl": "https://s0914712.github.io/taiwan-grayzone-monitor/data.json"
+                }
             }
         ]
     }

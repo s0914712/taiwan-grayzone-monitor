@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>暗船是什麼？如何偵測台灣周邊的暗船 | Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="暗船（dark vessel）是關閉 AIS、卻仍被 SAR 衛星拍到的船。了解暗船如何被偵測、為什麼關閉 AIS 不代表船消失、Global Fishing Watch 與 SAR 衛星的角色，以及台灣周邊暗船活動為何重要。">
+    <meta name="keywords" content="暗船,暗船是什麼,dark vessel,dark vessel Taiwan,AIS 關閉,SAR dark vessel detection,Global Fishing Watch,走暗,台灣海峽,海底電纜">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/what-is-dark-vessel.html">
+    <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/what-is-dark-vessel.html">
+    <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/what-is-dark-vessel.html?lang=en">
+    <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/what-is-dark-vessel.html">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="暗船是什麼？如何偵測台灣周邊的暗船">
+    <meta property="og:description" content="關閉 AIS 不代表船消失。暗船如何被 SAR 衛星找回、為什麼重要，以及本站如何判讀暗船——完整解說。">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/what-is-dark-vessel.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="暗船是什麼？如何偵測台灣周邊的暗船">
+    <meta name="twitter:description" content="關閉 AIS 不代表船消失。暗船如何被 SAR 衛星找回、為什麼重要，以及本站如何判讀暗船。">
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0f1c">
+    <style>
+    .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:16px 0}
+    .stat-callout{text-align:center;padding:16px 12px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:8px}
+    .stat-number{font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);display:block;line-height:1.2}
+    .stat-label{font-size:11px;color:var(--text-secondary);margin-top:6px;line-height:1.5}
+    .fact-box{background:var(--bg-secondary);border:1px solid rgba(0,245,255,.15);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
+    .fact-box strong{color:var(--accent-cyan)}
+    .fact-title{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent-cyan);font-weight:600;letter-spacing:1px;margin-bottom:8px;text-transform:uppercase}
+    .series-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+    .series-chip{padding:5px 10px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:4px;font-size:10px;color:var(--text-secondary);text-decoration:none;font-family:'JetBrains Mono',monospace;transition:all .2s}
+    .series-chip:hover,.series-chip.active{border-color:var(--accent-cyan);color:var(--accent-cyan);background:rgba(0,245,255,.08)}
+    .dark-reason{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:6px;margin:8px 0;font-size:12px}
+    .dark-reason-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+    .dark-reason-text{color:var(--text-secondary);line-height:1.7}
+    .dark-reason-text strong{color:var(--text-primary);display:block;margin-bottom:2px}
+    .alert-box{background:rgba(255,77,77,.06);border:1px solid rgba(255,77,77,.2);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
+    .alert-box strong{color:#ff6b6b}
+    .faq-section{margin:16px 0}
+    .faq-item{border:1px solid var(--border-glow);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--bg-card)}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text-primary);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:'+';font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:18px;flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{transform:rotate(45deg)}
+    .faq-item summary:hover{color:var(--accent-cyan)}
+    .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
+    body.lang-en .lang-zh-only{display:none!important}body:not(.lang-en) .lang-en-only{display:none!important}
+    </style>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":["Article","TechArticle"],"headline":"暗船是什麼？如何偵測台灣周邊的暗船 — What Is a Dark Vessel?","description":"暗船（dark vessel）是關閉 AIS、卻仍被 SAR 衛星偵測到的船。本文說明暗船如何被偵測、為什麼關閉 AIS 不代表船消失、Global Fishing Watch 與 SAR 衛星的角色，以及台灣周邊暗船活動為何重要。A dark vessel is a ship that has switched off its AIS yet is still detected by SAR satellites; this article explains how dark vessels are detected and why they matter around Taiwan.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/what-is-dark-vessel.html","datePublished":"2026-06-16","dateModified":"2026-06-16","inLanguage":["zh-TW","en"],"author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#org"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"about":[{"@type":"Thing","name":"Dark Vessel"},{"@type":"Thing","name":"SAR Satellite Detection"},{"@type":"Thing","name":"AIS Going Dark"},{"@type":"Thing","name":"Global Fishing Watch"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"暗船是什麼","item":"https://s0914712.github.io/taiwan-grayzone-monitor/what-is-dark-vessel.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"暗船是什麼？","acceptedAnswer":{"@type":"Answer","text":"暗船（dark vessel）是指被合成孔徑雷達（SAR）衛星偵測到、卻沒有對應 AIS 訊號的船隻。也就是說它人在海上、被雷達拍到，但在一般 AIS 追蹤平台上「看不見」。"}},{"@type":"Question","name":"船隻關閉 AIS 後就消失了嗎？","acceptedAnswer":{"@type":"Answer","text":"沒有。AIS 只是船舶主動廣播的無線電訊號，關掉它不會讓船從雷達上消失。SAR 衛星仍能偵測水面上的金屬船體，與天候、雲層、日夜無關。"}},{"@type":"Question","name":"暗船如何被偵測？","acceptedAnswer":{"@type":"Answer","text":"以 SAR 衛星掃描海面取得船舶位置，再與同時段的 AIS 資料交叉比對。被 SAR 偵測到卻沒有 AIS 匹配的目標，即標記為暗船。本站使用 Global Fishing Watch 的 SAR 偵測結果。"}},{"@type":"Question","name":"被偵測為暗船就代表違法嗎？","acceptedAnswer":{"@type":"Answer","text":"不一定。SAR 偵測代表雷達可見目標，可能是漁船、商船或公務船；關閉 AIS 在某些情況下也屬合法。暗船是值得進一步研判的線索，而非違法認定。"}},{"@type":"Question","name":"為什麼台灣周邊的暗船活動值得關注？","acceptedAnswer":{"@type":"Answer","text":"台灣高度仰賴海底電纜對外連通，而電纜破壞事件中常見「接近電纜前關閉 AIS」的模式。在電纜路線附近出現、且低速徘徊的暗船，是本站威脅評分特別警戒的行為。"}}]}
+    </script>
+</head>
+<body>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <header class="header" style="position:sticky;top:0;z-index:100">
+        <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
+        <div class="header-info">
+            <a href="index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="dark-vessels.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.dark_vessels">暗船偵測</a>
+            <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">深度文章</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+        </div>
+    </header>
+
+    <div class="intro-hero">
+        <h1 class="lang-zh-only">暗船是什麼？</h1>
+        <h1 class="lang-en-only">What Is a Dark Vessel?</h1>
+        <p class="subtitle lang-zh-only">關閉 AIS &#x2022; SAR 衛星偵測 &#x2022; Global Fishing Watch &#x2022; 台灣海域</p>
+        <p class="subtitle lang-en-only">Going Dark &#x2022; SAR Detection &#x2022; Global Fishing Watch &#x2022; Taiwan Waters</p>
+    </div>
+
+    <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
+    <section class="ai-summary" aria-label="頁面摘要 Page summary">
+        <h2 class="lang-zh-only">本頁重點</h2>
+        <h2 class="lang-en-only">In short</h2>
+        <p class="lang-zh-only">
+            暗船（dark vessel）是關閉 AIS、卻仍被合成孔徑雷達（SAR）衛星偵測到的船。
+            關閉 AIS 不代表船消失——SAR 仍能在黑暗與雲層中拍到金屬船體。將 SAR 偵測與 AIS 交叉比對，
+            「有雷達、沒 AIS」的目標即為暗船。暗船是值得研判的線索，並非違法認定。
+        </p>
+        <p class="lang-en-only">
+            A dark vessel is a ship that has switched off its AIS transponder yet is still detected by
+            Synthetic Aperture Radar (SAR) satellites. Going dark does not make a vessel disappear — SAR
+            still sees the metal hull through darkness and cloud. Cross-referencing SAR detections with
+            AIS, a "radar yes, AIS no" target is a dark vessel. It is a lead to investigate, not a legal finding.
+        </p>
+        <ul>
+            <li class="lang-zh-only">偵測方法：SAR 衛星位置 × 同時段 AIS，比對出無訊號目標。</li>
+            <li class="lang-en-only">Detection: SAR satellite positions cross-referenced with concurrent AIS to find no-signal targets.</li>
+            <li class="lang-zh-only">本站 SAR 暗船資料來自 Global Fishing Watch，每 12 小時更新。</li>
+            <li class="lang-en-only">SAR dark-vessel data comes from Global Fishing Watch and updates every 12 hours.</li>
+        </ul>
+    </section>
+
+    <section class="intro-section">
+        <div class="series-nav">
+            <span style="font-size:10px;color:rgba(0,245,255,.4);font-family:'JetBrains Mono',monospace;align-self:center">延伸閱讀 RELATED →</span>
+            <a href="blog-what-is-ais.html" class="series-chip">AIS 是什麼</a>
+            <a href="dark-vessels.html" class="series-chip">暗船即時地圖</a>
+            <a href="ship-transfers.html" class="series-chip">旁靠偵測</a>
+            <a href="blog-methodology.html" class="series-chip">評分方法論</a>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <div class="story-hook">
+                一艘船在台灣海峽上行駛，原本每隔幾秒就向全世界廣播自己的位置。某個時刻，訊號突然中斷——它從所有航運追蹤網站上消失了。<br><br>
+                但它並沒有真的消失。在 600 公里高空，一顆雷達衛星仍清楚地看見它。這就是「暗船」。
+            </div>
+            <h2>暗船是什麼？</h2>
+            <p>「暗船」（dark vessel）指的是<strong>被衛星雷達偵測到、卻沒有對應 AIS 訊號的船隻</strong>。它的船體確實在海面上、被雷達拍到，但在一般依賴 AIS 的追蹤平台上卻「看不見」。</p>
+            <p>AIS（自動識別系統）是大型船舶依規定主動廣播的無線電訊號，包含船名、位置、速度與航向。當一艘船關閉 AIS，業界稱為「<strong>走暗</strong>」（going dark）。走暗之後，它就成了 AIS 世界裡的隱形人——但物理世界裡，它仍是一塊在水面移動的大型金屬。</p>
+        </div>
+        <div class="lang-en-only">
+            <div class="story-hook">
+                A ship sails across the Taiwan Strait, broadcasting its position to the world every few seconds. Then, at some moment, the signal cuts out — it vanishes from every shipping-tracker website.<br><br>
+                But it has not really vanished. 600 km overhead, a radar satellite still sees it clearly. That is a "dark vessel."
+            </div>
+            <h2>What Is a Dark Vessel?</h2>
+            <p>A "dark vessel" is a ship that is <strong>detected by satellite radar but has no matching AIS signal</strong>. Its hull is genuinely on the water and visible to radar, yet it is "invisible" on the AIS-based tracking platforms most people use.</p>
+            <p>AIS (Automatic Identification System) is the radio signal large ships are required to broadcast, carrying name, position, speed, and course. When a vessel switches off AIS, the industry calls it "<strong>going dark</strong>." Once dark, it becomes invisible in the AIS world — but in the physical world it is still a large piece of metal moving across the sea surface.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>暗船如何被偵測？</h2>
+            <p>關鍵在於把兩種不同的「看船」方式疊在一起：</p>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">📡</div>
+                <div class="dark-reason-text"><strong>第一層：AIS</strong>船舶主動廣播的數位身分與位置。優點是資訊豐富，缺點是可以被關閉或偽造。</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🛰️</div>
+                <div class="dark-reason-text"><strong>第二層：SAR 衛星</strong>合成孔徑雷達主動發射微波、接收回波，直接「看見」水面上的金屬船體，無法被船上關閉。</div>
+            </div>
+            <p>把同一時段的兩層資料交叉比對，就會出現三種情況：</p>
+            <ul style="font-size:13px;line-height:2;color:var(--text-secondary);padding-left:20px">
+                <li>SAR 有偵測 + 有 AIS 訊號 → <strong style="color:var(--accent-cyan)">一般船隻</strong></li>
+                <li>SAR 有偵測 + <strong style="color:#ff6b6b">無 AIS 訊號</strong> → <strong style="color:#ff6b6b">暗船（Dark Vessel）</strong></li>
+                <li>無 SAR 偵測 + 有 AIS 訊號 → 雷達當下未掃到（或非金屬小艇）</li>
+            </ul>
+            <p>第二種情況，就是本站優先標記與追蹤的對象。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>How Are Dark Vessels Detected?</h2>
+            <p>The trick is to overlay two completely different ways of "seeing" a ship:</p>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">📡</div>
+                <div class="dark-reason-text"><strong>Layer 1: AIS</strong>The digital identity and position a ship broadcasts itself. Rich in detail — but can be switched off or faked.</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🛰️</div>
+                <div class="dark-reason-text"><strong>Layer 2: SAR satellites</strong>Synthetic Aperture Radar emits microwaves and reads the echoes, directly "seeing" the metal hull on the water — something the crew cannot turn off.</div>
+            </div>
+            <p>Cross-reference both layers for the same time window and three cases appear:</p>
+            <ul style="font-size:13px;line-height:2;color:var(--text-secondary);padding-left:20px">
+                <li>SAR detection + AIS signal → <strong style="color:var(--accent-cyan)">Normal vessel</strong></li>
+                <li>SAR detection + <strong style="color:#ff6b6b">no AIS signal</strong> → <strong style="color:#ff6b6b">Dark Vessel</strong></li>
+                <li>No SAR detection + AIS signal → radar simply didn't pass over it (or a small non-metal craft)</li>
+            </ul>
+            <p>The second case is exactly what this site flags and tracks first.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>AIS 關閉不代表船消失</h2>
+            <p>這是關於暗船最常見的誤解。很多人以為「船從追蹤網站上不見了，就是駛離了海域」——其實不然。</p>
+            <p>AIS 只是一個<strong>自願廣播</strong>的無線電應答器。關掉它，就像把手機關機：你聯絡不到那個人，但那個人並沒有從地球上消失。船依然在原處航行、依然會撞上海底電纜、依然會在公海與另一艘船旁靠。</p>
+            <div class="alert-box">
+                <strong>為什麼這很重要：</strong>正因為關閉 AIS 不會讓船真的消失，獨立的衛星偵測（SAR）才成為關鍵——它讓「走暗」這個動作本身變成可被看見、可被記錄的證據，而不是一片空白。
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>Switching Off AIS Doesn't Make a Ship Disappear</h2>
+            <p>This is the most common misconception about dark vessels. Many assume that "if a ship drops off the tracker, it has left the area." It hasn't.</p>
+            <p>AIS is only a <strong>voluntary</strong> radio transponder. Switching it off is like powering down a phone: you can no longer reach that person, but they have not vanished from the planet. The ship is still sailing where it was, can still snag a submarine cable, and can still rendezvous with another vessel on the high seas.</p>
+            <div class="alert-box">
+                <strong>Why this matters:</strong> precisely because going dark does not actually remove the ship, independent satellite detection (SAR) becomes decisive — it turns the act of "going dark" itself into visible, recordable evidence rather than a blank gap.
+            </div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>SAR 衛星與 Global Fishing Watch 的角色</h2>
+            <p><strong>合成孔徑雷達（SAR, Synthetic Aperture Radar）</strong>是一種主動式雷達衛星。它自己發射微波、再接收從地表與海面反射回來的回波，因此<strong>不依賴陽光，也能穿透雲層</strong>——白天、黑夜、陰雨都能成像。金屬船體對雷達的回波特別強，在 SAR 影像上會呈現明亮的亮點。</p>
+            <p>本站使用的 SAR 暗船偵測結果來自 <strong>Global Fishing Watch（全球漁業觀察）</strong>。他們處理歐洲太空總署 Sentinel-1 等 SAR 衛星影像，自動辨識海面上的船舶亮點，再與公開 AIS 資料比對，標出沒有 AIS 匹配的目標。本站每 12 小時擷取一次這些結果，疊加到台灣周邊海域地圖上。</p>
+            <div class="fact-box">
+                <span class="fact-title">SAR 為什麼難以被欺騙</span>
+                AIS 可以關閉、可以偽造座標；但 SAR 是從太空直接量測物理回波。船想要不被 SAR 看見，唯一的方法是不要出現在水面上——這對一艘真正在執行任務的船而言並不可能。
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>The Role of SAR Satellites and Global Fishing Watch</h2>
+            <p><strong>Synthetic Aperture Radar (SAR)</strong> is an active radar satellite. It emits its own microwaves and reads the echoes bouncing back from land and sea, so it <strong>does not depend on sunlight and can see through clouds</strong> — imaging by day, by night, and in rain. Metal hulls return especially strong echoes and appear as bright spots in SAR imagery.</p>
+            <p>The SAR dark-vessel detections used here come from <strong>Global Fishing Watch</strong>. They process SAR imagery from satellites such as the European Space Agency's Sentinel-1, automatically identify vessel bright-spots on the sea surface, compare them against public AIS data, and flag the targets with no AIS match. This site pulls those results every 12 hours and overlays them on a map of the waters around Taiwan.</p>
+            <div class="fact-box">
+                <span class="fact-title">Why SAR Is Hard to Fool</span>
+                AIS can be switched off or spoofed; SAR measures a physical echo directly from space. The only way for a ship to avoid being seen by SAR is to not be on the water surface at all — impossible for a vessel actually carrying out a mission.
+            </div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>台灣周邊暗船活動為什麼重要？</h2>
+            <p>台灣是一座島，對外的網際網路、金融與通訊幾乎完全仰賴<strong>海底電纜</strong>。一旦關鍵電纜被切斷，影響的不只是上網，而是整個社會的運作韌性。</p>
+            <p>近年多起海底電纜受損事件中，反覆出現一個令人警覺的模式：涉案船隻會<strong>在接近電纜前關閉 AIS</strong>，使其在破壞行為發生時無法被即時追蹤與攔截。這正是暗船監測的核心價值——把「走暗」這個刻意隱匿的動作，重新攤在陽光下。</p>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🔌</div>
+                <div class="dark-reason-text"><strong>海底電纜威脅</strong>在電纜路線附近走暗、低速徘徊或拖錨，是最高警戒的行為組合之一。</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🔄</div>
+                <div class="dark-reason-text"><strong>海上旁靠與走私</strong>關閉 AIS 進行船對船轉運，規避港口檢查，常見於制裁規避與石油走私。</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🐟</div>
+                <div class="dark-reason-text"><strong>非法漁業</strong>越界或在禁漁區作業時走暗，隱匿真實作業位置。</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🔍</div>
+                <div class="dark-reason-text"><strong>灰色地帶與偵察</strong>在敏感海域進行偵察或施壓時關閉 AIS，刻意維持模糊與可否認性。</div>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>Why Dark-Vessel Activity Around Taiwan Matters</h2>
+            <p>Taiwan is an island whose internet, finance, and communications depend almost entirely on <strong>submarine cables</strong>. If a key cable is severed, the impact is not just slower browsing — it is the resilience of an entire society.</p>
+            <p>Across several recent cable-damage incidents, one alarming pattern keeps recurring: the vessels involved <strong>switch off AIS before approaching the cable</strong>, so they cannot be tracked or intercepted in real time while the damage occurs. This is the core value of dark-vessel monitoring — taking the deliberately concealed act of "going dark" and putting it back in plain sight.</p>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🔌</div>
+                <div class="dark-reason-text"><strong>Submarine cable threat</strong>Going dark, loitering at low speed, or dragging anchor near a cable route is one of the highest-alert behavior combinations.</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🔄</div>
+                <div class="dark-reason-text"><strong>STS transfer &amp; smuggling</strong>Disabling AIS for ship-to-ship transfers to evade port inspection — common in sanctions evasion and oil smuggling.</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🐟</div>
+                <div class="dark-reason-text"><strong>Illegal fishing</strong>Going dark while fishing across borders or in restricted zones to hide the true operating location.</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🔍</div>
+                <div class="dark-reason-text"><strong>Gray zone &amp; reconnaissance</strong>Switching off AIS during reconnaissance or coercion in sensitive waters to preserve ambiguity and deniability.</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>本專案如何判讀暗船？</h2>
+            <p>本站不會把「暗船」直接等同於「壞船」。我們把暗船當作一個<strong>起點</strong>，再用一套透明的規則去判斷它的風險高低：</p>
+            <ol style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
+                <li>從 Global Fishing Watch 取得 SAR 偵測，標出無 AIS 匹配的暗船位置。</li>
+                <li>把暗船與已知的 AIS 軌跡、海底電纜路線、漁撈熱點與領海基線疊圖比對。</li>
+                <li>檢查行為特徵：是否在電纜 5 公里內、是否低速徘徊、是否之字形航行、是否曾頻繁走暗或變更身分。</li>
+                <li>依 8 項指標累計威脅分數，並按船舶類型加權（貨輪、油輪權重高，漁船權重低）。</li>
+                <li>分數達門檻者標記為「可疑」，列入監測清單供人工進一步研判。</li>
+            </ol>
+            <p>完整的評分邏輯、門檻與限制，公開記載於 <a href="blog-methodology.html" style="color:var(--accent-cyan)">本站方法論</a>；即時的暗船分布可在 <a href="dark-vessels.html" style="color:var(--accent-cyan)">暗船偵測地圖</a> 查看。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>How This Project Reads Dark Vessels</h2>
+            <p>This site does not treat "dark vessel" as a synonym for "bad ship." We treat a dark vessel as a <strong>starting point</strong>, then apply a transparent set of rules to judge how risky it is:</p>
+            <ol style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
+                <li>Obtain SAR detections from Global Fishing Watch and mark dark vessels with no AIS match.</li>
+                <li>Overlay them against known AIS tracks, submarine cable routes, fishing hotspots, and territorial baselines.</li>
+                <li>Check behavioral features: within 5 km of a cable, loitering at low speed, zigzag course, a history of going dark or changing identity.</li>
+                <li>Accumulate a threat score across 8 criteria, weighted by vessel type (cargo and tanker weigh more; fishing less).</li>
+                <li>Vessels reaching the threshold are flagged "suspicious" and listed for further human assessment.</li>
+            </ol>
+            <p>The full scoring logic, thresholds, and limits are documented openly in our <a href="blog-methodology.html" style="color:var(--accent-cyan)">methodology</a>; the live dark-vessel distribution is on the <a href="dark-vessels.html" style="color:var(--accent-cyan)">dark-vessel map</a>.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>資料限制與免責聲明</h2>
+            <div class="alert-box">
+                <ul style="margin:0;padding-left:18px;line-height:2">
+                    <li>SAR 偵測代表「雷達可見的目標」，<strong>不必然代表違法活動</strong>；目標也可能是合法商船、漁船或公務船。</li>
+                    <li>關閉 AIS 在某些情況（如海盜區安全考量）屬合法，走暗本身不等於違規。</li>
+                    <li>SAR 衛星只在通過時拍攝，覆蓋有時間與空間間隙；沒被偵測不代表該處無船。</li>
+                    <li>AIS 資料可能因轉發延遲、覆蓋缺漏或設備問題而不完整，影響「有無匹配」的判定。</li>
+                    <li>本站的可疑分數是<strong>風險排序</strong>，用於輔助人工研判，並非法律認定，也不指控任何具名船隻違法。</li>
+                </ul>
+            </div>
+            <p style="font-size:11px;color:var(--text-secondary)">本頁為研究與教育用途，採 MIT 授權彙整公開資料。引用時請註明出處並一併說明上述限制。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Data Limitations &amp; Disclaimer</h2>
+            <div class="alert-box">
+                <ul style="margin:0;padding-left:18px;line-height:2">
+                    <li>A SAR detection means a "radar-visible target" and <strong>does not by itself indicate illegal activity</strong>; it may be a lawful merchant ship, fishing vessel, or government vessel.</li>
+                    <li>Switching off AIS is lawful in some situations (e.g. safety in piracy areas); going dark is not itself a violation.</li>
+                    <li>SAR satellites image only as they pass over, leaving spatial and temporal gaps; no detection does not mean no ship was present.</li>
+                    <li>AIS data can be incomplete due to relay delay, coverage gaps, or equipment issues, affecting the "match / no match" determination.</li>
+                    <li>Our suspicious score is a <strong>risk ranking</strong> to assist human analysis — not a legal finding, and not an accusation against any named vessel.</li>
+                </ul>
+            </div>
+            <p style="font-size:11px;color:var(--text-secondary)">This page is for research and education, aggregating public data under the MIT License. When citing, please attribute the source and note the limitations above.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>常見問題 FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>暗船是什麼？</summary><div class="faq-answer">暗船（dark vessel）是指被合成孔徑雷達（SAR）衛星偵測到、卻沒有對應 AIS 訊號的船隻。它人在海上、被雷達拍到，但在一般 AIS 追蹤平台上「看不見」。</div></details>
+                <details class="faq-item"><summary>船隻關閉 AIS 後就消失了嗎？</summary><div class="faq-answer">沒有。AIS 只是船舶主動廣播的無線電訊號，關掉它不會讓船從雷達上消失。SAR 衛星仍能偵測水面上的金屬船體，與天候、雲層、日夜無關。</div></details>
+                <details class="faq-item"><summary>暗船如何被偵測？</summary><div class="faq-answer">以 SAR 衛星掃描海面取得船舶位置，再與同時段的 AIS 資料交叉比對。被 SAR 偵測到卻沒有 AIS 匹配的目標，即標記為暗船。本站使用 Global Fishing Watch 的 SAR 偵測結果。</div></details>
+                <details class="faq-item"><summary>被偵測為暗船就代表違法嗎？</summary><div class="faq-answer">不一定。SAR 偵測代表雷達可見目標，可能是漁船、商船或公務船；關閉 AIS 在某些情況下也屬合法。暗船是值得進一步研判的線索，而非違法認定。</div></details>
+                <details class="faq-item"><summary>為什麼台灣周邊的暗船活動值得關注？</summary><div class="faq-answer">台灣高度仰賴海底電纜對外連通，而電纜破壞事件中常見「接近電纜前關閉 AIS」的模式。在電纜路線附近出現、且低速徘徊的暗船，是本站威脅評分特別警戒的行為。</div></details>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>What is a dark vessel?</summary><div class="faq-answer">A dark vessel is a ship detected by Synthetic Aperture Radar (SAR) satellites that has no matching AIS signal. It is genuinely on the water and visible to radar, but "invisible" on the AIS trackers most people use.</div></details>
+                <details class="faq-item"><summary>Does a ship disappear after switching off AIS?</summary><div class="faq-answer">No. AIS is just a radio signal the ship broadcasts itself; turning it off does not remove the ship from radar. SAR satellites still detect the metal hull on the water, regardless of weather, cloud, or time of day.</div></details>
+                <details class="faq-item"><summary>How are dark vessels detected?</summary><div class="faq-answer">SAR satellites scan the sea to obtain vessel positions, which are cross-referenced against concurrent AIS data. A SAR-detected target with no AIS match is flagged as a dark vessel. This site uses Global Fishing Watch's SAR detections.</div></details>
+                <details class="faq-item"><summary>Does being flagged as a dark vessel mean it is illegal?</summary><div class="faq-answer">Not necessarily. A SAR detection means a radar-visible target — possibly a fishing, merchant, or government vessel — and switching off AIS is lawful in some cases. A dark vessel is a lead to investigate, not a legal determination.</div></details>
+                <details class="faq-item"><summary>Why does dark-vessel activity around Taiwan matter?</summary><div class="faq-answer">Taiwan depends heavily on submarine cables for external connectivity, and cable-damage incidents often show a "switch off AIS before approaching the cable" pattern. A dark vessel that appears near a cable route and loiters at low speed is a behavior our threat scoring specifically watches for.</div></details>
+            </div>
+        </div>
+    </section>
+
+    <div class="intro-cta" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+        <a href="dark-vessels.html" class="lang-zh-only">查看即時暗船地圖 →</a>
+        <a href="dark-vessels.html" class="lang-en-only">View the live dark-vessel map →</a>
+        <a href="blog.html" class="lang-zh-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← 返回深度文章</a>
+        <a href="blog.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← Back to articles</a>
+    </div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+    <script defer src="js/i18n.js"></script>
+    <script defer src="js/mobile-nav.js"></script>
+</body>
+</html>
