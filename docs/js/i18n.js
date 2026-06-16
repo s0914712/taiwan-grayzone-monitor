@@ -552,6 +552,16 @@ const i18n = (function () {
      * 偵測瀏覽器語言
      */
     function detectLanguage() {
+        // URL ?lang= param wins (enables shareable per-language links + hreflang).
+        // Accepts en / zh / zh-TW (case-insensitive); persists the choice.
+        try {
+            const param = new URLSearchParams(window.location.search).get('lang');
+            if (param) {
+                const p = param.toLowerCase();
+                const norm = p.startsWith('zh') ? 'zh' : (p.startsWith('en') ? 'en' : null);
+                if (norm) { localStorage.setItem('lang', norm); return norm; }
+            }
+        } catch (e) { /* no URLSearchParams (old engine) — fall through */ }
         const saved = localStorage.getItem('lang');
         if (saved && (saved === 'zh' || saved === 'en')) return saved;
         const nav = navigator.language || navigator.userLanguage || '';
