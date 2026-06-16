@@ -10,6 +10,9 @@
     <meta name="author" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/">
+    <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/">
+    <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/?lang=en">
+    <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/">
 
     <!-- Google Search Console -->
     <meta name="google-site-verification" content="Cffizh3BczQNW2ywZA34H-c9DJiZOm5mrL1WC-ECW8w" />
@@ -29,6 +32,7 @@
     <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/">
     <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
     <meta property="og:locale" content="zh_TW">
+    <meta property="og:locale:alternate" content="en_US">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
@@ -121,6 +125,57 @@
                     "encodingFormat": "application/json",
                     "contentUrl": "https://s0914712.github.io/taiwan-grayzone-monitor/data.json"
                 }
+            },
+            {
+                "@type": "DataCatalog",
+                "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#datacatalog",
+                "name": "Taiwan Gray Zone Monitor Data Catalog",
+                "alternateName": "台灣灰色地帶監測資料目錄",
+                "description": "Open-source maritime monitoring datasets for the waters around Taiwan, covering AIS positions, SAR dark-vessel detections, suspicious-vessel scoring, AIS identity changes, and ship-to-ship transfers.",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/",
+                "inLanguage": ["zh-TW", "en"],
+                "isAccessibleForFree": true,
+                "license": "https://github.com/s0914712/taiwan-grayzone-monitor/blob/main/LICENSE",
+                "publisher": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#org" },
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" },
+                "dataset": [
+                    { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#dataset" },
+                    { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html#dataset" },
+                    { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/ship-transfers.html#dataset" },
+                    { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/identity-history.html#dataset" },
+                    { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/statistics.html#dataset" }
+                ]
+            },
+            {
+                "@type": "FAQPage",
+                "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#faq",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "What is Taiwan Gray Zone Monitor?",
+                        "acceptedAnswer": { "@type": "Answer", "text": "An open-source OSINT dashboard that tracks maritime gray-zone activity around Taiwan using AIS vessel positions, SAR satellite dark-vessel detections, Global Fishing Watch data, and CSIS threat methodology. It surfaces dark vessels, AIS anomalies, ship-to-ship transfers, Chinese fishing-fleet aggregation, and submarine-cable risk." }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "How often is the data updated?",
+                        "acceptedAnswer": { "@type": "Answer", "text": "AIS vessel positions, ship-to-ship transfer detection, and AIS identity-change detection update every 2 hours. SAR / Global Fishing Watch dark-vessel analysis updates every 12 hours. All timestamps are ISO 8601 (UTC)." }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Does a high threat score mean a vessel is guilty?",
+                        "acceptedAnswer": { "@type": "Answer", "text": "No. A high score indicates an anomalous behavior pattern and is a risk ranking to assist human analysts. It is not a legal determination of wrongdoing or intent." }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Is the project open source?",
+                        "acceptedAnswer": { "@type": "Answer", "text": "Yes. All code and scoring logic are public on GitHub under the MIT License, so anyone can inspect the methodology and data handling." }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "What area does it monitor?",
+                        "acceptedAnswer": { "@type": "Answer", "text": "Roughly 20–28°N and 112–128°E, covering the Taiwan Strait, the waters east of Taiwan, and parts of the South and East China Seas." }
+                    }
+                ]
             },
             {
                 "@type": "BreadcrumbList",
