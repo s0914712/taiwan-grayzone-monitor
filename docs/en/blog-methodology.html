@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<!-- AUTO-GENERATED English mirror of /blog-methodology.html by src/generate_i18n_pages.py — do not edit by hand. -->
+
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -7,22 +9,22 @@
     <meta name="description" content="台灣海峽每天數千艘船隻通過。我們如何從中找出真正可疑的？完整解說AIS資料來源、GitHub Actions管線、8項威脅評分指標，以及CSIS方法論基礎。">
     <meta name="keywords" content="AIS分析,威脅評分,CSIS方法論,海底電纜監測,GitHub Actions,GFW SAR">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-methodology.html">
     <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html">
     <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-methodology.html">
     <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html">
     <meta property="og:type" content="article">
     <meta property="og:title" content="本網站所使用之方法">
     <meta property="og:description" content="從原始AIS資料到威脅評分：完整揭露本站的監測管線、評分演算法與分析方法。">
-    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-methodology.html">
     <meta name="twitter:card" content="summary">
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#0a0f1c">
     <style>
     .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
@@ -82,12 +84,12 @@
     {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"本站的資料來自哪裡？","acceptedAnswer":{"@type":"Answer","text":"兩大來源——台灣港務局 AIS 資料（每 2 小時更新）與 Global Fishing Watch 的 SAR 衛星暗船偵測結果，兩者交叉比對。"}},{"@type":"Question","name":"威脅評分高代表這艘船一定有罪嗎？","acceptedAnswer":{"@type":"Answer","text":"不。高分代表行為模式異常，不等於確認破壞意圖。本系統旨在輔助人工研判，不能取代專業情報分析。"}},{"@type":"Question","name":"評分系統有幾項指標？","acceptedAnswer":{"@type":"Answer","text":"共 8 項，包含電纜鄰近、低速徘徊、之字形航行、AIS 異常與欺騙、制裁名單比對、STS 旁靠等，並依船舶類型加權。"}},{"@type":"Question","name":"這個專案是開源的嗎？","acceptedAnswer":{"@type":"Answer","text":"是。所有程式碼以 MIT 授權公開於 GitHub，任何人都可檢視評分邏輯與資料處理方式，並提出改進建議。"}}]}
     </script>
 </head>
-<body>
+<body class="lang-en">
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <header class="header" style="position:sticky;top:0;z-index:100">
         <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
         <div class="header-info">
-            <a href="index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="../index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">灰色地帶監測</a>
             <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">深度文章</a>
             <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
         </div>
@@ -497,15 +499,15 @@
         <a href="blog-taiwan-enforcement.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← 05 Enforcement Framework</a>
         <a href="blog.html" class="lang-zh-only">← 返回所有文章</a>
         <a href="blog.html" class="lang-en-only">← Back to All Articles</a>
-        <a href="index.html" class="lang-zh-only">前往監測儀表板 →</a>
-        <a href="index.html" class="lang-en-only">Go to Live Dashboard →</a>
+        <a href="../index.html" class="lang-zh-only">前往監測儀表板 →</a>
+        <a href="../index.html" class="lang-en-only">Go to Live Dashboard →</a>
     </div>
 
     <footer class="site-footer">
         <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
     </footer>
-    <script defer src="js/i18n.js"></script>
+    <script defer src="../js/i18n.js"></script>
     <style>body.lang-en .lang-zh-only{display:none!important}body:not(.lang-en) .lang-en-only{display:none!important}</style>
-    <script defer src="js/mobile-nav.js"></script>
+    <script defer src="../js/mobile-nav.js"></script>
 </body>
 </html>
