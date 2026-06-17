@@ -562,6 +562,14 @@ const i18n = (function () {
                 if (norm) { localStorage.setItem('lang', norm); return norm; }
             }
         } catch (e) { /* no URLSearchParams (old engine) — fall through */ }
+        // URL-level i18n: pages served under /en/ default to English (generated
+        // by src/generate_i18n_pages.py). Persist so root pages stay in English too.
+        try {
+            if (/(^|\/)en\//.test(window.location.pathname)) {
+                localStorage.setItem('lang', 'en');
+                return 'en';
+            }
+        } catch (e) { /* no location — fall through */ }
         const saved = localStorage.getItem('lang');
         if (saved && (saved === 'zh' || saved === 'en')) return saved;
         const nav = navigator.language || navigator.userLanguage || '';
