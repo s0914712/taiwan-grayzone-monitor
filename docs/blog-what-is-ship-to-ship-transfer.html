@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>船對船轉運（旁靠）是什麼？如何偵測 STS | Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="船對船轉運（旁靠，STS）是兩艘船在海上近距離並靠、轉移貨物的行為。了解旁靠如何被偵測、合法的雙拖作業與可疑的海上轉運如何區分，以及為什麼旁靠與灰色地帶、制裁規避和走私相關。">
+    <meta name="keywords" content="旁靠,船對船轉運,ship-to-ship transfer,STS,雙拖,pair trawling,走私,制裁規避,影子船隊,台灣海峽">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ship-to-ship-transfer.html">
+    <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ship-to-ship-transfer.html">
+    <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ship-to-ship-transfer.html?lang=en">
+    <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ship-to-ship-transfer.html">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="船對船轉運（旁靠）是什麼？如何偵測 STS">
+    <meta property="og:description" content="兩艘船在海上並靠轉移貨物——何時是合法雙拖、何時是可疑轉運？旁靠如何被偵測、為什麼與灰色地帶相關，完整解說。">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ship-to-ship-transfer.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="船對船轉運（旁靠）是什麼？如何偵測 STS">
+    <meta name="twitter:description" content="兩艘船在海上並靠轉移貨物——何時是合法雙拖、何時是可疑轉運？旁靠如何被偵測、為什麼與灰色地帶相關。">
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0f1c">
+    <style>
+    .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:16px 0}
+    .stat-callout{text-align:center;padding:16px 12px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:8px}
+    .stat-number{font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);display:block;line-height:1.2}
+    .stat-label{font-size:11px;color:var(--text-secondary);margin-top:6px;line-height:1.5}
+    .fact-box{background:var(--bg-secondary);border:1px solid rgba(0,245,255,.15);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
+    .fact-box strong{color:var(--accent-cyan)}
+    .fact-title{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent-cyan);font-weight:600;letter-spacing:1px;margin-bottom:8px;text-transform:uppercase}
+    .series-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+    .series-chip{padding:5px 10px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:4px;font-size:10px;color:var(--text-secondary);text-decoration:none;font-family:'JetBrains Mono',monospace;transition:all .2s}
+    .series-chip:hover,.series-chip.active{border-color:var(--accent-cyan);color:var(--accent-cyan);background:rgba(0,245,255,.08)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+    @media (max-width:600px){.compare-grid{grid-template-columns:1fr}}
+    .compare-col{border:1px solid var(--border-glow);border-radius:8px;padding:14px 16px;background:var(--bg-card)}
+    .compare-col h3{margin:0 0 8px;font-size:13px}
+    .compare-col.legit h3{color:var(--accent-green)}
+    .compare-col.suspect h3{color:#ff6b6b}
+    .compare-col ul{margin:0;padding-left:18px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
+    .dark-reason{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:6px;margin:8px 0;font-size:12px}
+    .dark-reason-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+    .dark-reason-text{color:var(--text-secondary);line-height:1.7}
+    .dark-reason-text strong{color:var(--text-primary);display:block;margin-bottom:2px}
+    .alert-box{background:rgba(255,77,77,.06);border:1px solid rgba(255,77,77,.2);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
+    .alert-box strong{color:#ff6b6b}
+    .faq-section{margin:16px 0}
+    .faq-item{border:1px solid var(--border-glow);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--bg-card)}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text-primary);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:'+';font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:18px;flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{transform:rotate(45deg)}
+    .faq-item summary:hover{color:var(--accent-cyan)}
+    .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
+    body.lang-en .lang-zh-only{display:none!important}body:not(.lang-en) .lang-en-only{display:none!important}
+    </style>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":["Article","TechArticle"],"headline":"船對船轉運（旁靠）是什麼？如何偵測 STS — What Is a Ship-to-Ship Transfer?","description":"船對船轉運（旁靠，STS）是兩艘船在海上近距離並靠、轉移貨物的行為。本文說明旁靠如何被偵測、合法的雙拖作業與可疑的海上轉運如何區分，以及為什麼旁靠與灰色地帶、制裁規避和走私相關。A ship-to-ship (STS) transfer is two vessels lying alongside at sea to move cargo; this article explains how STS is detected and why it matters.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ship-to-ship-transfer.html","datePublished":"2026-06-16","dateModified":"2026-06-16","inLanguage":["zh-TW","en"],"author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#org"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"about":[{"@type":"Thing","name":"Ship-to-Ship Transfer"},{"@type":"Thing","name":"Maritime Rendezvous"},{"@type":"Thing","name":"Sanctions Evasion"},{"@type":"Thing","name":"AIS Vessel Tracking"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"船對船轉運是什麼","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ship-to-ship-transfer.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"船對船轉運（旁靠）是什麼？","acceptedAnswer":{"@type":"Answer","text":"船對船轉運（Ship-to-Ship Transfer, STS），俗稱「旁靠」，是指兩艘船在海上近距離並靠在一起，將貨物、燃油或漁獲從一艘船轉移到另一艘船的行為，不需進港即可完成。"}},{"@type":"Question","name":"旁靠如何被偵測？","acceptedAnswer":{"@type":"Answer","text":"透過時空配對分析 AIS 船位：找出兩艘船在同一時段、彼此距離極近（約 10 公尺內）並維持一段時間的情況，即標記為一次旁靠事件。本站每 2 小時更新一次偵測結果。"}},{"@type":"Question","name":"旁靠一定是違法的嗎？","acceptedAnswer":{"@type":"Answer","text":"不是。許多旁靠是合法作業，例如雙拖漁法（兩船共同拖網）、海上補給、燃油加注或港外等候。是否可疑，取決於船舶類型、地點、是否關閉 AIS，以及是否涉及制裁或身分異常的船隻。"}},{"@type":"Question","name":"為什麼旁靠與灰色地帶和制裁規避相關？","acceptedAnswer":{"@type":"Answer","text":"受制裁國家的「影子船隊」常以海上旁靠轉運石油等貨物，避免進港被查驗、切斷貨物的來源追蹤。配合關閉 AIS，旁靠就成為隱匿物資流向的關鍵手法。"}},{"@type":"Question","name":"本站如何判讀旁靠事件？","acceptedAnswer":{"@type":"Answer","text":"本站區分「雙拖作業」與「可疑旁靠」，並把涉及制裁、身分變更或在敏感海域走暗的旁靠納入威脅評分，作為人工研判的線索，而非違法認定。"}}]}
+    </script>
+</head>
+<body>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <header class="header" style="position:sticky;top:0;z-index:100">
+        <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
+        <div class="header-info">
+            <a href="index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="ship-transfers.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.transfers">旁靠偵測</a>
+            <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">深度文章</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+        </div>
+    </header>
+
+    <div class="intro-hero">
+        <h1 class="lang-zh-only">船對船轉運（旁靠）是什麼？</h1>
+        <h1 class="lang-en-only">What Is a Ship-to-Ship Transfer?</h1>
+        <p class="subtitle lang-zh-only">STS &#x2022; 海上旁靠 &#x2022; 雙拖 vs 可疑轉運 &#x2022; 台灣海域</p>
+        <p class="subtitle lang-en-only">STS &#x2022; Rendezvous &#x2022; Pair-Trawling vs Suspicious &#x2022; Taiwan Waters</p>
+    </div>
+
+    <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
+    <section class="ai-summary" aria-label="頁面摘要 Page summary">
+        <h2 class="lang-zh-only">本頁重點</h2>
+        <h2 class="lang-en-only">In short</h2>
+        <p class="lang-zh-only">
+            船對船轉運（旁靠，STS）是兩艘船在海上近距離並靠、不進港就轉移貨物的行為。它本身常是合法的——
+            雙拖漁法、海上補給、燃油加注——但也是制裁規避與走私隱匿貨物流向的關鍵手法。
+            本站以 AIS 時空配對偵測旁靠事件，並區分合法作業與可疑轉運。旁靠是值得研判的線索，並非違法認定。
+        </p>
+        <p class="lang-en-only">
+            A ship-to-ship (STS) transfer, or "rendezvous," is two vessels lying alongside at sea to move
+            cargo without entering port. It is often perfectly legal — pair trawling, resupply, bunkering —
+            but it is also a key tactic for sanctions evasion and smuggling to hide where cargo comes from.
+            This site detects STS events via spatio-temporal AIS matching and separates lawful operations
+            from suspicious transfers. An STS event is a lead to investigate, not a legal finding.
+        </p>
+        <ul>
+            <li class="lang-zh-only">偵測方法：找出兩船同時段、距離約 10 公尺內並維持一段時間的配對。</li>
+            <li class="lang-en-only">Detection: find vessel pairs within ~10 m of each other, at the same time, for a sustained period.</li>
+            <li class="lang-zh-only">本站旁靠偵測每 2 小時更新，並標記涉及制裁或身分異常的事件。</li>
+            <li class="lang-en-only">STS detection updates every 2 hours and flags events involving sanctions or identity anomalies.</li>
+        </ul>
+    </section>
+
+    <section class="intro-section">
+        <div class="series-nav">
+            <span style="font-size:10px;color:rgba(0,245,255,.4);font-family:'JetBrains Mono',monospace;align-self:center">延伸閱讀 RELATED →</span>
+            <a href="blog-what-is-dark-vessel.html" class="series-chip">暗船是什麼</a>
+            <a href="blog-what-is-ais.html" class="series-chip">AIS 是什麼</a>
+            <a href="ship-transfers.html" class="series-chip">旁靠即時偵測</a>
+            <a href="blog-methodology.html" class="series-chip">評分方法論</a>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <div class="story-hook">
+                兩艘船在公海上慢慢靠近，最後幾乎貼在一起，並排漂浮數小時。沒有港口、沒有海關、沒有岸上的監視器。<br><br>
+                貨物從一艘船流向另一艘船。當它們各自離開時，誰也說不清那批貨物原本從哪裡來。
+            </div>
+            <h2>船對船轉運（旁靠）是什麼？</h2>
+            <p>船對船轉運（Ship-to-Ship Transfer，簡稱 <strong>STS</strong>），在中文裡常被稱為「<strong>旁靠</strong>」，指的是兩艘船在海上近距離並靠在一起，把<strong>貨物、燃油或漁獲從一艘船轉移到另一艘船</strong>，全程不需要進入任何港口。</p>
+            <p>這是航運業歷史悠久、完全正常的作業方式：大型油輪在外海把原油分裝給較小的船、母船在漁場接收漁船的漁獲、補給船為長期作業的船隊加油加水。問題在於——<strong>同一個動作，也可以用來隱匿貨物的真實來源與流向</strong>。</p>
+        </div>
+        <div class="lang-en-only">
+            <div class="story-hook">
+                Two ships slowly close on each other in international waters, until they are almost touching, drifting side by side for hours. No port, no customs, no cameras on shore.<br><br>
+                Cargo flows from one hull to the other. When they each sail away, no one can say for certain where that cargo originally came from.
+            </div>
+            <h2>What Is a Ship-to-Ship Transfer?</h2>
+            <p>A Ship-to-Ship Transfer (<strong>STS</strong>), often called a "rendezvous" or "alongside" operation, is when two vessels lie close together at sea to move <strong>cargo, fuel, or catch from one ship to another</strong> — without ever entering a port.</p>
+            <p>This is a long-established, perfectly normal practice: large tankers decant crude into smaller ships offshore, motherships receive catch from fishing boats on the grounds, and bunker vessels refuel fleets working far from land. The problem is that <strong>the very same maneuver can be used to hide the true origin and destination of cargo</strong>.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>旁靠如何被偵測？</h2>
+            <p>旁靠很難從單一艘船的軌跡看出來——它是一種<strong>「兩艘船之間的關係」</strong>。本站透過 AIS 船位進行<strong>時空配對分析</strong>來找出它：</p>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">📍</div>
+                <div class="dark-reason-text"><strong>空間鄰近</strong>兩艘船在某一時刻彼此距離極近（約 10 公尺內），近到幾乎是並靠。</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">⏱️</div>
+                <div class="dark-reason-text"><strong>時間持續</strong>這種近距離狀態不是擦身而過，而是維持了一段時間（數十分鐘到數小時）。</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🐢</div>
+                <div class="dark-reason-text"><strong>低速或漂流</strong>轉運通常在低速或近乎停止的狀態下進行，而非全速航行中。</div>
+            </div>
+            <p>當一組船位同時滿足這些條件，系統就把它記為一次「旁靠事件」，並記錄參與的兩艘船、時間、位置與持續時間。</p>
+            <div class="fact-box">
+                <span class="fact-title">為什麼「會師」本身就是情報</span>
+                就算我們不知道轉移了什麼貨物，「在公海特定地點、特定時間，A 船與 B 船並靠了 3 小時」這個事實本身，就足以成為後續比對與研判的有力線索——尤其當其中一艘船有制裁、身分變更或走暗紀錄時。
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>How Are STS Transfers Detected?</h2>
+            <p>An STS is hard to see from a single ship's track — it is fundamentally a <strong>relationship between two vessels</strong>. This site finds it through <strong>spatio-temporal matching</strong> of AIS positions:</p>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">📍</div>
+                <div class="dark-reason-text"><strong>Spatial proximity</strong>Two vessels at some moment lie extremely close (within ~10 m) — close enough to be alongside.</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">⏱️</div>
+                <div class="dark-reason-text"><strong>Sustained in time</strong>This closeness is not a passing crossing but lasts a sustained period (tens of minutes to hours).</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🐢</div>
+                <div class="dark-reason-text"><strong>Low speed or drifting</strong>Transfers usually happen at low speed or nearly stopped, not at full cruising speed.</div>
+            </div>
+            <p>When a set of positions meets all of these, the system records an "STS event," logging the two vessels involved, the time, location, and duration.</p>
+            <div class="fact-box">
+                <span class="fact-title">Why the Rendezvous Itself Is Intelligence</span>
+                Even without knowing what cargo moved, the simple fact that "at this place and time on the high seas, ship A lay alongside ship B for 3 hours" is a powerful lead for further analysis — especially when one of the vessels has a record of sanctions, identity changes, or going dark.
+            </div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>合法的旁靠 vs 可疑的旁靠</h2>
+            <p>偵測到旁靠只是第一步。絕大多數的海上並靠都是正當作業，關鍵在於分辨「日常」與「異常」。</p>
+            <div class="compare-grid">
+                <div class="compare-col legit">
+                    <h3>✅ 通常合法</h3>
+                    <ul>
+                        <li><strong>雙拖漁法</strong>：兩艘漁船共同拖一張網，全程必然並行。</li>
+                        <li><strong>海上補給 / 加油</strong>：補給船為長期作業船隊提供燃油、淡水。</li>
+                        <li><strong>母船接收漁獲</strong>：運搬船在漁場集中收取漁獲。</li>
+                        <li><strong>港外等候 / 領港</strong>：在錨地附近短暫靠近。</li>
+                    </ul>
+                </div>
+                <div class="compare-col suspect">
+                    <h3>⚠️ 值得警戒</h3>
+                    <ul>
+                        <li><strong>轉運時關閉 AIS</strong>：刻意在並靠期間走暗，隱匿行為。</li>
+                        <li><strong>涉及制裁船隻</strong>：一方在 UN 制裁名單或影子船隊。</li>
+                        <li><strong>身分異常</strong>：近期更換船名、MMSI 或虛報 IMO。</li>
+                        <li><strong>地點與類型不合理</strong>：油輪在非加油區、敏感海域長時間並靠。</li>
+                    </ul>
+                </div>
+            </div>
+            <p>本站的旁靠偵測會把事件標記為「雙拖作業」或「可疑」，後者才會進一步納入威脅研判。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Legitimate STS vs Suspicious STS</h2>
+            <p>Detecting an STS is only the first step. The vast majority of alongside operations are legitimate; the key is to tell routine from anomalous.</p>
+            <div class="compare-grid">
+                <div class="compare-col legit">
+                    <h3>✅ Usually legitimate</h3>
+                    <ul>
+                        <li><strong>Pair trawling</strong>: two boats towing one net necessarily run side by side.</li>
+                        <li><strong>Resupply / bunkering</strong>: support ships providing fuel and water to fleets.</li>
+                        <li><strong>Mothership collecting catch</strong>: reefers consolidating catch on the grounds.</li>
+                        <li><strong>Waiting / piloting</strong>: brief closeness near an anchorage.</li>
+                    </ul>
+                </div>
+                <div class="compare-col suspect">
+                    <h3>⚠️ Worth scrutiny</h3>
+                    <ul>
+                        <li><strong>AIS off during transfer</strong>: deliberately going dark while alongside.</li>
+                        <li><strong>Sanctioned vessel involved</strong>: one party on a UN list or shadow fleet.</li>
+                        <li><strong>Identity anomalies</strong>: recent name/MMSI change or false IMO.</li>
+                        <li><strong>Implausible place/type</strong>: a tanker alongside for hours in a non-bunkering, sensitive area.</li>
+                    </ul>
+                </div>
+            </div>
+            <p>This site's STS detection labels events as "pair-trawling" or "suspicious"; only the latter feeds further threat assessment.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>為什麼旁靠與灰色地帶相關？</h2>
+            <p>海上旁靠之所以成為灰色地帶的焦點，是因為它能在<strong>不留下港口紀錄</strong>的情況下移動貨物——這正是規避監管者最需要的能力。</p>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🛢️</div>
+                <div class="dark-reason-text"><strong>制裁規避</strong>受制裁國家（如俄羅斯、伊朗、北韓）的「影子船隊」以海上旁靠轉運石油，切斷貨物來源的可追溯性，再以「乾淨」的船進港。</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">📦</div>
+                <div class="dark-reason-text"><strong>走私與洗貨</strong>透過多次轉運混淆貨物來源，逃避關稅、配額或禁運。</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🎣</div>
+                <div class="dark-reason-text"><strong>非法漁業轉載</strong>在海上把非法或越界捕撈的漁獲轉到運搬船，讓漁獲「漂白」後合法上岸。</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🌐</div>
+                <div class="dark-reason-text"><strong>可否認性</strong>整個過程發生在公海、無監視器、常配合走暗，天生具備模糊與可否認的特性——這正是灰色地帶行動的核心。</div>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>Why STS Matters for the Gray Zone</h2>
+            <p>STS becomes a gray-zone focus because it can move cargo <strong>without leaving a port record</strong> — exactly the capability anyone evading oversight needs most.</p>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🛢️</div>
+                <div class="dark-reason-text"><strong>Sanctions evasion</strong>"Shadow fleets" of sanctioned states (Russia, Iran, North Korea) transship oil at sea to break the traceability of cargo origin, then send a "clean" ship into port.</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">📦</div>
+                <div class="dark-reason-text"><strong>Smuggling &amp; cargo laundering</strong>Multiple transfers obscure cargo origin to dodge tariffs, quotas, or embargoes.</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🎣</div>
+                <div class="dark-reason-text"><strong>Illegal-fishing transshipment</strong>Illegal or cross-border catch is moved to a reefer at sea, "laundered," then landed as legal.</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🌐</div>
+                <div class="dark-reason-text"><strong>Deniability</strong>It happens on the high seas, with no cameras and often with AIS off — inherently ambiguous and deniable, the core of gray-zone operations.</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>本專案如何判讀旁靠事件？</h2>
+            <p>本站不把每一次旁靠都視為威脅。我們的目標是<strong>把海量正常作業濾掉，讓真正異常的少數浮現</strong>：</p>
+            <ol style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
+                <li>以時空配對掃描 AIS 軌跡，找出符合「近距離 + 持續 + 低速」的旁靠事件。</li>
+                <li>初步分類：雙拖漁法等典型合法型態標記為「雙拖作業」，其餘標記為「可疑」。</li>
+                <li>檢查參與船隻背景：是否涉及 UN 制裁、近期身分變更、或在事件期間走暗。</li>
+                <li>比對地點：是否發生在敏感海域、海底電纜附近或非常規加油區。</li>
+                <li>將可疑且具加重因素的旁靠納入威脅評分，列入監測清單供人工進一步研判。</li>
+            </ol>
+            <p>即時的旁靠偵測結果可在 <a href="ship-transfers.html" style="color:var(--accent-cyan)">旁靠偵測頁</a> 查看；完整評分邏輯見 <a href="blog-methodology.html" style="color:var(--accent-cyan)">本站方法論</a>。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>How This Project Reads STS Events</h2>
+            <p>This site does not treat every rendezvous as a threat. The goal is to <strong>filter out the huge volume of routine operations so the genuinely anomalous few surface</strong>:</p>
+            <ol style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
+                <li>Scan AIS tracks via spatio-temporal matching for events meeting "close + sustained + low speed."</li>
+                <li>First-pass classification: typical lawful patterns like pair trawling are labeled "pair-trawling," the rest "suspicious."</li>
+                <li>Check the vessels' background: UN sanctions, recent identity changes, or going dark during the event.</li>
+                <li>Check the location: sensitive waters, near a submarine cable, or a non-standard bunkering area.</li>
+                <li>Suspicious STS with aggravating factors feed the threat score and the monitoring list for human assessment.</li>
+            </ol>
+            <p>Live STS results are on the <a href="ship-transfers.html" style="color:var(--accent-cyan)">STS detection page</a>; the full scoring logic is in our <a href="blog-methodology.html" style="color:var(--accent-cyan)">methodology</a>.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>資料限制與免責聲明</h2>
+            <div class="alert-box">
+                <ul style="margin:0;padding-left:18px;line-height:2">
+                    <li>旁靠偵測<strong>不必然代表違法</strong>；多數為雙拖、補給等合法作業。</li>
+                    <li>偵測依賴 AIS 船位——若一方關閉 AIS，旁靠可能<strong>無法被看見</strong>，因此清單會低估真實事件數。</li>
+                    <li>AIS 位置精度與轉發延遲可能造成距離誤判，產生偽陽性或漏判。</li>
+                    <li>「可疑」標記是<strong>風險排序</strong>，用於輔助人工研判，並非法律認定，也不指控任何具名船隻違法。</li>
+                </ul>
+            </div>
+            <p style="font-size:11px;color:var(--text-secondary)">本頁為研究與教育用途，採 MIT 授權彙整公開資料。引用時請註明出處並一併說明上述限制。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Data Limitations &amp; Disclaimer</h2>
+            <div class="alert-box">
+                <ul style="margin:0;padding-left:18px;line-height:2">
+                    <li>An STS detection <strong>does not by itself indicate illegality</strong>; most are lawful pair-trawling, resupply, etc.</li>
+                    <li>Detection relies on AIS positions — if one party switches off AIS, the STS may be <strong>invisible</strong>, so the list underestimates the true number of events.</li>
+                    <li>AIS position accuracy and relay delay can misjudge distance, causing false positives or misses.</li>
+                    <li>A "suspicious" label is a <strong>risk ranking</strong> to assist human analysis — not a legal finding, and not an accusation against any named vessel.</li>
+                </ul>
+            </div>
+            <p style="font-size:11px;color:var(--text-secondary)">This page is for research and education, aggregating public data under the MIT License. When citing, please attribute the source and note the limitations above.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>常見問題 FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>船對船轉運（旁靠）是什麼？</summary><div class="faq-answer">船對船轉運（Ship-to-Ship Transfer, STS），俗稱「旁靠」，是指兩艘船在海上近距離並靠在一起，將貨物、燃油或漁獲從一艘船轉移到另一艘船的行為，不需進港即可完成。</div></details>
+                <details class="faq-item"><summary>旁靠如何被偵測？</summary><div class="faq-answer">透過時空配對分析 AIS 船位：找出兩艘船在同一時段、彼此距離極近（約 10 公尺內）並維持一段時間的情況，即標記為一次旁靠事件。本站每 2 小時更新一次偵測結果。</div></details>
+                <details class="faq-item"><summary>旁靠一定是違法的嗎？</summary><div class="faq-answer">不是。許多旁靠是合法作業，例如雙拖漁法、海上補給、燃油加注或港外等候。是否可疑，取決於船舶類型、地點、是否關閉 AIS，以及是否涉及制裁或身分異常的船隻。</div></details>
+                <details class="faq-item"><summary>為什麼旁靠與灰色地帶和制裁規避相關？</summary><div class="faq-answer">受制裁國家的「影子船隊」常以海上旁靠轉運石油等貨物，避免進港被查驗、切斷貨物的來源追蹤。配合關閉 AIS，旁靠就成為隱匿物資流向的關鍵手法。</div></details>
+                <details class="faq-item"><summary>本站如何判讀旁靠事件？</summary><div class="faq-answer">本站區分「雙拖作業」與「可疑旁靠」，並把涉及制裁、身分變更或在敏感海域走暗的旁靠納入威脅評分，作為人工研判的線索，而非違法認定。</div></details>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>What is a ship-to-ship (STS) transfer?</summary><div class="faq-answer">An STS transfer, or "rendezvous," is two vessels lying close together at sea to move cargo, fuel, or catch from one ship to another — completed without entering any port.</div></details>
+                <details class="faq-item"><summary>How are STS transfers detected?</summary><div class="faq-answer">By spatio-temporal matching of AIS positions: finding two vessels that, at the same time, are extremely close (within ~10 m) and stay that way for a sustained period. This site refreshes detections every 2 hours.</div></details>
+                <details class="faq-item"><summary>Is an STS transfer always illegal?</summary><div class="faq-answer">No. Many are lawful — pair trawling, resupply, bunkering, or waiting at anchor. Whether it is suspicious depends on vessel type, location, whether AIS was switched off, and whether a sanctioned or identity-anomalous vessel is involved.</div></details>
+                <details class="faq-item"><summary>Why does STS matter for the gray zone and sanctions evasion?</summary><div class="faq-answer">Shadow fleets of sanctioned states often transship oil and other cargo at sea to avoid port inspection and break the traceability of cargo origin. Combined with going dark, STS becomes a key tactic for hiding the flow of goods.</div></details>
+                <details class="faq-item"><summary>How does this site read STS events?</summary><div class="faq-answer">It separates "pair-trawling" from "suspicious" STS, and feeds those involving sanctions, identity changes, or going dark in sensitive waters into threat scoring — as a lead for human assessment, not a legal determination.</div></details>
+            </div>
+        </div>
+    </section>
+
+    <div class="intro-cta" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+        <a href="ship-transfers.html" class="lang-zh-only">查看即時旁靠偵測 →</a>
+        <a href="ship-transfers.html" class="lang-en-only">View live STS detection →</a>
+        <a href="blog.html" class="lang-zh-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← 返回深度文章</a>
+        <a href="blog.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← Back to articles</a>
+    </div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+    <script defer src="js/i18n.js"></script>
+    <script defer src="js/mobile-nav.js"></script>
+</body>
+</html>
