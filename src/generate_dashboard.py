@@ -18,6 +18,62 @@ DATA_DIR = Path("data")
 DOCS_DIR = Path("docs")
 DOCS_DIR.mkdir(exist_ok=True)
 
+# 各資料源的新鮮度設定（供前端「資料健康」狀態表使用）
+# key, 中文標籤, 英文標籤, 來源檔, 預期更新間隔（小時）
+DATA_SOURCE_SPECS = [
+    ('ais',            'AIS 船舶定位',  'AIS vessel positions',      DATA_DIR / 'ais_snapshot.json',       2),
+    ('dark_vessels',   'SAR 暗船偵測',  'SAR dark-vessel detection', DATA_DIR / 'dark_vessels.json',       12),
+    ('suspicious',     '可疑船隻分析',  'Suspicious-vessel analysis', DATA_DIR / 'suspicious_vessels.json', 12),
+    ('ship_transfers', '旁靠偵測',      'Ship-to-ship transfers',    DATA_DIR / 'ship_transfers.json',      2),
+    ('identity',       'AIS 身分變更',  'AIS identity changes',      DATA_DIR / 'identity_events.json',      2),
+    ('scfi',           'SCFI 運價指數', 'SCFI freight index',        DATA_DIR / 'scfi_history.json',       168),
+    ('cable_status',   '海纜狀態',      'Submarine cable status',    DOCS_DIR / 'cable_status.json',        24),
+]
+
+
+def _normalize_iso(v):
+    """修正部分來源檔的時間戳瑕疵（例如同時帶 +00:00 與 Z）。"""
+    s = v.strip()
+    if s.endswith('Z') and ('+00:00' in s or '+0000' in s):
+        s = s[:-1]  # 去掉多餘的尾端 Z
+    return s
+
+
+def _source_updated_at(path):
+    """取得資料源的 updated_at（ISO 字串），優先讀檔內欄位，否則退回檔案 mtime。"""
+    if not path.exists():
+        return None
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            d = json.load(f)
+        if isinstance(d, dict):
+            for k in ('updated_at', 'generated_at', 'timestamp', 'last_updated'):
+                v = d.get(k)
+                if isinstance(v, str) and v:
+                    return _normalize_iso(v)
+    except (OSError, ValueError):
+        pass
+    try:
+        mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+        return mtime.isoformat().replace('+00:00', 'Z')
+    except OSError:
+        return None
+
+
+def build_data_sources():
+    """組出各資料源的新鮮度清單；status 由前端依 updated_at 即時計算。"""
+    sources = []
+    for key, label, label_en, path, interval in DATA_SOURCE_SPECS:
+        sources.append({
+            'key': key,
+            'label': label,
+            'label_en': label_en,
+            'updated_at': _source_updated_at(path),
+            'interval_hours': interval,
+        })
+    return sources
+
+
 # 暗船每日歷史持久檔（跨執行累積，避免 vessel_monitoring 趨勢凍結）
 DARK_HISTORY_PATH = DATA_DIR / 'dark_vessel_history.json'
 DARK_HISTORY_MAX_DAYS = 365
@@ -246,6 +302,7 @@ def main():
         'scfi_correlation': scfi_correlation_data,
         'ais_snapshot': ais_snapshot or {'updated_at': '', 'ais_data': {}, 'vessels': []},
         'identity_events': identity_events_data,
+        'data_sources': build_data_sources(),
         'status': 'operational',
         'version': '3.3.0'
     }

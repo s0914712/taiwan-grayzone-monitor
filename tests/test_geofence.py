@@ -1,0 +1,101 @@
+"""Tests for src/geofence.py maritime-zone + cable-band classification.
+
+Uses synthetic baselines/cable segments passed explicitly, so the tests do not
+depend on the committed data files. NM thresholds: 1° latitude ≈ 111.19 km, and
+12 nm = 22.224 km ≈ 0.20°, 24 nm ≈ 0.40°, 200 nm ≈ 3.33° south of the baseline.
+"""
+import pytest
+
+import geofence
+
+
+# Unit square baseline (lat 0..1, lon 0..1) as a single polygon.
+SQUARE = [(0.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0)]
+BASELINES = [SQUARE]
+
+
+def zone_at(lat, lon):
+    return geofence.classify_maritime_zone(lat, lon, baselines=BASELINES)["zone"]
+
+
+def test_inside_baseline_is_internal_waters():
+    r = geofence.classify_maritime_zone(0.5, 0.5, baselines=BASELINES)
+    assert r["zone"] == "internal_waters"
+    assert r["inside_baseline"] is True
+    assert r["distance_to_baseline_km"] == 0.0
+
+
+def test_territorial_sea_within_12nm():
+    # ~0.10° south of the baseline edge ≈ 11 km ≈ 6 nm
+    assert zone_at(-0.10, 0.5) == "territorial_sea"
+
+
+def test_contiguous_zone_between_12_and_24nm():
+    # ~0.30° south ≈ 33 km ≈ 18 nm
+    assert zone_at(-0.30, 0.5) == "contiguous_zone"
+
+
+def test_eez_between_24nm_and_200nm():
+    # ~1.0° south ≈ 111 km ≈ 60 nm
+    assert zone_at(-1.0, 0.5) == "eez"
+
+
+def test_high_seas_beyond_200nm():
+    # ~4° south ≈ 445 km ≈ 240 nm
+    assert zone_at(-4.0, 0.5) == "high_seas"
+
+
+def test_unknown_when_no_baseline():
+    r = geofence.classify_maritime_zone(0.5, 0.5, baselines=[])
+    assert r["zone"] == "unknown"
+    assert r["distance_to_baseline_nm"] is None
+
+
+def test_distance_increases_with_offset():
+    near = geofence.classify_maritime_zone(-0.1, 0.5, baselines=BASELINES)
+    far = geofence.classify_maritime_zone(-0.5, 0.5, baselines=BASELINES)
+    assert far["distance_to_baseline_nm"] > near["distance_to_baseline_nm"]
+
+
+# ── cable bands ─────────────────────────────────────────────────────────────
+# One cable segment running east-west along lat 24.0 from lon 121.0 to 122.0.
+CABLE = [{"points": [(24.0, 121.0), (24.0, 122.0)],
+          "bbox": (24.0, 121.0, 24.0, 122.0)}]
+
+
+def band_at(lat, lon):
+    return geofence.nearest_cable(lat, lon, segments=CABLE)["cable_band"]
+
+
+def test_cable_band_within_1km():
+    # ~0.005° north of the cable ≈ 0.56 km
+    assert band_at(24.005, 121.5) == "within_1km"
+
+
+def test_cable_band_within_5km():
+    # ~0.03° ≈ 3.3 km
+    assert band_at(24.03, 121.5) == "within_5km"
+
+
+def test_cable_band_within_10km():
+    # ~0.07° ≈ 7.8 km
+    assert band_at(24.07, 121.5) == "within_10km"
+
+
+def test_cable_band_beyond_10km():
+    # ~0.2° ≈ 22 km
+    assert band_at(24.2, 121.5) == "beyond_10km"
+
+
+def test_cable_unknown_when_no_segments():
+    r = geofence.nearest_cable(24.0, 121.5, segments=[])
+    assert r["cable_band"] == "unknown"
+    assert r["nearest_cable_km"] is None
+
+
+def test_annotate_combines_zone_and_cable(monkeypatch):
+    monkeypatch.setattr(geofence, "load_baselines", lambda: BASELINES)
+    monkeypatch.setattr(geofence, "load_cable_segments", lambda: CABLE)
+    out = geofence.annotate(24.005, 121.5)
+    assert "zone" in out and "cable_band" in out
+    assert out["cable_band"] == "within_1km"
