@@ -55,6 +55,19 @@ const i18n = (function () {
         'common.ago_h':          { zh: '{0} 小時前', en: '{0} h ago' },
         'common.stale_warning':  { zh: '⚠️ 資料逾 {0} 小時未更新', en: '⚠️ Data stale: >{0}h old' },
 
+        // ── 資料健康 Data freshness ──
+        'freshness.title':       { zh: '🩺 資料健康', en: '🩺 Data Health' },
+        'freshness.source':      { zh: '資料源', en: 'Source' },
+        'freshness.updated':     { zh: '最新更新', en: 'Last update' },
+        'freshness.interval':    { zh: '預期頻率', en: 'Expected' },
+        'freshness.status':      { zh: '狀態', en: 'Status' },
+        'freshness.ok':          { zh: '正常', en: 'OK' },
+        'freshness.late':        { zh: '延遲', en: 'Late' },
+        'freshness.stale':       { zh: '過期', en: 'Stale' },
+        'freshness.unknown':     { zh: '未知', en: 'Unknown' },
+        'freshness.every_h':     { zh: '每 {0} 小時', en: 'every {0}h' },
+        'freshness.every_d':     { zh: '每 {0} 天', en: 'every {0}d' },
+
         // ── 頁面標題 Page Titles ──
         'title.index':           { zh: '🛰️ 台灣灰色地帶與海底電纜監測', en: '🛰️ Taiwan Gray Zone & Submarine Cable Monitor' },
         'title.dark':            { zh: '🔦 暗船偵測 Dark Vessel Detection', en: '🔦 Dark Vessel Detection' },
@@ -562,6 +575,14 @@ const i18n = (function () {
                 if (norm) { localStorage.setItem('lang', norm); return norm; }
             }
         } catch (e) { /* no URLSearchParams (old engine) — fall through */ }
+        // URL-level i18n: pages served under /en/ default to English (generated
+        // by src/generate_i18n_pages.py). Persist so root pages stay in English too.
+        try {
+            if (/(^|\/)en\//.test(window.location.pathname)) {
+                localStorage.setItem('lang', 'en');
+                return 'en';
+            }
+        } catch (e) { /* no location — fall through */ }
         const saved = localStorage.getItem('lang');
         if (saved && (saved === 'zh' || saved === 'en')) return saved;
         const nav = navigator.language || navigator.userLanguage || '';

@@ -455,6 +455,22 @@
         </ul>
     </section>
 
+    <!-- Data freshness / health (populated by app.js from data.json data_sources) -->
+    <section class="data-health" aria-label="資料健康 Data health">
+        <h2 data-i18n="freshness.title">🩺 資料健康</h2>
+        <table class="freshness-table">
+            <thead>
+                <tr>
+                    <th data-i18n="freshness.source">資料源</th>
+                    <th data-i18n="freshness.updated">最新更新</th>
+                    <th data-i18n="freshness.interval">預期頻率</th>
+                    <th data-i18n="freshness.status">狀態</th>
+                </tr>
+            </thead>
+            <tbody id="dataFreshnessBody"></tbody>
+        </table>
+    </section>
+
     <!-- About Section (Chinese) -->
     <section class="about-section lang-zh-only" id="aboutSection">
         <div class="about-container">
