@@ -2267,3 +2267,23 @@ body:not(.lang-en):not(.lang-zh) .lang-en-only { display: none !important; }
     .about-card p, .about-card ul { font-size: 14px; }
     .about-card .reference-list li { font-size: 13px; }
 }
+
+/* Desktop dashboard readability — the sidebar / map panels use very compact
+   base sizes (8–11px) to fit the 300px sidebar; bump them on wider screens. */
+@media (min-width: 901px) {
+    .section-title { font-size: 12px; }
+    .stat-box .value { font-size: 18px; }
+    .stat-box .label { font-size: 10px; }
+    .stat-card .label { font-size: 11px; }
+    .overlay-card .label { font-size: 10px; }
+    .overlay-card .value { font-size: 20px; }
+    .suspicious-item { font-size: 11px; gap: 6px; }
+    .suspicious-item .risk-badge { font-size: 9px; padding: 2px 6px; }
+    .vessel-item { font-size: 11px; gap: 6px; }
+    .zone-item { font-size: 11px; }
+    .update-info { font-size: 10px; }
+    .panel-title { font-size: 13px; }
+    .gfw-stats-grid .gfw-stat-box .value { font-size: 16px; }
+    .gfw-stats-grid .gfw-stat-box .label { font-size: 9px; }
+    .data-status { font-size: 10px; }
+}
