@@ -96,6 +96,8 @@ const i18n = (function () {
         'sts.th_time':           { zh: '時間', en: 'Time' },
         'sts.events_found':      { zh: '筆旁靠事件', en: 'transfer events' },
         'sts.no_data':           { zh: '尚無旁靠資料', en: 'No transfer data available' },
+        'sts.share':             { zh: '分享', en: 'Share' },
+        'sts.link_copied':       { zh: '✅ 已複製事件連結', en: '✅ Event link copied' },
         'sts.normal_label':      { zh: '一般旁靠', en: 'Normal' },
 
         // ── 區域名稱 Region Names ──

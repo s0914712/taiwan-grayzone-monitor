@@ -320,6 +320,43 @@
 
     <section class="intro-section">
         <div class="lang-zh-only">
+            <h2>AIS 的兩種接收方式：地面站 vs 衛星</h2>
+            <p>AIS 訊號要被「看見」，必須先被接收。理解接收的兩種方式，才能明白「走暗」與「覆蓋盲區」的差別。</p>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">📻</div>
+                <div class="dark-reason-text"><strong>地面站 AIS（Terrestrial）</strong>沿岸基地台接收 VHF 訊號，更新即時、精度高，但因地球曲率，有效範圍通常僅約 40–70 浬。離岸越遠，覆蓋越稀疏。</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🛰️</div>
+                <div class="dark-reason-text"><strong>衛星 AIS（S-AIS）</strong>低軌衛星從太空接收，覆蓋公海，但衛星需通過上空才能收訊，更新有間隔；繁忙海域訊號互相干擾時也可能漏接。</div>
+            </div>
+            <p>這對監測的意義很關鍵：當一艘船在<strong>地面站範圍外、兩次衛星通過之間</strong>的空檔消失，可能是真的關閉 AIS（走暗），也可能只是覆蓋盲區。要分辨兩者，就得引入獨立的 SAR 衛星偵測——這也是本站把 AIS「going dark」判定與 SAR 暗船交叉比對的原因。</p>
+            <div class="fact-box">
+                <span class="fact-title">Class A vs Class B</span>
+                大型商船依規定使用功率較高、更新較頻繁的 <strong>Class A</strong> 設備；許多小型船與漁船使用較便宜、功率較低的 <strong>Class B</strong>。Class B 訊號較弱、較易漏接，因此「沒有 AIS」不一定等於「刻意走暗」，研判時必須一併考量船型與設備等級。
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>Two Ways AIS Is Received: Terrestrial vs Satellite</h2>
+            <p>An AIS signal has to be received before it can be "seen." Understanding the two ways it is received is what separates real "going dark" from a mere coverage gap.</p>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">📻</div>
+                <div class="dark-reason-text"><strong>Terrestrial AIS</strong>Coastal base stations receive VHF signals with real-time updates and high accuracy, but because of the Earth's curvature their effective range is usually only ~40–70 nautical miles. The farther offshore, the sparser the coverage.</div>
+            </div>
+            <div class="dark-reason">
+                <div class="dark-reason-icon">🛰️</div>
+                <div class="dark-reason-text"><strong>Satellite AIS (S-AIS)</strong>Low-orbit satellites receive from space and cover the open ocean, but a satellite must pass overhead to hear a signal, so updates have gaps; in busy waters overlapping signals can also be missed.</div>
+            </div>
+            <p>This matters for monitoring: when a ship vanishes <strong>beyond terrestrial range, between satellite passes</strong>, it may have genuinely switched off AIS (gone dark) — or it may just be in a coverage hole. Telling the two apart requires independent SAR satellite detection, which is exactly why this site cross-references AIS "going dark" with SAR dark-vessel hits.</p>
+            <div class="fact-box">
+                <span class="fact-title">Class A vs Class B</span>
+                Large merchant ships are required to use higher-power, more frequently updating <strong>Class A</strong> units; many small craft and fishing boats use cheaper, lower-power <strong>Class B</strong>. Class B signals are weaker and more easily missed, so "no AIS" does not always mean "deliberately dark" — vessel type and equipment class must be weighed in any assessment.
+            </div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
             <h2>常見問題 FAQ</h2>
             <div class="faq-section">
                 <details class="faq-item"><summary>AIS 是強制安裝的嗎？</summary><div class="faq-answer">根據國際海事組織（IMO）SOLAS 公約，300 總噸以上的遠洋船舶及所有客輪都必須裝設並啟動 AIS 自動識別系統，每隔幾秒廣播一次船舶資訊。</div></details>
