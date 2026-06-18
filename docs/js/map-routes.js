@@ -276,6 +276,7 @@ var MapRoutesFactory = function(map, layers) {
 
             renderRoute(data);
             showTrackInfoPanel(data, source);
+            _setMmsiPermalink(mmsi);
 
         } catch (e) {
             console.error('Load vessel route failed:', e);
@@ -285,9 +286,23 @@ var MapRoutesFactory = function(map, layers) {
         }
     }
 
+    /** Reflect the loaded vessel in the URL (?mmsi=) so it is shareable. */
+    function _setMmsiPermalink(mmsi) {
+        try {
+            var url = new URL(window.location.href);
+            url.searchParams.set('mmsi', mmsi);
+            window.history.replaceState(null, '', url);
+        } catch (_) { /* ignore */ }
+    }
+
     function clearVesselRoute() {
         layers.vesselRoutes.clearLayers();
         hideTrackInfoPanel();
+        try {
+            var url = new URL(window.location.href);
+            url.searchParams.delete('mmsi');
+            window.history.replaceState(null, '', url);
+        } catch (_) { /* ignore */ }
     }
 
     /**

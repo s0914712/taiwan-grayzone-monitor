@@ -99,6 +99,14 @@ VESSEL_TYPE_MULTIPLIER = {
 STS_SUSPICIOUS_SCORE = 5   # 涉及可疑旁靠事件
 STS_ANY_SCORE = 2          # 涉及任何旁靠事件
 
+# ── 地理法域 / 海纜緩衝帶加分（行為分，受船型乘數影響）──────────
+# 在既有「任一航跡點 5km 內海纜」(cable_proximity, +2) 之上，對「最近位置」
+# 做更精細的判讀：緊貼海纜（≤1km）再加分，且若同時位於我國管轄海域
+# （內水/領海/鄰接區）則再加分 —— 這正是灰色地帶海纜威脅的核心情境。
+CABLE_BUFFER_1KM_SCORE = 1          # 最近位置距海纜 ≤1km
+CABLE_BUFFER_JURISDICTION_SCORE = 1  # 且位於內水/領海/鄰接區
+JURISDICTION_ZONES = {'internal_waters', 'territorial_sea', 'contiguous_zone'}
+
 # ── 前十大船旗國 MMSI MID（國籍非前十大視為額外可疑）────────
 # MID = MMSI 前 3 碼，對照 ITU MID 表
 TOP_10_FLAG_MIDS = {
@@ -1193,6 +1201,30 @@ def classify_vessel(profile, track_points, identity_events=None,
                 f"半徑{starburst_details['mean_radius_km']}km"
             )
 
+    # ── 海域法域 + 海纜緩衝帶（最近位置）──────────────────────
+    # 先算出 geofence 標註，供計分與輸出共用（失敗安全降級，不影響評分）。
+    gf = None
+    classification['cable_buffer_1km'] = False
+    classification['cable_buffer_jurisdiction'] = False
+    if track_points:
+        _last = track_points[-1]
+        _lat, _lon = _last.get('lat'), _last.get('lon')
+        if _lat is not None and _lon is not None:
+            try:
+                gf = geofence.annotate(_lat, _lon)
+            except Exception:
+                gf = None
+    if gf:
+        if gf.get('cable_band') == 'within_1km':
+            classification['cable_buffer_1km'] = True
+            zone = gf.get('zone')
+            if zone in JURISDICTION_ZONES:
+                classification['cable_buffer_jurisdiction'] = True
+                classification['flags'].append(
+                    f'緊貼海纜 ≤1km（{zone}）')
+            else:
+                classification['flags'].append('緊貼海纜 ≤1km')
+
     # ── 風險計分 ──
     raw_score = 0
 
@@ -1207,6 +1239,10 @@ def classify_vessel(profile, track_points, identity_events=None,
         raw_score += 1
     if classification['non_top10_flag']:
         raw_score += 1  # 非前十大船旗國
+    if classification['cable_buffer_1km']:
+        raw_score += CABLE_BUFFER_1KM_SCORE  # 最近位置緊貼海纜 ≤1km
+    if classification['cable_buffer_jurisdiction']:
+        raw_score += CABLE_BUFFER_JURISDICTION_SCORE  # 且位於我國管轄海域
 
     # ── 組合加分（多重指標交叉 = 高度可疑）──
     if classification['cable_proximity'] and classification['zigzag_pattern']:
@@ -1273,19 +1309,14 @@ def classify_vessel(profile, track_points, identity_events=None,
     classification['risk_score'] = score
     classification['suspicious'] = score >= 8
 
-    # 附加位置資訊
+    # 附加位置資訊（geofence 已於計分前算好，此處沿用）
     if track_points:
         last = track_points[-1]
         classification['last_lat'] = last.get('lat')
         classification['last_lon'] = last.get('lon')
         classification['last_seen'] = last.get('t')
-        # 附加海域法域 + 海纜緩衝帶標註（純加值欄位，失敗不影響評分/管線）
-        lat, lon = last.get('lat'), last.get('lon')
-        if lat is not None and lon is not None:
-            try:
-                classification['geofence'] = geofence.annotate(lat, lon)
-            except Exception:
-                pass
+        if gf:
+            classification['geofence'] = gf
 
     return classification
 
@@ -1411,9 +1442,15 @@ def main():
     sts_transfer_count = 0
     zone_counts = {}
     cable_band_counts = {}
+    cable_buffer_1km_count = 0
+    cable_buffer_jur_count = 0
 
     for c in classifications:
         risk_counts[c['risk_level']] += 1
+        if c.get('cable_buffer_1km'):
+            cable_buffer_1km_count += 1
+        if c.get('cable_buffer_jurisdiction'):
+            cable_buffer_jur_count += 1
         gf = c.get('geofence')
         if gf:
             zone_counts[gf.get('zone', 'unknown')] = zone_counts.get(gf.get('zone', 'unknown'), 0) + 1
@@ -1469,6 +1506,8 @@ def main():
             'vessel_type_multiplier': VESSEL_TYPE_MULTIPLIER,
             'sts_suspicious_score': STS_SUSPICIOUS_SCORE,
             'sts_any_score': STS_ANY_SCORE,
+            'cable_buffer_1km_score': CABLE_BUFFER_1KM_SCORE,
+            'cable_buffer_jurisdiction_score': CABLE_BUFFER_JURISDICTION_SCORE,
         },
         'exclusion_rules': [
             {'id': r['id'], 'label': r['label']} for r in EXCLUSION_RULES
@@ -1493,6 +1532,8 @@ def main():
             'spoof_starburst_pattern': spoof_starburst_count,
             'itu_mars_mismatch': mars_mismatch_count,
             'sts_transfer': sts_transfer_count,
+            'cable_buffer_1km': cable_buffer_1km_count,
+            'cable_buffer_jurisdiction': cable_buffer_jur_count,
             'risk_distribution': risk_counts,
             'maritime_zone_distribution': zone_counts,
             'cable_band_distribution': cable_band_counts,

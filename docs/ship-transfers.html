@@ -166,6 +166,14 @@
             color: var(--text-primary);
         }
         .transfer-table tr:hover td { background: rgba(0,245,255,0.05); }
+        .transfer-table tr.row-active td { background: rgba(0,245,255,0.14); box-shadow: inset 3px 0 0 var(--accent-cyan); }
+        #stsToast {
+            position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+            background: var(--bg-card); color: var(--text-primary);
+            border: 1px solid var(--accent-cyan); border-radius: 6px;
+            padding: 8px 16px; font-size: 12px; z-index: 3000;
+            opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 90vw;
+        }
         .vessel-pair { display: flex; flex-direction: column; gap: 2px; }
         .vessel-pair span { white-space: nowrap; }
         .vessel-name { color: var(--accent-cyan); font-weight: 500; }
@@ -400,6 +408,71 @@
         let markers = [];
         let trackLayer;
         let cachedTrackHistory = null;
+        let transferIndex = {};   // eventId -> { marker, t }
+
+        /**
+         * Deterministic, shareable event id from first_seen + the MMSI pair,
+         * e.g. "202606180511-416070728-910676676". Stable across data refreshes.
+         */
+        function eventId(t) {
+            const d = t.first_seen ? new Date(t.first_seen) : null;
+            const stamp = (d && !isNaN(d)) ? d.toISOString().slice(0, 16).replace(/[-:T]/g, '') : '000000000000';
+            const pair = [String(t.vessel1.mmsi), String(t.vessel2.mmsi)].sort().join('-');
+            return stamp + '-' + pair;
+        }
+
+        /** Pan to an event, open its popup, highlight its table row, update URL. */
+        function focusEvent(id) {
+            const e = transferIndex[id];
+            if (!e || !e.t.location) return;
+            map.setView([e.t.location.lat, e.t.location.lon], 11);
+            if (e.marker && e.marker.openPopup) e.marker.openPopup();
+            document.querySelectorAll('#transferTableBody tr').forEach(r => r.classList.remove('row-active'));
+            const row = document.getElementById('evt-' + id);
+            if (row) { row.classList.add('row-active'); row.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            _setEventUrl(id);
+        }
+
+        function _setEventUrl(id) {
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('event', id);
+                window.history.replaceState(null, '', url);
+            } catch (_) { /* ignore */ }
+        }
+
+        /** Copy a permalink to this event and reflect it in the URL. */
+        function shareEvent(id) {
+            const url = window.location.origin + window.location.pathname + '?event=' + encodeURIComponent(id);
+            const msg = (typeof i18n !== 'undefined') ? i18n.t('sts.link_copied') : 'Link copied';
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => stsToast(msg)).catch(() => stsToast(url));
+            } else {
+                stsToast(url);
+            }
+            _setEventUrl(id);
+        }
+
+        function stsToast(text) {
+            let el = document.getElementById('stsToast');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'stsToast';
+                document.body.appendChild(el);
+            }
+            el.textContent = text;
+            el.style.opacity = '1';
+            clearTimeout(el._timer);
+            el._timer = setTimeout(() => { el.style.opacity = '0'; }, 2600);
+        }
+
+        /** On load, if URL has ?event=<id>, focus that event once markers exist. */
+        function applyEventDeepLink() {
+            try {
+                const id = new URLSearchParams(window.location.search).get('event');
+                if (id) setTimeout(() => focusEvent(id), 250);
+            } catch (_) { /* ignore */ }
+        }
 
         const CLASS_COLORS = {
             suspicious: '#ff3366',
@@ -458,10 +531,12 @@
             // Clear existing markers
             markers.forEach(m => map.removeLayer(m));
             markers = [];
+            transferIndex = {};
 
             transfers.forEach(t => {
                 const loc = t.location;
                 if (!loc || !loc.lat || !loc.lon) return;
+                const evId = eventId(t);
 
                 const color = CLASS_COLORS[t.classification] || '#ffd700';
                 const lang = (typeof i18n !== 'undefined' && i18n.lang === 'en') ? 'en' : 'zh';
@@ -501,7 +576,10 @@
                     ${t.risk_factors && t.risk_factors.length ? '<br>⚠️ ' + t.risk_factors.join(', ') : ''}
                     <br><button class="track-btn" onclick="loadTrack('${v1mmsi}','${v1name.replace(/'/g, "\\'")}')">📡 ${v1name} 航跡</button>
                     <button class="track-btn" onclick="loadTrack('${v2mmsi}','${v2name.replace(/'/g, "\\'")}')">📡 ${v2name} 航跡</button>
+                    <button class="track-btn" onclick="shareEvent('${evId}')">🔗 ${typeof i18n !== 'undefined' ? i18n.t('sts.share') : 'Share'}</button>
                 `);
+                marker._eventId = evId;
+                transferIndex[evId] = { marker: marker, t: t };
                 markers.push(marker);
             });
         }
@@ -518,8 +596,9 @@
             tbody.innerHTML = transfers.map(t => {
                 const classLabel = CLASS_LABELS[t.classification] ? CLASS_LABELS[t.classification][lang] : t.classification;
                 const time = t.first_seen ? new Date(t.first_seen).toLocaleString() : '--';
+                const evId = eventId(t);
                 return `
-                <tr>
+                <tr id="evt-${evId}" onclick="focusEvent('${evId}')" style="cursor:pointer">
                     <td><span class="badge badge-${t.classification}">${classLabel}</span></td>
                     <td>
                         <div class="vessel-pair">
@@ -777,6 +856,7 @@
                 renderTable(allTransfers);
                 renderDailyChart(allTransfers);
                 updateLegendCounts(allTransfers);
+                applyEventDeepLink();
 
                 // Status
                 document.getElementById('dataStatus').textContent =
