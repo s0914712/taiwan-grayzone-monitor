@@ -312,6 +312,17 @@ def main():
 
     print(f"✅ Dashboard 資料已儲存: {output_path}")
 
+    # 資料版本 manifest：前端先抓這個小檔取得版本，再以 data.json?v=<version>
+    # 取主資料 —— 同一版資料可被瀏覽器/CDN 快取，新資料才會 bust cache。
+    data_version = re.sub(r'[^0-9TZ]', '', dashboard['updated_at'])
+    manifest = {
+        'data_version': data_version,
+        'updated_at': dashboard['updated_at'],
+        'files': {'data': f'data.json?v={data_version}'},
+    }
+    atomic_write_json(DOCS_DIR / 'data-manifest.json', manifest)
+    print(f"🔖 資料版本 manifest 已儲存: data-manifest.json (v={data_version})")
+
     # 複製暗船動畫資料至 docs（獨立檔案，避免主 data.json 過大）
     weekly_dark_path = DATA_DIR / 'weekly_dark_vessels.json'
     if weekly_dark_path.exists():
@@ -351,7 +362,11 @@ def main():
 
 
 def update_structured_data_dates():
-    """Update dateModified in JSON-LD and <lastmod> in sitemap to today's UTC date."""
+    """Refresh dateModified (data pages) + sitemap <lastmod> (data pages only).
+
+    Evergreen content — blog-*, intro, research, glossary, and /en/ mirrors —
+    keeps its existing lastmod so search engines aren't told it changed daily.
+    """
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
     html_files = [
@@ -371,14 +386,38 @@ def update_structured_data_dates():
     sitemap = DOCS_DIR / 'sitemap.xml'
     if sitemap.exists():
         text = sitemap.read_text(encoding='utf-8')
-        new_text = re.sub(
-            r'(<lastmod>)[0-9]{4}-[0-9]{2}-[0-9]{2}(</lastmod>)',
-            rf'\g<1>{today}\2',
-            text,
-        )
+        new_text = bump_sitemap_lastmod(text, today)
         if new_text != text:
             sitemap.write_text(new_text, encoding='utf-8')
-            print(f"📅 已更新 sitemap.xml lastmod → {today}")
+            print(f"📅 已更新 sitemap.xml lastmod（資料型頁面）→ {today}")
+
+
+# 只有「資料型/每日更新」頁面的 <loc> 才隨資料更新 lastmod。
+# 文章型/常青頁面（blog-*, intro, research, glossary, /en/*）保持原值。
+SITEMAP_DATA_PAGE_SUFFIXES = (
+    'taiwan-grayzone-monitor/',   # 首頁儀表板（根 URL）
+    'dark-vessels.html',
+    'statistics.html',
+    'identity-history.html',
+    'ship-transfers.html',
+    'ais-animation.html',
+    'cn-fishing-animation.html',
+    'reports/',                   # 每日報告索引
+)
+
+
+def bump_sitemap_lastmod(text, today):
+    """把 sitemap 中『資料型頁面』的 <lastmod> 更新為 today；其餘保持不變。"""
+    lastmod_re = re.compile(r'(<lastmod>)[0-9]{4}-[0-9]{2}-[0-9]{2}(</lastmod>)')
+
+    def _bump(block_match):
+        block = block_match.group(0)
+        loc = re.search(r'<loc>\s*([^<]+?)\s*</loc>', block)
+        if loc and loc.group(1).endswith(SITEMAP_DATA_PAGE_SUFFIXES):
+            return lastmod_re.sub(rf'\g<1>{today}\2', block)
+        return block
+
+    return re.sub(r'<url>.*?</url>', _bump, text, flags=re.S)
 
 
 if __name__ == "__main__":

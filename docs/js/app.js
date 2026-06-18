@@ -692,7 +692,18 @@ const App = (function () {
      */
     async function loadData() {
         try {
-            const res = await fetch('data.json?' + Date.now());
+            // Resolve a build-time cache key so data.json stays CDN/browser
+            // cacheable within an update window; only the tiny manifest is
+            // always-fresh. Falls back to a timestamp bust if manifest absent.
+            let dataUrl = 'data.json?t=' + Date.now();
+            try {
+                const mres = await fetch('data-manifest.json?t=' + Date.now(), { cache: 'no-store' });
+                if (mres.ok) {
+                    const mf = await mres.json();
+                    if (mf && mf.data_version) dataUrl = 'data.json?v=' + encodeURIComponent(mf.data_version);
+                }
+            } catch (_) { /* keep timestamp fallback */ }
+            const res = await fetch(dataUrl);
             const data = await res.json();
 
             lastUpdatedAt = data.updated_at;
