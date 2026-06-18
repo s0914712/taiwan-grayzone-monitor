@@ -31,6 +31,25 @@ const App = (function () {
 
         // Load data
         loadData();
+
+        // Deep link: ?mmsi=<id> auto-loads that vessel's route (shareable permalink)
+        applyMmsiDeepLink();
+    }
+
+    /**
+     * If the URL has ?mmsi=<5-9 digits>, populate the search box and load the
+     * vessel's route automatically (used for shareable per-vessel permalinks).
+     */
+    function applyMmsiDeepLink() {
+        try {
+            var mmsi = new URLSearchParams(window.location.search).get('mmsi');
+            if (!mmsi || !/^\d{5,9}$/.test(mmsi)) return;
+            var input = document.getElementById('mmsiSearchInput');
+            if (input) input.value = mmsi;
+            if (typeof MapModule !== 'undefined' && MapModule.loadVesselRoute) {
+                MapModule.loadVesselRoute(mmsi);
+            }
+        } catch (_) { /* ignore */ }
     }
 
     /**

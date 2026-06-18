@@ -104,6 +104,16 @@ On match `type_name` is overridden to the category and a `gov_type` field (+ `is
 - Cable proximity + zigzag: +3 (possible anchor dragging)
 - Cable proximity + loitering: +2
 
+### Geofence Buffer Bonuses (behavioral, multiplied by vessel type)
+Refine the coarse 5km cable net using the per-vessel `geofence` annotation
+(`src/geofence.py`, from the **last** position). Bounded, additive:
+- Last position ≤1km from a cable (`cable_band == within_1km`): **+1**
+- …and inside Taiwan's jurisdiction (zone ∈ internal_waters / territorial_sea /
+  contiguous_zone): **+1** more — the precise gray-zone cable-threat scenario.
+Constants: `CABLE_BUFFER_1KM_SCORE`, `CABLE_BUFFER_JURISDICTION_SCORE`,
+`JURISDICTION_ZONES`. Each scored vessel carries `cable_buffer_1km` /
+`cable_buffer_jurisdiction` booleans; summary adds the two trigger counts.
+
 ### Final Score & Risk Levels
 ```
 final_score = round(raw_behavioral_score × type_multiplier) + high_threat_indicators
