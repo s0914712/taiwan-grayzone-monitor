@@ -45,6 +45,7 @@ STATIC_PAGES = [
     "blog-taiwan-enforcement.html",
     "blog-what-is-dark-vessel.html",
     "blog-what-is-ship-to-ship-transfer.html",
+    "blog-gray-zone-glossary.html",
 ]
 EN_SET = set(STATIC_PAGES)
 
