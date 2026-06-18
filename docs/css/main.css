@@ -2208,3 +2208,82 @@ body:not(.lang-en):not(.lang-zh) .lang-en-only { display: none !important; }
 @media (max-width: 900px) {
     .data-health { margin: 12px; padding: 14px 16px; }
 }
+
+/* ============================================================================
+   Desktop readability — larger fonts on wider screens (≥901px).
+   Mobile-first base sizes are intentionally compact; on desktop we scale up
+   the readable content. `body .class` is used where needed to win specificity
+   over the per-page inline <style> blocks on the article/report pages.
+   The compact map chrome (nav, legend, badges) is deliberately left alone.
+   ============================================================================ */
+@media (min-width: 901px) {
+    /* Long-form article / intro / research pages */
+    .intro-hero h1 { font-size: 34px; }
+    .intro-hero .subtitle { font-size: 17px; }
+    .intro-section { max-width: 800px; }
+    .intro-section p { font-size: 17px; line-height: 1.9; }
+    .intro-section h2 { font-size: 24px; }
+    .intro-section h3 { font-size: 18px; }
+    .intro-section ul, .intro-section ol { font-size: 16px; }
+    .intro-section ul li, .intro-section ol li { font-size: 16px; }
+
+    /* Decorative content blocks defined in per-page inline styles
+       (body … wins specificity over the inline `.class` rules) */
+    body .story-hook { font-size: 16px; }
+    body .fact-box { font-size: 14px; }
+    body .alert-box { font-size: 14px; }
+    body .dark-reason { font-size: 14px; }
+    body .compare-col h3 { font-size: 15px; }
+    body .compare-col ul { font-size: 14px; }
+    body .faq-item summary { font-size: 15px; }
+    body .faq-answer { font-size: 14px; }
+    body .series-chip { font-size: 11.5px; }
+    body .ais-data-table { font-size: 14px; }
+    body .score-table, body .mult-table { font-size: 13.5px; }
+
+    /* Glossary */
+    body .g-group { font-size: 16px; }
+    body .g-term { font-size: 16px; }
+    body .g-term .g-zh { font-size: 13px; }
+    body .g-def { font-size: 14.5px; }
+
+    /* Daily report pages */
+    body .rp-val { font-size: 34px; }
+    body .rp-lbl { font-size: 12.5px; }
+    body .rp-table { font-size: 14px; }
+    body .rp-meta { font-size: 12.5px; }
+
+    /* AI summary + data-health (shared main.css blocks) */
+    .ai-summary h2 { font-size: 15px; }
+    .ai-summary p { font-size: 15.5px; line-height: 1.8; }
+    .ai-summary li { font-size: 14px; }
+    .data-health h2 { font-size: 15px; }
+    .freshness-table { font-size: 14px; }
+    .freshness-table th { font-size: 12.5px; }
+
+    /* Homepage "About / Methodology" section */
+    .about-title { font-size: 18px; }
+    .about-card h3 { font-size: 15px; }
+    .about-card p, .about-card ul { font-size: 14px; }
+    .about-card .reference-list li { font-size: 13px; }
+}
+
+/* Desktop dashboard readability — the sidebar / map panels use very compact
+   base sizes (8–11px) to fit the 300px sidebar; bump them on wider screens. */
+@media (min-width: 901px) {
+    .section-title { font-size: 12px; }
+    .stat-box .value { font-size: 18px; }
+    .stat-box .label { font-size: 10px; }
+    .stat-card .label { font-size: 11px; }
+    .overlay-card .label { font-size: 10px; }
+    .overlay-card .value { font-size: 20px; }
+    .suspicious-item { font-size: 11px; gap: 6px; }
+    .suspicious-item .risk-badge { font-size: 9px; padding: 2px 6px; }
+    .vessel-item { font-size: 11px; gap: 6px; }
+    .zone-item { font-size: 11px; }
+    .update-info { font-size: 10px; }
+    .panel-title { font-size: 13px; }
+    .gfw-stats-grid .gfw-stat-box .value { font-size: 16px; }
+    .gfw-stats-grid .gfw-stat-box .label { font-size: 9px; }
+    .data-status { font-size: 10px; }
+}
