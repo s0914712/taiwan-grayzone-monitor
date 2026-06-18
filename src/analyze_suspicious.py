@@ -29,6 +29,7 @@ from pathlib import Path
 
 from geo_utils import haversine_km, calc_bearing
 from io_utils import atomic_write_json
+import geofence
 
 DATA_DIR = Path("data")
 DOCS_DIR = Path("docs")
@@ -1278,6 +1279,13 @@ def classify_vessel(profile, track_points, identity_events=None,
         classification['last_lat'] = last.get('lat')
         classification['last_lon'] = last.get('lon')
         classification['last_seen'] = last.get('t')
+        # 附加海域法域 + 海纜緩衝帶標註（純加值欄位，失敗不影響評分/管線）
+        lat, lon = last.get('lat'), last.get('lon')
+        if lat is not None and lon is not None:
+            try:
+                classification['geofence'] = geofence.annotate(lat, lon)
+            except Exception:
+                pass
 
     return classification
 
@@ -1401,9 +1409,16 @@ def main():
     spoof_starburst_count = 0
     mars_mismatch_count = 0
     sts_transfer_count = 0
+    zone_counts = {}
+    cable_band_counts = {}
 
     for c in classifications:
         risk_counts[c['risk_level']] += 1
+        gf = c.get('geofence')
+        if gf:
+            zone_counts[gf.get('zone', 'unknown')] = zone_counts.get(gf.get('zone', 'unknown'), 0) + 1
+            band = gf.get('cable_band', 'unknown')
+            cable_band_counts[band] = cable_band_counts.get(band, 0) + 1
         if c.get('cable_proximity'):
             cable_count += 1
         if c.get('cable_loitering'):
@@ -1479,6 +1494,8 @@ def main():
             'itu_mars_mismatch': mars_mismatch_count,
             'sts_transfer': sts_transfer_count,
             'risk_distribution': risk_counts,
+            'maritime_zone_distribution': zone_counts,
+            'cable_band_distribution': cable_band_counts,
         },
         'suspicious_vessels': suspicious_vessels[:50],
         'all_classifications': classifications[:200],
