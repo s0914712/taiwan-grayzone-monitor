@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<!-- AUTO-GENERATED English mirror of /blog-what-is-maritime-gray-zone.html by src/generate_i18n_pages.py — do not edit by hand. -->
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>What Is Maritime Gray-Zone Activity? Tactics Around Taiwan | Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="Maritime gray-zone activity is coercion kept below the threshold of open conflict. An overview of dark vessels, AIS spoofing, ship-to-ship transfers, shadow fleets, and cable threats — and how OSINT tracks them around Taiwan.">
+    <meta name="keywords" content="maritime gray zone, gray zone operations, dark vessel, AIS spoofing, ship-to-ship transfer, shadow fleet, submarine cable, Taiwan Strait, OSINT">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-maritime-gray-zone.html">
+    <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-maritime-gray-zone.html">
+    <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-maritime-gray-zone.html">
+    <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-maritime-gray-zone.html">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="What Is Maritime Gray-Zone Activity?">
+    <meta property="og:description" content="Maritime gray-zone activity is coercion kept below the threshold of open conflict. An overview of dark vessels, AIS spoofing, ship-to-ship transfers, shadow fleets, and cable threats — and how OSINT tracks them around Taiwan.">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-maritime-gray-zone.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="zh_TW">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="What Is Maritime Gray-Zone Activity?">
+    <meta name="twitter:description" content="Maritime gray-zone activity is coercion kept below the threshold of open conflict. An overview of dark vessels, AIS spoofing, ship-to-ship transfers, shadow fleets, and cable threats — and how OSINT tracks them around Taiwan.">
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#0a0f1c">
+    <style>
+    .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
+    .fact-box{background:var(--bg-secondary);border:1px solid rgba(0,245,255,.15);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
+    .fact-box strong{color:var(--accent-cyan)}
+    .fact-title{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent-cyan);font-weight:600;letter-spacing:1px;margin-bottom:8px;text-transform:uppercase}
+    .series-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+    .series-chip{padding:5px 10px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:4px;font-size:10px;color:var(--text-secondary);text-decoration:none;font-family:'JetBrains Mono',monospace;transition:all .2s}
+    .series-chip:hover,.series-chip.active{border-color:var(--accent-cyan);color:var(--accent-cyan);background:rgba(0,245,255,.08)}
+    .hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:16px 0}
+    .hub-card{display:block;padding:14px 16px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:8px;text-decoration:none;transition:all .2s}
+    .hub-card:hover{border-color:var(--accent-cyan);background:rgba(0,245,255,.06);transform:translateY(-2px)}
+    .hub-card h3{margin:0 0 4px;font-size:14px;color:var(--accent-cyan)}
+    .hub-card p{margin:0;font-size:12px;line-height:1.7;color:var(--text-secondary)}
+    .dark-reason{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:6px;margin:8px 0;font-size:12px}
+    .dark-reason-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+    .dark-reason-text{color:var(--text-secondary);line-height:1.7}
+    .dark-reason-text strong{color:var(--text-primary)}
+    .alert-box{background:rgba(255,77,77,.06);border:1px solid rgba(255,77,77,.2);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
+    .alert-box strong{color:#ff6b6b}
+    .faq-section{margin:16px 0}
+    .faq-item{border:1px solid var(--border-glow);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--bg-card)}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text-primary);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:'+';font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:18px;flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{transform:rotate(45deg)}
+    .faq-item summary:hover{color:var(--accent-cyan)}
+    .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
+    body.lang-en .lang-zh-only{display:none!important}body:not(.lang-en) .lang-en-only{display:none!important}
+    </style>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":["Article","TechArticle"],"headline":"海上灰色地帶行動是什麼？台灣周邊的灰色地帶手法總覽 — What Is Maritime Gray-Zone Activity?","description":"海上灰色地帶行動是維持在公開衝突門檻之下的脅迫或挑釁手法。本文總覽暗船、AIS 欺騙、旁靠、影子船隊、海底電纜威脅，以及如何用 AIS 與 SAR 開源情報觀察台灣周邊海域。An overview of maritime gray-zone tactics around Taiwan and how OSINT tracks them.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-maritime-gray-zone.html","datePublished":"2026-06-18","dateModified":"2026-06-18","inLanguage":"en","author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#org"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"mentions":[{"@type":"Article","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-dark-vessel.html"},{"@type":"Article","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ais-spoofing.html"},{"@type":"Article","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-ship-to-ship-transfer.html"},{"@type":"Article","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-cable-threats.html"},{"@type":"Article","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html"}],"about":[{"@type":"Thing","name":"Gray Zone Operations"},{"@type":"Thing","name":"Maritime Security"},{"@type":"Thing","name":"Taiwan Strait"},{"@type":"Thing","name":"OSINT"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"海上灰色地帶行動是什麼","item":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-maritime-gray-zone.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"什麼是海上灰色地帶行動？","acceptedAnswer":{"@type":"Answer","text":"灰色地帶行動是刻意維持在公開武裝衝突門檻之下的脅迫或挑釁手法，利用模糊與可否認性遂行目的。在海上，常見形式包括漁船聚集、AIS 關閉與欺騙、海上旁靠、影子船隊轉運，以及對海底電纜的威脅。"}},{"@type":"Question","name":"海上灰色地帶有哪些常見手法？","acceptedAnswer":{"@type":"Answer","text":"暗船（關閉 AIS 卻被 SAR 拍到）、AIS 欺騙（廣播假位置或冒用身分）、旁靠（船對船海上轉運）、影子船隊（規避制裁的油輪）、漁船聚集，以及在海底電纜附近的異常徘徊與拖錨。"}},{"@type":"Question","name":"為什麼台灣特別關注海上灰色地帶？","acceptedAnswer":{"@type":"Answer","text":"台灣是島嶼，逾 95% 對外通訊依賴海底電纜，且位於繁忙的台灣海峽與漁場交會處。這讓灰色地帶手法既容易隱身於正常海上活動，又可能造成不成比例的影響。"}},{"@type":"Question","name":"開源情報如何觀察灰色地帶？","acceptedAnswer":{"@type":"Answer","text":"以 AIS 船位、SAR 衛星暗船偵測、身分變更與旁靠偵測交叉比對，對異常行為評分排序。分數是風險排序與待查線索，而非法律認定。"}}]}
+    </script>
+</head>
+<body class="lang-en">
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <header class="header" style="position:sticky;top:0;z-index:100">
+        <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
+        <div class="header-info">
+            <a href="../index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">深度文章</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+        </div>
+    </header>
+
+    <div class="intro-hero">
+        <h1 class="lang-zh-only">海上灰色地帶行動是什麼？</h1>
+        <h1 class="lang-en-only">What Is Maritime Gray-Zone Activity?</h1>
+        <p class="subtitle lang-zh-only">門檻之下 &#x2022; 模糊與可否認 &#x2022; 台灣周邊海域 &#x2022; 手法總覽</p>
+        <p class="subtitle lang-en-only">Below the Threshold &#x2022; Ambiguous &amp; Deniable &#x2022; Waters Around Taiwan &#x2022; Overview</p>
+    </div>
+
+    <section class="ai-summary" aria-label="頁面摘要 Page summary">
+        <h2 class="lang-zh-only">本頁重點</h2>
+        <h2 class="lang-en-only">In short</h2>
+        <p class="lang-zh-only">海上灰色地帶行動是<strong>刻意維持在公開武裝衝突門檻之下</strong>的脅迫或挑釁手法，利用模糊與可否認性遂行目的。常見形式包括暗船、AIS 欺騙、海上旁靠、影子船隊、漁船聚集與海底電纜威脅。本頁是這些主題的總覽與導覽中心。</p>
+        <p class="lang-en-only">Maritime gray-zone activity is coercive or provocative action <strong>deliberately kept below the threshold of open armed conflict</strong>, exploiting ambiguity and deniability. Common forms include dark vessels, AIS spoofing, ship-to-ship transfers, shadow fleets, fishing-fleet aggregation, and submarine-cable threats. This page is the overview and hub for those topics.</p>
+        <ul>
+            <li class="lang-zh-only">共同點：難以歸責、易於否認、隱身於正常海上活動之中。</li>
+            <li class="lang-en-only">Common thread: hard to attribute, easy to deny, hidden within normal maritime activity.</li>
+            <li class="lang-zh-only">本站以 AIS + SAR 開源情報觀察，產生風險排序而非法律認定。</li>
+            <li class="lang-en-only">This site watches via AIS + SAR OSINT, producing risk rankings, not legal findings.</li>
+        </ul>
+    </section>
+
+    <section class="intro-section">
+        <div class="series-nav">
+            <span style="font-size:10px;color:rgba(0,245,255,.4);font-family:'JetBrains Mono',monospace;align-self:center">主題群 TOPIC MAP →</span>
+            <a href="blog-what-is-dark-vessel.html" class="series-chip">暗船</a>
+            <a href="blog-what-is-ais-spoofing.html" class="series-chip">AIS 欺騙</a>
+            <a href="blog-what-is-ship-to-ship-transfer.html" class="series-chip">旁靠</a>
+            <a href="blog-cable-threats.html" class="series-chip">海纜威脅</a>
+            <a href="blog-methodology.html" class="series-chip">方法論</a>
+            <a href="blog-gray-zone-glossary.html" class="series-chip">詞彙表</a>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <div class="story-hook">
+                它不像戰爭。沒有宣戰、沒有開火，海面上看起來只是漁船、油輪與貨船的日常往來。<br><br>
+                但其中有些船在電纜附近關掉了訊號、有些廣播著假的位置、有些在公海上悄悄並靠——這就是「灰色地帶」：把對抗藏進日常的縫隙裡。
+            </div>
+            <h2>灰色地帶：門檻之下的對抗</h2>
+            <p>「灰色地帶」（gray zone）指的是介於和平與公開衝突之間的模糊空間。行動者刻意<strong>把每一步都維持在會引發強烈反制的門檻之下</strong>，用一連串看似輕微、可否認的動作，逐步改變現狀或施加壓力。</p>
+            <p>在海上，這種特性特別好用：海洋遼闊、監視稀疏、船舶身分可被操弄，而且大量正常的商業與漁業活動正好提供了完美的掩護。一艘可疑的船，往往就藏在數千艘正常船舶之中。</p>
+        </div>
+        <div class="lang-en-only">
+            <div class="story-hook">
+                It doesn't look like war. No declaration, no gunfire — the sea looks like the daily traffic of fishing boats, tankers, and cargo ships.<br><br>
+                But some of those ships switch off their signal near a cable, some broadcast a false position, some quietly come alongside on the high seas. That is the "gray zone": hiding confrontation in the seams of the ordinary.
+            </div>
+            <h2>The Gray Zone: Confrontation Below the Threshold</h2>
+            <p>The "gray zone" is the ambiguous space between peace and open conflict. Actors deliberately keep <strong>each step below the threshold that would trigger a strong response</strong>, using a series of seemingly minor, deniable actions to gradually change the status quo or apply pressure.</p>
+            <p>At sea this works especially well: the ocean is vast, surveillance is sparse, vessel identity can be manipulated, and a huge volume of normal commercial and fishing activity provides perfect cover. A suspicious ship is usually hidden among thousands of normal ones.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>海上灰色地帶的常見手法</h2>
+            <p>本站的監測聚焦在幾種反覆出現的手法。點進每一篇，看它是什麼、如何被偵測：</p>
+            <div class="hub-grid">
+                <a class="hub-card" href="blog-what-is-dark-vessel.html"><h3>暗船 Dark Vessel</h3><p>關閉 AIS、卻被 SAR 衛星拍到的船。走暗不等於消失。</p></a>
+                <a class="hub-card" href="blog-what-is-ais-spoofing.html"><h3>AIS 欺騙 Spoofing</h3><p>廣播假位置、假速度，甚至冒用他船身分。</p></a>
+                <a class="hub-card" href="blog-what-is-ship-to-ship-transfer.html"><h3>旁靠 STS</h3><p>海上船對船並靠轉運，避開港口檢查。</p></a>
+                <a class="hub-card" href="blog-cable-threats.html"><h3>海底電纜威脅</h3><p>在電纜附近走暗、徘徊、拖錨——意外或蓄意？</p></a>
+                <a class="hub-card" href="blog-taiwan-enforcement.html"><h3>執法困境</h3><p>旗國主義與舉證困難，讓肇事者幾乎不被追訴。</p></a>
+                <a class="hub-card" href="blog-methodology.html"><h3>本站方法論</h3><p>8 項指標如何把異常行為轉成風險分數。</p></a>
+            </div>
+            <div class="fact-box"><span class="fact-title">影子船隊：把手法串起來</span>受制裁國家的「影子船隊」常同時使用上述多種手法——權宜旗、關閉 AIS、身分變更與海上旁靠——是觀察灰色地帶如何「組合運用」的典型案例。</div>
+        </div>
+        <div class="lang-en-only">
+            <h2>Common Maritime Gray-Zone Tactics</h2>
+            <p>This site's monitoring focuses on a few recurring tactics. Click into each to see what it is and how it is detected:</p>
+            <div class="hub-grid">
+                <a class="hub-card" href="blog-what-is-dark-vessel.html"><h3>Dark Vessel</h3><p>A ship that turns off AIS but is caught by SAR satellites. Going dark isn't disappearing.</p></a>
+                <a class="hub-card" href="blog-what-is-ais-spoofing.html"><h3>AIS Spoofing</h3><p>Broadcasting a fake position or speed, or borrowing another ship's identity.</p></a>
+                <a class="hub-card" href="blog-what-is-ship-to-ship-transfer.html"><h3>Ship-to-Ship (STS)</h3><p>Vessels lying alongside at sea to transfer cargo, dodging port inspection.</p></a>
+                <a class="hub-card" href="blog-cable-threats.html"><h3>Submarine-Cable Threats</h3><p>Going dark, loitering, or dragging anchor near a cable — accident or intent?</p></a>
+                <a class="hub-card" href="blog-taiwan-enforcement.html"><h3>The Enforcement Gap</h3><p>Flag-state jurisdiction and evidentiary hurdles let perpetrators escape prosecution.</p></a>
+                <a class="hub-card" href="blog-methodology.html"><h3>Our Methodology</h3><p>How 8 criteria turn anomalous behavior into a risk score.</p></a>
+            </div>
+            <div class="fact-box"><span class="fact-title">Shadow Fleets: Tactics Combined</span>The "shadow fleets" of sanctioned states often use several of the above at once — flags of convenience, AIS off, identity changes, and STS transfers — a textbook case of how gray-zone methods are combined.</div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>為什麼台灣特別關鍵？</h2>
+            <div class="dark-reason"><div class="dark-reason-icon">🔌</div><div class="dark-reason-text"><strong>命脈集中：</strong>台灣逾 95% 對外通訊依賴海底電纜，且登陸站與路徑高度集中，少數節點承擔不成比例的風險。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">🌊</div><div class="dark-reason-text"><strong>海域繁忙：</strong>台灣海峽是全球最繁忙的航道與漁場之一，可疑行為容易隱身於正常活動。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">⚖️</div><div class="dark-reason-text"><strong>歸責困難：</strong>旗國主義、公海管轄與舉證門檻，讓事後追究極為困難——這正是灰色地帶手法奏效的前提。</div></div>
+            <p>把這些條件加在一起，台灣周邊海域成為觀察與理解海上灰色地帶的最前線之一。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Why Is Taiwan Especially Critical?</h2>
+            <div class="dark-reason"><div class="dark-reason-icon">🔌</div><div class="dark-reason-text"><strong>Concentrated lifeline:</strong> over 95% of Taiwan's external communications depend on submarine cables, with landing stations and routes highly concentrated — a few nodes carry disproportionate risk.</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">🌊</div><div class="dark-reason-text"><strong>Busy waters:</strong> the Taiwan Strait is one of the world's busiest shipping lanes and fishing grounds, so suspicious behavior easily hides within normal activity.</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">⚖️</div><div class="dark-reason-text"><strong>Hard to attribute:</strong> flag-state jurisdiction, high-seas limits, and evidentiary thresholds make after-the-fact accountability very difficult — the precondition that makes gray-zone tactics work.</div></div>
+            <p>Together, these make the waters around Taiwan one of the front lines for observing and understanding the maritime gray zone.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>如何用開源情報觀察灰色地帶？</h2>
+            <p>灰色地帶的核心是「難以歸責」，而開源情報（OSINT）的價值，就在於把分散、可否認的訊號重新拼起來、攤在陽光下：</p>
+            <ol style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
+                <li><strong>AIS</strong> 提供船舶的身分與位置——但可被關閉或偽造。</li>
+                <li><strong>SAR 衛星</strong> 提供獨立的「雷達可見」佐證，找回走暗的船。</li>
+                <li><strong>身分變更與旁靠偵測</strong> 揭露隱匿與轉運的行為模式。</li>
+                <li><strong>地理法域與海纜緩衝帶</strong> 判讀「行為發生在哪裡」。</li>
+                <li>以上交叉比對後<strong>評分排序</strong>，讓真正異常的少數浮現。</li>
+            </ol>
+            <p>想看即時態勢，請到 <a href="../index.html" style="color:var(--accent-cyan)">即時監測地圖</a>；想了解評分如何運作，請看 <a href="blog-methodology.html" style="color:var(--accent-cyan)">本站方法論</a>。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>How OSINT Watches the Gray Zone</h2>
+            <p>The core of the gray zone is "hard to attribute," and the value of open-source intelligence (OSINT) is to reassemble scattered, deniable signals and put them in plain sight:</p>
+            <ol style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
+                <li><strong>AIS</strong> gives vessel identity and position — but can be switched off or faked.</li>
+                <li><strong>SAR satellites</strong> give independent "radar-visible" corroboration, recovering vessels that went dark.</li>
+                <li><strong>Identity-change and STS detection</strong> reveal patterns of concealment and transfer.</li>
+                <li><strong>Maritime-zone and cable-buffer</strong> classification reads "where the behavior happened."</li>
+                <li>Cross-referenced and then <strong>scored</strong>, so the genuinely anomalous minority surfaces.</li>
+            </ol>
+            <p>For the live picture, see the <a href="../index.html" style="color:var(--accent-cyan)">live monitoring map</a>; to understand the scoring, read our <a href="blog-methodology.html" style="color:var(--accent-cyan)">methodology</a>.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>資料限制與免責聲明</h2>
+            <div class="alert-box"><ul style="margin:0;padding-left:18px;line-height:2">
+                <li>「灰色地帶」是分析框架，不是對任一行動者的法律定性。</li>
+                <li>AIS 可能因延遲、覆蓋缺漏或走暗而不完整；SAR 偵測代表雷達可見目標，不必然違法。</li>
+                <li>本站分數是風險排序與研判輔助，並非法律認定，也不指控任何具名船隻。</li>
+            </ul></div>
+        </div>
+        <div class="lang-en-only">
+            <h2>Data Limitations &amp; Disclaimer</h2>
+            <div class="alert-box"><ul style="margin:0;padding-left:18px;line-height:2">
+                <li>"Gray zone" is an analytical frame, not a legal characterization of any actor.</li>
+                <li>AIS can be incomplete due to delay, coverage gaps, or going dark; a SAR detection is a radar-visible target, not proof of illegality.</li>
+                <li>Our scores are a risk ranking and an analytical aid — not a legal finding, and not an accusation against any named vessel.</li>
+            </ul></div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>常見問題 FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>什麼是海上灰色地帶行動？</summary><div class="faq-answer">刻意維持在公開武裝衝突門檻之下的脅迫或挑釁手法，利用模糊與可否認性遂行目的。海上常見形式包括漁船聚集、AIS 關閉與欺騙、海上旁靠、影子船隊轉運，以及對海底電纜的威脅。</div></details>
+                <details class="faq-item"><summary>海上灰色地帶有哪些常見手法？</summary><div class="faq-answer">暗船、AIS 欺騙、旁靠、影子船隊、漁船聚集，以及在海底電纜附近的異常徘徊與拖錨。</div></details>
+                <details class="faq-item"><summary>為什麼台灣特別關注？</summary><div class="faq-answer">台灣逾 95% 對外通訊依賴海底電纜，又位於繁忙的台灣海峽與漁場交會處，灰色地帶手法既容易隱身，又可能造成不成比例的影響。</div></details>
+                <details class="faq-item"><summary>開源情報如何觀察灰色地帶？</summary><div class="faq-answer">以 AIS 船位、SAR 暗船偵測、身分變更與旁靠偵測交叉比對，對異常行為評分排序。分數是風險排序與待查線索，而非法律認定。</div></details>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>What is maritime gray-zone activity?</summary><div class="faq-answer">Coercive or provocative action deliberately kept below the threshold of open armed conflict, exploiting ambiguity and deniability. At sea this includes fishing-fleet aggregation, AIS off and spoofing, ship-to-ship transfers, shadow-fleet transshipment, and threats to submarine cables.</div></details>
+                <details class="faq-item"><summary>What are the common tactics?</summary><div class="faq-answer">Dark vessels, AIS spoofing, ship-to-ship transfers, shadow fleets, fishing-fleet aggregation, and anomalous loitering or anchor-dragging near submarine cables.</div></details>
+                <details class="faq-item"><summary>Why does Taiwan pay special attention?</summary><div class="faq-answer">Taiwan depends on submarine cables for over 95% of external communications and sits at the busy intersection of the Taiwan Strait and major fishing grounds, so gray-zone tactics both hide easily and can have outsized impact.</div></details>
+                <details class="faq-item"><summary>How does OSINT watch the gray zone?</summary><div class="faq-answer">By cross-referencing AIS positions, SAR dark-vessel detection, identity changes, and STS detection, and scoring anomalous behavior. Scores are a risk ranking and a lead to investigate — not a legal finding.</div></details>
+            </div>
+        </div>
+    </section>
+
+    <div class="intro-cta" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+        <a href="../index.html" class="lang-zh-only">查看即時監測地圖 →</a>
+        <a href="../index.html" class="lang-en-only">View the live monitoring map →</a>
+        <a href="blog.html" class="lang-zh-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← 返回深度文章</a>
+        <a href="blog.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← Back to articles</a>
+    </div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+    <script defer src="../js/i18n.js"></script>
+    <script defer src="../js/mobile-nav.js"></script>
+</body>
+</html>
