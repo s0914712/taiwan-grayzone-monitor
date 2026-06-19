@@ -293,6 +293,71 @@ body.theme-reading .cta-secondary:hover {
     color: #1a1a1a;
 }
 
+/* =============================================================================
+   Evergreen article pages (blog-*.html) — shared components.
+   These pages lean on the CSS variables above, so most styling cascades for
+   free; below are the few hard-coded cyan spots that need fixing on white.
+   ============================================================================= */
+/* Decorative "SERIES →" eyebrow label (inline style → needs !important) */
+body.theme-reading .series-nav > span { color: #8a8a8a !important; }
+
+/* Series chips */
+body.theme-reading .series-chip { background: #fff; color: #5a5a5a; }
+body.theme-reading .series-chip:hover,
+body.theme-reading .series-chip.active {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    background: rgba(11, 111, 164, 0.07);
+}
+
+/* Story hook + fact callouts → clean tinted callouts on white */
+body.theme-reading .story-hook {
+    background: #eef6fb;
+    border-left-color: var(--accent-cyan);
+    color: #2a2a2a;
+    font-size: 16px;
+}
+body.theme-reading .fact-box { background: #f7f9fb; color: #444; }
+body.theme-reading .fact-box strong,
+body.theme-reading .fact-title { color: var(--accent-cyan); }
+
+/* Stat callouts */
+body.theme-reading .stat-callout { background: #f7f9fb; }
+body.theme-reading .stat-number { color: var(--accent-cyan); }
+body.theme-reading .stat-label { color: #5a5a5a; }
+
+/* Timeline list */
+body.theme-reading .tl-list li { color: #444; }
+body.theme-reading .tl-year { color: var(--accent-cyan); }
+
+/* Cable-layer breakdown */
+body.theme-reading .layer-name { color: #1a1a1a; }
+body.theme-reading .layer-desc { color: #4a4a4a; }
+body.theme-reading .layer-num { color: var(--accent-cyan); }
+
+/* FAQ accordion */
+body.theme-reading .faq-item { background: #fff; }
+body.theme-reading .faq-item summary { color: #1a1a1a; }
+body.theme-reading .faq-item summary:hover { color: var(--accent-cyan); }
+body.theme-reading .faq-item summary::after { color: var(--accent-cyan); }
+body.theme-reading .faq-answer { color: #4a4a4a; }
+
+/* Inline code badge (methodology) */
+body.theme-reading .step-code { color: #095a85; }
+
+/* Topic-cluster footer + sources list */
+body.theme-reading .topic-cluster { background: #f7f9fb; }
+body.theme-reading .topic-cluster h2 { color: var(--accent-cyan); }
+body.theme-reading .topic-cluster a { background: #fff; color: #5a5a5a; }
+body.theme-reading .topic-cluster a:hover {
+    color: var(--accent-cyan);
+    border-color: var(--accent-cyan);
+    background: rgba(11, 111, 164, 0.07);
+}
+body.theme-reading .src-list { color: #444; }
+body.theme-reading .src-list a { color: var(--accent-cyan); }
+body.theme-reading .ai-summary { background: #f7f9fb; color: #2a2a2a; }
+
 /* ── Mobile ────────────────────────────────────────────────────────────────── */
 @media (max-width: 600px) {
     body.theme-reading .intro-section p { font-size: 18px; }

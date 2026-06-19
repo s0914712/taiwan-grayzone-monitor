@@ -29,8 +29,9 @@
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
     <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/reading.css">
     <link rel="manifest" href="../manifest.json">
-    <meta name="theme-color" content="#0a0f1c">
+    <meta name="theme-color" content="#ffffff">
     <style>
     .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
     .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:16px 0}
@@ -69,7 +70,7 @@
     {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a dark vessel?","acceptedAnswer":{"@type":"Answer","text":"A dark vessel is a ship detected by Synthetic Aperture Radar (SAR) satellites but with no matching AIS signal. In other words, it is physically at sea and picked up by radar, yet “invisible” on ordinary AIS tracking platforms."}},{"@type":"Question","name":"Does a ship disappear once it switches off AIS?","acceptedAnswer":{"@type":"Answer","text":"No. AIS is only a radio signal the ship broadcasts itself; switching it off does not remove the ship from radar. SAR satellites can still detect the metal hull on the surface, regardless of weather, cloud, or day and night."}},{"@type":"Question","name":"How are dark vessels detected?","acceptedAnswer":{"@type":"Answer","text":"SAR satellites scan the sea surface for vessel positions, which are cross-referenced with AIS data from the same period. A target detected by SAR with no AIS match is flagged as a dark vessel. This site uses SAR detections from Global Fishing Watch."}},{"@type":"Question","name":"Does being detected as a dark vessel mean it is illegal?","acceptedAnswer":{"@type":"Answer","text":"Not necessarily. A SAR detection just means a radar-visible target — it could be a fishing boat, cargo ship, or government vessel; and switching off AIS is legal in some situations. A dark vessel is a lead worth investigating, not a finding of wrongdoing."}},{"@type":"Question","name":"Why does dark-vessel activity around Taiwan matter?","acceptedAnswer":{"@type":"Answer","text":"Taiwan depends heavily on submarine cables for external connectivity, and cable-damage incidents often show a “switch off AIS before approaching the cable” pattern. A dark vessel that appears near a cable route and loiters at low speed is exactly the behavior this site's threat scoring watches for."}}]}
     </script>
 </head>
-<body class="lang-en">
+<body class="theme-reading lang-en">
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <header class="header" style="position:sticky;top:0;z-index:100">
         <h1 data-i18n="title.index">🛰️ Taiwan Gray Zone &amp; Submarine Cable Monitor</h1>
