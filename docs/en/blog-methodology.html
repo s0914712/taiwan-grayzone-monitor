@@ -5,17 +5,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>本網站所使用之方法 | Taiwan Gray Zone Monitor</title>
-    <meta name="description" content="台灣海峽每天數千艘船隻通過。我們如何從中找出真正可疑的？完整解說AIS資料來源、GitHub Actions管線、8項威脅評分指標，以及CSIS方法論基礎。">
-    <meta name="keywords" content="AIS分析,威脅評分,CSIS方法論,海底電纜監測,GitHub Actions,GFW SAR">
+    <title>Our Methodology — How Vessels Are Scored | Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="How the Taiwan Gray Zone Monitor scores suspicious vessels: data sources, the 8-criterion threat-scoring engine, vessel-type weighting, maritime-zone scoring, and limitations.">
+    <meta name="keywords" content="AIS analysis, threat scoring, CSIS methodology, OSINT, GFW SAR, submarine cable monitoring">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-methodology.html">
     <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html">
     <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-methodology.html">
     <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html">
     <meta property="og:type" content="article">
-    <meta property="og:title" content="本網站所使用之方法">
-    <meta property="og:description" content="從原始AIS資料到威脅評分：完整揭露本站的監測管線、評分演算法與分析方法。">
+    <meta property="og:title" content="Our Methodology — How Vessels Are Scored">
+    <meta property="og:description" content="How the Taiwan Gray Zone Monitor scores suspicious vessels: data sources, the 8-criterion threat-scoring engine, vessel-type weighting, maritime-zone scoring, and limitations.">
     <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-methodology.html">
     <meta name="twitter:card" content="summary">
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
@@ -75,10 +75,10 @@
     .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
     </style>
     <script type="application/ld+json">
-    {"@context":"https://schema.org","@type":["Article","TechArticle"],"headline":"本網站所使用之方法 — Threat-Scoring Methodology","description":"How the Taiwan Gray Zone Monitor scores suspicious vessels: data sources, the 8-criterion threat-scoring engine, vessel-type weighting, risk levels, and methodological limitations.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html","datePublished":"2026-06-14","dateModified":"2026-06-16","inLanguage":["zh-TW","en"],"author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"about":[{"@type":"Thing","name":"AIS Vessel Monitoring"},{"@type":"Thing","name":"Threat Scoring Methodology"},{"@type":"Thing","name":"CSIS Submarine Cable Security"}]}
+    {"@context":"https://schema.org","@type":["Article","TechArticle"],"headline":"本網站所使用之方法 — Threat-Scoring Methodology","description":"How the Taiwan Gray Zone Monitor scores suspicious vessels: data sources, the 8-criterion threat-scoring engine, vessel-type weighting, risk levels, and methodological limitations.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-methodology.html","datePublished":"2026-06-14","dateModified":"2026-06-16","inLanguage":"en","author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"about":[{"@type":"Thing","name":"AIS Vessel Monitoring"},{"@type":"Thing","name":"Threat Scoring Methodology"},{"@type":"Thing","name":"CSIS Submarine Cable Security"}]}
     </script>
     <script type="application/ld+json">
-    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"本網站所使用之方法","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-methodology.html"}]}
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"本網站所使用之方法","item":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-methodology.html"}]}
     </script>
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"本站的資料來自哪裡？","acceptedAnswer":{"@type":"Answer","text":"兩大來源——台灣港務局 AIS 資料（每 2 小時更新）與 Global Fishing Watch 的 SAR 衛星暗船偵測結果，兩者交叉比對。"}},{"@type":"Question","name":"威脅評分高代表這艘船一定有罪嗎？","acceptedAnswer":{"@type":"Answer","text":"不。高分代表行為模式異常，不等於確認破壞意圖。本系統旨在輔助人工研判，不能取代專業情報分析。"}},{"@type":"Question","name":"評分系統有幾項指標？","acceptedAnswer":{"@type":"Answer","text":"共 8 項，包含電纜鄰近、低速徘徊、之字形航行、AIS 異常與欺騙、制裁名單比對、STS 旁靠等，並依船舶類型加權。"}},{"@type":"Question","name":"這個專案是開源的嗎？","acceptedAnswer":{"@type":"Answer","text":"是。所有程式碼以 MIT 授權公開於 GitHub，任何人都可檢視評分邏輯與資料處理方式，並提出改進建議。"}}]}
