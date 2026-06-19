@@ -213,6 +213,62 @@ def test_topic_cluster_footer_english_only():
     assert "Maritime zones" in out and "Shadow fleets" in out
 
 
+# The evergreen-article citation standard: every explainer/pillar/glossary/
+# methodology page must carry a visible Sources section + JSON-LD citation.
+EVERGREEN_PAGES = [
+    "blog-what-is-submarine-cable.html", "blog-what-is-ais.html",
+    "blog-taiwan-cable-status.html", "blog-cable-threats.html",
+    "blog-taiwan-enforcement.html", "blog-methodology.html",
+    "blog-what-is-dark-vessel.html", "blog-what-is-ship-to-ship-transfer.html",
+    "blog-what-is-ais-spoofing.html", "blog-what-is-maritime-gray-zone.html",
+    "blog-what-is-shadow-fleet.html", "blog-taiwan-maritime-zones.html",
+    "blog-gray-zone-glossary.html",
+]
+
+
+def test_all_evergreen_pages_have_sources_and_citation():
+    # Site-wide standard: visible Sources section + >=2 absolute-URL citations
+    # on the page's own Article node, so claims are verifiable (E-E-A-T / GEO).
+    for page in EVERGREEN_PAGES:
+        out = gi.generate_page(page)
+        assert 'id="sources"' in out, page
+        art = [d for d in (json.loads(b) for b in _ld_blocks(out))
+               if "Article" in (d["@type"] if isinstance(d.get("@type"), list)
+                                 else [d.get("@type")])][0]
+        cites = art.get("citation", [])
+        assert len(cites) >= 2, page
+        assert all(c.get("url", "").startswith("http") for c in cites), page
+
+
+def test_evergreen_pages_have_topic_cluster_and_dates():
+    # Each evergreen article should also carry the topic cluster and dates.
+    for page in EVERGREEN_PAGES:
+        out = gi.generate_page(page)
+        assert "topic-cluster" in out, page
+        art = [d for d in (json.loads(b) for b in _ld_blocks(out))
+               if "Article" in (d["@type"] if isinstance(d.get("@type"), list)
+                                 else [d.get("@type")])][0]
+        assert "datePublished" in art and "dateModified" in art, page
+
+
+def test_mirror_lang_toggle_is_safe_link():
+    # On the English-only mirror the toggle must NOT call i18n.toggle()
+    # (which would blank the page); it must be a link to the Chinese page.
+    out = gi.generate_page("blog-taiwan-maritime-zones.html")
+    assert "i18n.toggle()" not in out
+    m = re.search(r'<a id="langToggle"[^>]*href="([^"]+)"', out)
+    assert m, "langToggle should be an anchor"
+    assert m.group(1) == "../blog-taiwan-maritime-zones.html"
+
+
+def test_mirror_english_content_not_gated_on_body_class():
+    # The dangerous rule (hide .lang-en-only when body isn't .lang-en) must be
+    # removed on the mirror so the page can never blank out.
+    out = gi.generate_page("blog-what-is-shadow-fleet.html")
+    assert "body:not(.lang-en) .lang-en-only{display:none" not in out
+    assert ".lang-zh-only{display:none!important}" in out
+
+
 def test_glossary_definedterm_is_english_only():
     # P0.4 — DefinedTermSet/DefinedTerm in the mirror must be English-only:
     # no Chinese alternateName and no bilingual "EN / 中文" descriptions.
