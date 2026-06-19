@@ -27,8 +27,9 @@
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/reading.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0a0f1c">
+    <meta name="theme-color" content="#ffffff">
     <style>
     .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
     .fact-box{background:var(--bg-secondary);border:1px solid rgba(0,245,255,.15);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
@@ -63,7 +64,7 @@
     {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"AIS 欺騙和 AIS 關閉有什麼不同？","acceptedAnswer":{"@type":"Answer","text":"關閉 AIS（走暗）是讓船從 AIS 上消失；AIS 欺騙是繼續廣播，但內容是假的——假位置、假速度，甚至冒用其他船的身分。走暗留下一段空白，欺騙則主動製造誤導。"}},{"@type":"Question","name":"AIS 可以偽造哪些資訊？","acceptedAnswer":{"@type":"Answer","text":"幾乎全部：GPS 位置座標、對地速度（SOG）、航向（COG）、MMSI、船名、呼號與 IMO 編號。因為 AIS 是船舶自行填寫並廣播，沒有第三方即時驗證。"}},{"@type":"Question","name":"要怎麼偵測 AIS 欺騙？","acceptedAnswer":{"@type":"Answer","text":"靠物理與資料的內在矛盾：不可能的速度（兩點間距離除以時間超過合理上限）、廣播航向與實際位移方向不符、人造的方框或圓形軌跡，以及船名／IMO 與 ITU 等登記資料不符。本站的評分引擎特別偵測這些型態。"}},{"@type":"Question","name":"AIS 欺騙和海底電纜有什麼關係？","acceptedAnswer":{"@type":"Answer","text":"若一艘船能讓自己「看起來」在別處，就能在電纜附近活動而不被即時關聯。配合走暗與身分變更，欺騙讓灰色地帶行為更難被歸責。"}}]}
     </script>
 </head>
-<body>
+<body class="theme-reading">
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <header class="header" style="position:sticky;top:0;z-index:100">
         <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>

@@ -27,8 +27,9 @@
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/reading.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0a0f1c">
+    <meta name="theme-color" content="#ffffff">
     <style>
     .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
     .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:16px 0}
@@ -74,7 +75,7 @@
     {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"船對船轉運（旁靠）是什麼？","acceptedAnswer":{"@type":"Answer","text":"船對船轉運（Ship-to-Ship Transfer, STS），俗稱「旁靠」，是指兩艘船在海上近距離並靠在一起，將貨物、燃油或漁獲從一艘船轉移到另一艘船的行為，不需進港即可完成。"}},{"@type":"Question","name":"旁靠如何被偵測？","acceptedAnswer":{"@type":"Answer","text":"透過時空配對分析 AIS 船位：找出兩艘船在同一時段、彼此距離極近（約 10 公尺內）並維持一段時間的情況，即標記為一次旁靠事件。本站每 2 小時更新一次偵測結果。"}},{"@type":"Question","name":"旁靠一定是違法的嗎？","acceptedAnswer":{"@type":"Answer","text":"不是。許多旁靠是合法作業，例如雙拖漁法（兩船共同拖網）、海上補給、燃油加注或港外等候。是否可疑，取決於船舶類型、地點、是否關閉 AIS，以及是否涉及制裁或身分異常的船隻。"}},{"@type":"Question","name":"為什麼旁靠與灰色地帶和制裁規避相關？","acceptedAnswer":{"@type":"Answer","text":"受制裁國家的「影子船隊」常以海上旁靠轉運石油等貨物，避免進港被查驗、切斷貨物的來源追蹤。配合關閉 AIS，旁靠就成為隱匿物資流向的關鍵手法。"}},{"@type":"Question","name":"本站如何判讀旁靠事件？","acceptedAnswer":{"@type":"Answer","text":"本站區分「雙拖作業」與「可疑旁靠」，並把涉及制裁、身分變更或在敏感海域走暗的旁靠納入威脅評分，作為人工研判的線索，而非違法認定。"}}]}
     </script>
 </head>
-<body>
+<body class="theme-reading">
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <header class="header" style="position:sticky;top:0;z-index:100">
         <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>

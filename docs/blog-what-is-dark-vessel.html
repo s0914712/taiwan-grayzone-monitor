@@ -27,8 +27,9 @@
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/reading.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0a0f1c">
+    <meta name="theme-color" content="#ffffff">
     <style>
     .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
     .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:16px 0}
@@ -67,7 +68,7 @@
     {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"暗船是什麼？","acceptedAnswer":{"@type":"Answer","text":"暗船（dark vessel）是指被合成孔徑雷達（SAR）衛星偵測到、卻沒有對應 AIS 訊號的船隻。也就是說它人在海上、被雷達拍到，但在一般 AIS 追蹤平台上「看不見」。"}},{"@type":"Question","name":"船隻關閉 AIS 後就消失了嗎？","acceptedAnswer":{"@type":"Answer","text":"沒有。AIS 只是船舶主動廣播的無線電訊號，關掉它不會讓船從雷達上消失。SAR 衛星仍能偵測水面上的金屬船體，與天候、雲層、日夜無關。"}},{"@type":"Question","name":"暗船如何被偵測？","acceptedAnswer":{"@type":"Answer","text":"以 SAR 衛星掃描海面取得船舶位置，再與同時段的 AIS 資料交叉比對。被 SAR 偵測到卻沒有 AIS 匹配的目標，即標記為暗船。本站使用 Global Fishing Watch 的 SAR 偵測結果。"}},{"@type":"Question","name":"被偵測為暗船就代表違法嗎？","acceptedAnswer":{"@type":"Answer","text":"不一定。SAR 偵測代表雷達可見目標，可能是漁船、商船或公務船；關閉 AIS 在某些情況下也屬合法。暗船是值得進一步研判的線索，而非違法認定。"}},{"@type":"Question","name":"為什麼台灣周邊的暗船活動值得關注？","acceptedAnswer":{"@type":"Answer","text":"台灣高度仰賴海底電纜對外連通，而電纜破壞事件中常見「接近電纜前關閉 AIS」的模式。在電纜路線附近出現、且低速徘徊的暗船，是本站威脅評分特別警戒的行為。"}}]}
     </script>
 </head>
-<body>
+<body class="theme-reading">
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <header class="header" style="position:sticky;top:0;z-index:100">
         <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
