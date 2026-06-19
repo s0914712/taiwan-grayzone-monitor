@@ -358,6 +358,47 @@ body.theme-reading .src-list { color: #444; }
 body.theme-reading .src-list a { color: var(--accent-cyan); }
 body.theme-reading .ai-summary { background: #f7f9fb; color: #2a2a2a; }
 
+/* =============================================================================
+   Enlarged type scale (user request) — bigger fonts on the blog index cards
+   and inside every article. Placed last + uses `body.theme-reading .X`
+   (2-class) so it beats the pages' single-class inline <style> rules.
+   ============================================================================= */
+/* blog.html article cards */
+body.theme-reading .card-num { font-size: 11px; }
+body.theme-reading .card-title-zh { font-size: 20px; line-height: 1.45; }
+body.theme-reading .card-title-en { font-size: 12px; }
+body.theme-reading .card-desc { font-size: 16px; line-height: 1.75; }
+body.theme-reading .card-tag { font-size: 11px; }
+body.theme-reading .card-reading { font-size: 11px; }
+
+/* article reading content + components (blog-*.html) */
+body.theme-reading .intro-section ul[style] li { font-size: 16px; line-height: 1.9; }
+body.theme-reading .story-hook { font-size: 17px; line-height: 1.95; }
+body.theme-reading .fact-box { font-size: 15px; line-height: 1.9; }
+body.theme-reading .fact-title { font-size: 11px; }
+body.theme-reading .stat-number { font-size: 30px; }
+body.theme-reading .stat-label { font-size: 13px; }
+body.theme-reading .tl-list li { font-size: 15px; line-height: 1.85; }
+body.theme-reading .tl-year { font-size: 11px; }
+body.theme-reading .cable-layer { font-size: 15px; }
+body.theme-reading .layer-num { font-size: 11px; }
+body.theme-reading .faq-item summary { font-size: 16px; }
+body.theme-reading .faq-answer { font-size: 15px; line-height: 1.9; }
+body.theme-reading .series-chip { font-size: 12px; }
+
+/* research page components */
+body.theme-reading .keyword-badge { font-size: 11px; }
+body.theme-reading .legal-highlight { font-size: 16px; }
+body.theme-reading .gray-zone-table { font-size: 16px; }
+body.theme-reading .ref-list { font-size: 16px; }
+body.theme-reading .src-list { font-size: 16px; }
+body.theme-reading .topic-cluster a { font-size: 13px; }
+
+/* intro.html (About page) */
+body.theme-reading .intro-tool-card p { font-size: 15px; }
+/* article-series mini-card index numbers (inline cyan → readable gray) */
+body.theme-reading .intro-section a > span { color: #8a8a8a !important; }
+
 /* ── Mobile ────────────────────────────────────────────────────────────────── */
 @media (max-width: 600px) {
     body.theme-reading .intro-section p { font-size: 18px; }
