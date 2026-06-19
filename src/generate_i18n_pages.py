@@ -45,6 +45,8 @@ STATIC_PAGES = [
     "blog-taiwan-enforcement.html",
     "blog-what-is-dark-vessel.html",
     "blog-what-is-ship-to-ship-transfer.html",
+    "blog-what-is-ais-spoofing.html",
+    "blog-what-is-maritime-gray-zone.html",
     "blog-gray-zone-glossary.html",
 ]
 EN_SET = set(STATIC_PAGES)
@@ -120,6 +122,18 @@ EN_META = {
         "social": "What Is a Ship-to-Ship (STS) Transfer?",
         "desc": "An STS transfer is two ships moving cargo alongside at sea. Learn how STS is detected, lawful pair-trawling vs suspicious transfers, and the link to sanctions evasion.",
         "kw": "ship-to-ship transfer, STS, rendezvous, pair trawling, sanctions evasion, shadow fleet, Taiwan Strait",
+    },
+    "blog-what-is-ais-spoofing.html": {
+        "title": f"What Is AIS Spoofing? Detecting Fake Positions & Identity Fraud | {SITE}",
+        "social": "What Is AIS Spoofing?",
+        "desc": "AIS spoofing is a vessel broadcasting a false position, speed, or another ship's identity. Learn how it differs from going dark, how it is detected (impossible speed, box/circle tracks, registry mismatch), and why it matters near Taiwan.",
+        "kw": "AIS spoofing, fake GPS position, identity fraud, MMSI, IMO, impossible speed, submarine cable, gray zone, Taiwan Strait",
+    },
+    "blog-what-is-maritime-gray-zone.html": {
+        "title": f"What Is Maritime Gray-Zone Activity? Tactics Around Taiwan | {SITE}",
+        "social": "What Is Maritime Gray-Zone Activity?",
+        "desc": "Maritime gray-zone activity is coercion kept below the threshold of open conflict. An overview of dark vessels, AIS spoofing, ship-to-ship transfers, shadow fleets, and cable threats — and how OSINT tracks them around Taiwan.",
+        "kw": "maritime gray zone, gray zone operations, dark vessel, AIS spoofing, ship-to-ship transfer, shadow fleet, submarine cable, Taiwan Strait, OSINT",
     },
     "blog-gray-zone-glossary.html": {
         "title": f"Taiwan Maritime Gray-Zone Glossary (Bilingual) | {SITE}",
