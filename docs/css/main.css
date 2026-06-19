@@ -1399,6 +1399,48 @@ body {
     text-decoration: underline;
 }
 
+/* Topic-cluster footer on evergreen articles — internal-linking block */
+.topic-cluster {
+    max-width: 820px;
+    margin: 24px auto 0;
+    padding: 18px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glow);
+    border-radius: 10px;
+}
+.topic-cluster h2 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--accent-cyan);
+}
+.topic-cluster ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+}
+.topic-cluster a {
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-glow);
+    border-radius: 6px;
+    transition: all .2s;
+}
+.topic-cluster a:hover {
+    color: var(--accent-cyan);
+    border-color: var(--accent-cyan);
+    background: rgba(0, 245, 255, .08);
+}
+
 /* Vessel triangle icon - remove default leaflet div icon styling */
 /* =============================================================================
    Today's Overview Dashboard
