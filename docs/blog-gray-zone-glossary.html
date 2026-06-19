@@ -37,6 +37,10 @@
     .g-term .g-en{color:var(--accent-cyan)}
     .g-term .g-zh{font-size:12px;color:var(--text-secondary);margin-left:6px}
     .g-def{font-size:12.5px;line-height:1.8;color:var(--text-secondary)}
+    .glossary-toc{max-width:1100px;margin:6px auto 0;padding:12px 16px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:10px}
+    .glossary-toc .toc-label{font-size:11px;color:var(--accent-cyan);font-family:'JetBrains Mono',monospace;margin-right:4px;text-transform:uppercase;letter-spacing:.04em}
+    .glossary-toc a{font-size:11px;padding:3px 9px;border:1px solid var(--border-glow);border-radius:12px;color:var(--text-secondary);text-decoration:none;transition:all .2s}
+    .glossary-toc a:hover{border-color:var(--accent-cyan);color:var(--accent-cyan);background:rgba(0,245,255,.08)}
     body.lang-en .lang-zh-only{display:none!important}body:not(.lang-en) .lang-en-only{display:none!important}
     </style>
     <script type="application/ld+json">
@@ -44,6 +48,9 @@
     </script>
     <script type="application/ld+json">
     {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "首頁", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/"}, {"@type": "ListItem", "position": 2, "name": "深度文章", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"}, {"@type": "ListItem", "position": 3, "name": "灰色地帶詞彙表", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/blog-gray-zone-glossary.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":["Article","CollectionPage"],"headline":"台灣海域灰色地帶詞彙表（中英對照） — Taiwan Maritime Gray-Zone Glossary","description":"Bilingual (English / Traditional Chinese) glossary of maritime gray-zone, OSINT, AIS/SAR detection, and law-of-the-sea terms used by Taiwan Gray Zone Monitor.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-gray-zone-glossary.html","inLanguage":["zh-TW","en"],"datePublished":"2026-06-16","dateModified":"2026-06-16","author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#org"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"about":[{"@type":"Thing","name":"Maritime gray-zone terminology"},{"@type":"Thing","name":"OSINT maritime monitoring"}],"mainEntity":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-gray-zone-glossary.html#glossary"}}
     </script>
 </head>
 <body>
@@ -70,6 +77,32 @@
         <p class="lang-zh-only">本頁是台灣海域灰色地帶監測常用名詞的中英雙語詞彙表，涵蓋灰色地帶行動、暗船、AIS 欺騙、MMSI、旁靠、SAR、權宜旗與領海基線等。每個詞彙皆有錨點連結，可直接引用。</p>
         <p class="lang-en-only">A bilingual (English / Traditional Chinese) glossary of the terms used in Taiwan maritime gray-zone monitoring — gray-zone operations, dark vessels, AIS spoofing, MMSI, ship-to-ship transfers, SAR, flags of convenience, territorial baselines, and more. Every term has an anchor link for direct citation.</p>
     </section>
+
+    <nav class="glossary-toc" aria-label="詞彙索引 Glossary terms">
+        <span class="toc-label"><span class="lang-zh-only">詞彙</span><span class="lang-en-only">Terms</span></span>
+        <a href="#gray-zone"><span class="lang-zh-only">灰色地帶</span><span class="lang-en-only">Gray zone</span></a>
+        <a href="#going-dark"><span class="lang-zh-only">走暗</span><span class="lang-en-only">Going dark</span></a>
+        <a href="#dark-vessel"><span class="lang-zh-only">暗船</span><span class="lang-en-only">Dark vessel</span></a>
+        <a href="#loitering"><span class="lang-zh-only">低速徘徊</span><span class="lang-en-only">Loitering</span></a>
+        <a href="#sts"><span class="lang-zh-only">旁靠 STS</span><span class="lang-en-only">STS</span></a>
+        <a href="#rendezvous"><span class="lang-zh-only">海上會合</span><span class="lang-en-only">Rendezvous</span></a>
+        <a href="#shadow-fleet"><span class="lang-zh-only">影子船隊</span><span class="lang-en-only">Shadow fleet</span></a>
+        <a href="#iuu"><span class="lang-zh-only">非法漁業</span><span class="lang-en-only">IUU fishing</span></a>
+        <a href="#ais">AIS</a>
+        <a href="#ais-spoofing"><span class="lang-zh-only">AIS 欺騙</span><span class="lang-en-only">AIS spoofing</span></a>
+        <a href="#sar">SAR</a>
+        <a href="#mmsi">MMSI</a>
+        <a href="#imo"><span class="lang-zh-only">IMO 編號</span><span class="lang-en-only">IMO number</span></a>
+        <a href="#mid">MID</a>
+        <a href="#flag-state"><span class="lang-zh-only">船旗國</span><span class="lang-en-only">Flag state</span></a>
+        <a href="#foc"><span class="lang-zh-only">權宜旗</span><span class="lang-en-only">FOC</span></a>
+        <a href="#identity-manipulation"><span class="lang-zh-only">身分操弄</span><span class="lang-en-only">Identity manip.</span></a>
+        <a href="#baseline"><span class="lang-zh-only">領海基線</span><span class="lang-en-only">Baseline</span></a>
+        <a href="#territorial-sea"><span class="lang-zh-only">領海</span><span class="lang-en-only">Territorial sea</span></a>
+        <a href="#contiguous-zone"><span class="lang-zh-only">鄰接區</span><span class="lang-en-only">Contiguous zone</span></a>
+        <a href="#eez">EEZ</a>
+        <a href="#submarine-cable"><span class="lang-zh-only">海底電纜</span><span class="lang-en-only">Submarine cable</span></a>
+    </nav>
 
     <section class="intro-section">
         <h2 class="g-group"><span class="lang-zh-only">灰色地帶與可疑行為</span><span class="lang-en-only">Gray Zone &amp; Suspicious Behavior</span></h2>

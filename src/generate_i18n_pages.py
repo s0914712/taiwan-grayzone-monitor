@@ -49,6 +49,86 @@ STATIC_PAGES = [
 ]
 EN_SET = set(STATIC_PAGES)
 
+SITE = "Taiwan Gray Zone Monitor"
+
+# English <head> metadata for each mirrored page. `title` -> <title>;
+# `social` -> og:title / twitter:title; `desc` -> description / og:description /
+# twitter:description; `kw` -> keywords. A missing source tag is a no-op.
+EN_META = {
+    "blog.html": {
+        "title": f"In-Depth Articles | {SITE}",
+        "social": "In-Depth Articles | Taiwan Gray Zone & Submarine Cable Monitor",
+        "desc": "In-depth articles on Taiwan submarine-cable security, AIS vessel monitoring, gray-zone tactics, and this project's methodology.",
+        "kw": "submarine cable, AIS, gray zone, shadow fleet, Taiwan Strait security, dark vessel",
+    },
+    "intro.html": {
+        "title": f"About | {SITE}",
+        "social": "About | Taiwan Gray Zone & Submarine Cable Monitor",
+        "desc": "An open-source OSINT project monitoring maritime gray-zone activity and submarine-cable security around Taiwan, with FAQs and a usage guide.",
+        "kw": "gray zone, Taiwan Strait, submarine cable, dark vessel, AIS, maritime surveillance, OSINT",
+    },
+    "research-submarine-cable-legal.html": {
+        "title": f"Critical Nodes of an Invisible War: PRC Threats to Taiwan's Submarine Cables | {SITE}",
+        "social": "PRC Threats to Taiwan's Submarine Cables",
+        "desc": "Research on the legal framework and enforcement challenges around PRC gray-zone threats to Taiwan's submarine cables (UNCLOS, flag-state jurisdiction).",
+        "kw": "submarine cable, UNCLOS, flag state, gray zone, Taiwan, legal enforcement",
+    },
+    "blog-methodology.html": {
+        "title": f"Our Methodology — How Vessels Are Scored | {SITE}",
+        "social": "Our Methodology — How Vessels Are Scored",
+        "desc": "How the Taiwan Gray Zone Monitor scores suspicious vessels: data sources, the 8-criterion threat-scoring engine, vessel-type weighting, maritime-zone scoring, and limitations.",
+        "kw": "AIS analysis, threat scoring, CSIS methodology, OSINT, GFW SAR, submarine cable monitoring",
+    },
+    "blog-what-is-ais.html": {
+        "title": f"What Is AIS? Why It Matters for Submarine-Cable Security | {SITE}",
+        "social": "What Is AIS? Why It Matters for Cable Security",
+        "desc": "AIS is a ship's digital passport. Learn how AIS works, why vessels switch it off to 'go dark', how SAR satellites find them, and the link to submarine-cable security.",
+        "kw": "AIS, automatic identification system, dark vessel, SAR satellite, MMSI, going dark, vessel tracking",
+    },
+    "blog-what-is-submarine-cable.html": {
+        "title": f"What Is a Submarine Cable? Why It Matters | {SITE}",
+        "social": "What Is a Submarine Cable? Why It Matters",
+        "desc": "Submarine cables carry over 95% of international internet traffic. Learn how they work, how they are laid and repaired, and why they are Taiwan's digital lifeline.",
+        "kw": "submarine cable, fiber optic, internet infrastructure, Taiwan, cable laying, cable repair",
+    },
+    "blog-cable-threats.html": {
+        "title": f"Threats to Submarine Cables: Shadow Fleets & Gray-Zone Sabotage | {SITE}",
+        "social": "Threats to Submarine Cables",
+        "desc": "Natural, accidental, and deliberate threats to submarine cables — shadow fleets, anchor dragging vs sabotage, and why it is the perfect gray-zone tactic near Taiwan.",
+        "kw": "submarine cable threats, shadow fleet, gray zone warfare, anchor dragging, sabotage, Taiwan",
+    },
+    "blog-taiwan-cable-status.html": {
+        "title": f"Taiwan's Submarine Cable Situation | {SITE}",
+        "social": "Taiwan's Submarine Cable Situation",
+        "desc": "Taiwan's strategic cable density, landing stations, outer-island vulnerability, break trends, repair challenges, and government resilience efforts.",
+        "kw": "Taiwan submarine cable, Matsu cable, landing station, cable break, resilience",
+    },
+    "blog-taiwan-enforcement.html": {
+        "title": f"Taiwan's Enforcement Framework & Challenges | {SITE}",
+        "social": "Taiwan's Enforcement Framework & Challenges",
+        "desc": "Taiwan's legal toolbox for cable protection, the flag-state jurisdiction gap, why perpetrators are rarely prosecuted, and how other countries are responding.",
+        "kw": "submarine cable law, UNCLOS, flag state jurisdiction, gray zone enforcement, Taiwan",
+    },
+    "blog-what-is-dark-vessel.html": {
+        "title": f"What Is a Dark Vessel? SAR vs AIS Detection Near Taiwan | {SITE}",
+        "social": "What Is a Dark Vessel?",
+        "desc": "A dark vessel is a ship that turns off AIS but is still detected by SAR satellites. Learn how SAR and AIS are cross-referenced and why dark vessels matter around Taiwan.",
+        "kw": "dark vessel, AIS off, SAR satellite detection, Taiwan Strait, Global Fishing Watch, maritime gray zone",
+    },
+    "blog-what-is-ship-to-ship-transfer.html": {
+        "title": f"What Is a Ship-to-Ship (STS) Transfer? How It's Detected | {SITE}",
+        "social": "What Is a Ship-to-Ship (STS) Transfer?",
+        "desc": "An STS transfer is two ships moving cargo alongside at sea. Learn how STS is detected, lawful pair-trawling vs suspicious transfers, and the link to sanctions evasion.",
+        "kw": "ship-to-ship transfer, STS, rendezvous, pair trawling, sanctions evasion, shadow fleet, Taiwan Strait",
+    },
+    "blog-gray-zone-glossary.html": {
+        "title": f"Taiwan Maritime Gray-Zone Glossary (Bilingual) | {SITE}",
+        "social": "Taiwan Maritime Gray-Zone Glossary (Bilingual)",
+        "desc": "Bilingual (English/Chinese) definitions of maritime gray-zone, OSINT, AIS/SAR, and law-of-the-sea terms: dark vessel, AIS spoofing, MMSI, STS, SAR, flag of convenience, territorial baseline.",
+        "kw": "gray zone glossary, dark vessel, AIS spoofing, MMSI, ship-to-ship transfer, SAR, flag of convenience, territorial baseline",
+    },
+}
+
 _SKIP_PREFIXES = ("http://", "https://", "//", "#", "mailto:", "tel:",
                   "javascript:", "data:", "../")
 _ATTR_RE = re.compile(r'\b(href|src)="([^"]+)"')
@@ -73,6 +153,46 @@ def _rewrite_attrs(html: str) -> str:
     return _ATTR_RE.sub(lambda m: f'{m.group(1)}="{_rewrite_url(m.group(2))}"', html)
 
 
+def _esc(s: str) -> str:
+    """Escape a value for use inside HTML text / a double-quoted attribute."""
+    return (s.replace("&", "&amp;").replace("<", "&lt;")
+             .replace(">", "&gt;").replace('"', "&quot;"))
+
+
+def _sub_once(html: str, pattern: str, value: str) -> str:
+    """Replace the inner content of the first match (groups 1+2 bracket it)."""
+    return re.sub(pattern, lambda m: m.group(1) + _esc(value) + m.group(2),
+                  html, count=1)
+
+
+def _rewrite_en_head(html: str, meta: dict) -> str:
+    """Translate the <head> metadata of a mirror page to English."""
+    html = _sub_once(html, r"(<title>).*?(</title>)", meta["title"])
+    html = _sub_once(html, r'(<meta name="description" content=").*?(">)', meta["desc"])
+    html = _sub_once(html, r'(<meta name="keywords" content=").*?(">)', meta["kw"])
+    html = _sub_once(html, r'(<meta property="og:title" content=").*?(">)', meta["social"])
+    html = _sub_once(html, r'(<meta property="og:description" content=").*?(">)', meta["desc"])
+    html = _sub_once(html, r'(<meta name="twitter:title" content=").*?(">)', meta["social"])
+    html = _sub_once(html, r'(<meta name="twitter:description" content=").*?(">)', meta["desc"])
+    # Locale: an /en/ page is en_US, with zh_TW as the alternate.
+    html = html.replace('<meta property="og:locale" content="zh_TW">',
+                        '<meta property="og:locale" content="en_US">', 1)
+    html = html.replace('<meta property="og:locale:alternate" content="en_US">',
+                        '<meta property="og:locale:alternate" content="zh_TW">', 1)
+    return html
+
+
+def _rewrite_en_jsonld(html: str, page: str) -> str:
+    """Point JSON-LD url/item at the /en/ page and set inLanguage to en."""
+    src = re.escape(BASE + page)
+    html = re.sub(
+        r'("(?:url|item)"\s*:\s*")' + src + r'(")',
+        lambda m: m.group(1) + BASE + "en/" + page + m.group(2), html)
+    html = re.sub(r'"inLanguage"\s*:\s*(?:\[[^\]]*\]|"[^"]*")',
+                  '"inLanguage":"en"', html)
+    return html
+
+
 def generate_page(page: str) -> str:
     html = (DOCS / page).read_text(encoding="utf-8")
 
@@ -89,6 +209,11 @@ def generate_page(page: str) -> str:
                         f'canonical" href="{BASE}en/{page}"')
     html = html.replace(f'og:url" content="{BASE}{page}"',
                         f'og:url" content="{BASE}en/{page}"')
+
+    # English <head> metadata + JSON-LD url/inLanguage (clean SEO for /en/).
+    if page in EN_META:
+        html = _rewrite_en_head(html, EN_META[page])
+    html = _rewrite_en_jsonld(html, page)
 
     # Fix relative asset/link paths for the deeper directory.
     html = _rewrite_attrs(html)
