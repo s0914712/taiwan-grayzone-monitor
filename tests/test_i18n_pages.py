@@ -192,3 +192,35 @@ def test_shadow_fleet_article_registered():
     out = gi.generate_page(page)
     assert "What Is a Shadow Fleet?" in out
     assert '<html lang="en">' in out
+
+
+def test_maritime_zones_article_registered():
+    page = "blog-taiwan-maritime-zones.html"
+    assert page in gi.STATIC_PAGES
+    assert page in gi.EN_META and page in gi.EN_FAQ
+    assert page in gi.EN_BREADCRUMB_LAST
+    out = gi.generate_page(page)
+    assert "Taiwan's Maritime Zones" in out
+    leftover = [c for c in _BODY_CJK.findall(_visible_text(out)) if c != "中"]
+    assert leftover == [], leftover
+
+
+def test_topic_cluster_footer_english_only():
+    # The shared topic-cluster footer must render in English on the mirror.
+    out = gi.generate_page("blog-what-is-dark-vessel.html")
+    assert "Related gray-zone topics" in out
+    assert "相關灰色地帶主題" not in out
+    assert "Maritime zones" in out and "Shadow fleets" in out
+
+
+def test_glossary_definedterm_is_english_only():
+    # P0.4 — DefinedTermSet/DefinedTerm in the mirror must be English-only:
+    # no Chinese alternateName and no bilingual "EN / 中文" descriptions.
+    out = gi.generate_page("blog-gray-zone-glossary.html")
+    block = [b for b in _ld_blocks(out)
+             if json.loads(b).get("@type") == "DefinedTermSet"][0]
+    d = json.loads(block)
+    assert "alternateName" not in d
+    for term in d["hasDefinedTerm"]:
+        assert "alternateName" not in term, term["termCode"]
+        assert not _BODY_CJK.search(term["description"]), term["termCode"]
