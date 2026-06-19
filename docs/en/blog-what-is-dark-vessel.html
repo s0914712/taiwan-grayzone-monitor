@@ -5,24 +5,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>暗船是什麼？如何偵測台灣周邊的暗船 | Taiwan Gray Zone Monitor</title>
-    <meta name="description" content="暗船（dark vessel）是關閉 AIS、卻仍被 SAR 衛星拍到的船。了解暗船如何被偵測、為什麼關閉 AIS 不代表船消失、Global Fishing Watch 與 SAR 衛星的角色，以及台灣周邊暗船活動為何重要。">
-    <meta name="keywords" content="暗船,暗船是什麼,dark vessel,dark vessel Taiwan,AIS 關閉,SAR dark vessel detection,Global Fishing Watch,走暗,台灣海峽,海底電纜">
+    <title>What Is a Dark Vessel? SAR vs AIS Detection Near Taiwan | Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="A dark vessel is a ship that turns off AIS but is still detected by SAR satellites. Learn how SAR and AIS are cross-referenced and why dark vessels matter around Taiwan.">
+    <meta name="keywords" content="dark vessel, AIS off, SAR satellite detection, Taiwan Strait, Global Fishing Watch, maritime gray zone">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-dark-vessel.html">
     <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-dark-vessel.html">
     <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-dark-vessel.html">
     <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-dark-vessel.html">
     <meta property="og:type" content="article">
-    <meta property="og:title" content="暗船是什麼？如何偵測台灣周邊的暗船">
-    <meta property="og:description" content="關閉 AIS 不代表船消失。暗船如何被 SAR 衛星找回、為什麼重要，以及本站如何判讀暗船——完整解說。">
+    <meta property="og:title" content="What Is a Dark Vessel?">
+    <meta property="og:description" content="A dark vessel is a ship that turns off AIS but is still detected by SAR satellites. Learn how SAR and AIS are cross-referenced and why dark vessels matter around Taiwan.">
     <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-dark-vessel.html">
     <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
-    <meta property="og:locale" content="zh_TW">
-    <meta property="og:locale:alternate" content="en_US">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="zh_TW">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="暗船是什麼？如何偵測台灣周邊的暗船">
-    <meta name="twitter:description" content="關閉 AIS 不代表船消失。暗船如何被 SAR 衛星找回、為什麼重要，以及本站如何判讀暗船。">
+    <meta name="twitter:title" content="What Is a Dark Vessel?">
+    <meta name="twitter:description" content="A dark vessel is a ship that turns off AIS but is still detected by SAR satellites. Learn how SAR and AIS are cross-referenced and why dark vessels matter around Taiwan.">
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,10 +60,10 @@
     body.lang-en .lang-zh-only{display:none!important}body:not(.lang-en) .lang-en-only{display:none!important}
     </style>
     <script type="application/ld+json">
-    {"@context":"https://schema.org","@type":["Article","TechArticle"],"headline":"暗船是什麼？如何偵測台灣周邊的暗船 — What Is a Dark Vessel?","description":"暗船（dark vessel）是關閉 AIS、卻仍被 SAR 衛星偵測到的船。本文說明暗船如何被偵測、為什麼關閉 AIS 不代表船消失、Global Fishing Watch 與 SAR 衛星的角色，以及台灣周邊暗船活動為何重要。A dark vessel is a ship that has switched off its AIS yet is still detected by SAR satellites; this article explains how dark vessels are detected and why they matter around Taiwan.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-dark-vessel.html","datePublished":"2026-06-16","dateModified":"2026-06-16","inLanguage":["zh-TW","en"],"author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#org"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"isBasedOn":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html#dataset"},"mentions":{"@type":"Dataset","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html#dataset","name":"Taiwan Dark-Vessel Detections Dataset","url":"https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html"},"about":[{"@type":"Thing","name":"Dark Vessel"},{"@type":"Thing","name":"SAR Satellite Detection"},{"@type":"Thing","name":"AIS Going Dark"},{"@type":"Thing","name":"Global Fishing Watch"}]}
+    {"@context":"https://schema.org","@type":["Article","TechArticle"],"headline":"暗船是什麼？如何偵測台灣周邊的暗船 — What Is a Dark Vessel?","description":"暗船（dark vessel）是關閉 AIS、卻仍被 SAR 衛星偵測到的船。本文說明暗船如何被偵測、為什麼關閉 AIS 不代表船消失、Global Fishing Watch 與 SAR 衛星的角色，以及台灣周邊暗船活動為何重要。A dark vessel is a ship that has switched off its AIS yet is still detected by SAR satellites; this article explains how dark vessels are detected and why they matter around Taiwan.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-dark-vessel.html","datePublished":"2026-06-16","dateModified":"2026-06-16","inLanguage":"en","author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#org"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"isBasedOn":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html#dataset"},"mentions":{"@type":"Dataset","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html#dataset","name":"Taiwan Dark-Vessel Detections Dataset","url":"https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html"},"about":[{"@type":"Thing","name":"Dark Vessel"},{"@type":"Thing","name":"SAR Satellite Detection"},{"@type":"Thing","name":"AIS Going Dark"},{"@type":"Thing","name":"Global Fishing Watch"}]}
     </script>
     <script type="application/ld+json">
-    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"暗船是什麼","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-dark-vessel.html"}]}
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"暗船是什麼","item":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-dark-vessel.html"}]}
     </script>
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"暗船是什麼？","acceptedAnswer":{"@type":"Answer","text":"暗船（dark vessel）是指被合成孔徑雷達（SAR）衛星偵測到、卻沒有對應 AIS 訊號的船隻。也就是說它人在海上、被雷達拍到，但在一般 AIS 追蹤平台上「看不見」。"}},{"@type":"Question","name":"船隻關閉 AIS 後就消失了嗎？","acceptedAnswer":{"@type":"Answer","text":"沒有。AIS 只是船舶主動廣播的無線電訊號，關掉它不會讓船從雷達上消失。SAR 衛星仍能偵測水面上的金屬船體，與天候、雲層、日夜無關。"}},{"@type":"Question","name":"暗船如何被偵測？","acceptedAnswer":{"@type":"Answer","text":"以 SAR 衛星掃描海面取得船舶位置，再與同時段的 AIS 資料交叉比對。被 SAR 偵測到卻沒有 AIS 匹配的目標，即標記為暗船。本站使用 Global Fishing Watch 的 SAR 偵測結果。"}},{"@type":"Question","name":"被偵測為暗船就代表違法嗎？","acceptedAnswer":{"@type":"Answer","text":"不一定。SAR 偵測代表雷達可見目標，可能是漁船、商船或公務船；關閉 AIS 在某些情況下也屬合法。暗船是值得進一步研判的線索，而非違法認定。"}},{"@type":"Question","name":"為什麼台灣周邊的暗船活動值得關注？","acceptedAnswer":{"@type":"Answer","text":"台灣高度仰賴海底電纜對外連通，而電纜破壞事件中常見「接近電纜前關閉 AIS」的模式。在電纜路線附近出現、且低速徘徊的暗船，是本站威脅評分特別警戒的行為。"}}]}
