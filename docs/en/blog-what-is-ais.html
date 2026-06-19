@@ -58,7 +58,7 @@
     .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
     </style>
     <script type="application/ld+json">
-    {"@context":"https://schema.org","@type":"Article","headline":"What Is AIS? Why It Matters for Cable Security","url":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-ais.html","datePublished":"2026-06-14","inLanguage":"en","about":[{"@type":"Thing","name":"AIS (Automatic Identification System)"},{"@type":"Thing","name":"Dark Vessel Detection"},{"@type":"Thing","name":"SAR Satellite Imagery"}],"mainEntityOfPage":{"@type":"WebPage","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-ais.html"}}
+    {"@context":"https://schema.org","@type":"Article","headline":"What Is AIS? Why It Matters for Cable Security","url":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-ais.html","datePublished":"2026-06-14","dateModified":"2026-06-19","inLanguage":"en","about":[{"@type":"Thing","name":"AIS (Automatic Identification System)"},{"@type":"Thing","name":"Dark Vessel Detection"},{"@type":"Thing","name":"SAR Satellite Imagery"}],"mainEntityOfPage":{"@type":"WebPage","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-ais.html"},"citation":[{"@type":"Organization","name":"International Maritime Organization (IMO)","url":"https://www.imo.org/"},{"@type":"CreativeWork","name":"ITU-R Recommendation M.1371","url":"https://www.itu.int/rec/R-REC-M.1371/"}]}
     </script>
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"ListItem","position":2,"name":"In-Depth Articles","item":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog.html"},{"@type":"ListItem","position":3,"name":"What Is AIS?","item":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-ais.html"}]}
@@ -74,7 +74,7 @@
         <div class="header-info">
             <a href="../index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">Gray Zone Monitor</a>
             <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">Articles</a>
-            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">中</button>
+            <a id="langToggle" href="../blog-what-is-ais.html" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600;text-decoration:none;display:inline-block" title="切換為中文 / Read in Chinese">中</a>
         </div>
     </header>
 
@@ -254,6 +254,19 @@
                 <a href="blog-taiwan-cable-status.html" class="lang-en-only">Next: Taiwan's Cable Situation →</a>
     </div>
 
+    <section class="intro-section" id="sources">
+                <div class="lang-en-only">
+            <h2>Sources</h2>
+            <p>The concepts on this page can be verified against these public, authoritative sources:</p>
+            <ul class="src-list">
+                <li><a href="https://www.imo.org/" target="_blank" rel="noopener noreferrer">IMO SOLAS convention (mandatory AIS carriage) →</a></li>
+                <li><a href="https://www.itu.int/rec/R-REC-M.1371/" target="_blank" rel="noopener noreferrer">ITU-R Recommendation M.1371 (AIS technical standard) →</a></li>
+                <li><a href="https://www.itu.int/mmsapp/ShipStation/list" target="_blank" rel="noopener noreferrer">ITU MARS ship-station registry →</a></li>
+            </ul>
+            <p style="font-size:11px;color:var(--text-secondary)">This page is for research and education; detection signals are leads to investigate, not legal or factual findings. See the <a href="blog-methodology.html" style="color:var(--accent-cyan)">methodology</a>.</p>
+        </div>
+    </section>
+
     <!-- topic-cluster -->
     <section class="topic-cluster" aria-label="Related gray-zone topics">
                 <h2 class="lang-en-only">Related gray-zone topics</h2>
@@ -273,7 +286,7 @@
         <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
     </footer>
     <script defer src="../js/i18n.js"></script>
-    <style>body.lang-en .lang-zh-only{display:none!important}body:not(.lang-en) .lang-en-only{display:none!important}</style>
+    <style>.lang-zh-only{display:none!important}</style>
     <script defer src="../js/mobile-nav.js"></script>
 </body>
 </html>

@@ -53,10 +53,10 @@
     .faq-item[open] summary::after{transform:rotate(45deg)}
     .faq-item summary:hover{color:var(--accent-cyan)}
     .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
-    body.lang-en .lang-zh-only{display:none!important}body:not(.lang-en) .lang-en-only{display:none!important}
+    .lang-zh-only{display:none!important}
     </style>
     <script type="application/ld+json">
-    {"@context":"https://schema.org","@type":["Article","TechArticle"],"headline":"What Is a Shadow Fleet?","description":"A shadow fleet is a group of vessels that hide ownership and identity to evade sanctions and inspection — through flags of convenience, going dark and AIS spoofing, ship-to-ship transfers, and shell companies. How it operates and why it matters for Taiwan's submarine cables.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-shadow-fleet.html","datePublished":"2026-06-19","dateModified":"2026-06-19","inLanguage":"en","author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#org"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"mentions":{"@type":"Article","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-cable-threats.html"},"about":[{"@type":"Thing","name":"Shadow Fleet"},{"@type":"Thing","name":"Sanctions Evasion"},{"@type":"Thing","name":"Flag of Convenience"},{"@type":"Thing","name":"Ship-to-Ship Transfer"}],"mainEntityOfPage":{"@type":"WebPage","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-shadow-fleet.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":[".ai-summary"]}}
+    {"@context":"https://schema.org","@type":["Article","TechArticle"],"headline":"What Is a Shadow Fleet?","description":"A shadow fleet is a group of vessels that hide ownership and identity to evade sanctions and inspection — through flags of convenience, going dark and AIS spoofing, ship-to-ship transfers, and shell companies. How it operates and why it matters for Taiwan's submarine cables.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-shadow-fleet.html","datePublished":"2026-06-19","dateModified":"2026-06-19","inLanguage":"en","author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#org"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"mentions":{"@type":"Article","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-cable-threats.html"},"about":[{"@type":"Thing","name":"Shadow Fleet"},{"@type":"Thing","name":"Sanctions Evasion"},{"@type":"Thing","name":"Flag of Convenience"},{"@type":"Thing","name":"Ship-to-Ship Transfer"}],"mainEntityOfPage":{"@type":"WebPage","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-shadow-fleet.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":[".ai-summary"]},"citation":[{"@type":"CreativeWork","name":"United Nations Security Council Consolidated Sanctions List","url":"https://www.un.org/securitycouncil/content/un-sc-consolidated-list"},{"@type":"CreativeWork","name":"OFAC Specially Designated Nationals (SDN) List","url":"https://ofac.treasury.gov/"},{"@type":"CreativeWork","name":"EU Sanctions Map","url":"https://www.sanctionsmap.eu/"},{"@type":"CreativeWork","name":"ITU Maritime mobile Access and Retrieval System (MARS)","url":"https://www.itu.int/mmsapp/ShipStation/list"},{"@type":"CreativeWork","name":"Global Fishing Watch","url":"https://globalfishingwatch.org/"}]}
     </script>
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://s0914712.github.io/taiwan-grayzone-monitor/"},{"@type":"ListItem","position":2,"name":"In-Depth Articles","item":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog.html"},{"@type":"ListItem","position":3,"name":"What Is a Shadow Fleet?","item":"https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-shadow-fleet.html"}]}
@@ -72,7 +72,7 @@
         <div class="header-info">
             <a href="../index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">Gray Zone Monitor</a>
             <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">Articles</a>
-            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">中</button>
+            <a id="langToggle" href="../blog-what-is-shadow-fleet.html" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600;text-decoration:none;display:inline-block" title="切換為中文 / Read in Chinese">中</a>
         </div>
     </header>
 
@@ -169,6 +169,29 @@
                 <details class="faq-item"><summary>What does a shadow fleet have to do with submarine cables?</summary><div class="faq-answer">Shadow fleets were originally used to evade oil sanctions, but the same capability — hidden identity, going dark, and hard-to-attribute operations — also makes them an ideal vehicle for gray-zone threats to submarine cables: operating near a cable and dragging an anchor, then being hard to hold accountable afterward.</div></details>
                 <details class="faq-item"><summary>Does being labeled a shadow fleet vessel mean it is illegal?</summary><div class="faq-answer">Not necessarily. Flags of convenience, transfers at sea, and name changes are lawful shipping practices in many situations. A shadow fleet is a risk pattern formed by a combination of anomalies — a lead worth investigating, not a finding of wrongdoing.</div></details>
             </div>
+        </div>
+    </section>
+
+    <section class="intro-section" id="sources">
+                <div class="lang-en-only">
+            <h2>Sources &amp; Methodology</h2>
+            <p>Shadow fleets and sanctions evasion are highly fact-driven topics. The concepts and detection signals here can be checked against these public, authoritative sources:</p>
+            <ul class="src-list">
+                <li><strong>Sanctions lists</strong>: <a href="https://www.un.org/securitycouncil/content/un-sc-consolidated-list" target="_blank" rel="noopener noreferrer">UN Security Council Consolidated List</a>, <a href="https://ofac.treasury.gov/" target="_blank" rel="noopener noreferrer">U.S. OFAC (SDN list)</a>, <a href="https://www.sanctionsmap.eu/" target="_blank" rel="noopener noreferrer">EU Sanctions Map</a>, <a href="https://www.gov.uk/government/publications/financial-sanctions-consolidated-list-of-targets" target="_blank" rel="noopener noreferrer">UK OFSI list</a>.</li>
+                <li><strong>Vessel identity registries</strong>: <a href="https://www.itu.int/mmsapp/ShipStation/list" target="_blank" rel="noopener noreferrer">ITU MARS (ship stations)</a>, <a href="https://www.imo.org/" target="_blank" rel="noopener noreferrer">IMO</a> (IMO number / company ID).</li>
+                <li><strong>Satellite &amp; shipping observation</strong>: <a href="https://globalfishingwatch.org/" target="_blank" rel="noopener noreferrer">Global Fishing Watch</a> (SAR dark-vessel detection).</li>
+                <li><strong>Investigative &amp; analytical reporting</strong>: <a href="https://c4ads.org/" target="_blank" rel="noopener noreferrer">C4ADS</a>, <a href="https://www.rusi.org/" target="_blank" rel="noopener noreferrer">RUSI</a>, <a href="https://www.atlanticcouncil.org/" target="_blank" rel="noopener noreferrer">Atlantic Council</a>, <a href="https://www.lloydslistintelligence.com/" target="_blank" rel="noopener noreferrer">Lloyd's List Intelligence</a>.</li>
+            </ul>
+            <p style="font-size:12.5px;color:var(--text-secondary)">The <strong>data source, refresh cadence, and nature</strong> (fact vs inference) of each signal this site uses:</p>
+            <ul class="src-list">
+                <li><strong>Identity changes</strong>: Taiwan Port Bureau AIS (every 2 h); an <em>inferred</em> lead.</li>
+                <li><strong>Flag of convenience (FOC)</strong>: MID flag-state lookup from the MMSI; a <em>factual</em> field, but lawful and common.</li>
+                <li><strong>Ship-to-ship (STS)</strong>: spatiotemporal AIS matching (every 2 h); an <em>inferred</em> event.</li>
+                <li><strong>Going dark (AIS gaps)</strong>: AIS silence &gt;18 h; <em>inferred</em> — may be concealment or an equipment issue.</li>
+                <li><strong>Cable proximity</strong>: distance to routes in <code>taiwan_cables.json</code>; a <em>factual</em> geometric calculation.</li>
+                <li><strong>Sanctions / registry match</strong>: UN list and ITU MARS cache (30 days); a <em>factual</em> comparison, but lists can be stale.</li>
+            </ul>
+            <div class="alert-box">This site asserts no sanctions determination about any named vessel, company, or state; every signal is a <strong>lead to investigate</strong> that must be verified against the official sources above — not a legal or factual finding.</div>
         </div>
     </section>
 
