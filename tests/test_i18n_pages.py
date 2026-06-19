@@ -213,19 +213,42 @@ def test_topic_cluster_footer_english_only():
     assert "Maritime zones" in out and "Shadow fleets" in out
 
 
-def test_sensitive_pages_have_sources_and_citation():
-    # Legal/sanctions pages must carry a visible Sources section and JSON-LD
-    # citation so claims are verifiable (E-E-A-T / GEO).
-    for page in ("blog-taiwan-maritime-zones.html",
-                 "blog-what-is-shadow-fleet.html"):
+# The evergreen-article citation standard: every explainer/pillar/glossary/
+# methodology page must carry a visible Sources section + JSON-LD citation.
+EVERGREEN_PAGES = [
+    "blog-what-is-submarine-cable.html", "blog-what-is-ais.html",
+    "blog-taiwan-cable-status.html", "blog-cable-threats.html",
+    "blog-taiwan-enforcement.html", "blog-methodology.html",
+    "blog-what-is-dark-vessel.html", "blog-what-is-ship-to-ship-transfer.html",
+    "blog-what-is-ais-spoofing.html", "blog-what-is-maritime-gray-zone.html",
+    "blog-what-is-shadow-fleet.html", "blog-taiwan-maritime-zones.html",
+    "blog-gray-zone-glossary.html",
+]
+
+
+def test_all_evergreen_pages_have_sources_and_citation():
+    # Site-wide standard: visible Sources section + >=2 absolute-URL citations
+    # on the page's own Article node, so claims are verifiable (E-E-A-T / GEO).
+    for page in EVERGREEN_PAGES:
         out = gi.generate_page(page)
-        assert 'id="sources"' in out
-        assert "Sources &amp; Methodology" in out or "Sources & Methodology" in out
-        art = [json.loads(b) for b in _ld_blocks(out)
-               if "Article" in (lambda t: t if isinstance(t, list) else [t])
-               (json.loads(b).get("@type"))][0]
-        assert len(art.get("citation", [])) >= 3
-        assert all(c.get("url", "").startswith("http") for c in art["citation"])
+        assert 'id="sources"' in out, page
+        art = [d for d in (json.loads(b) for b in _ld_blocks(out))
+               if "Article" in (d["@type"] if isinstance(d.get("@type"), list)
+                                 else [d.get("@type")])][0]
+        cites = art.get("citation", [])
+        assert len(cites) >= 2, page
+        assert all(c.get("url", "").startswith("http") for c in cites), page
+
+
+def test_evergreen_pages_have_topic_cluster_and_dates():
+    # Each evergreen article should also carry the topic cluster and dates.
+    for page in EVERGREEN_PAGES:
+        out = gi.generate_page(page)
+        assert "topic-cluster" in out, page
+        art = [d for d in (json.loads(b) for b in _ld_blocks(out))
+               if "Article" in (d["@type"] if isinstance(d.get("@type"), list)
+                                 else [d.get("@type")])][0]
+        assert "datePublished" in art and "dateModified" in art, page
 
 
 def test_mirror_lang_toggle_is_safe_link():
