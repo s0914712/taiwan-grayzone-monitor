@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>影子船隊是什麼？制裁規避、旁靠與權宜旗 | Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="影子船隊（shadow fleet / dark fleet）是隱匿船東與身分、用來規避制裁與檢查的一群船。了解它如何以權宜旗、走暗與 AIS 欺騙、海上旁靠（STS）、空殼公司運作，以及為什麼與台灣海底電纜灰色地帶威脅相關。">
+    <meta name="keywords" content="影子船隊,shadow fleet,dark fleet,制裁規避,權宜旗,海上旁靠,STS,AIS 欺騙,走暗,海底電纜,灰色地帶,台灣海峽">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-shadow-fleet.html">
+    <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-shadow-fleet.html">
+    <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-what-is-shadow-fleet.html">
+    <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-shadow-fleet.html">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="影子船隊是什麼？制裁規避、旁靠與權宜旗">
+    <meta property="og:description" content="隱匿身分、走暗、海上轉運——影子船隊如何運作，為什麼與海底電纜灰色地帶威脅相關，完整解說。">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-shadow-fleet.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="影子船隊是什麼？制裁規避、旁靠與權宜旗">
+    <meta name="twitter:description" content="隱匿身分、走暗、海上轉運——影子船隊如何運作，為什麼與海底電纜灰色地帶相關。">
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0f1c">
+    <style>
+    .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
+    .fact-box{background:var(--bg-secondary);border:1px solid rgba(0,245,255,.15);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
+    .fact-box strong{color:var(--accent-cyan)}
+    .fact-title{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent-cyan);font-weight:600;letter-spacing:1px;margin-bottom:8px;text-transform:uppercase}
+    .series-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+    .series-chip{padding:5px 10px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:4px;font-size:10px;color:var(--text-secondary);text-decoration:none;font-family:'JetBrains Mono',monospace;transition:all .2s}
+    .series-chip:hover,.series-chip.active{border-color:var(--accent-cyan);color:var(--accent-cyan);background:rgba(0,245,255,.08)}
+    .dark-reason{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:6px;margin:8px 0;font-size:12px}
+    .dark-reason-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+    .dark-reason-text{color:var(--text-secondary);line-height:1.7}
+    .dark-reason-text strong{color:var(--text-primary);display:block;margin-bottom:2px}
+    .alert-box{background:rgba(255,77,77,.06);border:1px solid rgba(255,77,77,.2);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
+    .alert-box strong{color:#ff6b6b}
+    .faq-section{margin:16px 0}
+    .faq-item{border:1px solid var(--border-glow);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--bg-card)}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text-primary);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:'+';font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:18px;flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{transform:rotate(45deg)}
+    .faq-item summary:hover{color:var(--accent-cyan)}
+    .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
+    body.lang-en .lang-zh-only{display:none!important}body:not(.lang-en) .lang-en-only{display:none!important}
+    </style>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":["Article","TechArticle"],"headline":"影子船隊是什麼？制裁規避、旁靠與權宜旗 — What Is a Shadow Fleet?","description":"影子船隊是隱匿船東與身分、用來規避制裁與檢查的一群船。本文說明它如何以權宜旗、走暗與 AIS 欺騙、海上旁靠與空殼公司運作，以及與海底電纜灰色地帶威脅的關聯。A shadow fleet is a group of vessels that hide ownership and identity to evade sanctions; this article explains how it operates and why it matters for Taiwan's submarine cables.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-shadow-fleet.html","datePublished":"2026-06-19","dateModified":"2026-06-19","inLanguage":["zh-TW","en"],"author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#org"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"mentions":{"@type":"Article","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-cable-threats.html"},"about":[{"@type":"Thing","name":"Shadow Fleet"},{"@type":"Thing","name":"Sanctions Evasion"},{"@type":"Thing","name":"Flag of Convenience"},{"@type":"Thing","name":"Ship-to-Ship Transfer"}],"mainEntityOfPage":{"@type":"WebPage","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-shadow-fleet.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":[".ai-summary"]}}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"影子船隊是什麼","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-what-is-shadow-fleet.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"影子船隊是什麼？","acceptedAnswer":{"@type":"Answer","text":"影子船隊（shadow fleet，又稱 dark fleet）是指刻意隱匿真實船東與身分、用來規避制裁與檢查的一群船。它們常以權宜旗註冊、頻繁更換船名與船旗、透過空殼公司層層持有，並在海上以走暗、AIS 欺騙與旁靠來掩飾貨物與行蹤。"}},{"@type":"Question","name":"影子船隊用哪些手法規避追蹤？","acceptedAnswer":{"@type":"Answer","text":"常見手法包括：登記在管理寬鬆的權宜旗國、頻繁變更船名／呼號／MMSI、關閉或偽造 AIS、以海上旁靠（STS）轉運避免進港受檢，以及用空殼公司與可疑保險隱匿真實所有人。"}},{"@type":"Question","name":"影子船隊和海底電纜有什麼關係？","acceptedAnswer":{"@type":"Answer","text":"影子船隊原本用於規避石油制裁，但同一套「隱匿身分＋走暗＋難以歸責」的能力，也讓它們成為海底電纜灰色地帶威脅的理想載具——在電纜附近活動、拖錨破壞後難以被追究。"}},{"@type":"Question","name":"被歸為影子船隊就代表違法嗎？","acceptedAnswer":{"@type":"Answer","text":"不一定。權宜旗、海上轉運與更換船名在許多情況下都是合法的航運實務。影子船隊是由多項異常「組合」而成的風險樣態，是值得進一步研判的線索，而非違法認定。"}}]}
+    </script>
+</head>
+<body>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <header class="header" style="position:sticky;top:0;z-index:100">
+        <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
+        <div class="header-info">
+            <a href="index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">深度文章</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+        </div>
+    </header>
+
+    <div class="intro-hero">
+        <h1 class="lang-zh-only">影子船隊是什麼？</h1>
+        <h1 class="lang-en-only">What Is a Shadow Fleet?</h1>
+        <p class="subtitle lang-zh-only">制裁規避 &#x2022; 權宜旗 &#x2022; 海上旁靠 &#x2022; 台灣海域</p>
+        <p class="subtitle lang-en-only">Sanctions Evasion &#x2022; Flags of Convenience &#x2022; STS Transfers &#x2022; Taiwan Waters</p>
+    </div>
+
+    <section class="ai-summary" aria-label="頁面摘要 Page summary">
+        <h2 class="lang-zh-only">本頁重點</h2>
+        <h2 class="lang-en-only">In short</h2>
+        <p class="lang-zh-only">影子船隊（shadow fleet / dark fleet）是<strong>刻意隱匿船東與身分、用來規避制裁與檢查的一群船</strong>。它們以權宜旗註冊、頻繁更換船名與船旗、透過空殼公司層層持有，並在海上靠走暗、AIS 欺騙與旁靠（STS）掩飾貨物與行蹤。同一套隱匿能力，也讓影子船隊成為海底電纜灰色地帶威脅的理想載具。</p>
+        <p class="lang-en-only">A shadow fleet (or dark fleet) is a group of vessels that <strong>deliberately hide their owner and identity to evade sanctions and inspection</strong>. They register under flags of convenience, frequently change names and flags, are held through layers of shell companies, and at sea mask cargo and movements via going dark, AIS spoofing, and ship-to-ship (STS) transfers. That same concealment capability also makes shadow fleets an ideal vehicle for gray-zone threats to submarine cables.</p>
+        <ul>
+            <li class="lang-zh-only">核心特徵：身分不透明、走暗／欺騙、海上轉運、難以歸責。</li>
+            <li class="lang-en-only">Hallmarks: opaque identity, going dark/spoofing, transfers at sea, hard to attribute.</li>
+            <li class="lang-zh-only">影子船隊是多項異常的組合樣態，是待查線索而非違法認定。</li>
+            <li class="lang-en-only">A shadow fleet is a combination pattern — a lead to investigate, not a legal finding.</li>
+        </ul>
+    </section>
+
+    <section class="intro-section">
+        <div class="series-nav">
+            <span style="font-size:10px;color:rgba(0,245,255,.4);font-family:'JetBrains Mono',monospace;align-self:center">延伸閱讀 RELATED →</span>
+            <a href="blog-cable-threats.html" class="series-chip">電纜威脅</a>
+            <a href="blog-what-is-ship-to-ship-transfer.html" class="series-chip">旁靠 STS</a>
+            <a href="blog-what-is-ais-spoofing.html" class="series-chip">AIS 欺騙</a>
+            <a href="blog-gray-zone-glossary.html#shadow-fleet" class="series-chip">詞彙表</a>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <div class="story-hook">
+                一艘油輪掛著某個小國的旗、由一家剛成立幾個月的公司持有、保險來路不明。它從不靠港，貨在外海換了船，AIS 時開時關。<br><br>
+                它不是一艘船的問題——它是一整支「看不見的船隊」的縮影。
+            </div>
+            <h2>影子船隊是什麼？</h2>
+            <p>「影子船隊」（shadow fleet，又稱 dark fleet）指的是<strong>一群刻意隱匿真實船東與身分、用來規避制裁與檢查的船</strong>。它不是某一種船型，而是一套<strong>運作模式</strong>：把所有權、船籍、行蹤與貨物來源層層模糊，讓監管者難以追蹤、難以歸責。</p>
+            <p>這個詞最初用來描述規避俄羅斯與伊朗石油制裁的老舊油輪船隊，但同樣的隱匿手法，近年也出現在<strong>海底電纜附近的異常活動</strong>中。影子船隊的價值，正在於「可否認性」——當出事時，沒有人能輕易說清楚那艘船究竟屬於誰。</p>
+        </div>
+        <div class="lang-en-only">
+            <div class="story-hook">
+                A tanker flies the flag of a small state, is owned by a company set up a few months ago, and carries insurance of unknown origin. It never calls at port, swaps its cargo at sea, and turns AIS on and off.<br><br>
+                It is not one ship's problem — it is a glimpse of an entire "invisible fleet."
+            </div>
+            <h2>What Is a Shadow Fleet?</h2>
+            <p>A "shadow fleet" (also called a dark fleet) is <strong>a group of vessels that deliberately hide their true owner and identity to evade sanctions and inspection</strong>. It is not a vessel type but an <strong>operating model</strong>: layer upon layer of blurred ownership, flag, movements, and cargo origin, so regulators struggle to track or attribute them.</p>
+            <p>The term first described the aging tanker fleets used to evade Russian and Iranian oil sanctions, but the same concealment toolkit has lately appeared in <strong>anomalous activity near submarine cables</strong>. The value of a shadow fleet lies in deniability — when something goes wrong, no one can easily say whom the ship really belongs to.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>影子船隊怎麼運作？</h2>
+            <p>影子船隊很少只靠單一手法，而是把多種隱匿技巧疊在一起：</p>
+            <div class="dark-reason"><div class="dark-reason-icon">🏴</div><div class="dark-reason-text"><strong>權宜旗（flag of convenience）</strong>把船登記在管理寬鬆、與船東毫無關係的第三國旗下。依海洋法，公海船舶受船旗國專屬管轄，這讓受害國難以執法。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">🆔</div><div class="dark-reason-text"><strong>更換身分</strong>頻繁更改船名、呼號甚至 MMSI，切斷與既有可疑紀錄的連結，讓持續追蹤變得困難。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">📡</div><div class="dark-reason-text"><strong>走暗與 AIS 欺騙</strong>在敏感海域關閉 AIS，或廣播假位置／假身分，讓船「看起來」在別處或乾脆從追蹤平台消失。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">🔄</div><div class="dark-reason-text"><strong>海上旁靠（STS）</strong>在外海把貨物轉運到另一艘船，不必進港受檢，也切斷了貨物的來源追蹤。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">🏢</div><div class="dark-reason-text"><strong>空殼公司與不透明所有權</strong>透過層層註冊的紙上公司持有，真正的受益人隱身其後，追責時無從查起。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">📄</div><div class="dark-reason-text"><strong>可疑保險與認證</strong>使用來路不明或非主流的保險與船級驗證，規避正規體系的審查。</div></div>
+            <div class="fact-box"><span class="fact-title">關鍵概念</span>沒有任何單一手法等於影子船隊。真正的特徵是<strong>這些異常同時出現、彼此強化</strong>，共同構成一套讓人「查不到、賴不掉」的隱匿體系。</div>
+        </div>
+        <div class="lang-en-only">
+            <h2>How Does a Shadow Fleet Operate?</h2>
+            <p>A shadow fleet rarely relies on a single trick; it stacks several concealment techniques:</p>
+            <div class="dark-reason"><div class="dark-reason-icon">🏴</div><div class="dark-reason-text"><strong>Flag of convenience</strong>Register the ship under a loosely regulated third-country flag with no real link to the owner. Under the law of the sea, high-seas ships fall under exclusive flag-state jurisdiction, making enforcement by victim states hard.</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">🆔</div><div class="dark-reason-text"><strong>Identity changes</strong>Frequently change the ship's name, call sign, or even MMSI to sever the link to existing suspicious records and make continuous tracking difficult.</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">📡</div><div class="dark-reason-text"><strong>Going dark &amp; AIS spoofing</strong>Switch off AIS in sensitive waters, or broadcast a false position or identity, so the ship "appears" elsewhere or vanishes from tracking platforms.</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">🔄</div><div class="dark-reason-text"><strong>Ship-to-ship (STS) transfers</strong>Move cargo to another vessel on the open sea, avoiding port inspection and cutting the trail of where the cargo came from.</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">🏢</div><div class="dark-reason-text"><strong>Shell companies &amp; opaque ownership</strong>Hold the ship through layers of paper companies so the real beneficial owner stays hidden and accountability has nowhere to start.</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">📄</div><div class="dark-reason-text"><strong>Questionable insurance &amp; certification</strong>Use insurance and classification of unclear or non-mainstream origin to bypass scrutiny by the established system.</div></div>
+            <div class="fact-box"><span class="fact-title">The Key Idea</span>No single technique equals a shadow fleet. The real signature is that <strong>these anomalies appear together and reinforce each other</strong>, forming a concealment system designed to be "untraceable and undeniable."</div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>為什麼與台灣和海底電纜有關？</h2>
+            <p>影子船隊原本是制裁規避的工具，但它的能力與海底電纜威脅高度重疊。台灣超過 95% 的對外通訊依賴海底電纜，這些電纜密集穿過台灣海峽——正是船舶活動最繁忙、也最容易讓異常行為「混入正常」的水域。</p>
+            <p>一支能隱匿身分、隨時走暗、又難以歸責的船隊，恰好具備了在電纜附近<strong>拖錨破壞而不被追究</strong>所需的一切條件。當一艘權宜旗、所有權不透明、事發時 AIS 關閉的船出現在電纜路線上，影子船隊的特徵與電纜灰色地帶威脅就交會在一起。2025 年初切斷台灣周邊海纜的若干事件，正是這種樣態的典型。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Why It Matters for Taiwan and Cables</h2>
+            <p>A shadow fleet is originally a sanctions-evasion tool, but its capabilities overlap heavily with submarine-cable threats. Taiwan depends on submarine cables for over 95% of its external communications, and those cables run densely through the Taiwan Strait — the very waters where traffic is busiest and anomalies most easily "blend into normal."</p>
+            <p>A fleet that can hide its identity, go dark at will, and resist attribution has exactly what is needed to <strong>drag an anchor near a cable and avoid being held to account</strong>. When a flag-of-convenience ship with opaque ownership and its AIS off at the time appears on a cable route, the shadow-fleet signature and the cable gray-zone threat converge. Several cable-cutting incidents around Taiwan in early 2025 fit precisely this pattern.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>本站如何判讀？</h2>
+            <ol style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
+                <li>檢查船籍是否屬於常見的權宜旗國，並與身分變更紀錄交叉比對。</li>
+                <li>偵測走暗（長時間 AIS 中斷）與 AIS 欺騙（不可能速度、方框／圓形軌跡、登記不符）。</li>
+                <li>把海上旁靠（STS）事件納入分析，特別是涉及制裁或身分異常的船隻。</li>
+                <li>比對 UN 制裁名單與 ITU 等公開登記資料，找出身分與紀錄的矛盾。</li>
+                <li>多項異常同時出現時，威脅分數明顯上升，並列入可疑清單供人工研判。</li>
+            </ol>
+        </div>
+        <div class="lang-en-only">
+            <h2>How This Site Reads It</h2>
+            <ol style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
+                <li>Check whether the flag belongs to a common flag-of-convenience state and cross-reference it with identity-change records.</li>
+                <li>Detect going dark (long AIS gaps) and AIS spoofing (impossible speed, box/circle tracks, registry mismatch).</li>
+                <li>Fold ship-to-ship (STS) events into the analysis, especially when sanctioned or identity-anomalous vessels are involved.</li>
+                <li>Match against UN sanctions lists and public registries such as ITU to surface contradictions between identity and records.</li>
+                <li>When several anomalies coincide, the threat score rises sharply and the vessel is listed as suspicious for human assessment.</li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>資料限制與免責聲明</h2>
+            <div class="alert-box"><ul style="margin:0;padding-left:18px;line-height:2">
+                <li>權宜旗、海上旁靠與更換船名在許多情況下皆屬合法航運實務，不能單憑其一認定為影子船隊。</li>
+                <li>所有權與保險資訊往往不在公開 AIS 資料中，本站只能就可觀測的行為樣態進行研判。</li>
+                <li>制裁名單與登記資料可能過時或缺漏，比對結果需謹慎解讀。</li>
+                <li>「影子船隊特徵」是<strong>風險線索</strong>，並非法律認定，也不指控任何具名船隻違法。</li>
+            </ul></div>
+            <p style="font-size:11px;color:var(--text-secondary)">本頁為研究與教育用途，採 MIT 授權彙整公開資料。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Data Limitations &amp; Disclaimer</h2>
+            <div class="alert-box"><ul style="margin:0;padding-left:18px;line-height:2">
+                <li>Flags of convenience, STS transfers, and name changes are lawful shipping practices in many cases; no single one identifies a shadow fleet.</li>
+                <li>Ownership and insurance information is often absent from public AIS data, so this site can only assess observable behavior patterns.</li>
+                <li>Sanctions lists and registry data can be stale or incomplete, so matches need careful interpretation.</li>
+                <li>A "shadow fleet signature" is a <strong>risk lead</strong> — not a legal finding, and not an accusation against any named vessel.</li>
+            </ul></div>
+            <p style="font-size:11px;color:var(--text-secondary)">This page is for research and education, aggregating public data under the MIT License.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>常見問題 FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>影子船隊是什麼？</summary><div class="faq-answer">影子船隊（shadow fleet，又稱 dark fleet）是指刻意隱匿真實船東與身分、用來規避制裁與檢查的一群船。它們常以權宜旗註冊、頻繁更換船名與船旗、透過空殼公司層層持有，並在海上以走暗、AIS 欺騙與旁靠來掩飾貨物與行蹤。</div></details>
+                <details class="faq-item"><summary>影子船隊用哪些手法規避追蹤？</summary><div class="faq-answer">常見手法包括：登記在管理寬鬆的權宜旗國、頻繁變更船名／呼號／MMSI、關閉或偽造 AIS、以海上旁靠（STS）轉運避免進港受檢，以及用空殼公司與可疑保險隱匿真實所有人。</div></details>
+                <details class="faq-item"><summary>影子船隊和海底電纜有什麼關係？</summary><div class="faq-answer">影子船隊原本用於規避石油制裁，但同一套「隱匿身分＋走暗＋難以歸責」的能力，也讓它們成為海底電纜灰色地帶威脅的理想載具——在電纜附近活動、拖錨破壞後難以被追究。</div></details>
+                <details class="faq-item"><summary>被歸為影子船隊就代表違法嗎？</summary><div class="faq-answer">不一定。權宜旗、海上轉運與更換船名在許多情況下都是合法的航運實務。影子船隊是由多項異常「組合」而成的風險樣態，是值得進一步研判的線索，而非違法認定。</div></details>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>What is a shadow fleet?</summary><div class="faq-answer">A shadow fleet (also called a dark fleet) is a group of vessels that deliberately hide their true owner and identity to evade sanctions and inspection. They typically register under flags of convenience, frequently change names and flags, are held through layers of shell companies, and mask cargo and movements at sea by going dark, spoofing AIS, and conducting ship-to-ship transfers.</div></details>
+                <details class="faq-item"><summary>What methods do shadow fleets use to evade tracking?</summary><div class="faq-answer">Common methods include registering under loosely regulated flags of convenience; frequently changing name, call sign, or MMSI; switching off or spoofing AIS; using ship-to-ship (STS) transfers to move cargo at sea and avoid port inspection; and hiding the real owner behind shell companies and questionable insurance.</div></details>
+                <details class="faq-item"><summary>What does a shadow fleet have to do with submarine cables?</summary><div class="faq-answer">Shadow fleets were originally used to evade oil sanctions, but the same capability — hidden identity, going dark, and hard-to-attribute operations — also makes them an ideal vehicle for gray-zone threats to submarine cables: operating near a cable and dragging an anchor, then being hard to hold accountable afterward.</div></details>
+                <details class="faq-item"><summary>Does being labeled a shadow fleet vessel mean it is illegal?</summary><div class="faq-answer">Not necessarily. Flags of convenience, transfers at sea, and name changes are lawful shipping practices in many situations. A shadow fleet is a risk pattern formed by a combination of anomalies — a lead worth investigating, not a finding of wrongdoing.</div></details>
+            </div>
+        </div>
+    </section>
+
+    <div class="intro-cta" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+        <a href="blog-what-is-maritime-gray-zone.html" class="lang-zh-only">下一篇：海上灰色地帶總覽 →</a>
+        <a href="blog-what-is-maritime-gray-zone.html" class="lang-en-only">Next: Maritime gray-zone overview →</a>
+        <a href="blog.html" class="lang-zh-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← 返回深度文章</a>
+        <a href="blog.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← Back to articles</a>
+    </div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+    <script defer src="js/i18n.js"></script>
+    <script defer src="js/mobile-nav.js"></script>
+</body>
+</html>

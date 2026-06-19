@@ -49,91 +49,7 @@
 
     <!-- Structured Data: AboutPage + FAQPage + HowTo + Breadcrumb -->
     <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@graph": [
-            {
-                "@type": "AboutPage",
-                "name": "關於本站 | About — Taiwan Gray Zone & Submarine Cable Monitor",
-                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/en/intro.html",
-                "description": "了解台灣周邊灰色地帶活動、海底電纜安全，以及本站提供的開源監測工具。常見問題與使用教學。",
-                "inLanguage":"en",
-                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" }
-            },
-            {
-                "@type": "BreadcrumbList",
-                "itemListElement": [
-                    { "@type": "ListItem", "position": 1, "name": "首頁 Home", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/" },
-                    { "@type": "ListItem", "position": 2, "name": "關於本站 About", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/en/intro.html" }
-                ]
-            },
-            {
-                "@type": "HowTo",
-                "name": "如何使用台灣灰色地帶與海底電纜監測站",
-                "description": "從即時地圖、圖層切換、可疑船隻清單到軌跡動畫與統計分析的完整使用流程。",
-                "inLanguage":"en",
-                "step": [
-                    { "@type": "HowToStep", "position": 1, "name": "開啟即時監測地圖", "text": "從首頁即時地圖進入，查看台灣周邊海域的即時船舶位置、暗船偵測點與海底電纜路線。", "url": "https://s0914712.github.io/taiwan-grayzone-monitor/index.html" },
-                    { "@type": "HowToStep", "position": 2, "name": "切換地圖圖層", "text": "使用圖層控制開關，顯示或隱藏船舶、暗船、海底電纜與漁撈熱點，聚焦你關注的資訊。", "url": "https://s0914712.github.io/taiwan-grayzone-monitor/index.html" },
-                    { "@type": "HowToStep", "position": 3, "name": "查看可疑船隻清單", "text": "在側邊欄或底部面板檢視依威脅分數排序的可疑船隻，點選任一船隻即可查看詳細資訊與風險指標。", "url": "https://s0914712.github.io/taiwan-grayzone-monitor/index.html" },
-                    { "@type": "HowToStep", "position": 4, "name": "回放軌跡動畫", "text": "開啟軌跡動畫頁面，動態回放船舶過去數日的航跡，觀察走暗、徘徊或海上旁靠等異常行為。", "url": "https://s0914712.github.io/taiwan-grayzone-monitor/ais-animation.html" },
-                    { "@type": "HowToStep", "position": 5, "name": "對照統計與軍演預測", "text": "在統計分析頁面查看暗船趨勢圖表與軍事演習預測指標，判讀整體海域態勢。", "url": "https://s0914712.github.io/taiwan-grayzone-monitor/statistics.html" }
-                ]
-            },
-            {
-                "@type": "FAQPage",
-                "inLanguage":"en",
-                "mainEntity": [
-                    {
-                        "@type": "Question",
-                        "name": "什麼是「暗船」(dark vessel)？",
-                        "acceptedAnswer": { "@type": "Answer", "text": "暗船是指關閉 AIS（船舶自動識別系統）訊號、無法被一般船舶追蹤系統偵測的船隻。本站透過 SAR 合成孔徑雷達衛星影像偵測這些未發送 AIS 訊號的船隻，並與 AIS 數據交叉比對，找出刻意「走暗」的可疑目標。" }
-                    },
-                    {
-                        "@type": "Question",
-                        "name": "資料從哪裡來？",
-                        "acceptedAnswer": { "@type": "Answer", "text": "船舶位置資料來自台灣港務局公開的 AIS 數據；暗船偵測來自 Global Fishing Watch 的 SAR 衛星影像；威脅評分方法則參考美國智庫 CSIS「Signals in the Swarm」報告的灰色地帶分析方法論。所有資料皆為開源公開資訊（OSINT）。" }
-                    },
-                    {
-                        "@type": "Question",
-                        "name": "資料多久更新一次？",
-                        "acceptedAnswer": { "@type": "Answer", "text": "AIS 船舶資料每 2 小時自動更新一次；完整資料管線（含暗船偵測、威脅評分、軌跡分析）每 12 小時執行一次；統計報告每週彙整。所有時間以 UTC（協調世界時）標示。" }
-                    },
-                    {
-                        "@type": "Question",
-                        "name": "如何判定一艘船「可疑」？",
-                        "acceptedAnswer": { "@type": "Answer", "text": "本站採用 8 項指標的加權評分系統，包括：靠近海底電纜並低速徘徊、之字形異常航行、頻繁變更船名或呼號（身分操弄）、長時間關閉 AIS（走暗）、AIS 位置造假、海上旁靠（STS）等。分數達到門檻的船隻會被標記為可疑並列入清單。" }
-                    },
-                    {
-                        "@type": "Question",
-                        "name": "海底電纜為什麼重要？",
-                        "acceptedAnswer": { "@type": "Answer", "text": "台灣超過 95% 的對外網路通訊依賴海底電纜，這些電纜密集通過台灣海峽。拖網漁船的錨泊與作業是電纜損壞的主因之一；當不明船隻在電纜路線附近長時間徘徊，便構成基礎設施安全威脅。" }
-                    },
-                    {
-                        "@type": "Question",
-                        "name": "這是官方政府網站嗎？",
-                        "acceptedAnswer": { "@type": "Answer", "text": "不是。本站是獨立的開源情報（OSINT）專案，所有資料來自公開來源，分析方法與程式碼皆公開於 GitHub，不代表任何政府或官方機構立場。" }
-                    }
-                ]
-            },
-            {
-                "@type": "SoftwareApplication",
-                "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#app",
-                "name": "Taiwan Gray Zone Monitor",
-                "alternateName": "台灣灰色地帶與海底電纜監測",
-                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/",
-                "applicationCategory": "SecurityApplication",
-                "operatingSystem": "Web",
-                "browserRequirements": "Requires JavaScript",
-                "inLanguage":"en",
-                "isAccessibleForFree": true,
-                "license": "https://github.com/s0914712/taiwan-grayzone-monitor/blob/main/LICENSE",
-                "publisher": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#org" },
-                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" },
-                "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-            }
-        ]
-    }
+    {"@context":"https://schema.org","@graph":[{"@type":"AboutPage","name":"About | Taiwan Gray Zone Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/en/intro.html","description":"An open-source OSINT project monitoring maritime gray-zone activity and submarine-cable security around Taiwan, with FAQs and a usage guide.","inLanguage":"en","isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/en/intro.html"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://s0914712.github.io/taiwan-grayzone-monitor/"},{"@type":"ListItem","position":2,"name":"About","item":"https://s0914712.github.io/taiwan-grayzone-monitor/en/intro.html"}]},{"@type":"HowTo","name":"How to Use the Taiwan Gray Zone & Submarine Cable Monitor","description":"A complete walkthrough from the live map, layer toggles, and the suspicious-vessel list to track-playback animation and statistical analysis.","inLanguage":"en","step":[{"@type":"HowToStep","position":1,"name":"Open the live monitoring map","text":"Enter from the homepage live map to see real-time vessel positions, dark-vessel detections, and submarine-cable routes in the waters around Taiwan.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"HowToStep","position":2,"name":"Toggle map layers","text":"Use the layer controls to show or hide vessels, dark vessels, submarine cables, and fishing hotspots, focusing on the information you care about.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"HowToStep","position":3,"name":"Check the suspicious-vessel list","text":"Review suspicious vessels ranked by threat score in the sidebar or bottom panel; click any vessel to see detailed information and risk indicators.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/index.html"},{"@type":"HowToStep","position":4,"name":"Replay the track animation","text":"Open the track-animation page to dynamically replay vessels' tracks over the past few days and observe anomalies such as going dark, loitering, or ship-to-ship transfers.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/ais-animation.html"},{"@type":"HowToStep","position":5,"name":"Compare statistics and exercise predictions","text":"On the statistics page, view dark-vessel trend charts and military-exercise prediction indicators to read the overall maritime situation.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/statistics.html"}]},{"@type":"FAQPage","inLanguage":"en","mainEntity":[{"@type":"Question","name":"What is a “dark vessel”?","acceptedAnswer":{"@type":"Answer","text":"A dark vessel is a ship that has switched off its AIS (Automatic Identification System) signal and so cannot be seen by ordinary vessel-tracking systems. This site detects such ships through SAR (Synthetic Aperture Radar) satellite imagery and cross-references them with AIS data to find suspicious targets that have deliberately gone dark."}},{"@type":"Question","name":"Where does the data come from?","acceptedAnswer":{"@type":"Answer","text":"Vessel position data comes from Taiwan Port Bureau's public AIS feed; dark-vessel detection comes from Global Fishing Watch's SAR satellite imagery; and the threat-scoring methodology draws on the gray-zone analysis in the US think tank CSIS's “Signals in the Swarm” report. All data is open-source intelligence (OSINT)."}},{"@type":"Question","name":"How often is the data updated?","acceptedAnswer":{"@type":"Answer","text":"AIS vessel data updates automatically every 2 hours; the full data pipeline (dark-vessel detection, threat scoring, and track analysis) runs every 12 hours; and statistical reports are compiled weekly. All times are shown in UTC (Coordinated Universal Time)."}},{"@type":"Question","name":"How is a vessel judged “suspicious”?","acceptedAnswer":{"@type":"Answer","text":"The site uses an 8-criterion weighted scoring system, including loitering at low speed near submarine cables, anomalous zigzag navigation, frequent changes of ship name or call sign (identity manipulation), going dark for long periods, AIS position spoofing, and ship-to-ship (STS) transfers. Vessels that reach the threshold are flagged as suspicious and listed."}},{"@type":"Question","name":"Why do submarine cables matter?","acceptedAnswer":{"@type":"Answer","text":"Over 95% of Taiwan's external internet communication depends on submarine cables, which run densely through the Taiwan Strait. Trawler anchoring and operations are a leading cause of cable damage; when unidentified ships loiter near cable routes for long periods it becomes a threat to infrastructure security."}},{"@type":"Question","name":"Is this an official government website?","acceptedAnswer":{"@type":"Answer","text":"No. This is an independent open-source intelligence (OSINT) project. All data comes from public sources, and the analysis methods and code are published on GitHub. It does not represent the position of any government or official body."}}]},{"@type":"SoftwareApplication","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#app","name":"Taiwan Gray Zone Monitor","alternateName":"台灣灰色地帶與海底電纜監測","url":"https://s0914712.github.io/taiwan-grayzone-monitor/","applicationCategory":"SecurityApplication","operatingSystem":"Web","browserRequirements":"Requires JavaScript","inLanguage":"en","isAccessibleForFree":true,"license":"https://github.com/s0914712/taiwan-grayzone-monitor/blob/main/LICENSE","publisher":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#org"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}]}
     </script>
 </head>
 
@@ -144,30 +60,23 @@
 
     <!-- Header -->
     <header class="header" style="position:sticky;top:0;z-index:100">
-        <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
+        <h1 data-i18n="title.index">🛰️ Taiwan Gray Zone &amp; Submarine Cable Monitor</h1>
         <div class="header-info">
-            <a href="../index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">灰色地帶監測</a>
-            <a href="blog.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.blog">深度文章</a>
-            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <a href="../index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">Gray Zone Monitor</a>
+            <a href="blog.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.blog">Articles</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">中</button>
         </div>
     </header>
 
     <!-- Hero -->
     <div class="intro-hero">
-        <h1 class="lang-zh-only" data-i18n="intro.hero_title">台灣周邊海域灰色地帶與海底電纜監測</h1>
-        <h1 class="lang-en-only">Gray Zone &amp; Submarine Cable Monitor around Taiwan</h1>
-        <p class="subtitle lang-zh-only" data-i18n="intro.hero_subtitle">開源衛星數據 &#x2022; 即時船舶追蹤 &#x2022; 海纜安全</p>
-        <p class="subtitle lang-en-only">Open Satellite Data &#x2022; Real-time Vessel Tracking &#x2022; Cable Security</p>
+                <h1 class="lang-en-only">Gray Zone &amp; Submarine Cable Monitor around Taiwan</h1>
+                <p class="subtitle lang-en-only">Open Satellite Data &#x2022; Real-time Vessel Tracking &#x2022; Cable Security</p>
     </div>
 
     <!-- Section 1: What is Gray Zone? -->
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2 data-i18n="intro.gz_title">🌊 什麼是灰色地帶活動？</h2>
-            <p data-i18n="intro.gz_p1">「灰色地帶」是指介於和平與戰爭之間的模糊狀態。在台灣周邊海域，這包括：大量漁船越界作業、船隻關閉 AIS 定位訊號成為「暗船」、海上民兵偽裝為漁船活動，以及與軍事演習高度相關的異常船舶行為。</p>
-            <p data-i18n="intro.gz_p2">這些活動不構成傳統意義上的軍事衝突，卻持續侵蝕海上秩序、消耗監測資源，並可能為進一步行動創造條件。透過衛星與 AIS 數據的交叉比對，我們能追蹤這些隱蔽的海上活動。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>🌊 What is Gray Zone Activity?</h2>
             <p>The "gray zone" refers to the ambiguous space between peace and war. Around Taiwan, this includes: fishing fleets crossing maritime boundaries, vessels disabling AIS transponders to become "dark ships," maritime militia disguised as fishing boats, and anomalous vessel behavior closely correlated with military exercises.</p>
             <p>These activities fall short of traditional military conflict but continuously erode maritime order, drain monitoring resources, and may create conditions for further action. By cross-referencing satellite imagery and AIS data, we can track these covert maritime activities.</p>
@@ -176,12 +85,7 @@
 
     <!-- Section 2: Submarine Cables -->
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2 data-i18n="intro.cable_title">🔌 海底電纜與灰色地帶</h2>
-            <p data-i18n="intro.cable_p1">台灣超過 95% 的對外網路通訊依賴海底電纜。這些電纜集中通過台灣海峽與周邊海域——正是灰色地帶活動最頻繁的區域。</p>
-            <p data-i18n="intro.cable_p2">拖網漁船的錨泊與作業是電纜損壞的主因之一。當大量不明船隻在電纜路線附近活動，便構成潛在威脅。本站地圖圖層可疊加顯示海底電纜路線與船隻分布，協助識別風險。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>🔌 Submarine Cables & the Gray Zone</h2>
             <p>Over 95% of Taiwan's international internet traffic relies on submarine cables. These cables pass through the Taiwan Strait and surrounding waters — precisely where gray zone activity is most intense.</p>
             <p>Anchor dragging by fishing trawlers is a leading cause of cable damage. When unidentified vessels operate near cable routes, they pose a potential threat. Our map layers overlay submarine cable routes with vessel positions to help identify risks.</p>
@@ -190,10 +94,7 @@
 
     <!-- Section 3: Tools -->
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2 data-i18n="intro.tools_title">🧰 監測工具</h2>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>🧰 Monitoring Tools</h2>
         </div>
     </section>
@@ -201,83 +102,44 @@
     <div class="intro-tools-grid">
         <a href="../index.html" class="intro-tool-card">
             <div class="tool-icon">🛰️</div>
-            <h3 class="lang-zh-only">即時監測地圖</h3>
-            <h3 class="lang-en-only">Live Monitor Map</h3>
-            <p class="lang-zh-only">即時顯示船隻位置、暗船偵測、海底電纜路線與漁撈熱點</p>
-            <p class="lang-en-only">Real-time vessel positions, dark vessel detections, cable routes & fishing hotspots</p>
+                        <h3 class="lang-en-only">Live Monitor Map</h3>
+                        <p class="lang-en-only">Real-time vessel positions, dark vessel detections, cable routes & fishing hotspots</p>
         </a>
         <a href="../dark-vessels.html" class="intro-tool-card">
             <div class="tool-icon">🔦</div>
-            <h3 class="lang-zh-only">暗船偵測</h3>
-            <h3 class="lang-en-only">Dark Vessel Detection</h3>
-            <p class="lang-zh-only">SAR 衛星偵測無 AIS 訊號的船隻，按區域分析分布</p>
-            <p class="lang-en-only">SAR satellite detection of vessels without AIS, regional analysis</p>
+                        <h3 class="lang-en-only">Dark Vessel Detection</h3>
+                        <p class="lang-en-only">SAR satellite detection of vessels without AIS, regional analysis</p>
         </a>
         <a href="../statistics.html" class="intro-tool-card">
             <div class="tool-icon">📊</div>
-            <h3 class="lang-zh-only">統計分析</h3>
-            <h3 class="lang-en-only">Statistics & Analysis</h3>
-            <p class="lang-zh-only">趨勢圖表、軍事演習預測指標、暗船與軍事活動相關性</p>
-            <p class="lang-en-only">Trend charts, military exercise prediction indicators & correlations</p>
+                        <h3 class="lang-en-only">Statistics & Analysis</h3>
+                        <p class="lang-en-only">Trend charts, military exercise prediction indicators & correlations</p>
         </a>
         <a href="../ais-animation.html" class="intro-tool-card">
             <div class="tool-icon">📡</div>
-            <h3 class="lang-zh-only">軌跡動畫</h3>
-            <h3 class="lang-en-only">AIS Track Animation</h3>
-            <p class="lang-zh-only">船位動態回放＋灰區事件、聚焦敘事、區域分析、走暗與匯出</p>
-            <p class="lang-en-only">Track playback + gray-zone events, focus narrative, area analysis, going-dark & export</p>
+                        <h3 class="lang-en-only">AIS Track Animation</h3>
+                        <p class="lang-en-only">Track playback + gray-zone events, focus narrative, area analysis, going-dark & export</p>
         </a>
         <a href="../cn-fishing-animation.html" class="intro-tool-card">
             <div class="tool-icon">🐟</div>
-            <h3 class="lang-zh-only">大陸漁船追蹤</h3>
-            <h3 class="lang-en-only">Chinese Fishing Vessels</h3>
-            <p class="lang-zh-only">依省份分析中國漁船在台灣周邊的活動分布</p>
-            <p class="lang-en-only">Chinese fishing vessel activity by province around Taiwan</p>
+                        <h3 class="lang-en-only">Chinese Fishing Vessels</h3>
+                        <p class="lang-en-only">Chinese fishing vessel activity by province around Taiwan</p>
         </a>
         <a href="../identity-history.html" class="intro-tool-card">
             <div class="tool-icon">🔄</div>
-            <h3 class="lang-zh-only">身分追蹤</h3>
-            <h3 class="lang-en-only">Identity Tracking</h3>
-            <p class="lang-zh-only">偵測船隻變更名稱、呼號或 IMO 號碼等可疑行為</p>
-            <p class="lang-en-only">Detect vessels changing names, call signs, or IMO numbers</p>
+                        <h3 class="lang-en-only">Identity Tracking</h3>
+                        <p class="lang-en-only">Detect vessels changing names, call signs, or IMO numbers</p>
         </a>
         <a href="research-submarine-cable-legal.html" class="intro-tool-card">
             <div class="tool-icon">📜</div>
-            <h3 class="lang-zh-only">海底電纜法律分析</h3>
-            <h3 class="lang-en-only">Cable Legal Analysis</h3>
-            <p class="lang-zh-only">影子船隊灰色地帶威脅、UNCLOS 法律漏洞與國際合作框架</p>
-            <p class="lang-en-only">Shadow fleet gray zone threats, UNCLOS legal gaps & international cooperation</p>
+                        <h3 class="lang-en-only">Cable Legal Analysis</h3>
+                        <p class="lang-en-only">Shadow fleet gray zone threats, UNCLOS legal gaps & international cooperation</p>
         </a>
     </div>
 
     <!-- Section 4: How to Use (HowTo) -->
     <section class="intro-section intro-howto">
-        <div class="lang-zh-only">
-            <h2>🧭 如何使用本監測站</h2>
-            <ol class="howto-steps">
-                <li>
-                    <h3>步驟 1：開啟即時監測地圖</h3>
-                    <p>從<a href="../index.html">首頁即時地圖</a>進入，查看台灣周邊海域的即時船舶位置、暗船偵測點與海底電纜路線。</p>
-                </li>
-                <li>
-                    <h3>步驟 2：切換地圖圖層</h3>
-                    <p>使用圖層控制開關，顯示或隱藏船舶、暗船、海底電纜與漁撈熱點，聚焦你關注的資訊。</p>
-                </li>
-                <li>
-                    <h3>步驟 3：查看可疑船隻清單</h3>
-                    <p>在側邊欄或底部面板檢視依威脅分數排序的可疑船隻，點選任一船隻即可查看詳細資訊與風險指標。</p>
-                </li>
-                <li>
-                    <h3>步驟 4：回放軌跡動畫</h3>
-                    <p>開啟<a href="../ais-animation.html">軌跡動畫</a>頁面，動態回放船舶過去數日的航跡，觀察走暗、徘徊或海上旁靠等異常行為。</p>
-                </li>
-                <li>
-                    <h3>步驟 5：對照統計與軍演預測</h3>
-                    <p>在<a href="../statistics.html">統計分析</a>頁面查看暗船趨勢圖表與軍事演習預測指標，判讀整體海域態勢。</p>
-                </li>
-            </ol>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>🧭 How to Use This Monitor</h2>
             <ol class="howto-steps">
                 <li>
@@ -306,22 +168,7 @@
 
     <!-- Section 5: FAQ (FAQPage) -->
     <section class="intro-section intro-faq">
-        <div class="lang-zh-only">
-            <h2>❓ 常見問題 FAQ</h2>
-            <h3>什麼是「暗船」(dark vessel)？</h3>
-            <p>暗船是指關閉 AIS（船舶自動識別系統）訊號、無法被一般船舶追蹤系統偵測的船隻。本站透過 SAR 合成孔徑雷達衛星影像偵測這些未發送 AIS 訊號的船隻，並與 AIS 數據交叉比對，找出刻意「走暗」的可疑目標。</p>
-            <h3>資料從哪裡來？</h3>
-            <p>船舶位置資料來自台灣港務局公開的 AIS 數據；暗船偵測來自 Global Fishing Watch 的 SAR 衛星影像；威脅評分方法則參考美國智庫 CSIS「Signals in the Swarm」報告的灰色地帶分析方法論。所有資料皆為開源公開資訊（OSINT）。</p>
-            <h3>資料多久更新一次？</h3>
-            <p>AIS 船舶資料每 2 小時自動更新一次；完整資料管線（含暗船偵測、威脅評分、軌跡分析）每 12 小時執行一次；統計報告每週彙整。所有時間以 UTC（協調世界時）標示。</p>
-            <h3>如何判定一艘船「可疑」？</h3>
-            <p>本站採用 8 項指標的加權評分系統，包括：靠近海底電纜並低速徘徊、之字形異常航行、頻繁變更船名或呼號（身分操弄）、長時間關閉 AIS（走暗）、AIS 位置造假、海上旁靠（STS）等。分數達到門檻的船隻會被標記為可疑並列入清單。</p>
-            <h3>海底電纜為什麼重要？</h3>
-            <p>台灣超過 95% 的對外網路通訊依賴海底電纜，這些電纜密集通過台灣海峽。拖網漁船的錨泊與作業是電纜損壞的主因之一；當不明船隻在電纜路線附近長時間徘徊，便構成基礎設施安全威脅。</p>
-            <h3>這是官方政府網站嗎？</h3>
-            <p>不是。本站是獨立的開源情報（OSINT）專案，所有資料來自公開來源，分析方法與程式碼皆公開於 GitHub，不代表任何政府或官方機構立場。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>❓ Frequently Asked Questions</h2>
             <h3>What is a "dark vessel"?</h3>
             <p>A dark vessel is a ship that has switched off its AIS (Automatic Identification System) transponder so it cannot be tracked by ordinary vessel-tracking systems. This site detects them using SAR (synthetic aperture radar) satellite imagery and cross-references the detections against AIS data to surface targets that have deliberately "gone dark."</p>
@@ -340,11 +187,7 @@
 
     <!-- 深度文章 Section -->
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>📖 深度文章系列</h2>
-            <p>從海底電纜的基礎知識到台灣的執法挑戰——六篇深度文章帶你完整了解這場無形的海底戰爭。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>📖 In-Depth Article Series</h2>
             <p>From submarine cable fundamentals to Taiwan's enforcement challenges — six articles covering the full picture of the invisible underwater war.</p>
         </div>
@@ -352,62 +195,53 @@
             <a href="blog-what-is-submarine-cable.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
                 <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">01</span>
                 <div>
-                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">什麼是海底電纜？</div>
-                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">What Are Submarine Cables?</div>
-                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">基礎知識 · 8 min</div>
+                                        <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">What Are Submarine Cables?</div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">Basics · 8 min</div>
                 </div>
             </a>
             <a href="blog-what-is-ais.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
                 <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">02</span>
                 <div>
-                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">AIS 是什麼？暗船偵測</div>
-                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">What Is AIS? Dark Vessels</div>
+                                        <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">What Is AIS? Dark Vessels</div>
                     <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">AIS · SAR · 10 min</div>
                 </div>
             </a>
             <a href="blog-taiwan-cable-status.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
                 <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">03</span>
                 <div>
-                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">我國海底電纜現況</div>
-                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Taiwan's Cable Situation</div>
-                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">台灣 · 馬祖 · 9 min</div>
+                                        <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Taiwan's Cable Situation</div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">Taiwan · Matsu · 9 min</div>
                 </div>
             </a>
             <a href="blog-cable-threats.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
                 <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">04</span>
                 <div>
-                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">海底電纜所受到的威脅</div>
-                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Threats to Submarine Cables</div>
-                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">威脅 · 影子船隊 · 11 min</div>
+                                        <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Threats to Submarine Cables</div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">Threats · Shadow Fleet · 11 min</div>
                 </div>
             </a>
             <a href="blog-taiwan-enforcement.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
                 <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">05</span>
                 <div>
-                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">我國執法框架與挑戰</div>
-                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Taiwan's Enforcement Framework</div>
-                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">執法 · UNCLOS · 12 min</div>
+                                        <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Taiwan's Enforcement Framework</div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">Enforcement · UNCLOS · 12 min</div>
                 </div>
             </a>
             <a href="blog-methodology.html" style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:7px;text-decoration:none;transition:border-color .2s">
                 <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,245,255,.45);font-weight:700;padding-top:2px;min-width:18px">06</span>
                 <div>
-                    <div class="lang-zh-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">本網站所使用之方法</div>
-                    <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Our Methodology</div>
-                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">CSIS · 開源 · 13 min</div>
+                                        <div class="lang-en-only" style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">Our Methodology</div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:3px;font-family:'JetBrains Mono',monospace">CSIS · Open Source · 13 min</div>
                 </div>
             </a>
         </div>
-        <a href="blog.html" class="lang-zh-only" style="display:inline-block;font-size:12px;color:var(--accent-cyan);text-decoration:none;padding:6px 14px;border:1px solid rgba(0,245,255,.3);border-radius:4px;font-family:'JetBrains Mono',monospace;transition:background .2s">→ 查看全部文章 / All Articles</a>
-        <a href="blog.html" class="lang-en-only" style="display:inline-block;font-size:12px;color:var(--accent-cyan);text-decoration:none;padding:6px 14px;border:1px solid rgba(0,245,255,.3);border-radius:4px;font-family:'JetBrains Mono',monospace;transition:background .2s">→ View All Articles</a>
+                <a href="blog.html" class="lang-en-only" style="display:inline-block;font-size:12px;color:var(--accent-cyan);text-decoration:none;padding:6px 14px;border:1px solid rgba(0,245,255,.3);border-radius:4px;font-family:'JetBrains Mono',monospace;transition:background .2s">→ View All Articles</a>
     </section>
 
     <!-- CTA -->
     <div class="intro-cta">
-        <a href="../index.html" class="lang-zh-only" data-i18n="intro.cta">開始監測 →</a>
-        <a href="../index.html" class="lang-en-only">Start Monitoring →</a>
-        <a href="blog.html" class="lang-zh-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">📖 深度文章</a>
-        <a href="blog.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">📖 In-Depth Articles</a>
+                <a href="../index.html" class="lang-en-only">Start Monitoring →</a>
+                <a href="blog.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">📖 In-Depth Articles</a>
     </div>
 
     <footer class="site-footer">
