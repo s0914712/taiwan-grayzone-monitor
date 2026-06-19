@@ -49,6 +49,7 @@ STATIC_PAGES = [
     "blog-what-is-ais-spoofing.html",
     "blog-what-is-maritime-gray-zone.html",
     "blog-what-is-shadow-fleet.html",
+    "blog-taiwan-maritime-zones.html",
     "blog-gray-zone-glossary.html",
 ]
 EN_SET = set(STATIC_PAGES)
@@ -142,6 +143,12 @@ EN_META = {
         "social": "What Is a Shadow Fleet?",
         "desc": "A shadow fleet is a group of vessels that hide ownership and identity to evade sanctions and inspection — through flags of convenience, going dark and AIS spoofing, ship-to-ship transfers, and shell companies. How it operates and why it matters for Taiwan's submarine cables.",
         "kw": "shadow fleet, dark fleet, sanctions evasion, flag of convenience, ship-to-ship transfer, AIS spoofing, going dark, submarine cable, Taiwan Strait, OSINT",
+    },
+    "blog-taiwan-maritime-zones.html": {
+        "title": f"Taiwan's Maritime Zones: Baseline, Territorial Sea, Contiguous Zone & EEZ | {SITE}",
+        "social": "Taiwan's Maritime Zones Explained",
+        "desc": "Territorial baseline, 12 nm territorial sea, 24 nm contiguous zone, and 200 nm EEZ — what each maritime zone means under UNCLOS, how this site's baseline / 12 nm / 24 nm map layers are used, and the difference between legal delimitation and a risk-analysis aid.",
+        "kw": "territorial baseline, territorial sea, contiguous zone, EEZ, UNCLOS, maritime zones, Taiwan, 12 nautical miles, 24 nautical miles, 200 nautical miles",
     },
     "blog-gray-zone-glossary.html": {
         "title": f"Taiwan Maritime Gray-Zone Glossary (Bilingual) | {SITE}",
@@ -289,6 +296,16 @@ EN_FAQ = {
         ("Does being labeled a shadow fleet vessel mean it is illegal?",
          "Not necessarily. Flags of convenience, transfers at sea, and name changes are lawful shipping practices in many situations. A shadow fleet is a risk pattern formed by a combination of anomalies — a lead worth investigating, not a finding of wrongdoing."),
     ],
+    "blog-taiwan-maritime-zones.html": [
+        ("What is a territorial baseline?",
+         "The territorial baseline is the line from which each zone's width is measured. It usually follows the coast's low-water line (the normal baseline), or joins appropriate points as straight baselines where the coast is broken or has offshore islands. Every zone's width is measured seaward from this baseline."),
+        ("What's the difference between the territorial sea, contiguous zone, and EEZ?",
+         "The territorial sea (12 nm) is under the coastal state's sovereignty; within the contiguous zone (24 nm) the state may exercise the control needed over customs, fiscal, immigration, and sanitary matters; the EEZ (200 nm) gives the state sovereign rights over natural resources, while other states keep the freedoms of navigation and cable-laying."),
+        ("Are the zones on this site's map official boundaries?",
+         "No. The baseline and 12/24 nm bands are drawn approximately from public data for visualization and risk analysis. They are not an official legal delimitation and imply no sovereignty or border claim."),
+        ("How do maritime zones relate to gray-zone monitoring?",
+         "Which zone a vessel is in shapes the legal meaning and suspiciousness of its behavior. A foreign ship loitering inside the territorial sea, or lingering anomalously in the contiguous zone or near a cable route, warrants more caution than one transiting the high seas. This site overlays vessels with the zones as a supporting lead for threat assessment."),
+    ],
     "blog-what-is-maritime-gray-zone.html": [
         ("What is maritime gray-zone activity?",
          "Gray-zone activity is coercion or provocation deliberately kept below the threshold of open armed conflict, using ambiguity and deniability to achieve its aims. At sea, common forms include fishing-vessel swarms, switching off and spoofing AIS, ship-to-ship transfers, shadow-fleet transshipment, and threats to submarine cables."),
@@ -323,6 +340,7 @@ EN_BREADCRUMB_LAST = {
     "blog-what-is-ais-spoofing.html": "What Is AIS Spoofing?",
     "blog-what-is-maritime-gray-zone.html": "What Is Maritime Gray-Zone Activity?",
     "blog-what-is-shadow-fleet.html": "What Is a Shadow Fleet?",
+    "blog-taiwan-maritime-zones.html": "Taiwan's Maritime Zones",
     "blog-gray-zone-glossary.html": "Gray-Zone Glossary",
     "intro.html": "About",
     "research-submarine-cable-legal.html": "Research",
@@ -404,6 +422,7 @@ EN_TEXT = {
     "方法": "Method",
     "開源": "Open Source",
     "法律分析": "Legal Analysis",
+    "海域分區": "Maritime Zones",
     "海巡署": "Coast Guard",
     "權宜船": "Flag of Convenience",
     "法律戰": "Lawfare",
@@ -545,6 +564,18 @@ def _translate_node(node: dict, page: str, has_ai_summary: bool) -> None:
                 fn = u[len(BASE):].split("#")[0].split("?")[0]
                 if fn in EN_META:
                     item["name"] = EN_META[fn]["social"]
+
+    # DefinedTermSet / DefinedTerm — make the glossary schema English-only:
+    # drop the Chinese alternateName and the Chinese half of bilingual
+    # "English / 中文" definitions, matching the English-only DOM.
+    if types & {"DefinedTermSet", "DefinedTerm"}:
+        node.pop("alternateName", None)
+        desc = node.get("description")
+        if isinstance(desc, str) and " / " in desc:
+            kept = [s for s in desc.split(" / ")
+                    if not re.search(r"[一-鿿]", s)]
+            if kept:
+                node["description"] = " / ".join(kept).strip()
 
     # HowTo — only the intro usage walkthrough; translate name/desc/steps.
     if "HowTo" in types and page == "intro.html":
