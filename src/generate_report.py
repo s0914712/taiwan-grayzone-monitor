@@ -111,14 +111,52 @@ def _top_rows(top):
 def render_html(s):
     d = s["date"]
     url = f"{BASE}reports/{d}.html"
+    dataset_url = f"{BASE}reports/{d}.json"
+    # The report is an Article-style Report backed by a machine-readable
+    # Dataset (the day's JSON), which is in turn derived from data.json.
     ld = {
-        "@context": "https://schema.org", "@type": "Report",
+        "@context": "https://schema.org", "@type": ["Report", "Article"],
         "name": f"Taiwan Gray Zone Maritime Daily Report — {d}",
+        "headline": f"Taiwan Gray Zone Maritime Daily Report — {d}",
         "datePublished": d, "dateModified": s["generated_at"], "url": url,
+        "mainEntityOfPage": {"@type": "WebPage", "@id": url},
         "inLanguage": ["zh-TW", "en"], "isAccessibleForFree": True,
+        "license": "https://opensource.org/licenses/MIT",
+        "author": {"@id": BASE + "#org"},
         "publisher": {"@id": BASE + "#org"},
         "isPartOf": {"@id": BASE + "#website"},
-        "about": [{"@type": "Thing", "name": "Taiwan maritime gray-zone activity"}],
+        "about": [
+            {"@type": "Thing", "name": "Taiwan maritime gray-zone activity"},
+            {"@type": "Thing", "name": "Submarine cable security"},
+            {"@type": "Thing", "name": "Dark vessel detection"},
+        ],
+        "isBasedOn": {"@id": dataset_url},
+        "mentions": [
+            {"@type": "WebSite", "@id": BASE + "#website",
+             "url": BASE, "name": "Taiwan Gray Zone Monitor"},
+            {"@type": "Article",
+             "@id": BASE + "blog-methodology.html",
+             "url": BASE + "blog-methodology.html",
+             "name": "How vessels are scored — methodology"},
+        ],
+    }
+    dataset = {
+        "@context": "https://schema.org", "@type": "Dataset",
+        "@id": dataset_url,
+        "name": f"Taiwan Gray Zone Maritime Daily Report Data — {d}",
+        "description": ("Machine-readable daily summary of maritime "
+                        "gray-zone activity around Taiwan: AIS vessel count, "
+                        "SAR dark vessels, suspicious and critical vessels, "
+                        "near-cable and suspicious ship-to-ship counts, and "
+                        "the day's top suspicious vessels."),
+        "datePublished": d, "dateModified": s["generated_at"],
+        "url": url, "contentUrl": dataset_url,
+        "encodingFormat": "application/json", "inLanguage": "en",
+        "isAccessibleForFree": True,
+        "license": "https://opensource.org/licenses/MIT",
+        "creator": {"@id": BASE + "#org"},
+        "publisher": {"@id": BASE + "#org"},
+        "isBasedOn": f"{BASE}data.json",
     }
     breadcrumb = {
         "@context": "https://schema.org", "@type": "BreadcrumbList",
@@ -178,6 +216,9 @@ body.lang-en .lang-zh-only{{display:none!important}}body:not(.lang-en) .lang-en-
 </style>
 <script type="application/ld+json">
 {json.dumps(ld, ensure_ascii=False)}
+</script>
+<script type="application/ld+json">
+{json.dumps(dataset, ensure_ascii=False)}
 </script>
 <script type="application/ld+json">
 {json.dumps(breadcrumb, ensure_ascii=False)}

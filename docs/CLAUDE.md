@@ -94,6 +94,15 @@ i18n.t('app.mmsi')        // simple
 i18n.t('idx.ago_h', 24)   // {0} replacement
 ```
 
+### Bilingual evergreen articles + `/en/` mirror
+`blog-*.html` explainer/pillar/glossary pages carry both languages inline
+(`lang-zh-only` / `lang-en-only` + `data-i18n`) and toggle client-side. Their
+English URLs under `docs/en/` are **generated** by `src/generate_i18n_pages.py`
+(do not hand-edit `docs/en/*.html`). Each article has Article/Breadcrumb/FAQ
+JSON-LD (+`mainEntityOfPage`/`speakable`), a visible `.ai-summary` abstract, and
+a shared bilingual `.topic-cluster` footer (CSS in `main.css`) inserted before
+`<footer>`. Adding an article → see `src/CLAUDE.md` (`generate_i18n_pages.py`).
+
 ### Onboarding Tour
 - 5-card carousel, first visit only
 - `localStorage('onboarding-seen')` tracks completion

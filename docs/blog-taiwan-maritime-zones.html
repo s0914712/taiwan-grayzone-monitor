@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>台灣海域分區：領海基線、領海、鄰接區與經濟海域 | Taiwan Gray Zone Monitor</title>
+    <meta name="description" content="領海基線、領海（12 浬）、鄰接區（24 浬）與專屬經濟海域（200 浬）各代表什麼？了解 UNCLOS 的海域分區、本站地圖的領海／鄰接區圖層如何使用，以及「法律劃界」與「風險分析輔助」的差別。">
+    <meta name="keywords" content="領海基線,領海,鄰接區,專屬經濟海域,EEZ,UNCLOS,海域分區,台灣,12浬,24浬,200浬,maritime zones">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-maritime-zones.html">
+    <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-maritime-zones.html">
+    <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/en/blog-taiwan-maritime-zones.html">
+    <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-maritime-zones.html">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="台灣海域分區：領海基線、領海、鄰接區與經濟海域">
+    <meta property="og:description" content="從領海基線到 200 浬經濟海域——UNCLOS 的海域分區怎麼劃，本站地圖的領海／鄰接區圖層如何使用，完整解說。">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-maritime-zones.html">
+    <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="台灣海域分區：領海基線、領海、鄰接區與經濟海域">
+    <meta name="twitter:description" content="從領海基線到 200 浬經濟海域——UNCLOS 的海域分區怎麼劃，本站圖層如何使用。">
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0f1c">
+    <style>
+    .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
+    .fact-box{background:var(--bg-secondary);border:1px solid rgba(0,245,255,.15);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
+    .fact-box strong{color:var(--accent-cyan)}
+    .fact-title{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent-cyan);font-weight:600;letter-spacing:1px;margin-bottom:8px;text-transform:uppercase}
+    .series-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+    .series-chip{padding:5px 10px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:4px;font-size:10px;color:var(--text-secondary);text-decoration:none;font-family:'JetBrains Mono',monospace;transition:all .2s}
+    .series-chip:hover,.series-chip.active{border-color:var(--accent-cyan);color:var(--accent-cyan);background:rgba(0,245,255,.08)}
+    .dark-reason{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:6px;margin:8px 0;font-size:12px}
+    .dark-reason-icon{font-size:18px;flex-shrink:0;margin-top:1px;font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-weight:600}
+    .dark-reason-text{color:var(--text-secondary);line-height:1.7}
+    .dark-reason-text strong{color:var(--text-primary);display:block;margin-bottom:2px}
+    .alert-box{background:rgba(255,77,77,.06);border:1px solid rgba(255,77,77,.2);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
+    .alert-box strong{color:#ff6b6b}
+    .faq-section{margin:16px 0}
+    .faq-item{border:1px solid var(--border-glow);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--bg-card)}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text-primary);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:'+';font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);font-size:18px;flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{transform:rotate(45deg)}
+    .faq-item summary:hover{color:var(--accent-cyan)}
+    .faq-answer{padding:0 18px 14px;font-size:12px;line-height:1.9;color:var(--text-secondary)}
+    body.lang-en .lang-zh-only{display:none!important}body:not(.lang-en) .lang-en-only{display:none!important}
+    </style>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":["Article","TechArticle"],"headline":"台灣海域分區：領海基線、領海、鄰接區與經濟海域 — Taiwan's Maritime Zones Explained","description":"領海基線、領海（12 浬）、鄰接區（24 浬）與專屬經濟海域（200 浬）各代表什麼。本文說明 UNCLOS 的海域分區、本站地圖的領海／鄰接區圖層如何使用，以及法律劃界與風險分析輔助的差別。An explainer of the UNCLOS maritime zones around Taiwan and how this site uses its baseline / 12 nm / 24 nm map layers.","url":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-maritime-zones.html","datePublished":"2026-06-19","dateModified":"2026-06-19","inLanguage":["zh-TW","en"],"author":{"@type":"Organization","name":"Taiwan Gray Zone & Submarine Cable Monitor","url":"https://s0914712.github.io/taiwan-grayzone-monitor/"},"publisher":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#org"},"isPartOf":{"@id":"https://s0914712.github.io/taiwan-grayzone-monitor/#website"},"mentions":{"@type":"Article","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/research-submarine-cable-legal.html"},"about":[{"@type":"Thing","name":"Territorial Baseline"},{"@type":"Thing","name":"Territorial Sea"},{"@type":"Thing","name":"Contiguous Zone"},{"@type":"Thing","name":"Exclusive Economic Zone"},{"@type":"Thing","name":"UNCLOS"}],"mainEntityOfPage":{"@type":"WebPage","@id":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-maritime-zones.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":[".ai-summary"]}}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://s0914712.github.io/taiwan-grayzone-monitor/"},{"@type":"ListItem","position":2,"name":"深度文章","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog.html"},{"@type":"ListItem","position":3,"name":"台灣海域分區","item":"https://s0914712.github.io/taiwan-grayzone-monitor/blog-taiwan-maritime-zones.html"}]}
+    </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"什麼是領海基線？","acceptedAnswer":{"@type":"Answer","text":"領海基線是測量各海域寬度的起算線。通常沿用海岸低潮線（正常基線），或在海岸破碎、有外島時，連接適當點劃出直線基線。所有海域（領海、鄰接區、專屬經濟海域）的寬度，都是從這條基線「向外海算」的。"}},{"@type":"Question","name":"領海、鄰接區、專屬經濟海域有什麼不同？","acceptedAnswer":{"@type":"Answer","text":"領海（自基線起 12 浬）是沿海國主權所及的海域；鄰接區（24 浬）內沿海國可對海關、財政、移民與衛生事項行使必要管制；專屬經濟海域（200 浬）則賦予沿海國對自然資源的主權權利，但他國仍享有航行與鋪設電纜的自由。"}},{"@type":"Question","name":"本站地圖上的領海／鄰接區範圍是官方劃界嗎？","acceptedAnswer":{"@type":"Answer","text":"不是。本站的基線與 12／24 浬範圍是依公開資料近似繪製，供視覺化與風險分析參考，並非官方法律劃界，也不代表任何主權或邊界主張。"}},{"@type":"Question","name":"海域分區和灰色地帶監測有什麼關係？","acceptedAnswer":{"@type":"Answer","text":"船舶位於哪個海域，會影響其行為的法律意涵與可疑程度。例如外國船在領海內長時間徘徊、或在鄰接區／電纜路線附近異常停留，比在公海航行更值得警戒。本站把船舶與海域範圍疊圖，作為威脅研判的輔助線索。"}}]}
+    </script>
+</head>
+<body>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <header class="header" style="position:sticky;top:0;z-index:100">
+        <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
+        <div class="header-info">
+            <a href="index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">深度文章</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+        </div>
+    </header>
+
+    <div class="intro-hero">
+        <h1 class="lang-zh-only">台灣海域分區</h1>
+        <h1 class="lang-en-only">Taiwan's Maritime Zones</h1>
+        <p class="subtitle lang-zh-only">領海基線 &#x2022; 領海 &#x2022; 鄰接區 &#x2022; 專屬經濟海域</p>
+        <p class="subtitle lang-en-only">Baseline &#x2022; Territorial Sea &#x2022; Contiguous Zone &#x2022; EEZ</p>
+    </div>
+
+    <section class="ai-summary" aria-label="頁面摘要 Page summary">
+        <h2 class="lang-zh-only">本頁重點</h2>
+        <h2 class="lang-en-only">In short</h2>
+        <p class="lang-zh-only">海域分區是依《聯合國海洋法公約》（UNCLOS），從<strong>領海基線</strong>向外海劃出的一系列範圍：<strong>領海（12 浬）、鄰接區（24 浬）、專屬經濟海域（200 浬）</strong>。離岸越遠，沿海國的權利越有限、他國的自由越大。本站地圖可疊上基線與 12／24 浬範圍，但這些線是<strong>近似的分析輔助，並非官方法律劃界</strong>。</p>
+        <p class="lang-en-only">Maritime zones are a series of bands measured seaward from a <strong>territorial baseline</strong> under UNCLOS: the <strong>territorial sea (12 nm), contiguous zone (24 nm), and exclusive economic zone (200 nm)</strong>. The farther offshore, the more limited the coastal state's rights and the greater other states' freedoms. This site can overlay the baseline and 12/24 nm bands, but those lines are an <strong>approximate analysis aid, not an official legal delimitation</strong>.</p>
+        <ul>
+            <li class="lang-zh-only">起算點：所有寬度都從領海基線「向外海」量起。</li>
+            <li class="lang-en-only">Origin: every width is measured seaward from the territorial baseline.</li>
+            <li class="lang-zh-only">船舶位於哪個海域，影響其行為的法律意涵與可疑程度。</li>
+            <li class="lang-en-only">Which zone a ship is in shapes the legal meaning — and suspiciousness — of its behavior.</li>
+        </ul>
+    </section>
+
+    <section class="intro-section">
+        <div class="series-nav">
+            <span style="font-size:10px;color:rgba(0,245,255,.4);font-family:'JetBrains Mono',monospace;align-self:center">延伸閱讀 RELATED →</span>
+            <a href="blog-taiwan-enforcement.html" class="series-chip">執法</a>
+            <a href="research-submarine-cable-legal.html" class="series-chip">學術研究</a>
+            <a href="blog-gray-zone-glossary.html#baseline" class="series-chip">詞彙表</a>
+            <a href="blog-methodology.html" class="series-chip">方法論</a>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <div class="story-hook">
+                一艘船停在距離台灣海岸 13 浬的海面上——剛好在領海之外、卻深深落在鄰接區之內。它算不算「在台灣的水域裡」？<br><br>
+                答案，取決於幾條看不見、卻從一條基線往外延伸的界線。
+            </div>
+            <h2>什麼是海域分區與領海基線？</h2>
+            <p>《聯合國海洋法公約》（UNCLOS）把海洋依「離岸距離」劃成數個法律地位不同的海域。一切的起點，是<strong>領海基線</strong>——通常沿用海岸的低潮線（正常基線），或在海岸破碎、外島眾多時，連接適當的點劃出<strong>直線基線</strong>。</p>
+            <p>關鍵在於：領海、鄰接區、專屬經濟海域的寬度，<strong>全都是從這條基線「向外海」量起</strong>，而不是從海岸線本身。越往外海，沿海國的權利越受限，他國的航行與鋪設電纜等自由則越大。</p>
+        </div>
+        <div class="lang-en-only">
+            <div class="story-hook">
+                A ship sits 13 nautical miles off Taiwan's coast — just outside the territorial sea, yet well inside the contiguous zone. Is it "in Taiwan's waters"?<br><br>
+                The answer depends on a few invisible lines, all drawn outward from a single baseline.
+            </div>
+            <h2>What Are Maritime Zones and the Territorial Baseline?</h2>
+            <p>The UN Convention on the Law of the Sea (UNCLOS) divides the ocean by distance from shore into bands with different legal status. The starting point is the <strong>territorial baseline</strong> — usually the low-water line along the coast (the normal baseline), or, where the coast is broken or fringed with islands, <strong>straight baselines</strong> joining appropriate points.</p>
+            <p>The key point: the widths of the territorial sea, contiguous zone, and EEZ are <strong>all measured seaward from this baseline</strong>, not from the shoreline itself. The farther out, the more limited the coastal state's rights and the greater other states' freedoms of navigation and cable-laying.</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>四個海域，由內而外</h2>
+            <div class="dark-reason"><div class="dark-reason-icon">0</div><div class="dark-reason-text"><strong>領海基線（Baseline）</strong>所有寬度的起算線。本身不是一個「海域」，而是量測的基準。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">12</div><div class="dark-reason-text"><strong>領海（Territorial Sea，12 浬）</strong>沿海國主權所及，效力一如陸地領土；他國船舶僅享有「無害通過」權。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">24</div><div class="dark-reason-text"><strong>鄰接區（Contiguous Zone，24 浬）</strong>沿海國可對<strong>海關、財政、移民、衛生</strong>四類事項行使必要管制，以防止或處罰在領土或領海內的違法行為。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">200</div><div class="dark-reason-text"><strong>專屬經濟海域（EEZ，200 浬）</strong>沿海國對漁業、礦產等自然資源享有主權權利；但他國仍保有航行、飛越與鋪設海底電纜的自由。</div></div>
+            <div class="fact-box"><span class="fact-title">一句話記住</span>越靠近基線，沿海國「說了算」的程度越高；越往外海，越接近「公海自由」。鄰接區與 EEZ <strong>不等於領土</strong>——船進入這些海域，多半仍屬合法。</div>
+        </div>
+        <div class="lang-en-only">
+            <h2>Four Zones, From Inside Out</h2>
+            <div class="dark-reason"><div class="dark-reason-icon">0</div><div class="dark-reason-text"><strong>Territorial baseline</strong>The line every width is measured from. Not a "zone" itself, but the measuring datum.</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">12</div><div class="dark-reason-text"><strong>Territorial sea (12 nm)</strong>Under the coastal state's sovereignty, much like land territory; foreign ships have only the right of "innocent passage."</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">24</div><div class="dark-reason-text"><strong>Contiguous zone (24 nm)</strong>The coastal state may exercise the control needed over <strong>customs, fiscal, immigration, and sanitary</strong> matters to prevent or punish breaches committed within its territory or territorial sea.</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">200</div><div class="dark-reason-text"><strong>Exclusive economic zone (200 nm)</strong>The coastal state has sovereign rights over natural resources such as fisheries and minerals; but other states keep the freedoms of navigation, overflight, and submarine-cable laying.</div></div>
+            <div class="fact-box"><span class="fact-title">One Line to Remember</span>The closer to the baseline, the more the coastal state has the final say; the farther out, the closer to "high-seas freedom." The contiguous zone and EEZ are <strong>not territory</strong> — a ship entering them is usually still acting lawfully.</div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>本站地圖如何使用這些範圍？</h2>
+            <p>在本站的即時地圖上，可以選擇疊上<strong>領海基線</strong>與從基線外推的 <strong>12 浬（領海）</strong>、<strong>24 浬（鄰接區）</strong>範圍。這些圖層的用途是：</p>
+            <div class="dark-reason"><div class="dark-reason-icon">🗺️</div><div class="dark-reason-text"><strong>判讀船舶位置的脈絡</strong>讓你一眼看出某艘船是貼著領海邊緣、深入鄰接區，還是仍在外海。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">🔌</div><div class="dark-reason-text"><strong>對照電纜與管轄範圍</strong>把海底電纜路線與海域範圍疊在一起，凸顯「電纜剛好落在哪個管轄區」這類關鍵問題。</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">⚠️</div><div class="dark-reason-text"><strong>輔助威脅研判</strong>同樣的徘徊行為，發生在領海內或電纜附近，與發生在公海，警戒程度並不相同。</div></div>
+        </div>
+        <div class="lang-en-only">
+            <h2>How This Site Uses These Zones</h2>
+            <p>On this site's live map you can overlay the <strong>territorial baseline</strong> and the <strong>12 nm (territorial sea)</strong> and <strong>24 nm (contiguous zone)</strong> bands offset from it. These layers help you:</p>
+            <div class="dark-reason"><div class="dark-reason-icon">🗺️</div><div class="dark-reason-text"><strong>Read a vessel's position in context</strong>See at a glance whether a ship is hugging the edge of the territorial sea, deep in the contiguous zone, or still offshore.</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">🔌</div><div class="dark-reason-text"><strong>Cross-reference cables and jurisdiction</strong>Overlaying cable routes with the zones highlights questions like "which jurisdiction does this cable actually fall in?"</div></div>
+            <div class="dark-reason"><div class="dark-reason-icon">⚠️</div><div class="dark-reason-text"><strong>Support threat assessment</strong>The same loitering means something different inside the territorial sea or near a cable than out on the high seas.</div></div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>法律劃界 vs 風險分析輔助</h2>
+            <p>這一點必須說清楚：本站繪製的基線與 12／24 浬範圍，是<strong>依公開資料近似計算的視覺化圖層</strong>，目的在於幫助理解與風險研判，<strong>不是官方法律劃界</strong>。</p>
+            <p>真正的海域界線涉及精確的基點座標、相鄰國家間的協議與爭端，往往由官方海圖與條約決定。本站的線條可能與官方界線存在誤差，也不代表任何主權主張或邊界立場。把它當成「幫助你思考的參考格線」，而非「法律上的界碑」。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Legal Delimitation vs Analysis Aid</h2>
+            <p>This must be said plainly: the baseline and 12/24 nm bands drawn here are an <strong>approximate visualization computed from public data</strong>, meant to aid understanding and risk assessment — <strong>not an official legal delimitation</strong>.</p>
+            <p>Real maritime boundaries involve precise basepoint coordinates, agreements and disputes between neighboring states, and are usually fixed by official charts and treaties. This site's lines may differ from official boundaries and imply no sovereignty claim or border position. Treat them as a "reference grid to think with," not a "legal boundary marker."</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>為什麼與灰色地帶相關？</h2>
+            <p>海域分區之所以重要，是因為<strong>船舶在哪個海域、做了什麼</strong>，決定了行為的法律意涵與可疑程度。外國船在公海航行稀鬆平常；但若在<strong>領海內無故低速徘徊</strong>、或在<strong>鄰接區與電纜路線附近</strong>反覆停留、又適逢 AIS 關閉，警戒層級就完全不同。</p>
+            <p>這也是灰色地帶手法的精妙之處：它常刻意游走在這些界線的模糊地帶，既不明顯越界，又持續製造壓力。把船舶軌跡與海域範圍疊圖，正是本站把「位置」轉化為「風險脈絡」的方式。</p>
+        </div>
+        <div class="lang-en-only">
+            <h2>Why It Matters for the Gray Zone</h2>
+            <p>Maritime zones matter because <strong>where a ship is, and what it does there</strong>, determine the legal meaning and suspiciousness of its behavior. A foreign ship transiting the high seas is unremarkable; but <strong>loitering at low speed inside the territorial sea</strong>, or lingering repeatedly <strong>in the contiguous zone near a cable route</strong> with AIS switched off, is a completely different alert level.</p>
+            <p>That is the cleverness of gray-zone tactics: they often deliberately work the blurry edges of these lines, never plainly crossing over yet continuously applying pressure. Overlaying vessel tracks with the zones is exactly how this site turns "position" into "risk context."</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>資料限制與免責聲明</h2>
+            <div class="alert-box"><ul style="margin:0;padding-left:18px;line-height:2">
+                <li>本站基線與 12／24 浬範圍為近似計算，<strong>非官方法律劃界</strong>，不代表任何主權或邊界主張。</li>
+                <li>實際海域界線涉及官方海圖、基點座標與國家間協議，可能與本站圖層存在誤差。</li>
+                <li>船舶位於某一海域，本身不等於違法；是否可疑取決於行為、脈絡與其他指標。</li>
+                <li>本頁為研究與教育用途，採 MIT 授權彙整公開資料。</li>
+            </ul></div>
+        </div>
+        <div class="lang-en-only">
+            <h2>Data Limitations &amp; Disclaimer</h2>
+            <div class="alert-box"><ul style="margin:0;padding-left:18px;line-height:2">
+                <li>The baseline and 12/24 nm bands here are approximate and are <strong>not an official legal delimitation</strong>; they imply no sovereignty or border claim.</li>
+                <li>Actual maritime boundaries depend on official charts, basepoint coordinates, and inter-state agreements, and may differ from these layers.</li>
+                <li>A vessel being in a given zone is not itself unlawful; suspiciousness depends on behavior, context, and other indicators.</li>
+                <li>This page is for research and education, aggregating public data under the MIT License.</li>
+            </ul></div>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="lang-zh-only">
+            <h2>常見問題 FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>什麼是領海基線？</summary><div class="faq-answer">領海基線是測量各海域寬度的起算線。通常沿用海岸低潮線（正常基線），或在海岸破碎、有外島時，連接適當點劃出直線基線。所有海域的寬度，都是從這條基線「向外海算」的。</div></details>
+                <details class="faq-item"><summary>領海、鄰接區、專屬經濟海域有什麼不同？</summary><div class="faq-answer">領海（12 浬）是沿海國主權所及的海域；鄰接區（24 浬）內沿海國可對海關、財政、移民與衛生事項行使必要管制；專屬經濟海域（200 浬）賦予沿海國對自然資源的主權權利，但他國仍享有航行與鋪設電纜的自由。</div></details>
+                <details class="faq-item"><summary>本站地圖上的領海／鄰接區範圍是官方劃界嗎？</summary><div class="faq-answer">不是。本站的基線與 12／24 浬範圍是依公開資料近似繪製，供視覺化與風險分析參考，並非官方法律劃界，也不代表任何主權或邊界主張。</div></details>
+                <details class="faq-item"><summary>海域分區和灰色地帶監測有什麼關係？</summary><div class="faq-answer">船舶位於哪個海域，會影響其行為的法律意涵與可疑程度。外國船在領海內長時間徘徊、或在鄰接區／電纜路線附近異常停留，比在公海航行更值得警戒。本站把船舶與海域範圍疊圖，作為威脅研判的輔助線索。</div></details>
+            </div>
+        </div>
+        <div class="lang-en-only">
+            <h2>FAQ</h2>
+            <div class="faq-section">
+                <details class="faq-item"><summary>What is a territorial baseline?</summary><div class="faq-answer">The territorial baseline is the line from which each zone's width is measured. It usually follows the coast's low-water line (the normal baseline), or joins appropriate points as straight baselines where the coast is broken or has offshore islands. Every zone's width is measured seaward from this baseline.</div></details>
+                <details class="faq-item"><summary>What's the difference between the territorial sea, contiguous zone, and EEZ?</summary><div class="faq-answer">The territorial sea (12 nm) is under the coastal state's sovereignty; within the contiguous zone (24 nm) the state may exercise the control needed over customs, fiscal, immigration, and sanitary matters; the EEZ (200 nm) gives the state sovereign rights over natural resources, while other states keep the freedoms of navigation and cable-laying.</div></details>
+                <details class="faq-item"><summary>Are the zones on this site's map official boundaries?</summary><div class="faq-answer">No. The baseline and 12/24 nm bands are drawn approximately from public data for visualization and risk analysis. They are not an official legal delimitation and imply no sovereignty or border claim.</div></details>
+                <details class="faq-item"><summary>How do maritime zones relate to gray-zone monitoring?</summary><div class="faq-answer">Which zone a vessel is in shapes the legal meaning and suspiciousness of its behavior. A foreign ship loitering inside the territorial sea, or lingering anomalously in the contiguous zone or near a cable route, warrants more caution than one transiting the high seas. This site overlays vessels with the zones as a supporting lead for threat assessment.</div></details>
+            </div>
+        </div>
+    </section>
+
+    <div class="intro-cta" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+        <a href="blog-gray-zone-glossary.html" class="lang-zh-only">查看詞彙表 →</a>
+        <a href="blog-gray-zone-glossary.html" class="lang-en-only">See the glossary →</a>
+        <a href="blog.html" class="lang-zh-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← 返回深度文章</a>
+        <a href="blog.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← Back to articles</a>
+    </div>
+
+    <!-- topic-cluster -->
+    <section class="topic-cluster" aria-label="Related gray-zone topics">
+        <h2 class="lang-zh-only">相關灰色地帶主題</h2>
+        <h2 class="lang-en-only">Related gray-zone topics</h2>
+        <ul>
+            <li><a href="blog-what-is-maritime-gray-zone.html"><span class="lang-zh-only">海上灰色地帶總覽</span><span class="lang-en-only">Maritime gray-zone overview</span></a></li>
+            <li><a href="blog-what-is-dark-vessel.html"><span class="lang-zh-only">暗船</span><span class="lang-en-only">Dark vessels</span></a></li>
+            <li><a href="blog-what-is-ais-spoofing.html"><span class="lang-zh-only">AIS 欺騙</span><span class="lang-en-only">AIS spoofing</span></a></li>
+            <li><a href="blog-what-is-ship-to-ship-transfer.html"><span class="lang-zh-only">船對船轉運（旁靠）</span><span class="lang-en-only">Ship-to-ship transfers</span></a></li>
+            <li><a href="blog-what-is-shadow-fleet.html"><span class="lang-zh-only">影子船隊</span><span class="lang-en-only">Shadow fleets</span></a></li>
+            <li><a href="blog-gray-zone-glossary.html"><span class="lang-zh-only">詞彙表</span><span class="lang-en-only">Glossary</span></a></li>
+            <li><a href="blog-methodology.html"><span class="lang-zh-only">評分方法論</span><span class="lang-en-only">Methodology</span></a></li>
+        </ul>
+    </section>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+    <script defer src="js/i18n.js"></script>
+    <script defer src="js/mobile-nav.js"></script>
+</body>
+</html>
