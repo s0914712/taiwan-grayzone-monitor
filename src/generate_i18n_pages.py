@@ -681,7 +681,30 @@ _DATA_I18N_RE = re.compile(
     r'(<(\w+)\b[^>]*\sdata-i18n="([\w.]+)"[^>]*>)(.*?)(</\2>)', re.S)
 _PLACEHOLDER_RE = re.compile(
     r'(data-i18n-placeholder="([\w.]+)"[^>]*\bplaceholder=")[^"]*(")')
-_LANGTOGGLE_RE = re.compile(r'(<button id="langToggle"[^>]*>)EN(</button>)')
+_LANGTOGGLE_BTN_RE = re.compile(r'<button id="langToggle"[^>]*>.*?</button>', re.S)
+# The bilingual visibility rule the source pages carry inline. On an English
+# mirror (Chinese DOM removed) it is dangerous: if anything ever clears
+# body.lang-en, every .lang-en-only block would hide and the page goes blank.
+_LANG_VIS_CSS = ('body.lang-en .lang-zh-only{display:none!important}'
+                 'body:not(.lang-en) .lang-en-only{display:none!important}')
+
+
+def _localize_lang_toggle(html: str, page: str) -> str:
+    """Turn the in-page ``i18n.toggle()`` button into a link to the zh page.
+
+    On an English-only mirror, calling ``i18n.toggle()`` would switch the body
+    to ``lang-zh`` and hide all (English) content, leaving a blank page — the
+    Chinese DOM no longer exists. Replacing it with a plain anchor to the
+    Chinese canonical (``../<page>``) makes the switch a real, safe navigation.
+    """
+    m = _LANGTOGGLE_BTN_RE.search(html)
+    if not m:
+        return html
+    sm = re.search(r'\sstyle="([^"]*)"', m.group(0))
+    style = (sm.group(1) + ";" if sm else "") + "text-decoration:none;display:inline-block"
+    anchor = (f'<a id="langToggle" href="../{page}" style="{style}" '
+              f'title="切換為中文 / Read in Chinese">中</a>')
+    return html[:m.start()] + anchor + html[m.end():]
 
 
 def _resolve_data_i18n(html: str) -> str:
@@ -783,7 +806,10 @@ def generate_page(page: str) -> str:
     html = _resolve_data_i18n(html)
     html = _strip_zh_only(html)
     html = _translate_static_text(html)
-    html = _LANGTOGGLE_RE.sub(lambda m: m.group(1) + "中" + m.group(2), html)
+    # Make English content unconditional and the toggle a safe link, so the
+    # mirror can never blank out if the body's lang class changes.
+    html = html.replace(_LANG_VIS_CSS, ".lang-zh-only{display:none!important}")
+    html = _localize_lang_toggle(html, page)
 
     # Fix relative asset/link paths for the deeper directory.
     html = _rewrite_attrs(html)
