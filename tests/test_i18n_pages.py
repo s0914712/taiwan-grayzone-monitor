@@ -213,6 +213,21 @@ def test_topic_cluster_footer_english_only():
     assert "Maritime zones" in out and "Shadow fleets" in out
 
 
+def test_sensitive_pages_have_sources_and_citation():
+    # Legal/sanctions pages must carry a visible Sources section and JSON-LD
+    # citation so claims are verifiable (E-E-A-T / GEO).
+    for page in ("blog-taiwan-maritime-zones.html",
+                 "blog-what-is-shadow-fleet.html"):
+        out = gi.generate_page(page)
+        assert 'id="sources"' in out
+        assert "Sources &amp; Methodology" in out or "Sources & Methodology" in out
+        art = [json.loads(b) for b in _ld_blocks(out)
+               if "Article" in (lambda t: t if isinstance(t, list) else [t])
+               (json.loads(b).get("@type"))][0]
+        assert len(art.get("citation", [])) >= 3
+        assert all(c.get("url", "").startswith("http") for c in art["citation"])
+
+
 def test_mirror_lang_toggle_is_safe_link():
     # On the English-only mirror the toggle must NOT call i18n.toggle()
     # (which would blank the page); it must be a link to the Chinese page.
