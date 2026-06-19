@@ -29,8 +29,9 @@
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
     <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/reading.css">
     <link rel="manifest" href="../manifest.json">
-    <meta name="theme-color" content="#0a0f1c">
+    <meta name="theme-color" content="#ffffff">
     <style>
     .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
     .fact-box{background:var(--bg-secondary);border:1px solid rgba(0,245,255,.15);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
@@ -65,7 +66,7 @@
     {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does AIS spoofing differ from switching AIS off?","acceptedAnswer":{"@type":"Answer","text":"Switching off AIS (going dark) makes a ship vanish from AIS; AIS spoofing keeps broadcasting, but the content is fake — a false position, a false speed, or even impersonating another ship's identity. Going dark leaves a blank; spoofing actively creates misdirection."}},{"@type":"Question","name":"What AIS information can be faked?","acceptedAnswer":{"@type":"Answer","text":"Almost everything: GPS position, speed over ground (SOG), course over ground (COG), MMSI, ship name, call sign, and IMO number. Because AIS is filled in and broadcast by the ship itself, there is no real-time third-party verification."}},{"@type":"Question","name":"How is AIS spoofing detected?","acceptedAnswer":{"@type":"Answer","text":"Through internal contradictions in physics and data: impossible speed (distance between two points divided by time exceeding a reasonable limit), a broadcast course that does not match the actual direction of movement, artificial box- or circle-shaped tracks, and a ship name or IMO that does not match registry data such as the ITU. This site's scoring engine specifically detects these patterns."}},{"@type":"Question","name":"What does AIS spoofing have to do with submarine cables?","acceptedAnswer":{"@type":"Answer","text":"If a ship can make itself appear to be elsewhere, it can operate near a cable without being immediately linked to it. Combined with going dark and identity changes, spoofing makes gray-zone behavior even harder to attribute."}}]}
     </script>
 </head>
-<body class="lang-en">
+<body class="theme-reading lang-en">
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <header class="header" style="position:sticky;top:0;z-index:100">
         <h1 data-i18n="title.index">🛰️ Taiwan Gray Zone &amp; Submarine Cable Monitor</h1>
