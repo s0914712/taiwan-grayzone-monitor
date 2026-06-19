@@ -87,42 +87,33 @@
 <body class="lang-en">
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <header class="header" style="position:sticky;top:0;z-index:100">
-        <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
+        <h1 data-i18n="title.index">🛰️ Taiwan Gray Zone &amp; Submarine Cable Monitor</h1>
         <div class="header-info">
-            <a href="../index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">灰色地帶監測</a>
-            <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">深度文章</a>
-            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <a href="../index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">Gray Zone Monitor</a>
+            <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">Articles</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">中</button>
         </div>
     </header>
 
     <div class="intro-hero">
-        <h1 class="lang-zh-only">本網站<br>所使用之方法</h1>
-        <h1 class="lang-en-only">Our Methodology</h1>
-        <p class="subtitle lang-zh-only">深度文章系列 06 &#x2022; 資料來源 &#x2022; 評分演算法 &#x2022; CSIS 方法論</p>
-        <p class="subtitle lang-en-only">Article Series 06 &#x2022; Data Sources &#x2022; Scoring Algorithm &#x2022; CSIS Methodology</p>
+                <h1 class="lang-en-only">Our Methodology</h1>
+                <p class="subtitle lang-en-only">Article Series 06 &#x2022; Data Sources &#x2022; Scoring Algorithm &#x2022; CSIS Methodology</p>
     </div>
 
     <section class="intro-section">
         <div class="series-nav">
-            <span style="font-size:10px;color:rgba(0,245,255,.4);font-family:'JetBrains Mono',monospace;align-self:center">系列文章 SERIES →</span>
-            <a href="blog-what-is-submarine-cable.html" class="series-chip">01 海底電纜</a>
+            <span style="font-size:10px;color:rgba(0,245,255,.4);font-family:'JetBrains Mono',monospace;align-self:center">SERIES →</span>
+            <a href="blog-what-is-submarine-cable.html" class="series-chip">01 Submarine Cable</a>
             <a href="blog-what-is-ais.html" class="series-chip">02 AIS</a>
-            <a href="blog-taiwan-cable-status.html" class="series-chip">03 台灣現況</a>
-            <a href="blog-cable-threats.html" class="series-chip">04 威脅</a>
-            <a href="blog-taiwan-enforcement.html" class="series-chip">05 執法</a>
-            <a href="blog-methodology.html" class="series-chip active">06 方法論</a>
+            <a href="blog-taiwan-cable-status.html" class="series-chip">03 Taiwan Status</a>
+            <a href="blog-cable-threats.html" class="series-chip">04 Threats</a>
+            <a href="blog-taiwan-enforcement.html" class="series-chip">05 Enforcement</a>
+            <a href="blog-methodology.html" class="series-chip active">06 Methodology</a>
         </div>
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <div class="story-hook">
-                台灣海峽和周邊海域，每天有數千艘船隻通過。漁船、貨輪、油輪、客輪、海巡船——絕大多數都是完全合法的航行。
-                <br><br>
-                我們的任務是：在這片繁忙的海域中，找出那幾艘真正值得警覺的船。不能太多（避免誤報讓人麻木），也不能遺漏（避免放過真正的威脅）。這需要一套明確、可重複、可被檢驗的方法。
-            </div>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <div class="story-hook">
                 Thousands of vessels pass through the Taiwan Strait and surrounding waters every day. Fishing boats, cargo ships, tankers, passenger ferries, coast guard vessels — the vast majority engaged in completely legitimate navigation.
                 <br><br>
@@ -132,21 +123,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>資料來源</h2>
-            <p>本站使用兩個主要資料來源，互相補充、交叉驗證。</p>
-
-            <div class="fact-box">
-                <span class="fact-title">資料來源 1：台灣港務局 AIS 資料</span>
-                透過 <code style="font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">src/fetch_ais_data.py</code> 每 2 小時自動從台灣港務局 API 取得台灣海峽及周邊海域的即時 AIS 資料，監測範圍約 20–28°N、112–128°E。資料包含所有廣播 AIS 訊號的船隻位置、速度、航向、目的地等。資料透過 SOCKS5 代理取得以確保穩定性。
-            </div>
-
-            <div class="fact-box">
-                <span class="fact-title">資料來源 2：Global Fishing Watch SAR 衛星</span>
-                透過 <code style="font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">src/fetch_gfw_data.py</code> 定期從 Global Fishing Watch（全球漁業觀察）API 取得合成孔徑雷達（SAR）衛星影像分析結果。SAR 可以在全天候條件下偵測水面上的金屬物體，並標記未廣播 AIS 的「暗船」（Dark Vessel）。兩個資料來源的交叉比對是發現 AIS 走暗行為的核心方法。
-            </div>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>Data Sources</h2>
             <p>This site uses two primary data sources that complement and cross-validate each other.</p>
 
@@ -163,55 +140,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>資料管線</h2>
-            <p>本站透過 GitHub Actions 自動化整個資料處理流程，確保資料持續更新且過程可稽核。</p>
-            <div style="border:1px solid var(--border-glow);border-radius:8px;padding:16px;margin:12px 0">
-                <div class="pipeline-step">
-                    <span class="step-num">01</span>
-                    <div class="step-content">
-                        <div class="step-title lang-zh-only">取得 AIS 資料（每 2 小時）</div>
-                        <div class="step-title lang-en-only">Fetch AIS Data (every 2h)</div>
-                        <div class="step-desc">更新船隻位置、建立/更新船隻檔案（vessel profiles）、追加至航跡歷史記錄（14 天保留）</div>
-                        <span class="step-code">fetch_ais_data.py</span>
-                    </div>
-                </div>
-                <div class="pipeline-step">
-                    <span class="step-num">02</span>
-                    <div class="step-content">
-                        <div class="step-title">取得 GFW SAR 資料（每 12 小時）</div>
-                        <div class="step-desc">下載衛星暗船偵測結果，更新 SAR 資料集</div>
-                        <span class="step-code">fetch_gfw_data.py</span>
-                    </div>
-                </div>
-                <div class="pipeline-step">
-                    <span class="step-num">03</span>
-                    <div class="step-content">
-                        <div class="step-title">偵測海上旁靠（STS）</div>
-                        <div class="step-desc">識別兩船隻在同一位置、同一時間低速相遇的事件，標記為可疑 STS 旁靠</div>
-                        <span class="step-code">detect_ship_transfers.py</span>
-                    </div>
-                </div>
-                <div class="pipeline-step">
-                    <span class="step-num">04</span>
-                    <div class="step-content">
-                        <div class="step-title lang-zh-only">執行威脅評分</div>
-                        <div class="step-title lang-en-only">Run Threat Scoring</div>
-                        <div class="step-desc">對所有已知船隻套用 8 項評分指標，計算最終威脅分數與風險等級</div>
-                        <span class="step-code">analyze_suspicious.py</span>
-                    </div>
-                </div>
-                <div class="pipeline-step">
-                    <span class="step-num">05</span>
-                    <div class="step-content">
-                        <div class="step-title">生成儀表板資料</div>
-                        <div class="step-desc">整合所有分析結果，輸出前端所需的 data.json，部署至 GitHub Pages</div>
-                        <span class="step-code">generate_dashboard.py</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>Data Pipeline</h2>
             <p>The site automates the entire data processing workflow through GitHub Actions, ensuring continuous updates and an auditable process.</p>
             <div style="border:1px solid var(--border-glow);border-radius:8px;padding:16px;margin:12px 0">
@@ -260,18 +189,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>排除規則：先過濾掉不相關的訊號</h2>
-            <p>監測範圍內有大量的浮標、漁網標誌器等設備也會發出 AIS 訊號，但它們顯然不是我們關注的對象。在昂貴的分析工作開始之前，這些訊號會被優先排除：</p>
-            <ul style="font-size:12px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
-                <li>MMSI 以 <code style="font-family:'JetBrains Mono',monospace;background:rgba(0,0,0,.3);padding:0 4px">9</code> 開頭 → 助航設施（AtoN）/ 潛水浮標</li>
-                <li>MMSI 以 <code style="font-family:'JetBrains Mono',monospace;background:rgba(0,0,0,.3);padding:0 4px">898</code> 開頭 → 漁網標誌器</li>
-                <li>船名含 <code style="font-family:'JetBrains Mono',monospace;background:rgba(0,0,0,.3);padding:0 4px">%</code> → 漁網浮標</li>
-                <li>船名含 <code style="font-family:'JetBrains Mono',monospace;background:rgba(0,0,0,.3);padding:0 4px">BUOY</code> → 浮標</li>
-                <li>船名結尾為電壓格式如 <code style="font-family:'JetBrains Mono',monospace;background:rgba(0,0,0,.3);padding:0 4px">12.5V</code> → 漁網浮標</li>
-            </ul>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>Exclusion Rules: Filter Out Irrelevant Signals First</h2>
             <p>The monitoring area contains many buoys, fishing net markers, and other equipment that also broadcast AIS signals, but they're obviously not vessels of interest. These are excluded before expensive analysis begins:</p>
             <ul style="font-size:12px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
@@ -285,11 +203,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>8 項威脅評分指標</h2>
-            <p>通過排除規則的船隻，將被套用以下 8 項指標進行評分。評分基礎來自 CSIS（戰略與國際研究中心）的「Signals in the Swarm」報告所提出的分析框架。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>8 Threat Scoring Criteria</h2>
             <p>Vessels that pass the exclusion rules are evaluated against the following 8 criteria. The scoring framework is derived from CSIS (Center for Strategic and International Studies) "Signals in the Swarm" report.</p>
         </div>
@@ -298,70 +212,70 @@
             <thead>
                 <tr>
                     <th>#</th>
-                    <th class="lang-zh-only">指標</th><th class="lang-en-only">Criterion</th>
-                    <th class="lang-zh-only">偵測方法</th><th class="lang-en-only">Detection Method</th>
-                    <th class="lang-zh-only">分數</th><th class="lang-en-only">Score</th>
+                    <th class="lang-en-only">Criterion</th>
+                    <th class="lang-en-only">Detection Method</th>
+                    <th class="lang-en-only">Score</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>1a</td>
-                    <td class="lang-zh-only">電纜鄰近</td><td class="lang-en-only">Cable Proximity</td>
-                    <td class="lang-zh-only">航跡點距海底電纜 5 公里以內</td><td class="lang-en-only">Track points within 5km of submarine cable</td>
+                    <td class="lang-en-only">Cable Proximity</td>
+                    <td class="lang-en-only">Track points within 5km of submarine cable</td>
                     <td>+2</td>
                 </tr>
                 <tr>
                     <td>1b</td>
-                    <td class="lang-zh-only">電纜低速滯留</td><td class="lang-en-only">Cable Loitering</td>
-                    <td class="lang-zh-only">在電纜附近低速（&lt;8節）滯留超過 3 小時</td><td class="lang-en-only">Low speed (&lt;8kn) near cable for &gt;3 hours</td>
+                    <td class="lang-en-only">Cable Loitering</td>
+                    <td class="lang-en-only">Low speed (&lt;8kn) near cable for &gt;3 hours</td>
                     <td>+3</td>
                 </tr>
                 <tr>
                     <td>2</td>
-                    <td class="lang-zh-only">之字形航行</td><td class="lang-en-only">Zigzag Pattern</td>
-                    <td class="lang-zh-only">≥3 次 45° 以上的航向轉變</td><td class="lang-en-only">≥3 turns of ≥45° heading change</td>
+                    <td class="lang-en-only">Zigzag Pattern</td>
+                    <td class="lang-en-only">≥3 turns of ≥45° heading change</td>
                     <td>+1</td>
                 </tr>
                 <tr>
                     <td>3</td>
-                    <td class="lang-zh-only">200 米等深線</td><td class="lang-en-only">200m Depth Contour</td>
-                    <td class="lang-zh-only">≥30% 航跡時間在大陸棚邊緣附近</td><td class="lang-en-only">≥30% of track time near continental shelf edge</td>
+                    <td class="lang-en-only">200m Depth Contour</td>
+                    <td class="lang-en-only">≥30% of track time near continental shelf edge</td>
                     <td>+1</td>
                 </tr>
                 <tr>
                     <td>4</td>
-                    <td class="lang-zh-only">AIS 異常</td><td class="lang-en-only">AIS Anomalies</td>
-                    <td class="lang-zh-only">船名更換≥2次、走暗&gt;18小時、類型更換、身分事件</td><td class="lang-en-only">Name changes ≥2, dark gaps &gt;18hr, type changes, identity events</td>
+                    <td class="lang-en-only">AIS Anomalies</td>
+                    <td class="lang-en-only">Name changes ≥2, dark gaps &gt;18hr, type changes, identity events</td>
                     <td>+1 / +3</td>
                 </tr>
                 <tr>
                     <td>5</td>
-                    <td class="lang-zh-only">非前十旗幟國</td><td class="lang-en-only">Non-Top-10 Flag</td>
-                    <td class="lang-zh-only">MMSI 前三碼非前十大旗幟國</td><td class="lang-en-only">MMSI MID not in top-10 flag state set</td>
+                    <td class="lang-en-only">Non-Top-10 Flag</td>
+                    <td class="lang-en-only">MMSI MID not in top-10 flag state set</td>
                     <td>+1</td>
                 </tr>
                 <tr>
                     <td>6</td>
-                    <td class="lang-zh-only">聯合國制裁</td><td class="lang-en-only">UN Sanctions</td>
-                    <td class="lang-zh-only">IMO 或船名與制裁名單匹配</td><td class="lang-en-only">IMO or name match against sanctions list</td>
+                    <td class="lang-en-only">UN Sanctions</td>
+                    <td class="lang-en-only">IMO or name match against sanctions list</td>
                     <td>+8</td>
                 </tr>
                 <tr>
                     <td>7</td>
-                    <td class="lang-zh-only">AIS 欺騙</td><td class="lang-en-only">AIS Spoofing</td>
-                    <td class="lang-zh-only">不可能的物理運動 / 方框模式 / 圓形模式</td><td class="lang-en-only">Impossible physics / box pattern / circle pattern</td>
+                    <td class="lang-en-only">AIS Spoofing</td>
+                    <td class="lang-en-only">Impossible physics / box pattern / circle pattern</td>
                     <td>+4 each</td>
                 </tr>
                 <tr>
                     <td>8</td>
-                    <td class="lang-zh-only">ITU MARS 不符</td><td class="lang-en-only">ITU MARS Mismatch</td>
-                    <td class="lang-zh-only">船名、IMO 或呼號與 ITU 船站登記不符</td><td class="lang-en-only">Ship name, IMO, or call sign differs from ITU registry</td>
+                    <td class="lang-en-only">ITU MARS Mismatch</td>
+                    <td class="lang-en-only">Ship name, IMO, or call sign differs from ITU registry</td>
                     <td>+3</td>
                 </tr>
                 <tr>
                     <td>9</td>
-                    <td class="lang-zh-only">STS 旁靠</td><td class="lang-en-only">STS Transfer</td>
-                    <td class="lang-zh-only">涉及船對船旁靠事件</td><td class="lang-en-only">Involved in ship-to-ship rendezvous</td>
+                    <td class="lang-en-only">STS Transfer</td>
+                    <td class="lang-en-only">Involved in ship-to-ship rendezvous</td>
                     <td>+2 / +5</td>
                 </tr>
             </tbody>
@@ -369,69 +283,56 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>船舶類型加權係數</h2>
-            <p>不同類型的船隻，相同行為的威脅程度不同。行為性指標（指標 1–3, 5）會乘以下列係數；高威脅指標（指標 4, 6–9）不乘以係數。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>Vessel Type Multipliers</h2>
             <p>The same behavior carries different threat levels for different vessel types. Behavioral criteria (1–3, 5) are multiplied by the following coefficients; high-threat indicators (4, 6–9) are not multiplied.</p>
         </div>
 
         <table class="mult-table">
             <thead><tr>
-                <th class="lang-zh-only">船舶類型</th><th class="lang-en-only">Vessel Type</th>
-                <th class="lang-zh-only">係數</th><th class="lang-en-only">Multiplier</th>
-                <th class="lang-zh-only">理由</th><th class="lang-en-only">Rationale</th>
+                <th class="lang-en-only">Vessel Type</th>
+                <th class="lang-en-only">Multiplier</th>
+                <th class="lang-en-only">Rationale</th>
             </tr></thead>
             <tbody>
                 <tr>
-                    <td class="lang-zh-only">貨船、油輪、LNG</td><td class="lang-en-only">Cargo, Tanker, LNG</td>
+                    <td class="lang-en-only">Cargo, Tanker, LNG</td>
                     <td>×1.0</td>
-                    <td class="lang-zh-only">重型船錨、高噸位 → 實質電纜損壞風險最高</td><td class="lang-en-only">Heavy anchors, high tonnage → highest real cable damage risk</td>
+                    <td class="lang-en-only">Heavy anchors, high tonnage → highest real cable damage risk</td>
                 </tr>
                 <tr>
-                    <td class="lang-zh-only">中國海警、海巡、海救、科研</td><td class="lang-en-only">Chinese Gov't vessels (CG, MSA, Rescue, Research)</td>
+                    <td class="lang-en-only">Chinese Gov't vessels (CG, MSA, Rescue, Research)</td>
                     <td>×0.5</td>
-                    <td class="lang-zh-only">中國公務/特殊利益船隻，行為模式不同</td><td class="lang-en-only">China public-service / special-interest state vessels</td>
+                    <td class="lang-en-only">China public-service / special-interest state vessels</td>
                 </tr>
                 <tr>
-                    <td class="lang-zh-only">漁船</td><td class="lang-en-only">Fishing</td>
+                    <td class="lang-en-only">Fishing</td>
                     <td>×0.2</td>
-                    <td class="lang-zh-only">體積小、常規作業 → 電纜威脅低</td><td class="lang-en-only">Small, routine operations → low cable threat</td>
+                    <td class="lang-en-only">Small, routine operations → low cable threat</td>
                 </tr>
                 <tr>
-                    <td class="lang-zh-only">其他 / 未知</td><td class="lang-en-only">Other / Unknown</td>
+                    <td class="lang-en-only">Other / Unknown</td>
                     <td>×0.5</td>
-                    <td class="lang-zh-only">不確定，保守估計</td><td class="lang-en-only">Uncertain, conservative estimate</td>
+                    <td class="lang-en-only">Uncertain, conservative estimate</td>
                 </tr>
             </tbody>
         </table>
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>最終評分與風險等級</h2>
-            <p>最終分數計算公式：<code style="font-family:'JetBrains Mono',monospace;background:rgba(0,0,0,.3);padding:2px 8px;border-radius:4px">round(行為分數 × 船型係數) + 高威脅指標分數</code></p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>Final Score and Risk Levels</h2>
             <p>Final score formula: <code style="font-family:'JetBrains Mono',monospace;background:rgba(0,0,0,.3);padding:2px 8px;border-radius:4px">round(behavioral_score × type_multiplier) + high_threat_indicators</code></p>
         </div>
 
-        <div class="risk-bar normal"><span class="risk-label">NORMAL</span><span class="risk-score">&lt; 5</span><span class="risk-desc lang-zh-only">無顯著異常，不納入監測清單</span><span class="risk-desc lang-en-only">No significant anomalies, not listed in monitoring</span></div>
-        <div class="risk-bar medium"><span class="risk-label">MEDIUM</span><span class="risk-score">5–7</span><span class="risk-desc lang-zh-only">稍有異常，持續追蹤但不標記為可疑</span><span class="risk-desc lang-en-only">Slightly elevated, tracked but not flagged suspicious</span></div>
-        <div class="risk-bar high"><span class="risk-label">HIGH</span><span class="risk-score">8–11</span><span class="risk-desc lang-zh-only">可疑行為——標記在儀表板中</span><span class="risk-desc lang-en-only">Suspicious behavior — flagged in dashboard</span></div>
-        <div class="risk-bar critical"><span class="risk-label">CRITICAL</span><span class="risk-score">≥ 12</span><span class="risk-desc lang-zh-only">多項強烈指標同時觸發——最高警戒</span><span class="risk-desc lang-en-only">Multiple strong indicators simultaneously triggered — highest alert</span></div>
+        <div class="risk-bar normal"><span class="risk-label">NORMAL</span><span class="risk-score">&lt; 5</span><span class="risk-desc lang-en-only">No significant anomalies, not listed in monitoring</span></div>
+        <div class="risk-bar medium"><span class="risk-label">MEDIUM</span><span class="risk-score">5–7</span><span class="risk-desc lang-en-only">Slightly elevated, tracked but not flagged suspicious</span></div>
+        <div class="risk-bar high"><span class="risk-label">HIGH</span><span class="risk-score">8–11</span><span class="risk-desc lang-en-only">Suspicious behavior — flagged in dashboard</span></div>
+        <div class="risk-bar critical"><span class="risk-label">CRITICAL</span><span class="risk-score">≥ 12</span><span class="risk-desc lang-en-only">Multiple strong indicators simultaneously triggered — highest alert</span></div>
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>方法論基礎：CSIS「Signals in the Swarm」</h2>
-            <p>本站的評分框架參考並延伸自美國智庫 <a href="https://www.csis.org" target="_blank" rel="noopener" style="color:var(--accent-cyan)">戰略與國際研究中心（CSIS）</a>發表的「Signals in the Swarm」研究報告。該報告系統性地分析了中國漁船群在台灣周邊海域的威脅行為模式，識別出電纜鄰近、走暗、之字形航行等核心指標。</p>
-            <p>本站在 CSIS 框架的基礎上，增加了 AIS 欺騙偵測、ITU MARS 登記查核、STS 旁靠偵測等指標，並整合 GFW SAR 衛星資料，以強化針對台灣海域的偵測能力。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>Methodological Basis: CSIS "Signals in the Swarm"</h2>
             <p>This site's scoring framework references and extends the "Signals in the Swarm" research report published by the <a href="https://www.csis.org" target="_blank" rel="noopener" style="color:var(--accent-cyan)">Center for Strategic and International Studies (CSIS)</a>. The report systematically analyzes behavioral patterns of Chinese fishing fleets in Taiwan's surrounding waters, identifying core indicators including cable proximity, AIS dark events, and zigzag navigation.</p>
             <p>Building on the CSIS framework, this site adds AIS spoofing detection, ITU MARS registry verification, STS rendezvous detection, and integrates GFW SAR satellite data to enhance detection capabilities specific to Taiwan's waters.</p>
@@ -439,23 +340,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>方法論的限制</h2>
-            <p>透明度要求我們誠實地說明這套方法的局限性：</p>
-            <ul style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
-                <li><strong style="color:var(--text-primary)">相關不等於因果：</strong>高威脅評分代表行為模式異常，不等於確認船隻有破壞意圖</li>
-                <li><strong style="color:var(--text-primary)">資料覆蓋率：</strong>AIS 資料依賴船隻自願廣播；蓄意走暗的船隻在走暗期間無法被追蹤</li>
-                <li><strong style="color:var(--text-primary)">SAR 時效性：</strong>SAR 衛星不是即時監測，影像有時效延遲</li>
-                <li><strong style="color:var(--text-primary)">誤報可能：</strong>某些正當活動（如合法錨泊、特殊作業）可能觸發部分指標</li>
-                <li><strong style="color:var(--text-primary)">評分非絕對：</strong>本系統旨在協助人工研判，不能取代專業情報分析</li>
-            </ul>
-
-            <div class="fact-box">
-                <span class="fact-title">開源與透明</span>
-                本站的所有程式碼皆以 MIT 授權條款開放於 <a href="https://github.com/s0914712/taiwan-grayzone-monitor" target="_blank" rel="noopener" style="color:var(--accent-cyan)">GitHub</a>。任何人都可以檢視我們的評分邏輯、資料處理方式，乃至提出改進建議。我們相信，在灰色地帶威脅中，透明度本身就是一種防禦手段。
-            </div>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>Methodological Limitations</h2>
             <p>Transparency requires us to honestly state the limitations of this approach:</p>
             <ul style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
@@ -474,17 +359,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>地理法域與海纜緩衝帶加分</h2>
-            <p>除了「任一航跡點是否在海纜 5 公里內」這個較粗的判斷，本站還會對船舶<strong>最近一筆位置</strong>做更精細的地理研判，把「位置」本身納入評分。</p>
-            <p>系統以內政部公告的<strong>領海基線</strong>計算該位置屬於哪個法域（內水／領海 12 浬／鄰接區 24 浬／經濟海域／公海），並計算其與最近海底電纜的距離緩衝帶（≤1km／≤5km／≤10km）。在此基礎上，加入兩項有上限的行為加分：</p>
-            <ul style="font-size:13px;line-height:2;color:var(--text-secondary);padding-left:20px">
-                <li>最近位置<strong>緊貼海纜（≤1 公里）</strong>：+1</li>
-                <li>且同時位於<strong>我國管轄海域</strong>（內水／領海／鄰接區）：再 +1</li>
-            </ul>
-            <p>這兩項屬於「行為分」，一樣會乘上船型加權（商船權重高、漁船權重低）。它的用意是<strong>精修</strong>而非取代既有的 5 公里粗網——把「此刻就壓在電纜上、又落在我國管轄海域」這個最符合灰色地帶電纜威脅的情境，給予額外但有限的權重。EEZ 在此採「距基線 ≤200 浬」的簡化定義，僅供風險研判，並非法律上的劃界。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>Maritime-Zone and Cable-Buffer Scoring</h2>
             <p>Beyond the coarser test of "is any track point within 5&nbsp;km of a cable," the site also makes a finer geographic read of a vessel's <strong>most recent position</strong>, folding location itself into the score.</p>
             <p>Using Taiwan's official <strong>territorial baseline</strong>, the system classifies which legal zone that position falls in (internal waters / territorial sea 12&nbsp;nm / contiguous zone 24&nbsp;nm / EEZ / high seas) and computes its distance band to the nearest submarine cable (≤1km / ≤5km / ≤10km). On top of that, two bounded behavioral bonuses are added:</p>
@@ -497,24 +372,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>為什麼採用開源（OSINT）方法？</h2>
-            <p>本站刻意建立在<strong>公開可得的資料</strong>與<strong>公開的程式碼</strong>之上，這是一個方法論選擇，而非權宜之計。</p>
-            <div class="dark-reason">
-                <div class="dark-reason-icon">🔍</div>
-                <div class="dark-reason-text"><strong>可驗證</strong>任何人都能檢視評分邏輯、調整門檻、甚至質疑某艘船為何被標記。結論不必「相信我」，而是「自己看」。</div>
-            </div>
-            <div class="dark-reason">
-                <div class="dark-reason-icon">🔁</div>
-                <div class="dark-reason-text"><strong>可重現</strong>相同的輸入資料與相同的程式，會得到相同的結果。這讓分析能被獨立檢驗，也讓錯誤可以被指認與修正。</div>
-            </div>
-            <div class="dark-reason">
-                <div class="dark-reason-icon">⚖️</div>
-                <div class="dark-reason-text"><strong>有節制</strong>開源也意味著公開承認限制：資料會有缺漏、分數是風險排序而非法律認定。透明，才能避免過度詮釋。</div>
-            </div>
-            <p>OSINT 的價值不在於取代官方情報，而在於提供一個<strong>任何人都能查核</strong>的共同事實基礎。當討論台灣周邊的灰色地帶活動時，一個公開、可重現、誠實標示限制的工具，比一個「黑箱結論」更值得信任。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>Why an Open-Source (OSINT) Approach?</h2>
             <p>This site is deliberately built on <strong>publicly available data</strong> and <strong>public code</strong> — a methodological choice, not a convenience.</p>
             <div class="dark-reason">
@@ -534,16 +392,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>常見問題 FAQ</h2>
-            <div class="faq-section">
-                <details class="faq-item"><summary>本站的資料來自哪裡？</summary><div class="faq-answer">兩大來源——台灣港務局 AIS 資料（每 2 小時更新）與 Global Fishing Watch 的 SAR 衛星暗船偵測結果，兩者交叉比對。</div></details>
-                <details class="faq-item"><summary>威脅評分高代表這艘船一定有罪嗎？</summary><div class="faq-answer">不。高分代表行為模式異常，不等於確認破壞意圖。本系統旨在輔助人工研判，不能取代專業情報分析。</div></details>
-                <details class="faq-item"><summary>評分系統有幾項指標？</summary><div class="faq-answer">共 8 項，包含電纜鄰近、低速徘徊、之字形航行、AIS 異常與欺騙、制裁名單比對、STS 旁靠等，並依船舶類型加權。</div></details>
-                <details class="faq-item"><summary>這個專案是開源的嗎？</summary><div class="faq-answer">是。所有程式碼以 MIT 授權公開於 GitHub，任何人都可檢視評分邏輯與資料處理方式，並提出改進建議。</div></details>
-            </div>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>FAQ</h2>
             <div class="faq-section">
                 <details class="faq-item"><summary>Where does the site's data come from?</summary><div class="faq-answer">Two sources — Taiwan Port Bureau AIS data (updated every 2 hours) and Global Fishing Watch SAR satellite dark-vessel detections, which are cross-referenced.</div></details>
@@ -555,12 +404,9 @@
     </section>
 
     <div class="intro-cta" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
-        <a href="blog-taiwan-enforcement.html" class="lang-zh-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← 05 執法框架</a>
-        <a href="blog-taiwan-enforcement.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← 05 Enforcement Framework</a>
-        <a href="blog.html" class="lang-zh-only">← 返回所有文章</a>
-        <a href="blog.html" class="lang-en-only">← Back to All Articles</a>
-        <a href="../index.html" class="lang-zh-only">前往監測儀表板 →</a>
-        <a href="../index.html" class="lang-en-only">Go to Live Dashboard →</a>
+                <a href="blog-taiwan-enforcement.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← 05 Enforcement Framework</a>
+                <a href="blog.html" class="lang-en-only">← Back to All Articles</a>
+                <a href="../index.html" class="lang-en-only">Go to Live Dashboard →</a>
     </div>
 
     <footer class="site-footer">

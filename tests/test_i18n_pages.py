@@ -136,3 +136,59 @@ def test_all_faq_pages_have_en_faq_entry():
         src = (gi.DOCS / page).read_text(encoding="utf-8")
         if "FAQPage" in src:
             assert page in gi.EN_FAQ, f"{page} has FAQPage but no EN_FAQ"
+
+
+_BODY_CJK = re.compile(r"[一-鿿]")
+
+
+def _visible_text(html):
+    body = html[html.find("<body"):]
+    body = re.sub(r"<script.*?</script>", "", body, flags=re.S)
+    body = re.sub(r"<style.*?</style>", "", body, flags=re.S)
+    return re.sub(r"<[^>]+>", " ", body)
+
+
+def test_mirror_dom_is_english_only():
+    # No Chinese-only DOM blocks survive, and data-i18n nav text is resolved.
+    out = gi.generate_page("blog-what-is-dark-vessel.html")
+    assert re.search(r'class="[^"]*lang-zh-only', out) is None
+    # data-i18n nav resolved to English, Chinese gone
+    assert "Gray Zone Monitor" in out and "灰色地帶監測" not in out
+    assert "🛰️ Taiwan Gray Zone" in out
+    # the only Chinese left in visible text is the 中 language toggle
+    leftover = [c for c in _BODY_CJK.findall(_visible_text(out)) if c != "中"]
+    assert leftover == [], leftover
+
+
+def test_mirror_static_labels_translated():
+    # Related-chip / series labels (no data-i18n, no en variant) are translated.
+    out = gi.generate_page("blog-what-is-shadow-fleet.html")
+    assert "RELATED →" in out and "延伸閱讀" not in out
+    assert "Cable Threats" in out
+    leftover = [c for c in _BODY_CJK.findall(_visible_text(out)) if c != "中"]
+    assert leftover == [], leftover
+
+
+def test_blog_index_dom_english_only():
+    # blog.html has the heaviest UI chrome (filters, cards, series dots).
+    out = gi.generate_page("blog.html")
+    assert re.search(r'class="[^"]*lang-zh-only', out) is None
+    leftover = [c for c in _BODY_CJK.findall(_visible_text(out)) if c != "中"]
+    assert leftover == [], leftover
+
+
+def test_glossary_gzh_terms_removed():
+    out = gi.generate_page("blog-gray-zone-glossary.html")
+    assert 'class="g-zh"' not in out          # Chinese term labels dropped
+    assert 'class="g-en"' in out              # English term labels kept
+
+
+def test_shadow_fleet_article_registered():
+    page = "blog-what-is-shadow-fleet.html"
+    assert page in gi.STATIC_PAGES
+    assert page in gi.EN_META and page in gi.EN_FAQ
+    assert page in gi.EN_BREADCRUMB_LAST
+    # the source page exists and mirrors without error
+    out = gi.generate_page(page)
+    assert "What Is a Shadow Fleet?" in out
+    assert '<html lang="en">' in out
