@@ -22,8 +22,9 @@
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/reading.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0a0f1c">
+    <meta name="theme-color" content="#ffffff">
     <style>
     .story-hook{border-left:4px solid var(--accent-cyan);padding:16px 20px;margin:16px 0;background:rgba(0,245,255,.06);border-radius:0 8px 8px 0;font-size:14px;line-height:1.9;font-style:italic;color:var(--text-primary)}
     .fact-box{background:var(--bg-secondary);border:1px solid rgba(0,245,255,.15);border-radius:6px;padding:14px 18px;margin:12px 0;font-size:12px;line-height:1.8;color:var(--text-secondary)}
@@ -82,7 +83,7 @@
     {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"本站的資料來自哪裡？","acceptedAnswer":{"@type":"Answer","text":"兩大來源——台灣港務局 AIS 資料（每 2 小時更新）與 Global Fishing Watch 的 SAR 衛星暗船偵測結果，兩者交叉比對。"}},{"@type":"Question","name":"威脅評分高代表這艘船一定有罪嗎？","acceptedAnswer":{"@type":"Answer","text":"不。高分代表行為模式異常，不等於確認破壞意圖。本系統旨在輔助人工研判，不能取代專業情報分析。"}},{"@type":"Question","name":"評分系統有幾項指標？","acceptedAnswer":{"@type":"Answer","text":"共 8 項，包含電纜鄰近、低速徘徊、之字形航行、AIS 異常與欺騙、制裁名單比對、STS 旁靠等，並依船舶類型加權。"}},{"@type":"Question","name":"這個專案是開源的嗎？","acceptedAnswer":{"@type":"Answer","text":"是。所有程式碼以 MIT 授權公開於 GitHub，任何人都可檢視評分邏輯與資料處理方式，並提出改進建議。"}}]}
     </script>
 </head>
-<body>
+<body class="theme-reading">
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <header class="header" style="position:sticky;top:0;z-index:100">
         <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
