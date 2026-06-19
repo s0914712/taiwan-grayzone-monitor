@@ -1,0 +1,302 @@
+/* =============================================================================
+   reading.css — Light "reading" theme (Medium-like)
+   Scoped to body.theme-reading. Applied only to blog.html and
+   research-submarine-cable-legal.html (and their /en/ mirrors).
+   White background, near-black text, enlarged titles + body copy.
+   ============================================================================= */
+
+/* ── Variable remap: cascades through main.css ─────────────────────────────── */
+body.theme-reading {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f7fa;
+    --bg-card: #ffffff;
+    --text-primary: #242424;
+    --text-secondary: #4a4a4a;
+    --accent-cyan: #0b6fa4;          /* readable link/heading accent on white */
+    --border-glow: rgba(0, 0, 0, 0.12);
+}
+
+/* ── Base / readability ────────────────────────────────────────────────────── */
+body.theme-reading {
+    background: #ffffff;
+    color: #242424;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+/* Reading column + Medium-like body copy */
+body.theme-reading .intro-section {
+    max-width: 700px;
+    padding: 8px 24px 8px;
+}
+body.theme-reading .intro-section p {
+    font-size: 20px;
+    line-height: 1.7;
+    color: #242424;
+    margin-bottom: 1.2em;
+}
+body.theme-reading .intro-section h2 {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: #111;
+    margin: 40px 0 16px;
+    letter-spacing: -0.4px;
+}
+body.theme-reading .intro-section h3 {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: #1a1a1a;
+    margin: 28px 0 8px;
+}
+
+/* ── Enlarged article / page titles (Medium feel) ──────────────────────────── */
+body.theme-reading .intro-hero {
+    max-width: 700px;
+    padding: 56px 24px 28px;
+}
+body.theme-reading .intro-hero h1 {
+    font-size: clamp(32px, 5vw, 46px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.6px;
+    color: #111;
+    margin-bottom: 14px;
+}
+body.theme-reading .intro-hero .subtitle {
+    font-size: 19px;
+    line-height: 1.5;
+    color: #6a6a6a;
+    letter-spacing: 0;
+}
+
+/* ── Header (full white) ───────────────────────────────────────────────────── */
+body.theme-reading .header {
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.10);
+}
+body.theme-reading .header h1 {
+    color: #111;
+    text-shadow: none;
+}
+body.theme-reading .header-info a {
+    color: #444;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+body.theme-reading .header-info a:hover,
+body.theme-reading .header-info a.active {
+    color: var(--accent-cyan);
+    border-color: var(--accent-cyan);
+    background: rgba(11, 111, 164, 0.07);
+}
+body.theme-reading #langToggle {
+    color: var(--accent-cyan) !important;
+    background: #ffffff !important;
+    border-color: var(--accent-cyan) !important;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────────── */
+body.theme-reading .site-footer {
+    background: #f5f7fa;
+    border-top: 1px solid rgba(0, 0, 0, 0.10);
+    color: #555;
+}
+body.theme-reading .site-footer a { color: var(--accent-cyan); }
+
+/* =============================================================================
+   research-submarine-cable-legal.html specifics
+   ============================================================================= */
+body.theme-reading .article-meta {
+    background: #f7f9fb;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    color: #555;
+}
+body.theme-reading .article-meta .meta-label { color: var(--accent-cyan); }
+body.theme-reading .keyword-badge {
+    background: rgba(11, 111, 164, 0.08);
+    border: 1px solid rgba(11, 111, 164, 0.30);
+    color: var(--accent-cyan);
+}
+body.theme-reading .legal-highlight {
+    border-left: 3px solid var(--accent-cyan);
+    background: #eef6fb;                 /* subtle blue tint callout on white */
+    color: #2a2a2a;
+    font-size: 16px;
+    line-height: 1.7;
+}
+body.theme-reading .legal-highlight strong { color: var(--accent-cyan); }
+body.theme-reading .gray-zone-table { font-size: 15px; }
+body.theme-reading .gray-zone-table th {
+    background: #eef1f5;
+    color: #0b6fa4;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+}
+body.theme-reading .gray-zone-table td {
+    color: #2a2a2a;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+body.theme-reading .ref-list { font-size: 15px; }
+body.theme-reading .ref-list li {
+    color: #444;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+body.theme-reading .ref-list li em { color: #111; font-style: italic; }
+
+body.theme-reading .intro-cta a {
+    background: var(--accent-cyan);
+    color: #ffffff;
+}
+body.theme-reading .intro-cta a:hover {
+    box-shadow: 0 4px 18px rgba(11, 111, 164, 0.30);
+}
+
+/* =============================================================================
+   blog.html specifics — the page's bespoke <style> uses literal cyan, so
+   override explicitly.
+   ============================================================================= */
+body.theme-reading .blog-hero {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+body.theme-reading .blog-hero::after { opacity: 0.4; }     /* tone the sweep line */
+body.theme-reading .hero-canvas { opacity: 0.15; }         /* faint cyan grid → barely there */
+
+body.theme-reading .hero-eyebrow { color: #8a8a8a; }
+body.theme-reading .hero-title {
+    -webkit-text-fill-color: initial;
+    background: none;
+    color: #111;
+    font-size: clamp(34px, 6vw, 52px);
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+body.theme-reading .hero-sub { color: #5a5a5a; }
+body.theme-reading .h-stat-num {
+    color: var(--accent-cyan);
+    text-shadow: none;
+}
+body.theme-reading .h-stat-label { color: #6a6a6a; }
+
+/* Series track + filter bar (were dark islands) */
+body.theme-reading .series-track {
+    background: #f7f9fb;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+body.theme-reading .series-dot {
+    background: #ffffff;
+    border-color: rgba(11, 111, 164, 0.30);
+    color: #5a5a5a;
+}
+body.theme-reading .series-dot:hover {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    background: rgba(11, 111, 164, 0.08);
+    box-shadow: 0 0 10px rgba(11, 111, 164, 0.15);
+}
+body.theme-reading .series-dot-label { color: #9aa0a6; }
+body.theme-reading .series-dot:hover .series-dot-label { color: var(--accent-cyan); }
+body.theme-reading .series-line {
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.06));
+}
+
+body.theme-reading .filter-bar {
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+body.theme-reading .filter-bar-label { color: #9aa0a6; }
+body.theme-reading .filter-btn {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: #5a5a5a;
+}
+body.theme-reading .filter-btn:hover,
+body.theme-reading .filter-btn.active {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    background: rgba(11, 111, 164, 0.07);
+}
+
+/* Cards → clean white cards with soft shadow */
+body.theme-reading .blog-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+body.theme-reading .blog-card:hover {
+    border-color: rgba(11, 111, 164, 0.40);
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
+}
+body.theme-reading .blog-card::before {
+    background: linear-gradient(90deg, var(--accent-cyan) 0%, transparent 80%);
+}
+body.theme-reading .card-num { color: var(--accent-cyan); }
+body.theme-reading .card-title-zh { color: #1a1a1a; }
+body.theme-reading .blog-card:hover .card-title-zh { color: var(--accent-cyan); }
+body.theme-reading .card-title-en { color: #8a8a8a; }
+body.theme-reading .card-desc { color: #4a4a4a; font-size: 14px; }
+body.theme-reading .card-bg-num { color: rgba(0, 0, 0, 0.04); }
+body.theme-reading .blog-card:hover .card-bg-num { color: rgba(0, 0, 0, 0.06); }
+body.theme-reading .card-tag {
+    background: rgba(11, 111, 164, 0.07);
+    border: 1px solid rgba(11, 111, 164, 0.20);
+    color: var(--accent-cyan);
+}
+body.theme-reading .card-reading { color: #9aa0a6; }
+body.theme-reading .card-arrow { color: var(--accent-cyan); }
+
+/* Research card — darken the gold treatment for contrast on white */
+body.theme-reading .card-research {
+    border-color: rgba(184, 120, 0, 0.30);
+    background: #fffdf7;
+}
+body.theme-reading .card-research::before {
+    background: linear-gradient(90deg, #c8860a 0%, transparent 80%);
+}
+body.theme-reading .card-research:hover {
+    border-color: rgba(184, 120, 0, 0.55);
+    background: #fffdf7;
+    box-shadow: 0 10px 30px rgba(184, 120, 0, 0.12);
+}
+body.theme-reading .card-research .card-num { color: #b8780a; }
+body.theme-reading .card-research:hover .card-title-zh { color: #a86a00; }
+body.theme-reading .card-research .card-tag {
+    border-color: rgba(184, 120, 0, 0.35);
+    color: #a86a00;
+    background: rgba(184, 120, 0, 0.07);
+}
+body.theme-reading .card-research .card-arrow { color: #b8780a; }
+body.theme-reading .card-research .card-title-en { color: #b8860b !important; }
+
+/* Section labels + CTA */
+body.theme-reading .section-label {
+    color: #8a8a8a;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+body.theme-reading .section-label.gold { color: #b8780a; border-color: rgba(184, 120, 0, 0.18); }
+
+body.theme-reading .cta-primary {
+    background: var(--accent-cyan);
+    border: 1px solid var(--accent-cyan);
+    color: #ffffff;
+}
+body.theme-reading .cta-primary:hover {
+    background: #095a85;
+    box-shadow: 0 6px 18px rgba(11, 111, 164, 0.25);
+}
+body.theme-reading .cta-secondary {
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: #5a5a5a;
+}
+body.theme-reading .cta-secondary:hover {
+    border-color: rgba(0, 0, 0, 0.35);
+    color: #1a1a1a;
+}
+
+/* ── Mobile ────────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    body.theme-reading .intro-section p { font-size: 18px; }
+    body.theme-reading .intro-section h2 { font-size: 25px; }
+    body.theme-reading .intro-section h3 { font-size: 20px; }
+    body.theme-reading .intro-hero { padding: 40px 20px 24px; }
+}
