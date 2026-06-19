@@ -48,6 +48,7 @@ STATIC_PAGES = [
     "blog-what-is-ship-to-ship-transfer.html",
     "blog-what-is-ais-spoofing.html",
     "blog-what-is-maritime-gray-zone.html",
+    "blog-what-is-shadow-fleet.html",
     "blog-gray-zone-glossary.html",
 ]
 EN_SET = set(STATIC_PAGES)
@@ -135,6 +136,12 @@ EN_META = {
         "social": "What Is Maritime Gray-Zone Activity?",
         "desc": "Maritime gray-zone activity is coercion kept below the threshold of open conflict. An overview of dark vessels, AIS spoofing, ship-to-ship transfers, shadow fleets, and cable threats — and how OSINT tracks them around Taiwan.",
         "kw": "maritime gray zone, gray zone operations, dark vessel, AIS spoofing, ship-to-ship transfer, shadow fleet, submarine cable, Taiwan Strait, OSINT",
+    },
+    "blog-what-is-shadow-fleet.html": {
+        "title": f"What Is a Shadow Fleet? Sanctions Evasion, STS & Flags of Convenience | {SITE}",
+        "social": "What Is a Shadow Fleet?",
+        "desc": "A shadow fleet is a group of vessels that hide ownership and identity to evade sanctions and inspection — through flags of convenience, going dark and AIS spoofing, ship-to-ship transfers, and shell companies. How it operates and why it matters for Taiwan's submarine cables.",
+        "kw": "shadow fleet, dark fleet, sanctions evasion, flag of convenience, ship-to-ship transfer, AIS spoofing, going dark, submarine cable, Taiwan Strait, OSINT",
     },
     "blog-gray-zone-glossary.html": {
         "title": f"Taiwan Maritime Gray-Zone Glossary (Bilingual) | {SITE}",
@@ -272,6 +279,16 @@ EN_FAQ = {
         ("What does AIS spoofing have to do with submarine cables?",
          "If a ship can make itself appear to be elsewhere, it can operate near a cable without being immediately linked to it. Combined with going dark and identity changes, spoofing makes gray-zone behavior even harder to attribute."),
     ],
+    "blog-what-is-shadow-fleet.html": [
+        ("What is a shadow fleet?",
+         "A shadow fleet (also called a dark fleet) is a group of vessels that deliberately hide their true owner and identity to evade sanctions and inspection. They typically register under flags of convenience, frequently change ship names and flags, are held through layers of shell companies, and mask cargo and movements at sea by going dark, spoofing AIS, and conducting ship-to-ship transfers."),
+        ("What methods do shadow fleets use to evade tracking?",
+         "Common methods include registering under loosely regulated flags of convenience; frequently changing name, call sign, or MMSI; switching off or spoofing AIS; using ship-to-ship (STS) transfers to move cargo at sea and avoid port inspection; and hiding the real owner behind shell companies and questionable insurance."),
+        ("What does a shadow fleet have to do with submarine cables?",
+         "Shadow fleets were originally used to evade oil sanctions, but the same capability — hidden identity, going dark, and hard-to-attribute operations — also makes them an ideal vehicle for gray-zone threats to submarine cables: operating near a cable and dragging an anchor, then being hard to hold accountable afterward."),
+        ("Does being labeled a shadow fleet vessel mean it is illegal?",
+         "Not necessarily. Flags of convenience, transfers at sea, and name changes are lawful shipping practices in many situations. A shadow fleet is a risk pattern formed by a combination of anomalies — a lead worth investigating, not a finding of wrongdoing."),
+    ],
     "blog-what-is-maritime-gray-zone.html": [
         ("What is maritime gray-zone activity?",
          "Gray-zone activity is coercion or provocation deliberately kept below the threshold of open armed conflict, using ambiguity and deniability to achieve its aims. At sea, common forms include fishing-vessel swarms, switching off and spoofing AIS, ship-to-ship transfers, shadow-fleet transshipment, and threats to submarine cables."),
@@ -305,6 +322,7 @@ EN_BREADCRUMB_LAST = {
     "blog-what-is-ship-to-ship-transfer.html": "What Is an STS Transfer?",
     "blog-what-is-ais-spoofing.html": "What Is AIS Spoofing?",
     "blog-what-is-maritime-gray-zone.html": "What Is Maritime Gray-Zone Activity?",
+    "blog-what-is-shadow-fleet.html": "What Is a Shadow Fleet?",
     "blog-gray-zone-glossary.html": "Gray-Zone Glossary",
     "intro.html": "About",
     "research-submarine-cable-legal.html": "Research",
@@ -326,6 +344,92 @@ EN_HOWTO = {
         ("Compare statistics and exercise predictions",
          "On the statistics page, view dark-vessel trend charts and military-exercise prediction indicators to read the overall maritime situation."),
     ],
+}
+
+# Exact-match English for language-neutral UI chrome that the source pages
+# hard-code in Chinese with no English variant and no data-i18n key: related/
+# series chips, blog-index filter buttons and card tags, series-dot labels and
+# title tooltips, stat callouts with Chinese units, and bilingual incident
+# names (kept as the English side). Applied to whole text nodes and to title=""
+# attributes on the /en/ mirror only.
+EN_TEXT = {
+    # section / list labels
+    "系列文章 SERIES →": "SERIES →",
+    "延伸閱讀 RELATED →": "RELATED →",
+    "主題群 TOPIC MAP →": "TOPIC MAP →",
+    # numbered series chips
+    "01 海底電纜": "01 Submarine Cable",
+    "03 台灣現況": "03 Taiwan Status",
+    "04 威脅": "04 Threats",
+    "05 執法": "05 Enforcement",
+    "06 方法論": "06 Methodology",
+    # related chips
+    "影子船隊": "Shadow Fleet",
+    "暗船": "Dark Vessel",
+    "AIS 欺騙": "AIS Spoofing",
+    "海底電纜": "Submarine Cable",
+    "AIS 是什麼": "What Is AIS",
+    "評分方法論": "Methodology",
+    "詞彙表": "Glossary",
+    "方法論": "Methodology",
+    "旁靠": "STS",
+    "暗船即時地圖": "Live Dark-Vessel Map",
+    "旁靠偵測": "STS Detection",
+    "旁靠即時偵測": "Live STS Detection",
+    "海纜威脅": "Cable Threats",
+    "電纜威脅": "Cable Threats",
+    "旁靠 STS": "STS",
+    "暗船是什麼": "What Is a Dark Vessel",
+    # blog-index filter buttons
+    "全部 / All": "All",
+    "AIS / 暗船": "AIS / Dark",
+    "灰色地帶": "Gray Zone",
+    "執法法律": "Enforcement",
+    "詞彙": "Glossary",
+    "參考": "Reference",
+    "基礎知識": "Basics",
+    "威脅分析": "Threat Analysis",
+    "學術研究": "Research",
+    # card tags
+    "基礎": "Basics",
+    "總覽": "Overview",
+    "制裁規避": "Sanctions Evasion",
+    "AIS欺騙": "AIS Spoofing",
+    "偵測": "Detection",
+    "台灣海纜": "Taiwan Cables",
+    "馬祖": "Matsu",
+    "基礎設施": "Infrastructure",
+    "威脅": "Threats",
+    "執法": "Enforcement",
+    "方法": "Method",
+    "開源": "Open Source",
+    "法律分析": "Legal Analysis",
+    "海巡署": "Coast Guard",
+    "權宜船": "Flag of Convenience",
+    "法律戰": "Lawfare",
+    "參考 ⏱": "Reference ⏱",
+    # series-dot reading-time subtitles (blog index)
+    "基礎知識 · 8 min": "Basics · 8 min",
+    "台灣 · 馬祖 · 9 min": "Taiwan · Matsu · 9 min",
+    "威脅 · 影子船隊 · 11 min": "Threats · Shadow Fleet · 11 min",
+    "執法 · UNCLOS · 12 min": "Enforcement · UNCLOS · 12 min",
+    "CSIS · 開源 · 13 min": "CSIS · Open Source · 13 min",
+    # stat callouts (Chinese units)
+    "50天": "50 days",
+    "130萬": "1.3M",
+    "$10兆": "$10T",
+    # bilingual incident names -> English side
+    "馬祖雙纜事件 / Matsu Double-Cut Incident": "Matsu Double-Cut Incident",
+    "伊鵬三號事件 / Yi Peng 3 Incident (Baltic Sea)": "Yi Peng 3 Incident (Baltic Sea)",
+    "興順 39 號 / Xing Shun 39": "Xing Shun 39",
+    "鴻泰 58 號 / Hong Tai 58": "Hong Tai 58",
+    # series-dot title tooltips (blog index)
+    "01 什麼是海底電纜": "01 What Is a Submarine Cable",
+    "02 AIS 是什麼": "02 What Is AIS",
+    "03 我國海底電纜現況": "03 Taiwan's Cable Situation",
+    "04 海底電纜所受到的威脅": "04 Threats to Submarine Cables",
+    "05 我國執法框架與挑戰": "05 Enforcement Framework & Challenges",
+    "06 本網站所使用之方法": "06 Our Methodology",
 }
 
 # JSON-LD @type values whose `headline`/`description`/`name` describe the page
@@ -519,6 +623,107 @@ def _rewrite_en_jsonld(html: str, page: str) -> str:
     return _JSONLD_RE.sub(repl, html)
 
 
+def _load_i18n_en() -> dict:
+    """Parse docs/js/i18n.js into a {key: english_string} map.
+
+    The visible nav/header/intro text on the source pages is held in
+    ``data-i18n`` spans whose text content is Chinese and swapped to English
+    client-side by i18n.js. To emit an English-only DOM we resolve those keys
+    to their English value from the same dictionary, so the two never drift.
+    """
+    try:
+        js = (DOCS / "js" / "i18n.js").read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    out = {}
+    for m in re.finditer(
+            r"'([\w.]+)'\s*:\s*\{[^{}]*?\ben\s*:\s*'((?:[^'\\]|\\.)*)'", js):
+        val = (m.group(2).replace("\\'", "'").replace('\\"', '"')
+               .replace("\\\\", "\\"))
+        out[m.group(1)] = val
+    return out
+
+
+EN_UI = _load_i18n_en()
+
+_DATA_I18N_RE = re.compile(
+    r'(<(\w+)\b[^>]*\sdata-i18n="([\w.]+)"[^>]*>)(.*?)(</\2>)', re.S)
+_PLACEHOLDER_RE = re.compile(
+    r'(data-i18n-placeholder="([\w.]+)"[^>]*\bplaceholder=")[^"]*(")')
+_LANGTOGGLE_RE = re.compile(r'(<button id="langToggle"[^>]*>)EN(</button>)')
+
+
+def _resolve_data_i18n(html: str) -> str:
+    """Replace data-i18n element text (and placeholders) with English."""
+    def text(m):
+        en = EN_UI.get(m.group(3))
+        return m.group(1) + _esc(en) + m.group(5) if en is not None else m.group(0)
+
+    def ph(m):
+        en = EN_UI.get(m.group(2))
+        return m.group(1) + _esc(en) + m.group(3) if en is not None else m.group(0)
+
+    html = _DATA_I18N_RE.sub(text, html)
+    html = _PLACEHOLDER_RE.sub(ph, html)
+    return html
+
+
+def _strip_zh_only(html: str) -> str:
+    """Remove every element carrying the ``lang-zh-only`` class.
+
+    Depth-aware so a Chinese block that nests same-named tags (``div`` in
+    ``div``) is removed whole. The parallel ``lang-en-only`` siblings remain
+    and render because the mirror's ``<body>`` is ``lang-en``.
+    """
+    open_re = re.compile(
+        r'<(\w+)([^>]*\bclass="[^"]*\blang-zh-only\b[^"]*"[^>]*)>', re.I)
+    out, i = [], 0
+    while True:
+        m = open_re.search(html, i)
+        if not m:
+            out.append(html[i:])
+            break
+        out.append(html[i:m.start()])
+        tag = m.group(1)
+        if m.group(2).rstrip().endswith("/"):   # self-closing — drop just it
+            i = m.end()
+            continue
+        depth, j = 1, m.end()
+        tag_re = re.compile(r'<(/?)' + re.escape(tag) + r'\b([^>]*)>', re.I)
+        while depth > 0:
+            tm = tag_re.search(html, j)
+            if not tm:
+                j = len(html)
+                break
+            if tm.group(1) == "/":
+                depth -= 1
+            elif not tm.group(2).rstrip().endswith("/"):
+                depth += 1
+            j = tm.end()
+        i = j
+        k = i                                    # swallow trailing blank line
+        while k < len(html) and html[k] in " \t":
+            k += 1
+        if k < len(html) and html[k] == "\n":
+            i = k + 1
+    return "".join(out)
+
+
+_GZH_RE = re.compile(r'\s*<span class="g-zh">.*?</span>')
+
+
+def _translate_static_text(html: str) -> str:
+    """Translate hard-coded Chinese UI labels (whole text nodes + titles)."""
+    for zh, en in EN_TEXT.items():
+        html = re.sub(r'(>)\s*' + re.escape(zh) + r'\s*(<)',
+                      lambda m, en=en: m.group(1) + _esc(en) + m.group(2), html)
+        html = html.replace(f'title="{zh}"', f'title="{_esc(en)}"')
+    # Glossary term rows show the Chinese term in a g-zh span beside the English
+    # g-en span; drop it so the English mirror reads cleanly.
+    html = _GZH_RE.sub("", html)
+    return html
+
+
 def generate_page(page: str) -> str:
     html = (DOCS / page).read_text(encoding="utf-8")
 
@@ -540,6 +745,14 @@ def generate_page(page: str) -> str:
     if page in EN_META:
         html = _rewrite_en_head(html, EN_META[page])
     html = _rewrite_en_jsonld(html, page)
+
+    # English-only DOM: resolve data-i18n text, drop Chinese-only blocks, and
+    # flip the language toggle to offer Chinese (so non-JS / text-only crawlers
+    # see clean English instead of CSS-hidden bilingual content).
+    html = _resolve_data_i18n(html)
+    html = _strip_zh_only(html)
+    html = _translate_static_text(html)
+    html = _LANGTOGGLE_RE.sub(lambda m: m.group(1) + "中" + m.group(2), html)
 
     # Fix relative asset/link paths for the deeper directory.
     html = _rewrite_attrs(html)

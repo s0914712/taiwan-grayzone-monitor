@@ -68,55 +68,40 @@
 <body class="lang-en">
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <header class="header" style="position:sticky;top:0;z-index:100">
-        <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
+        <h1 data-i18n="title.index">🛰️ Taiwan Gray Zone &amp; Submarine Cable Monitor</h1>
         <div class="header-info">
-            <a href="../index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">灰色地帶監測</a>
-            <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">深度文章</a>
-            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <a href="../index.html" style="font-size:9px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.grayzone">Gray Zone Monitor</a>
+            <a href="blog.html" style="font-size:9px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.blog">Articles</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:9px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">中</button>
         </div>
     </header>
 
     <div class="intro-hero">
-        <h1 class="lang-zh-only">AIS 欺騙是什麼？</h1>
-        <h1 class="lang-en-only">What Is AIS Spoofing?</h1>
-        <p class="subtitle lang-zh-only">假座標 &#x2022; 身分冒用 &#x2022; 軌跡型態偵測 &#x2022; 台灣海域</p>
-        <p class="subtitle lang-en-only">Fake Positions &#x2022; Identity Fraud &#x2022; Pattern Detection &#x2022; Taiwan Waters</p>
+                <h1 class="lang-en-only">What Is AIS Spoofing?</h1>
+                <p class="subtitle lang-en-only">Fake Positions &#x2022; Identity Fraud &#x2022; Pattern Detection &#x2022; Taiwan Waters</p>
     </div>
 
     <section class="ai-summary" aria-label="頁面摘要 Page summary">
-        <h2 class="lang-zh-only">本頁重點</h2>
-        <h2 class="lang-en-only">In short</h2>
-        <p class="lang-zh-only">AIS 欺騙（spoofing）是船舶<strong>繼續廣播 AIS，但內容造假</strong>：假位置、假速度、假航向，甚至冒用其他船的 MMSI、船名或 IMO。與「走暗」（關閉 AIS）不同，欺騙是主動製造誤導。由於 AIS 由船舶自行填寫、無即時第三方驗證，本站靠物理與資料的內在矛盾來偵測它。</p>
-        <p class="lang-en-only">AIS spoofing is when a vessel <strong>keeps broadcasting AIS but the content is faked</strong>: false position, speed, or course, or even another ship's MMSI, name, or IMO. Unlike "going dark" (switching AIS off), spoofing actively creates a misleading picture. Because AIS is self-reported with no real-time third-party verification, this site detects it through physical and data inconsistencies.</p>
+                <h2 class="lang-en-only">In short</h2>
+                <p class="lang-en-only">AIS spoofing is when a vessel <strong>keeps broadcasting AIS but the content is faked</strong>: false position, speed, or course, or even another ship's MMSI, name, or IMO. Unlike "going dark" (switching AIS off), spoofing actively creates a misleading picture. Because AIS is self-reported with no real-time third-party verification, this site detects it through physical and data inconsistencies.</p>
         <ul>
-            <li class="lang-zh-only">偵測型態：不可能速度、方框／圓形軌跡、航向與位移不符、登記不符。</li>
-            <li class="lang-en-only">Detection patterns: impossible speed, box/circle tracks, course-vs-displacement mismatch, registry mismatch.</li>
-            <li class="lang-zh-only">欺騙是值得研判的強烈警訊，但仍是線索而非違法認定。</li>
-            <li class="lang-en-only">Spoofing is a strong red flag to investigate — still a lead, not a legal finding.</li>
+                        <li class="lang-en-only">Detection patterns: impossible speed, box/circle tracks, course-vs-displacement mismatch, registry mismatch.</li>
+                        <li class="lang-en-only">Spoofing is a strong red flag to investigate — still a lead, not a legal finding.</li>
         </ul>
     </section>
 
     <section class="intro-section">
         <div class="series-nav">
-            <span style="font-size:10px;color:rgba(0,245,255,.4);font-family:'JetBrains Mono',monospace;align-self:center">延伸閱讀 RELATED →</span>
-            <a href="blog-what-is-ais.html" class="series-chip">AIS 是什麼</a>
-            <a href="blog-what-is-dark-vessel.html" class="series-chip">暗船</a>
-            <a href="blog-methodology.html" class="series-chip">評分方法論</a>
-            <a href="blog-gray-zone-glossary.html#ais-spoofing" class="series-chip">詞彙表</a>
+            <span style="font-size:10px;color:rgba(0,245,255,.4);font-family:'JetBrains Mono',monospace;align-self:center">RELATED →</span>
+            <a href="blog-what-is-ais.html" class="series-chip">What Is AIS</a>
+            <a href="blog-what-is-dark-vessel.html" class="series-chip">Dark Vessel</a>
+            <a href="blog-methodology.html" class="series-chip">Methodology</a>
+            <a href="blog-gray-zone-glossary.html#ais-spoofing" class="series-chip">Glossary</a>
         </div>
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <div class="story-hook">
-                一艘船的 AIS 顯示它正穩穩地航行在某條航道上。問題是：衛星雷達在另一個地方拍到了它，而它「廣播的位置」其實是一片它從未去過的海。<br><br>
-                它沒有關掉 AIS——它在說謊。
-            </div>
-            <h2>AIS 欺騙是什麼？</h2>
-            <p>AIS 欺騙（AIS spoofing）指的是船舶<strong>持續廣播 AIS 訊號，但訊號內容是偽造的</strong>。它和「走暗」（關閉 AIS）是兩種不同手法：走暗是消失，欺騙是<strong>主動製造一個假的自己</strong>。</p>
-            <p>之所以可能，是因為 AIS 的設計是<strong>自我回報</strong>：船上的設備把位置、速度、身分等資料填好後廣播出去，沒有一個即時的第三方在旁邊核對。只要動點手腳，廣播出去的就可以是任何數字。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <div class="story-hook">
                 A ship's AIS shows it cruising steadily down a shipping lane. The problem: satellite radar photographed it somewhere else, and its "broadcast position" is a patch of sea it never visited.<br><br>
                 It didn't switch off AIS — it's lying.
@@ -128,17 +113,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>AIS 可以偽造什麼？</h2>
-            <p>幾乎每個欄位都能被造假，常見的有：</p>
-            <div class="dark-reason"><div class="dark-reason-icon">📍</div><div class="dark-reason-text"><strong>位置（GPS 座標）</strong>最常見：讓船「看起來」在數十甚至數百浬外，遠離它真正所在的敏感海域。</div></div>
-            <div class="dark-reason"><div class="dark-reason-icon">🚀</div><div class="dark-reason-text"><strong>速度（SOG）與航向（COG）</strong>虛報慢速或錯誤航向，掩蓋真實的徘徊、繞行或加速逃離。</div></div>
-            <div class="dark-reason"><div class="dark-reason-icon">🆔</div><div class="dark-reason-text"><strong>MMSI</strong>冒用另一艘合法船的識別碼，讓追蹤紀錄混淆，或借用乾淨身分。</div></div>
-            <div class="dark-reason"><div class="dark-reason-icon">🚢</div><div class="dark-reason-text"><strong>船名與呼號</strong>頻繁更換或填入假名，切斷與既有可疑紀錄的連結。</div></div>
-            <div class="dark-reason"><div class="dark-reason-icon">🔢</div><div class="dark-reason-text"><strong>IMO 編號</strong>理論上終身不變，卻被虛報或冒用，是高度可疑的訊號。</div></div>
-            <div class="fact-box"><span class="fact-title">關鍵差別</span>關閉 AIS 留下一段「空白」；AIS 欺騙則填滿一段「假資料」。前者讓你知道「有東西不見了」，後者試圖讓你<strong>根本不去懷疑</strong>——這也是為什麼欺騙往往比走暗更難察覺。</div>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>What Can Be Faked?</h2>
             <p>Almost every field can be forged. The common ones:</p>
             <div class="dark-reason"><div class="dark-reason-icon">📍</div><div class="dark-reason-text"><strong>Position (GPS coordinates)</strong>The most common: make the ship "appear" tens or hundreds of miles away from the sensitive waters it is really in.</div></div>
@@ -151,17 +126,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>如何偵測 AIS 欺騙？</h2>
-            <p>既然 AIS 內容可以造假，偵測就不能只看「它說什麼」，而要找出<strong>它說的話彼此矛盾、或與物理／登記資料對不上</strong>的地方。本站評分引擎使用幾種型態：</p>
-            <div class="dark-reason"><div class="dark-reason-icon">⚡</div><div class="dark-reason-text"><strong>不可能的速度</strong>把連續兩筆位置的距離除以時間，若得到的速度遠超船舶可能的上限（例如瞬間跳數百公里），代表位置被竄改。</div></div>
-            <div class="dark-reason"><div class="dark-reason-icon">🧭</div><div class="dark-reason-text"><strong>航向與位移不符</strong>廣播的航向（COG）與「由位置實際算出的移動方向」差距過大，是資料造假的跡象。</div></div>
-            <div class="dark-reason"><div class="dark-reason-icon">⬜</div><div class="dark-reason-text"><strong>方框軌跡（box pattern）</strong>出現多個近 90° 的轉折、且路徑封閉或範圍極小，是電腦生成假軌跡的典型特徵。</div></div>
-            <div class="dark-reason"><div class="dark-reason-icon">⭕</div><div class="dark-reason-text"><strong>圓形軌跡（circle pattern）</strong>半徑變化極小、弧度接近完整圓——真實航行很少如此對稱，常是 GPS 干擾或人造訊號。</div></div>
-            <div class="dark-reason"><div class="dark-reason-icon">📑</div><div class="dark-reason-text"><strong>登記不符</strong>廣播的船名、IMO 或呼號與 ITU 等公開登記資料對不上，顯示身分可能被冒用或虛報。</div></div>
-            <p>沒有任何單一型態能「證明」欺騙，但多項同時出現時，可信度就明顯下降。完整邏輯見 <a href="blog-methodology.html" style="color:var(--accent-cyan)">本站方法論</a>。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>How Is AIS Spoofing Detected?</h2>
             <p>Since the content can be faked, detection cannot rely on "what it says" — it has to find where <strong>the claims contradict each other, or clash with physics or registry data</strong>. This site's scoring engine uses several patterns:</p>
             <div class="dark-reason"><div class="dark-reason-icon">⚡</div><div class="dark-reason-text"><strong>Impossible speed</strong>Divide the distance between two consecutive positions by the time; if the implied speed far exceeds what a ship can do (e.g. jumping hundreds of km instantly), the position was tampered with.</div></div>
@@ -174,12 +139,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>為什麼與海底電纜和灰色地帶有關？</h2>
-            <p>欺騙之所以是灰色地帶的利器，在於它直接攻擊「歸責」這件事。如果一艘船能讓監測者相信它在別處，它就能在<strong>海底電纜附近活動，卻不被即時關聯到</strong>。</p>
-            <p>把欺騙、走暗與身分變更疊在一起，就構成一套完整的隱匿手法：先讓真實行蹤模糊（欺騙／走暗），再讓事後追查困難（換名、換 MMSI）。這正是本站把這些型態都納入威脅評分的原因——任何單項都不決定性，但組合起來會大幅削弱可否認性。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>Why It Matters for Cables and the Gray Zone</h2>
             <p>Spoofing is a gray-zone weapon because it attacks attribution itself. If a ship can make monitors believe it is elsewhere, it can <strong>operate near a submarine cable without being connected to the event in real time</strong>.</p>
             <p>Stack spoofing, going dark, and identity changes together and you get a full concealment toolkit: first blur the real movements (spoof/dark), then make after-the-fact tracing hard (rename, change MMSI). That is why this site folds all of these patterns into the threat score — no single one is decisive, but together they sharply erode deniability.</p>
@@ -187,17 +147,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>本站如何判讀？</h2>
-            <ol style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
-                <li>對每艘船的航跡檢查上述型態（不可能速度、方框、圓形、航向不符）。</li>
-                <li>把廣播身分與 ITU MARS 等登記資料比對，找出船名／IMO／呼號不符。</li>
-                <li>偵測到的欺騙型態屬於「高威脅指標」，會直接加進威脅分數。</li>
-                <li>欺騙 + 海纜鄰近的組合會再加分，因為這最符合蓄意隱匿的情境。</li>
-                <li>分數達門檻者列入可疑清單，供人工進一步研判。</li>
-            </ol>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>How This Site Reads It</h2>
             <ol style="font-size:13px;line-height:2.2;color:var(--text-secondary);padding-left:20px">
                 <li>Check each vessel's track for the patterns above (impossible speed, box, circle, course mismatch).</li>
@@ -210,17 +160,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>資料限制與免責聲明</h2>
-            <div class="alert-box"><ul style="margin:0;padding-left:18px;line-height:2">
-                <li>並非所有異常都是蓄意欺騙——GPS 干擾、設備故障或資料錯誤都可能造成類似型態。</li>
-                <li>SAR 衛星可作為獨立佐證，但其覆蓋有時間與空間間隙。</li>
-                <li>登記資料本身也可能過時或缺漏，比對結果需謹慎解讀。</li>
-                <li>偵測到欺騙型態是<strong>強烈警訊與待查線索</strong>，並非法律認定，也不指控任何具名船隻違法。</li>
-            </ul></div>
-            <p style="font-size:11px;color:var(--text-secondary)">本頁為研究與教育用途，採 MIT 授權彙整公開資料。</p>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>Data Limitations &amp; Disclaimer</h2>
             <div class="alert-box"><ul style="margin:0;padding-left:18px;line-height:2">
                 <li>Not every anomaly is deliberate spoofing — GPS jamming, equipment faults, or data errors can produce similar patterns.</li>
@@ -233,16 +173,7 @@
     </section>
 
     <section class="intro-section">
-        <div class="lang-zh-only">
-            <h2>常見問題 FAQ</h2>
-            <div class="faq-section">
-                <details class="faq-item"><summary>AIS 欺騙和 AIS 關閉有什麼不同？</summary><div class="faq-answer">關閉 AIS（走暗）是讓船從 AIS 上消失；AIS 欺騙是繼續廣播，但內容是假的——假位置、假速度，甚至冒用其他船的身分。走暗留下一段空白，欺騙則主動製造誤導。</div></details>
-                <details class="faq-item"><summary>AIS 可以偽造哪些資訊？</summary><div class="faq-answer">幾乎全部：GPS 位置座標、對地速度（SOG）、航向（COG）、MMSI、船名、呼號與 IMO 編號。因為 AIS 是船舶自行填寫並廣播，沒有第三方即時驗證。</div></details>
-                <details class="faq-item"><summary>要怎麼偵測 AIS 欺騙？</summary><div class="faq-answer">靠物理與資料的內在矛盾：不可能的速度、廣播航向與實際位移方向不符、人造的方框或圓形軌跡，以及船名／IMO 與 ITU 等登記資料不符。本站的評分引擎特別偵測這些型態。</div></details>
-                <details class="faq-item"><summary>AIS 欺騙和海底電纜有什麼關係？</summary><div class="faq-answer">若一艘船能讓自己「看起來」在別處，就能在電纜附近活動而不被即時關聯。配合走暗與身分變更，欺騙讓灰色地帶行為更難被歸責。</div></details>
-            </div>
-        </div>
-        <div class="lang-en-only">
+                <div class="lang-en-only">
             <h2>FAQ</h2>
             <div class="faq-section">
                 <details class="faq-item"><summary>How is AIS spoofing different from going dark?</summary><div class="faq-answer">Going dark removes the ship from AIS; spoofing keeps broadcasting but with fake content — false position, speed, or even another ship's identity. Going dark leaves a gap; spoofing actively misleads.</div></details>
@@ -254,10 +185,8 @@
     </section>
 
     <div class="intro-cta" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
-        <a href="blog-what-is-dark-vessel.html" class="lang-zh-only">下一篇：暗船是什麼 →</a>
-        <a href="blog-what-is-dark-vessel.html" class="lang-en-only">Next: What is a dark vessel? →</a>
-        <a href="blog.html" class="lang-zh-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← 返回深度文章</a>
-        <a href="blog.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← Back to articles</a>
+                <a href="blog-what-is-dark-vessel.html" class="lang-en-only">Next: What is a dark vessel? →</a>
+                <a href="blog.html" class="lang-en-only" style="background:transparent;border:1px solid var(--border-glow);color:var(--text-secondary)">← Back to articles</a>
     </div>
 
     <footer class="site-footer">
