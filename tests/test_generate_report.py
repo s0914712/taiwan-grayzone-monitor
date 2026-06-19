@@ -32,9 +32,22 @@ def test_render_html_valid_and_contains_key_facts():
     assert "YUAN XIANG YOU 27" in out
     assert 'href="../index.html?mmsi=413324020"' in out  # vessel permalink
     blocks = _ld_blocks(out)
-    assert len(blocks) >= 2
-    types = [json.loads(b).get("@type") for b in blocks]
-    assert "Report" in types and "BreadcrumbList" in types
+    assert len(blocks) >= 3
+    types = []
+    for b in blocks:
+        t = json.loads(b).get("@type")
+        types += t if isinstance(t, list) else [t]
+    for expected in ("Report", "Article", "Dataset", "BreadcrumbList"):
+        assert expected in types, expected
+    # the Report is backed by the day's Dataset, which derives from data.json
+    report = next(json.loads(b) for b in blocks
+                  if "Report" in (json.loads(b).get("@type") or []))
+    assert report["isBasedOn"]["@id"].endswith("/reports/2026-06-18.json")
+    assert any(m.get("@id", "").endswith("blog-methodology.html")
+               for m in report["mentions"])
+    dataset = next(json.loads(b) for b in blocks
+                   if json.loads(b).get("@type") == "Dataset")
+    assert dataset["isBasedOn"].endswith("/data.json")
 
 
 def test_render_html_escapes_and_handles_empty_top():
