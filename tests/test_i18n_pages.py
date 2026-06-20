@@ -223,6 +223,11 @@ EVERGREEN_PAGES = [
     "blog-what-is-ais-spoofing.html", "blog-what-is-maritime-gray-zone.html",
     "blog-what-is-shadow-fleet.html", "blog-taiwan-maritime-zones.html",
     "blog-gray-zone-glossary.html",
+    "blog-ocean-law-maritime-rights.html",
+    "blog-ocean-law-cable-protection.html",
+    "blog-ocean-law-enforcement-jurisdiction.html",
+    "blog-taiwan-cable-infrastructure.html",
+    "blog-global-cable-industry.html",
 ]
 
 
