@@ -75,7 +75,7 @@ body {
 
 .header h1 {
     font-family: 'Orbitron', sans-serif;
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 900;
     letter-spacing: 1px;
     color: var(--accent-cyan);
@@ -95,7 +95,7 @@ body {
 }
 
 .header-nav a {
-    font-size: 10px;
+    font-size: 13px;
     color: var(--text-secondary);
     text-decoration: none;
     padding: var(--spacing-xs) 10px;
@@ -117,7 +117,7 @@ body {
 
 .data-status {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
+    font-size: 11px;
     color: var(--text-secondary);
     padding: var(--spacing-xs) 10px;
     background: var(--bg-card);
@@ -936,7 +936,7 @@ body {
         flex-wrap: wrap;
     }
     .header h1 {
-        font-size: 13px;
+        font-size: 15px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -2144,6 +2144,16 @@ body {
 /* Detail button in popup */
 .vic-detail-btn {
     margin-top: 4px;
+}
+
+/* ── Leaflet popup (clicked vessel info card) — larger, readable text ──
+   Overrides the vendored leaflet.css defaults (13px) without editing it. */
+.leaflet-popup-content {
+    font-size: 14px;
+    line-height: 1.7;
+}
+.leaflet-popup-content b {
+    font-size: 15px;
 }
 
 /* ── Mobile: bottom sheet style ── */
