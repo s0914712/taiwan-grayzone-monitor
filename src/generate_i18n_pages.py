@@ -51,6 +51,11 @@ STATIC_PAGES = [
     "blog-what-is-shadow-fleet.html",
     "blog-taiwan-maritime-zones.html",
     "blog-gray-zone-glossary.html",
+    "blog-ocean-law-maritime-rights.html",
+    "blog-ocean-law-cable-protection.html",
+    "blog-ocean-law-enforcement-jurisdiction.html",
+    "blog-taiwan-cable-infrastructure.html",
+    "blog-global-cable-industry.html",
 ]
 EN_SET = set(STATIC_PAGES)
 
@@ -155,6 +160,36 @@ EN_META = {
         "social": "Taiwan Maritime Gray-Zone Glossary (Bilingual)",
         "desc": "Bilingual (English/Chinese) definitions of maritime gray-zone, OSINT, AIS/SAR, and law-of-the-sea terms: dark vessel, AIS spoofing, MMSI, STS, SAR, flag of convenience, territorial baseline.",
         "kw": "gray zone glossary, dark vessel, AIS spoofing, MMSI, ship-to-ship transfer, SAR, flag of convenience, territorial baseline",
+    },
+    "blog-ocean-law-maritime-rights.html": {
+        "title": f"What Are \"Maritime Rights\"? Sovereignty, Sovereign Rights & Jurisdiction | {SITE}",
+        "social": "What Are \"Maritime Rights\"?",
+        "desc": "Maritime rights under Taiwan's Ocean Basic Act are a three-tier structure — sovereignty, sovereign rights, and jurisdiction — running from the territorial sea to the high seas, mapping onto national security, maritime law-and-order, and maritime safety. Why submarine cables are critical national infrastructure.",
+        "kw": "maritime rights, law of the sea, sovereignty, sovereign rights, jurisdiction, UNCLOS, Ocean Basic Act, submarine cable, critical infrastructure, Taiwan",
+    },
+    "blog-ocean-law-cable-protection.html": {
+        "title": f"Submarine Cables Under International Law: From the 1884 Convention to UNCLOS | {SITE}",
+        "social": "Submarine Cables Under International Law",
+        "desc": "How international law protects submarine cables — the 1884 Convention, the 1958 High Seas Convention, and UNCLOS Article 113 — and the fatal gap between prescriptive and enforcement jurisdiction under exclusive flag-state jurisdiction.",
+        "kw": "submarine cable, international law, 1884 Convention, UNCLOS, Article 113, High Seas Convention, flag state jurisdiction, Lotus case, prescriptive jurisdiction, enforcement jurisdiction",
+    },
+    "blog-ocean-law-enforcement-jurisdiction.html": {
+        "title": f"Who Can Board and Enforce? Hot Pursuit, Right of Visit & Universal Jurisdiction | {SITE}",
+        "social": "Who Can Board and Enforce?",
+        "desc": "The enforcement toolkit for cable protection: UNCLOS right of visit (Art. 110) and hot pursuit (Art. 111), coastal-state protective powers, Taiwan's Telecommunications Management Act and Coast Guard Act, and the proposal to extend universal jurisdiction to malicious cable-cutting.",
+        "kw": "hot pursuit, right of visit, universal jurisdiction, UNCLOS Article 110, Article 111, Telecommunications Management Act, Coast Guard Act, submarine cable enforcement, extraterritorial jurisdiction",
+    },
+    "blog-taiwan-cable-infrastructure.html": {
+        "title": f"Taiwan's Submarine Cable Infrastructure: 4 Landing Stations & 12 Cable Systems | {SITE}",
+        "social": "Taiwan's Submarine Cable Infrastructure",
+        "desc": "The physical geography of Taiwan's submarine cables: the Toucheng, Tamsui, Bali, and Fangshan landing stations, ~12 international cable systems, the Kinmen–Xiamen and Tamsui–Fuzhou cross-strait cables, and the fragility of outer-island redundancy.",
+        "kw": "Taiwan submarine cable, landing station, Toucheng, Tamsui, Bali, Fangshan, international cable, Kinmen-Xiamen cable, Tamsui-Fuzhou, backup, cable resilience",
+    },
+    "blog-global-cable-industry.html": {
+        "title": f"The Global Submarine Cable Industry & Why Cables Break | {SITE}",
+        "social": "The Global Submarine Cable Industry",
+        "desc": "An overview of the global submarine cable industry: 400+ cables and over 1.1 million km, consortium vs private cables, the OTT investment shift (Google, Meta, Microsoft, Amazon), fault causes (over 70% human — fishing and anchors), repair challenges, AIS protection, and cable geopolitics.",
+        "kw": "submarine cable industry, global cables, cable map, OTT cables, Google cable, cable faults, fishing, anchor, cable ship, AIS, undersea great wall, Belt and Road",
     },
 }
 
@@ -316,6 +351,56 @@ EN_FAQ = {
         ("How does OSINT observe the gray zone?",
          "By cross-referencing AIS positions, SAR satellite dark-vessel detections, identity changes, and STS detection, then scoring and ranking anomalous behavior. The score is a risk ranking and a lead to investigate, not a legal finding."),
     ],
+    "blog-ocean-law-maritime-rights.html": [
+        ("What are \"maritime rights\"?",
+         "\"Maritime rights\" is the term used in Taiwan's Ocean Basic Act for the rights and interests a state enjoys and may assert in maritime zones under international law (above all UNCLOS). It is not a single right but three tiers of differing strength — sovereignty, sovereign rights, and jurisdiction — weakening from the coast outward. Cable protection sits inside this structure."),
+        ("What's the difference between sovereignty, sovereign rights, and jurisdiction?",
+         "They differ in strength: sovereignty is the most complete power, reaching internal waters and the territorial sea, where the state governs fully; sovereign rights are exclusive rights over specific matters (such as exploring and exploiting EEZ natural resources) but do not reach freedoms like navigation; jurisdiction is management power over specific functions (marine research, environmental protection, artificial islands). The farther offshore, the weaker the tier a state can assert."),
+        ("Why are submarine cables \"critical national infrastructure\"?",
+         "Over 95% of Taiwan's external internet and communications depend on submarine cables, on which finance, government, defense, and civilian communications are built. Cutting a cable affects not just connectivity but the functioning of the whole society and national security. Cables are therefore treated as critical national infrastructure, with security spanning national security, maritime law-and-order, and maritime safety."),
+        ("What does Taiwan's Ocean Basic Act mean for cable protection?",
+         "The Ocean Basic Act is a policy-framework parent law that declares basic principles for safeguarding maritime rights, maritime security, and ocean resources, but does not itself set criminal penalties. It provides the legal basis for folding cable security into the overall \"maritime rights\" framework, which individual laws such as the Telecommunications Management Act and the Coast Guard Act then implement with concrete controls and enforcement."),
+    ],
+    "blog-ocean-law-cable-protection.html": [
+        ("How does the 1884 Convention protect submarine cables?",
+         "The 1884 Convention for the Protection of Submarine Cables is the earliest treaty dedicated to cables. Art. 2 makes intentional or negligent damage punishable; Art. 8 assigns jurisdiction to the flag state and allows the victim state to exercise supplementary jurisdiction where the flag state fails to act; Art. 10 gives warships a right to inspect suspect vessels. It is in theory more toothed than UNCLOS, but has only about 36 parties — and neither Taiwan nor the PRC is one — so it is hard to apply directly in the Strait."),
+        ("What does UNCLOS Article 113 provide?",
+         "UNCLOS Art. 113 requires each party to enact domestic law making intentional or grossly negligent damage to high-seas submarine cables a punishable offense. It imposes a \"duty to legislate\" but allocates only prescriptive jurisdiction — it does not also grant states enforcement jurisdiction over foreign ships on the high seas. That is the core gap in international cable protection."),
+        ("What is the \"prescriptive vs enforcement\" jurisdiction gap?",
+         "Prescriptive jurisdiction is the power to make law and declare conduct illegal; enforcement jurisdiction is the power to actually board, seize, arrest, and prosecute. UNCLOS Art. 113 requires states to legislate against cable damage, yet Arts. 92 and 97 hand high-seas ships to exclusive flag-state jurisdiction. The result: the victim state has a law but no power to act against the foreign ship — a \"law without enforcement\" gap."),
+        ("Why is flag-state jurisdiction the biggest institutional gap?",
+         "Under the principle established from the Permanent Court's 1927 Lotus case and codified in UNCLOS Art. 92, a ship on the high seas is in principle subject only to its flag state. If perpetrators register under a loosely regulated flag of convenience, the victim state has no power to board or prosecute and must rely on the flag state's cooperation — which is often unwilling or unable, rendering protection hollow."),
+    ],
+    "blog-ocean-law-enforcement-jurisdiction.html": [
+        ("What is the right of visit?",
+         "The right of visit (UNCLOS Art. 110) lets a warship inspect a foreign ship on the high seas, but only in specific cases: reasonable suspicion of piracy, the slave trade, unauthorized broadcasting, or that the ship is stateless or falsely flagged (e.g. actually of the warship's nationality). Inspection usually means demanding the ship's papers and, if needed, boarding. Unfortunately \"submarine cable damage\" is not among Art. 110's listed grounds — a major limit on cable enforcement."),
+        ("What is hot pursuit?",
+         "Hot pursuit (UNCLOS Art. 111) lets a coastal state, when it has good reason to believe a foreign ship has broken its laws in internal waters, the territorial sea, the contiguous zone, or the EEZ, pursue that ship from those waters in an uninterrupted chase onto the high seas and intercept it. But the pursuit must be \"uninterrupted\" and ends once the ship enters its own or a third state's territorial sea — in practice a poor fit for an elusive cable-cutter."),
+        ("Can Telecommunications Management Act Article 72 be enforced against foreign ships?",
+         "Art. 72 (2023 amendment) criminalizes intentional cable damage and is Taiwan's domestic basis against cable cuts. But its reach is mainly Taiwan's territorial sea and EEZ; against foreign ships operating on the high seas or in other states' waters it remains constrained by exclusive flag-state jurisdiction, creating an extraterritorial-application problem. Coast Guard Act Arts. 4-5 grant enforcement and inspection powers within waters under Taiwan's jurisdiction."),
+        ("Why do some argue for extending universal jurisdiction to cables?",
+         "Universal jurisdiction currently applies mainly to \"enemies of all humankind\" such as piracy and the slave trade, which any state may prosecute. Because submarine cables are globally shared critical infrastructure and deliberate damage harms a transnational public interest, some scholars propose folding malicious cable-cutting into universal jurisdiction by analogy to piracy, so any state could board and prosecute and fill the gap left by flag-state jurisdiction. This is still a developing proposal, not yet positive international law."),
+    ],
+    "blog-taiwan-cable-infrastructure.html": [
+        ("What are Taiwan's cable landing stations?",
+         "Taiwan's international cables land mainly at four stations: Toucheng, Tamsui, and Bali in the north, and Fangshan in the south. After landfall, cables are carried by terrestrial backhaul to network hubs and data centers in places like Taipei and Neihu. The heavy concentration of landing stations is one of Taiwan's structural cable-resilience weaknesses."),
+        ("How many submarine cables does Taiwan have?",
+         "Taiwan's main island has about 14 international submarine cable systems plus roughly 10 domestic cables (connecting outer islands such as Penghu, Kinmen, and Matsu). About 12 international cable systems land on the main island across the four stations of Toucheng, Tamsui, Bali, and Fangshan. The outer islands have very few cables and are the most fragile link."),
+        ("What are the Kinmen–Xiamen and Tamsui–Fuzhou cables?",
+         "The Kinmen–Xiamen cable is a short cable (about 21 km) linking Kinmen to Xiamen in China, reflecting Kinmen's peculiar geographic and communications situation. The Tamsui–Fuzhou cable (TSE) is a system about 260 km long. These cross-strait cables are geopolitically sensitive."),
+        ("Why is outer-island cable redundancy especially fragile?",
+         "Outer islands such as Matsu rely on just 2 cables to the main island, and Kinmen has only 1 plus 1 backup. If those few cables are damaged together, an entire island can be cut off for weeks — in February 2023 Matsu's two cables were cut within 6 days and about 14,000 residents' internet was affected for nearly 50 days. The main island has more redundancy, but landing-station concentration remains a concern."),
+    ],
+    "blog-global-cable-industry.html": [
+        ("How many submarine cables are there worldwide?",
+         "By public cable-map counts, there are roughly 400-plus live and planned submarine cable systems globally, totaling over 1.1 million km — enough to circle the Earth dozens of times. They carry over 95% of international data traffic and are the true backbone of the internet. The figures change continuously as systems are built and retired."),
+        ("Who owns these cables?",
+         "Traditionally cables were built by consortia of telecom operators co-investing and sharing capacity. The biggest recent shift is OTT content giants — Google, Meta, Microsoft, Amazon — heavily investing in and even solely building \"private cables\" to feed the huge traffic between their cloud and data centers. Cable ownership is moving from telecoms to tech giants."),
+        ("What most commonly breaks a submarine cable?",
+         "Statistically the vast majority are human accidents: fishing activity (trawling) about 38% and ship anchors about 25%, together over 70% human; natural and environmental causes (seabed quakes, current abrasion) about 14%. Deliberate sabotage is a small share but the hardest to attribute — the thorniest part of gray-zone threats."),
+        ("How long does it take to repair a broken cable?",
+         "Usually 1 to 1.5 months, sometimes longer. One reason is that only about 60 specialized cable-repair ships exist worldwide and are often queued; plus the break must be located precisely, then grappled up, spliced, and tested — deep water is especially slow. Long repair times are exactly why outer islands served by only a few cables fear a break most."),
+    ],
 }
 
 # English breadcrumb names. Intermediate ancestor names are translated by the
@@ -342,6 +427,11 @@ EN_BREADCRUMB_LAST = {
     "blog-what-is-shadow-fleet.html": "What Is a Shadow Fleet?",
     "blog-taiwan-maritime-zones.html": "Taiwan's Maritime Zones",
     "blog-gray-zone-glossary.html": "Gray-Zone Glossary",
+    "blog-ocean-law-maritime-rights.html": "What Are Maritime Rights?",
+    "blog-ocean-law-cable-protection.html": "Cables Under International Law",
+    "blog-ocean-law-enforcement-jurisdiction.html": "Who Can Board and Enforce?",
+    "blog-taiwan-cable-infrastructure.html": "Taiwan's Cable Infrastructure",
+    "blog-global-cable-industry.html": "The Global Cable Industry",
     "intro.html": "About",
     "research-submarine-cable-legal.html": "Research",
 }
@@ -373,6 +463,7 @@ EN_HOWTO = {
 EN_TEXT = {
     # section / list labels
     "系列文章 SERIES →": "SERIES →",
+    "海洋法專區 SERIES →": "SERIES →",
     "延伸閱讀 RELATED →": "RELATED →",
     "主題群 TOPIC MAP →": "TOPIC MAP →",
     # numbered series chips
@@ -403,6 +494,7 @@ EN_TEXT = {
     "AIS / 暗船": "AIS / Dark",
     "灰色地帶": "Gray Zone",
     "執法法律": "Enforcement",
+    "海洋法": "Law of the Sea",
     "詞彙": "Glossary",
     "參考": "Reference",
     "基礎知識": "Basics",
@@ -422,6 +514,9 @@ EN_TEXT = {
     "方法": "Method",
     "開源": "Open Source",
     "法律分析": "Legal Analysis",
+    "國際法": "International Law",
+    "管轄權": "Jurisdiction",
+    "海纜產業": "Cable Industry",
     "海域分區": "Maritime Zones",
     "海巡署": "Coast Guard",
     "權宜船": "Flag of Convenience",
