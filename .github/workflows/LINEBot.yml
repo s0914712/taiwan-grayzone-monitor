@@ -1,34 +1,36 @@
-name: LINE Bot Auto Push
+name: LINE Bot Daily Report
 
 on:
   schedule:
-    # GitHub 的 cron 是使用 UTC 時間。
-    # 若要在台灣時間 (UTC+8) 每天早上 8:00 執行，這裡要設定為 0:00 (8 - 8 = 0)
+    # GitHub cron 使用 UTC 時間。
+    # 台灣時間 (UTC+8) 每天早上 08:00 推送 → UTC 00:00。
     # 格式：分 時 日 月 星期
     - cron: '0 0 * * *'
-  
-  # 加入 workflow_dispatch 可以讓你在 GitHub 網頁上按按鈕手動測試，不用苦等排程
-  workflow_dispatch: 
+
+  # 允許在 GitHub 網頁上手動觸發測試，不用等排程
+  workflow_dispatch:
 
 jobs:
-  build:
+  push-daily-report:
     runs-on: ubuntu-latest
 
     steps:
       - name: 取得程式碼 (Checkout)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 設定 Python 環境
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
-      - name: 安裝套件 (requests)
+      - name: 安裝套件
         run: pip install requests
 
-      - name: 執行發送訊息腳本
+      - name: 產生並推送每日報告
         env:
-          # 將 Secrets 轉化為腳本可以讀取的環境變數
-          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
-        run: python send_message.py
+          # 將 Secrets 轉成腳本讀取的環境變數
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINECHANNELACCESSTOKEN }}
+          LINE_USER_ID: ${{ secrets.USERID }}
+          # LLM 產文用（選填）；未設定時自動退回固定模板
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python src/SendMessage.py
