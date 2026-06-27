@@ -81,8 +81,14 @@ def _point_near_any_cable(lat, lon, cable_segments, threshold_km=5.0):
 
 
 def _load_cable_segments():
-    """載入海纜 GeoJSON，提取台灣周邊的線段座標"""
+    """載入海纜 GeoJSON，提取台灣周邊的線段座標。
+
+    優先讀 data/cable-geo.json（完整資料）；CI 環境該檔被 gitignore，
+    退回讀已提交的 docs/taiwan_cables.json（相同 GeoJSON 結構）。
+    """
     cable_file = DATA_DIR / "cable-geo.json"
+    if not cable_file.exists():
+        cable_file = DOCS_DIR / "taiwan_cables.json"
     if not cable_file.exists():
         return []
 
