@@ -29,8 +29,8 @@ jobs:
       - name: 產生並推送每日報告
         env:
           # 將 Secrets 轉成腳本讀取的環境變數
-          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINECHANNELACCESSTOKEN }}
-          LINE_USER_ID: ${{ secrets.USERID }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
           # LLM 產文用（選填）；未設定時自動退回固定模板
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python src/SendMessage.py
