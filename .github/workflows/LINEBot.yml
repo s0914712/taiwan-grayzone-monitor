@@ -1,0 +1,34 @@
+name: LINE Bot Auto Push
+
+on:
+  schedule:
+    # GitHub 的 cron 是使用 UTC 時間。
+    # 若要在台灣時間 (UTC+8) 每天早上 8:00 執行，這裡要設定為 0:00 (8 - 8 = 0)
+    # 格式：分 時 日 月 星期
+    - cron: '0 0 * * *'
+  
+  # 加入 workflow_dispatch 可以讓你在 GitHub 網頁上按按鈕手動測試，不用苦等排程
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 取得程式碼 (Checkout)
+        uses: actions/checkout@v3
+
+      - name: 設定 Python 環境
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 安裝套件 (requests)
+        run: pip install requests
+
+      - name: 執行發送訊息腳本
+        env:
+          # 將 Secrets 轉化為腳本可以讀取的環境變數
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python send_message.py
