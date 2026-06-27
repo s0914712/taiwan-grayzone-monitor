@@ -13,6 +13,9 @@ on:
 jobs:
   push-daily-report:
     runs-on: ubuntu-latest
+    # 上傳危險船隻航跡圖到 repo 需要寫入權限（取得公開圖片 URL 給 LINE）
+    permissions:
+      contents: write
 
     steps:
       - name: 取得程式碼 (Checkout)
@@ -24,7 +27,7 @@ jobs:
           python-version: '3.11'
 
       - name: 安裝套件
-        run: pip install requests
+        run: pip install requests matplotlib
 
       - name: 產生並推送每日報告
         env:
@@ -33,4 +36,6 @@ jobs:
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
           # LLM 產文用（選填）；未設定時自動退回固定模板
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # 上傳航跡圖到 repo 以取得公開圖片 URL
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python src/SendMessage.py
