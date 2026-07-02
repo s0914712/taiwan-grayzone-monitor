@@ -34,6 +34,7 @@ import requests
 BASE_DIR = Path(__file__).resolve().parent.parent
 SRC_DIR = BASE_DIR / "src"
 DOCS_DIR = BASE_DIR / "docs"
+DATA_DIR = BASE_DIR / "data"
 sys.path.insert(0, str(SRC_DIR))
 
 from generate_summary import load_data, compute_daily_summary  # noqa: E402
@@ -92,8 +93,8 @@ def select_top_commercial_vessel(data):
 
 
 def load_vessel_track(mmsi):
-    """讀取某艘船的航跡（docs/vessel_routes/{mmsi}.json）。點數不足回 None。"""
-    route_file = DOCS_DIR / "vessel_routes" / f"{mmsi}.json"
+    """讀取某艘船的航跡（data/vessel_routes/{mmsi}.json）。點數不足回 None。"""
+    route_file = DATA_DIR / "vessel_routes" / f"{mmsi}.json"
     if not route_file.exists():
         return None
     try:

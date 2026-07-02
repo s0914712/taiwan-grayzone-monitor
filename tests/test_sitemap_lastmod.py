@@ -48,3 +48,27 @@ def test_root_not_confused_with_subpaths():
     out = gd.bump_sitemap_lastmod(SITEMAP, "2026-06-20")
     blog = out.split(f"<loc>{BASE}blog-methodology.html</loc>")[1].split("</url>")[0]
     assert "2026-06-20" not in blog
+
+
+def test_report_entries_added_once(tmp_path):
+    (tmp_path / "2026-06-30.html").write_text("x")
+    (tmp_path / "2026-07-01.html").write_text("x")
+    (tmp_path / "index.html").write_text("x")  # non-dated -> skipped
+
+    out = gd.sync_report_sitemap_entries(SITEMAP, reports_dir=tmp_path)
+    for name in ("2026-06-30", "2026-07-01"):
+        block = out.split(f"<loc>{BASE}reports/{name}.html</loc>")[1].split("</url>")[0]
+        assert f"<lastmod>{name}</lastmod>" in block
+    assert f"{BASE}reports/index.html" not in out
+    assert out.rstrip().endswith("</urlset>")
+
+    # idempotent: running again adds nothing
+    assert gd.sync_report_sitemap_entries(out, reports_dir=tmp_path) == out
+
+
+def test_report_entries_dated_lastmod_not_bumped(tmp_path):
+    (tmp_path / "2026-06-30.html").write_text("x")
+    out = gd.sync_report_sitemap_entries(SITEMAP, reports_dir=tmp_path)
+    out = gd.bump_sitemap_lastmod(out, "2026-07-02")
+    block = out.split(f"<loc>{BASE}reports/2026-06-30.html</loc>")[1].split("</url>")[0]
+    assert "<lastmod>2026-06-30</lastmod>" in block

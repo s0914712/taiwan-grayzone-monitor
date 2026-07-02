@@ -66,5 +66,5 @@
 **待辦：**
 - 兩個動畫頁腳本間的重複 helper 去重（外移後已可逐步比對合併，風險低於先前）
 - **git 歷史帳密清除**（filter-repo + force push）— 需使用者決策：force push 會影響所有 clone，且 CI 自動 commit 流程需暫停配合；無論是否清除，**pingproxies 憑證都必須先在供應商端輪換**
-- **repo 膨脹**（pack 216MB；`docs/vessel_routes/` 23,012 檔 129MB）— 需架構決策：選項包括 (a) 軌跡檔搬到獨立資料分支、(b) GitHub Actions artifacts + 前端改 API 載入、(c) 合併為依 MMSI 前綴分片的大檔。各選項都會改變前端載入路徑
+- **repo 膨脹**（pack 216MB）— Pages 部署失敗的部分已於 2026-07 解決：`vessel_routes/` 移出 `docs/`（→ `data/vessel_routes/`，前端改經 raw.githubusercontent.com 載入），部署 artifact 從 195MB/27k 檔縮到 ~30MB/數百檔，並移除 update-ais/update-data 內與內建 pages-build-deployment 互搶的重複 deploy job。**git 歷史/pack 大小本身仍未縮**（需 filter-repo 或獨立資料分支，與帳密清除一併決策）
 - `data.json`（3.6MB）按主題分割 / 分頁載入 — 改善首屏載入，需同步調整各頁面 fetch 邏輯

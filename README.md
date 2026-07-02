@@ -197,8 +197,9 @@ taiwan-grayzone-monitor/
 │   ├── identity_events.json           # AIS identity change events 身分變更事件
 │   ├── weekly_dark_vessels.json       # 90-day SAR detections 暗船偵測紀錄
 │   ├── cable_status.json              # Submarine cable status 海纜狀態
-│   ├── taiwan_cables.json             # Cable route GeoJSON 海纜路線
-│   └── vessel_routes/                 # 1,000+ per-vessel route files 個別船隻航跡
+│   └── taiwan_cables.json             # Cable route GeoJSON 海纜路線
+├── data/
+│   └── vessel_routes/                 # Per-vessel route files 個別船隻航跡（不進 Pages，前端經 raw.githubusercontent.com 讀取）
 ├── src/                               # Python data pipeline 資料管線
 │   ├── fetch_ais_data.py              # Fetch AIS positions 擷取 AIS 船位
 │   ├── fetch_gfw_data.py              # Fetch GFW SAR data 擷取 GFW SAR 資料

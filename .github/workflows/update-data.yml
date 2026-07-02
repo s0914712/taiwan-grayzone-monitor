@@ -150,36 +150,7 @@ jobs:
         run: |
           echo "::error::管線輸出驗證失敗 — 詳見 Validate pipeline outputs 步驟。壞檔已還原為上次好版本後才 commit。"
           exit 1
-          
-  deploy:
-    needs: update-data
-    runs-on: ubuntu-latest
-    concurrency:
-      group: github-pages-deploy
-      cancel-in-progress: false
-    permissions:
-      pages: write
-      id-token: write
 
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: main  # 確保取得最新的 commit
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: './docs'
-          overwrite: true
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      # 不再自帶 deploy job：push 到 main 會觸發內建的 pages-build-deployment。
+      # 先前兩條部署路徑（內建 + 自訂 deploy-pages）互搶，導致
+      # "Deployment request failed ... due to in progress deployment" 連鎖失敗。
