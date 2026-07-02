@@ -9,6 +9,14 @@
 var MapRoutesFactory = function(map, layers) {
     'use strict';
 
+    // Per-vessel route files live in data/vessel_routes/ (outside the Pages
+    // artifact — 27k files made deployments time out), so on GitHub Pages they
+    // are fetched from the repo via raw.githubusercontent.com. Elsewhere
+    // (local dev server at the repo root, tests) use the relative repo path.
+    var ROUTE_FILE_BASE = /\.github\.io$/.test(location.hostname)
+        ? 'https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/data/vessel_routes/'
+        : '../data/vessel_routes/';
+
     /**
      * Show/hide route loading spinner
      */
@@ -254,7 +262,7 @@ var MapRoutesFactory = function(map, layers) {
             var source = 'pre';
 
             // Try pre-generated route file first
-            var res = await fetch('vessel_routes/' + mmsi + '.json?' + Date.now());
+            var res = await fetch(ROUTE_FILE_BASE + mmsi + '.json?' + Date.now());
             if (res.ok) {
                 data = await res.json();
                 if (!data.track || data.track.length === 0) data = null;

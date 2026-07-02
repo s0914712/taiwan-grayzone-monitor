@@ -409,6 +409,11 @@
         let trackLayer;
         let cachedTrackHistory = null;
         let transferIndex = {};   // eventId -> { marker, t }
+        // Route files live in data/vessel_routes/ (outside the Pages artifact);
+        // on GitHub Pages fetch them from the repo via raw.githubusercontent.com.
+        const ROUTE_FILE_BASE = /\.github\.io$/.test(location.hostname)
+            ? 'https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/data/vessel_routes/'
+            : '../data/vessel_routes/';
 
         /**
          * Deterministic, shareable event id from first_seen + the MMSI pair,
@@ -713,7 +718,7 @@
                 let data = null;
 
                 // Try pre-generated route file
-                const res = await fetch('vessel_routes/' + mmsi + '.json?' + Date.now());
+                const res = await fetch(ROUTE_FILE_BASE + mmsi + '.json?' + Date.now());
                 if (res.ok) {
                     data = await res.json();
                     if (!data.track || data.track.length === 0) data = null;
