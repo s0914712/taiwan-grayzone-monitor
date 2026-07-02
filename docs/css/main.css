@@ -66,6 +66,7 @@ body {
 .header {
     grid-column: 1 / -1;
     display: flex;
+    flex-wrap: wrap; /* 導覽按鈕 13px 後，窄視窗換行而非水平溢出 */
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-sm) var(--spacing-md);
@@ -84,6 +85,8 @@ body {
 
 .header-info {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     align-items: center;
     gap: 10px;
 }
