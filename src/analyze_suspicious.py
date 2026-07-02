@@ -7,17 +7,17 @@ Suspicious Vessel Analysis: Submarine Cable Threat Detection
 
 偵測邏輯（針對海纜破壞威脅 + AIS 偽訊號）：
   1. 海底電纜鄰近活動 (Cable Proximity)
-     - 船隻航跡經過海纜路線 5 公里內
+     - 船隻航跡經過海纜路線 5 公里內（港內點排除 — 海纜登陸點鄰近港口）
   2. Z 字型移動模式 (Zigzag Pattern)
-     - 頻繁改變航向，疑似拖錨或破壞行為
+     - 頻繁改變航向，疑似拖錨或破壞行為（排除錨泊擺動；拖錨組合需 ≤7kn）
   3. 200 公尺等深線活動 (Continental Shelf Edge)
      - 在大陸棚邊緣活動，海纜密集區
   4. AIS 身分變更 (Identity Manipulation)
      - 變更船名、呼號、IMO 等識別資訊
   5. AIS 偽訊號偵測 (Spoofing Detection)
-     a. 不可能物理 — 瞬移、速度/航向不一致
-     b. 方形軌跡 — 多次 ~90° 轉彎 + 封閉路徑
-     c. 圓形軌跡 — 半徑 CV 極低 + 弧度覆蓋 > 270°
+     a. 不可能物理 — 瞬移（排除 MMSI 共用）、速度/航向不一致（僅密集取樣）
+     b. 方形軌跡 — 多次 ~90° 轉彎 + 封閉路徑（港內操船排除）
+     c. 圓形軌跡 — 半徑 CV 極低 + 弧度覆蓋 > 270°（錨泊迴旋/港區干擾排除）
 ================================================================================
 """
 
@@ -48,7 +48,10 @@ SHIP_TRANSFERS_FILE = DATA_DIR / "ship_transfers.json"
 # ── 門檻設定 ────────────────────────────────────────────
 CABLE_PROXIMITY_KM = 5.0          # 海纜 5 公里內視為鄰近
 CABLE_LOITER_HOURS = 3.0          # 海纜鄰近低速徘徊 > 3 小時
-CABLE_LOITER_MAX_KNOTS = 8.0      # 低速定義 < 8 knots
+CABLE_LOITER_MAX_KNOTS = 5.0      # 低速定義 < 5 knots（>5kn 屬正常過境，非徘徊/拖錨）
+LOITER_MAX_GAP_HOURS = 4.0        # 徘徊連續性：慢速時間戳間隔超過此值即斷開（2h 快照 ×2）
+ANCHOR_DRAG_MAX_KNOTS = 7.0       # 拖錨情境速度上限 — >7kn 航行中的船幾乎不可能下錨
+STATIONARY_MAX_KNOTS = 1.0        # 錨泊/繫泊視為靜止（錨泊擺動漂移不算轉向）
 ZIGZAG_HEADING_CHANGE_DEG = 45    # 航向變化 > 45° 視為一次轉向
 ZIGZAG_MIN_TURNS = 3              # 至少 3 次轉向才算 Z 字型
 DEPTH_200M_CONTOUR_KM = 10.0      # 200m 等深線緩衝區寬度
@@ -59,6 +62,10 @@ GOING_DARK_GAP_HOURS = 18         # AIS 消失 > 18 小時
 SPOOF_TELEPORT_KMH = 100.0         # 最大合理速度 ~54kn；超過即瞬移
 SPOOF_SPEED_MISMATCH_RATIO = 3.0   # 計算速度 / 回報速度 比值門檻
 SPOOF_BEARING_MISMATCH_DEG = 60.0  # 計算航向 vs 回報 COG 差異門檻
+PHYSICS_MISMATCH_MAX_DT_HOURS = 1.0  # 速度/航向不符僅在取樣間隔 ≤1h 時檢查
+                                     # （2h 快照下瞬時 SOG vs 平均速度比對無意義）
+SPOOF_ANCHOR_SWING_RADIUS_KM = 0.6   # 圓形軌跡半徑 ≤0.6km + 低速/錨泊 = 錨泊迴旋，非偽訊號
+SPOOF_ANCHOR_SWING_MAX_KNOTS = 2.0   # 錨泊迴旋速度中位數上限
 SPOOF_BOX_ANGLE_TOLERANCE = 25.0   # 90° ± 25° 視為直角轉彎（65°-115°）
 SPOOF_BOX_MIN_TURNS = 3            # 至少 3 次直角轉彎
 SPOOF_BOX_CLOSURE_KM = 5.0         # 起終點 < 5km 視為封閉路徑
@@ -98,6 +105,11 @@ VESSEL_TYPE_MULTIPLIER = {
 # ── STS 旁靠加分 ──────────────────────────────────────────
 STS_SUSPICIOUS_SCORE = 5   # 涉及可疑旁靠事件
 STS_ANY_SCORE = 2          # 涉及任何旁靠事件
+
+# ── UN 制裁匹配加分 ───────────────────────────────────────
+# IMO 是唯一不變識別碼 → 高信度；純船名比對中式船名重名率高 → 降低權重
+SANCTION_IMO_SCORE = 8         # IMO 確認匹配
+SANCTION_NAME_ONLY_SCORE = 4   # 僅船名匹配（無 IMO 佐證）
 
 # ── 地理法域 / 海纜緩衝帶加分（行為分，受船型乘數影響）──────────
 # 在既有「任一航跡點 5km 內海纜」(cable_proximity, +2) 之上，對「最近位置」
@@ -293,14 +305,18 @@ def check_impossible_physics(track_points):
     """
     偵測不可能物理現象：
     - 瞬移 (teleportation): 計算速度超過 SPOOF_TELEPORT_KMH
+      （瞬移對兩點船名不同 → 判為 MMSI 共用，另計 mmsi_collision，不算偽訊號）
     - 速度不一致: 計算速度 vs 回報 SOG 比值 > SPOOF_SPEED_MISMATCH_RATIO
     - 航向不一致: 計算航向 vs 回報 COG 差異 > SPOOF_BEARING_MISMATCH_DEG
+      （速度/航向不符僅在取樣間隔 ≤ PHYSICS_MISMATCH_MAX_DT_HOURS 檢查 —
+       常態 2h 快照下「瞬時 SOG vs 區間平均」比對只會製造誤判）
     回傳: (is_suspicious, details)
     """
     if len(track_points) < 2:
         return False, {}
 
     teleport_count = 0
+    mmsi_collision_count = 0
     max_calc_speed = 0
     speed_mismatch_count = 0
     bearing_mismatch_count = 0
@@ -337,27 +353,34 @@ def check_impossible_physics(track_points):
         if calc_speed_kmh > max_calc_speed:
             max_calc_speed = calc_speed_kmh
 
-        # 瞬移偵測
+        # 瞬移偵測 — 兩點船名不同時判為 MMSI 共用（大陸漁船常見），非偽訊號
         if calc_speed_kmh > SPOOF_TELEPORT_KMH:
-            teleport_count += 1
+            n1 = (p1.get('name') or '').strip().upper()
+            n2 = (p2.get('name') or '').strip().upper()
+            if n1 and n2 and n1 != n2:
+                mmsi_collision_count += 1
+            else:
+                teleport_count += 1
 
-        # 速度不一致偵測
-        reported_sog = p1.get('speed', 0)
-        reported_kmh = reported_sog * 1.852  # knots → km/h
-        if calc_speed_kmh > 5 and reported_kmh > 5:  # 避免低速噪音
-            ratio = calc_speed_kmh / reported_kmh
-            if ratio > SPOOF_SPEED_MISMATCH_RATIO or \
-               ratio < (1.0 / SPOOF_SPEED_MISMATCH_RATIO):
-                speed_mismatch_count += 1
+        # 速度/航向不一致：僅在取樣密集時（dt ≤1h）比對才有意義
+        if dt_hours <= PHYSICS_MISMATCH_MAX_DT_HOURS:
+            # 速度不一致偵測
+            reported_sog = p1.get('speed', 0)
+            reported_kmh = reported_sog * 1.852  # knots → km/h
+            if calc_speed_kmh > 5 and reported_kmh > 5:  # 避免低速噪音
+                ratio = calc_speed_kmh / reported_kmh
+                if ratio > SPOOF_SPEED_MISMATCH_RATIO or \
+                   ratio < (1.0 / SPOOF_SPEED_MISMATCH_RATIO):
+                    speed_mismatch_count += 1
 
-        # 航向不一致偵測
-        if dist_km >= 1.0:  # 移動距離夠大才比較航向
-            calc_brg = calc_bearing(lat1, lon1, lat2, lon2)
-            reported_hdg = p1.get('heading')
-            if reported_hdg is not None and reported_hdg > 0:
-                diff = angular_diff(calc_brg, reported_hdg)
-                if diff > SPOOF_BEARING_MISMATCH_DEG:
-                    bearing_mismatch_count += 1
+            # 航向不一致偵測
+            if dist_km >= 1.0:  # 移動距離夠大才比較航向
+                calc_brg = calc_bearing(lat1, lon1, lat2, lon2)
+                reported_hdg = p1.get('heading')
+                if reported_hdg is not None and reported_hdg > 0:
+                    diff = angular_diff(calc_brg, reported_hdg)
+                    if diff > SPOOF_BEARING_MISMATCH_DEG:
+                        bearing_mismatch_count += 1
 
     is_suspicious = (teleport_count > 0 or
                      speed_mismatch_count >= 2 or
@@ -365,6 +388,7 @@ def check_impossible_physics(track_points):
 
     return is_suspicious, {
         'teleport_count': teleport_count,
+        'mmsi_collision_count': mmsi_collision_count,
         'max_calc_speed_kmh': round(max_calc_speed, 1),
         'speed_mismatch_count': speed_mismatch_count,
         'bearing_mismatch_count': bearing_mismatch_count,
@@ -424,12 +448,23 @@ def check_box_pattern(track_points):
     is_box = (right_angle_turns >= SPOOF_BOX_MIN_TURNS and
               (path_closed or bbox_km < 5.0))
 
-    return is_box, {
+    details = {
         'right_angle_turns': right_angle_turns,
         'path_closed': path_closed,
         'closure_distance_km': round(closure_km, 2),
         'bounding_box_km': round(bbox_km, 2),
     }
+
+    # 港內排除：進出泊位/錨地的操船本來就是直角轉彎 + 小範圍封閉路徑
+    if is_box:
+        clat = sum(lats) / len(lats)
+        clon = sum(lons) / len(lons)
+        port = geofence.is_in_port_cached(clat, clon)
+        if port:
+            details['skipped_reason'] = f'in_port:{port}'
+            return False, details
+
+    return is_box, details
 
 
 def check_circle_pattern(track_points):
@@ -480,7 +515,7 @@ def check_circle_pattern(track_points):
     is_circle = (cv < SPOOF_CIRCLE_RADIUS_CV and
                  arc_coverage >= SPOOF_CIRCLE_MIN_ARC_DEG)
 
-    return is_circle, {
+    details = {
         'center_lat': round(clat, 4),
         'center_lon': round(clon, 4),
         'mean_radius_km': round(mean_r, 3),
@@ -488,6 +523,27 @@ def check_circle_pattern(track_points):
         'arc_coverage_deg': round(arc_coverage, 1),
         'point_count': len(moving),
     }
+
+    if is_circle:
+        # 錨泊迴旋排除：船繞錨點隨潮流迴轉本來就是小半徑近圓軌跡。
+        # 半徑 ≤0.6km 且（過半數點回報錨泊/繫泊 或 速度中位數 <2kn）→ 非偽訊號
+        if mean_r <= SPOOF_ANCHOR_SWING_RADIUS_KM:
+            anc_count = sum(1 for p in moving if p.get('anc'))
+            speeds = sorted(p.get('speed', 0) for p in moving)
+            median_speed = speeds[len(speeds) // 2]
+            if (anc_count * 2 >= len(moving)
+                    or median_speed < SPOOF_ANCHOR_SWING_MAX_KNOTS):
+                details['skipped_reason'] = 'anchor_swing'
+                return False, details
+
+        # 港內排除：港區 GPS 干擾（"crop circles"）產生的圓形軌跡
+        # 屬環境干擾而非船隻蓄意偽造，對海纜威脅評分是雜訊
+        port = geofence.is_in_port_cached(clat, clon)
+        if port:
+            details['skipped_reason'] = f'in_port:{port}'
+            return False, details
+
+    return is_circle, details
 
 
 def check_starburst_pattern(track_points, vessel_type='unknown'):
@@ -570,7 +626,8 @@ def check_starburst_pattern(track_points, vessel_type='unknown'):
 def check_cable_proximity(track_points):
     """
     檢查船隻航跡是否經過海纜附近
-    同時偵測低速徘徊（<8kn 在海纜 5km 內超過 3 小時）
+    同時偵測低速徘徊（<5kn 在海纜 5km 內、連續超過 3 小時）
+    港內點不計入 — 海纜登陸點鄰近港口，靠泊/錨泊屬例行活動。
     回傳: (is_near, details)
     """
     cables = load_cable_segments()
@@ -578,8 +635,10 @@ def check_cable_proximity(track_points):
         return False, {}
 
     # 計算船隻航跡的 bounding box，用於快速排除不相關的海纜
+    # 港內點直接跳過：正常靠泊會被海纜登陸段誤判為鄰近/徘徊
     valid_pts = [p for p in track_points
-                 if p.get('lat') is not None and p.get('lon') is not None]
+                 if p.get('lat') is not None and p.get('lon') is not None
+                 and not p.get('in_port')]
     if not valid_pts:
         return False, {}
     # CABLE_PROXIMITY_KM ≈ 0.045° buffer at equator, use 0.06° for safety
@@ -622,24 +681,37 @@ def check_cable_proximity(track_points):
             if is_near_cable:
                 break
 
-        # 記錄低速徘徊時間戳（海纜鄰近 + 速度 < 8 knots）
+        # 記錄低速徘徊時間戳（海纜鄰近 + 速度 < 5 knots）
         if is_near_cable and pt.get('speed', 99) < CABLE_LOITER_MAX_KNOTS:
             ts = pt.get('t', '')
             if ts:
                 loiter_slow_timestamps.append(ts)
 
-    # 從實際時間戳計算徘徊時數
+    # 從實際時間戳計算「最長連續」徘徊時數 —
+    # 相鄰慢速時間戳間隔 > LOITER_MAX_GAP_HOURS 即斷開（船中途離開再回來
+    # 不能累計成一段長徘徊）
     loiter_hours = 0.0
     if len(loiter_slow_timestamps) >= 2:
-        try:
-            t_first = datetime.fromisoformat(
-                loiter_slow_timestamps[0].replace('Z', '+00:00'))
-            t_last = datetime.fromisoformat(
-                loiter_slow_timestamps[-1].replace('Z', '+00:00'))
-            loiter_hours = (t_last - t_first).total_seconds() / 3600
-        except (ValueError, AttributeError):
-            # 回退：用快照數 × 平均間隔估算
-            loiter_hours = len(loiter_slow_timestamps) * 2.0
+        parsed = []
+        for ts in loiter_slow_timestamps:
+            try:
+                parsed.append(datetime.fromisoformat(ts.replace('Z', '+00:00')))
+            except (ValueError, AttributeError):
+                continue
+        parsed.sort()
+        seg_start = None
+        prev = None
+        for t in parsed:
+            if seg_start is None:
+                seg_start = prev = t
+                continue
+            gap = (t - prev).total_seconds() / 3600
+            if gap > LOITER_MAX_GAP_HOURS:
+                seg_start = t  # 斷開，重新起算
+            else:
+                loiter_hours = max(
+                    loiter_hours, (t - seg_start).total_seconds() / 3600)
+            prev = t
     is_loitering = loiter_hours >= CABLE_LOITER_HOURS
 
     is_near = len(near_cables) > 0
@@ -656,15 +728,24 @@ def check_zigzag_pattern(track_points):
     """
     檢測 Z 字型移動模式（頻繁大幅改變航向）
     使用 calc_bearing() 從實際位置計算航向，避免依賴可能不準確的 AIS heading。
+    排除錨泊/繫泊與近乎靜止的點 — 錨泊船隨潮流擺動，2h 快照間可漂移
+    100-300m，方位近乎隨機，會被誤判為連續大幅轉向。
     回傳: (is_zigzag, details)
     """
     if len(track_points) < 4:
         return False, {}
 
-    # 從連續位置計算實際航向（排除靜止點和距離過近的點）
-    bearings = []
-    for i in range(1, len(track_points)):
-        p1, p2 = track_points[i - 1], track_points[i]
+    # 過濾錨泊(anc)與近靜止點，再從連續位置計算實際航向
+    moving = [p for p in track_points
+              if not p.get('anc')
+              and p.get('speed', 0) >= STATIONARY_MAX_KNOTS]
+
+    if len(moving) < 4:
+        return False, {}
+
+    bearings = []  # (bearing, 該段起點回報速度)
+    for i in range(1, len(moving)):
+        p1, p2 = moving[i - 1], moving[i]
         lat1, lon1 = p1.get('lat'), p1.get('lon')
         lat2, lon2 = p2.get('lat'), p2.get('lon')
         if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
@@ -672,25 +753,31 @@ def check_zigzag_pattern(track_points):
         dist = haversine_km(lat1, lon1, lat2, lon2)
         if dist < 0.1:  # 移動不足 100m，跳過
             continue
-        bearings.append(calc_bearing(lat1, lon1, lat2, lon2))
+        bearings.append((calc_bearing(lat1, lon1, lat2, lon2),
+                         p2.get('speed', 0)))
 
     if len(bearings) < 4:
         return False, {}
 
-    # 計算航向變化
+    # 計算航向變化；同時統計低速（≤7kn，可能下錨）狀態下的轉向次數，
+    # 供「海纜鄰近 + Z字型 = 拖錨」組合判斷 — 高速轉向不可能是拖錨
     turns = 0
+    turns_below_drag_speed = 0
     heading_changes = []
     for i in range(1, len(bearings)):
-        delta = angular_diff(bearings[i], bearings[i - 1])
+        delta = angular_diff(bearings[i][0], bearings[i - 1][0])
         heading_changes.append(delta)
         if delta >= ZIGZAG_HEADING_CHANGE_DEG:
             turns += 1
+            if bearings[i][1] <= ANCHOR_DRAG_MAX_KNOTS:
+                turns_below_drag_speed += 1
 
     avg_change = sum(heading_changes) / len(heading_changes) if heading_changes else 0
     is_zigzag = turns >= ZIGZAG_MIN_TURNS
 
     return is_zigzag, {
         'turn_count': turns,
+        'turns_below_drag_speed': turns_below_drag_speed,
         'avg_heading_change': round(avg_change, 1),
         'threshold': f'>={ZIGZAG_MIN_TURNS} turns of >={ZIGZAG_HEADING_CHANGE_DEG}°',
     }
@@ -1001,19 +1088,37 @@ def load_track_history():
                             continue
                         if mmsi not in tracks:
                             tracks[mmsi] = []
-                        tracks[mmsi].append({
+                        pt = {
                             't': ts,
                             'lat': v.get('lat'),
                             'lon': v.get('lon'),
                             'speed': v.get('speed', 0),
                             'heading': v.get('heading'),
-                        })
+                            # 船名：偵測 MMSI 共用（瞬移偽訊號誤判排除）
+                            'name': v.get('name'),
+                        }
+                        # 錨泊/繫泊旗標（nav_status 1/5，fetch_ais_data 寫入）
+                        if v.get('anc'):
+                            pt['anc'] = 1
+                        tracks[mmsi].append(pt)
                 break  # found this tier, skip fallback path
         else:
             print(f"⚠️ {tier_label} track history not found")
 
     print(f"📊 Track history: {len(tracks)} vessels")
     return tracks
+
+
+def annotate_port_points(track_points):
+    """對每個航跡點標註 in_port（台灣港口 2km / 大陸港灣 8km+，見 geofence）。
+    港內的靠泊/錨泊/操船屬例行活動，海纜鄰近、徘徊、緩衝帶加分皆應排除。"""
+    for pt in track_points:
+        lat, lon = pt.get('lat'), pt.get('lon')
+        if lat is None or lon is None:
+            continue
+        port = geofence.is_in_port_cached(lat, lon)
+        if port:
+            pt['in_port'] = port
 
 
 def classify_vessel(profile, track_points, identity_events=None,
@@ -1065,6 +1170,10 @@ def classify_vessel(profile, track_points, identity_events=None,
         classification['type_multiplier'] = 0
         classification['flags'] = [f'排除: {reasons}']
         return classification
+
+    # ── 港內點標註（供海纜鄰近/徘徊/緩衝帶排除）──
+    if track_points:
+        annotate_port_points(track_points)
 
     # ── Criterion 1: 海纜鄰近活動 ──
     if track_points:
@@ -1120,8 +1229,11 @@ def classify_vessel(profile, track_points, identity_events=None,
         classification['sanction_info'] = sanctions_match
         res = sanctions_match.get('resolution', '1718')
         measures = ', '.join(sanctions_match.get('measures', []))
+        # 純船名匹配（無 IMO 佐證）信度較低 — 中式船名重名率高
+        name_only = sanctions_match.get('matched_by') == 'name'
+        suffix = '｜僅船名匹配，無 IMO 佐證' if name_only else ''
         classification['flags'].append(
-            f'⚠️ UN 制裁船舶 (UNSCR {res}: {measures})'
+            f'⚠️ UN 制裁船舶 (UNSCR {res}: {measures}){suffix}'
         )
 
     # ── Criterion 7: AIS 偽訊號偵測 (Spoofing) ──
@@ -1204,17 +1316,20 @@ def classify_vessel(profile, track_points, identity_events=None,
     # ── 海域法域 + 海纜緩衝帶（最近位置）──────────────────────
     # 先算出 geofence 標註，供計分與輸出共用（失敗安全降級，不影響評分）。
     gf = None
+    last_in_port = False
     classification['cable_buffer_1km'] = False
     classification['cable_buffer_jurisdiction'] = False
     if track_points:
         _last = track_points[-1]
+        last_in_port = bool(_last.get('in_port'))
         _lat, _lon = _last.get('lat'), _last.get('lon')
         if _lat is not None and _lon is not None:
             try:
                 gf = geofence.annotate(_lat, _lon)
             except Exception:
                 gf = None
-    if gf:
+    # 港內不加分：靠泊在港（≒海纜登陸點附近、必為內水）不是灰色地帶威脅情境
+    if gf and not last_in_port:
         if gf.get('cable_band') == 'within_1km':
             classification['cable_buffer_1km'] = True
             zone = gf.get('zone')
@@ -1245,8 +1360,11 @@ def classify_vessel(profile, track_points, identity_events=None,
         raw_score += CABLE_BUFFER_JURISDICTION_SCORE  # 且位於我國管轄海域
 
     # ── 組合加分（多重指標交叉 = 高度可疑）──
-    if classification['cable_proximity'] and classification['zigzag_pattern']:
-        raw_score += 3  # 海纜鄰近 + Z字型 = 可能拖錨
+    # 拖錨組合：轉向須發生在可能下錨的速度（≤7kn）— 高速 Z 字是漁撈/操船，非拖錨
+    if (classification['cable_proximity'] and classification['zigzag_pattern']
+            and classification.get('zigzag_details', {})
+                .get('turns_below_drag_speed', 0) >= ZIGZAG_MIN_TURNS):
+        raw_score += 3  # 海纜鄰近 + 低速 Z字型 = 可能拖錨
     if classification['cable_proximity'] and classification['cable_loitering']:
         raw_score += 2  # 海纜鄰近 + 長時間徘徊
 
@@ -1255,7 +1373,11 @@ def classify_vessel(profile, track_points, identity_events=None,
 
     # ── 高威脅指標（不受船型乘數影響）──
     if classification['sanctioned']:
-        score += 8  # UN 制裁船舶 — 最高優先
+        # IMO 確認 +8（最高優先）；純船名匹配 +4（重名可能，降低權重）
+        if sanctions_match and sanctions_match.get('matched_by') == 'name':
+            score += SANCTION_NAME_ONLY_SCORE
+        else:
+            score += SANCTION_IMO_SCORE
     for a in anomalies:
         if a['severity'] == 'high':
             score += 3  # 嚴重 AIS 異常（多次船名變更等）
@@ -1380,17 +1502,20 @@ def main():
         id_events = id_events_by_mmsi.get(mmsi)
 
         # 檢查是否在 UN 制裁清單中（比對 IMO 和船名）
+        # matched_by 標記匹配方式：imo（高信度 +8）/ name（純船名 +4）
         sanction_hit = None
         imo = profile.get('last_imo', '')
         if imo and imo in sanctions_imo_set:
-            sanction_hit = sanctions_by_imo.get(imo)
+            hit = sanctions_by_imo.get(imo)
+            if hit:
+                sanction_hit = dict(hit, matched_by='imo')
         if not sanction_hit:
             for name in profile.get('names_seen', []):
                 if name.upper().strip() in sanctions_name_set:
                     # 名稱匹配 — 找到對應的制裁條目
                     for sv in sanctions_by_imo.values():
                         if sv.get('name', '').upper().strip() == name.upper().strip():
-                            sanction_hit = sv
+                            sanction_hit = dict(sv, matched_by='name')
                             break
                     break
 
@@ -1490,6 +1615,13 @@ def main():
             'cable_proximity_km': CABLE_PROXIMITY_KM,
             'cable_loiter_hours': CABLE_LOITER_HOURS,
             'cable_loiter_max_knots': CABLE_LOITER_MAX_KNOTS,
+            'loiter_max_gap_hours': LOITER_MAX_GAP_HOURS,
+            'anchor_drag_max_knots': ANCHOR_DRAG_MAX_KNOTS,
+            'stationary_max_knots': STATIONARY_MAX_KNOTS,
+            'physics_mismatch_max_dt_hours': PHYSICS_MISMATCH_MAX_DT_HOURS,
+            'sanction_imo_score': SANCTION_IMO_SCORE,
+            'sanction_name_only_score': SANCTION_NAME_ONLY_SCORE,
+            'port_exclusion': True,  # 港內點不計海纜鄰近/徘徊/緩衝帶
             'zigzag_min_turns': ZIGZAG_MIN_TURNS,
             'zigzag_heading_change_deg': ZIGZAG_HEADING_CHANGE_DEG,
             'depth_200m_contour_km': DEPTH_200M_CONTOUR_KM,
