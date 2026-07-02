@@ -69,16 +69,24 @@ Current rules:
 
 | # | Criterion | Detection Method | Raw Score |
 |---|-----------|-----------------|-----------|
-| 1a | Cable Proximity | Track points within 5km of submarine cable (bbox pre-filtered) | +2 |
-| 1b | Cable Loitering | Low speed (<8kn) near cable for >3hr (actual timestamps) | +3 |
-| 2 | Zigzag Pattern | ≥3 turns of ≥45° heading change (calc_bearing from positions) | +1 |
+| 1a | Cable Proximity | Track points within 5km of submarine cable (bbox pre-filtered, **in-port points excluded**) | +2 |
+| 1b | Cable Loitering | Low speed (<5kn) near cable for >3hr **continuous** (slow-timestamp runs split when gap >4h; in-port excluded) | +3 |
+| 2 | Zigzag Pattern | ≥3 turns of ≥45° heading change (calc_bearing from positions; anchored `anc` / <1kn points filtered — anchor swing is not zigzag) | +1 |
 | 3 | 200m Depth Contour | ≥30% of track time near continental shelf edge | +1 |
 | 4 | AIS Anomalies | Name changes ≥2, going dark >18hr gaps, type changes, identity events | +1 (medium) / +3 (high) |
 | 5 | Non-Top-10 Flag | MMSI MID not in top-10 flag state set | +1 |
-| 6 | UN Sanctions | IMO or name match against sanctions list | +8 |
-| 7 | AIS Spoofing | Impossible physics / box pattern / circle pattern | +4 each |
+| 6 | UN Sanctions | IMO match +8 (high confidence); name-only match +4 (Chinese ship names collide often) | +4/+8 |
+| 7 | AIS Spoofing | Impossible physics / box pattern / circle pattern (see false-positive suppression below) | +4 each |
 | 8 | ITU MARS Mismatch | Ship name, IMO, or call sign differs from ITU registry | +3 |
 | 9 | STS Transfer | Involved in ship-to-ship rendezvous (suspicious: +5, any: +2) | +2/+5 |
+
+**In-port suppression:** cable landings sit next to ports, so a ship legally moored in
+Kaohsiung would otherwise score ~9 (proximity + loiter + combos + buffers) and cross the
+suspicious threshold. `annotate_port_points()` marks every track point via
+`geofence.is_in_port_cached()` (Taiwan ports 2km / CN coastal ports 8km+, shared with STS
+detection — the port list lives in `geofence.py`); those points are skipped for criteria
+1a/1b and the geofence buffer bonuses. Track points also carry the `anc` flag
+(nav_status 1=at anchor / 5=moored, written by `fetch_ais_data.py`).
 
 ### Vessel Type Multiplier
 Applied to **behavioral scores only** (criteria 1-3, 5). High-threat indicators (4, 6-9) are NOT multiplied.
@@ -101,7 +109,9 @@ Applied to **behavioral scores only** (criteria 1-3, 5). High-threat indicators 
 On match `type_name` is overridden to the category and a `gov_type` field (+ `is_coast_guard` for the coastguard sub-type) is set; tier-1 tracks gain a `gov:<category>` flag and these vessels are always retained in tier-1 (so routes accumulate). MMSI-prefix matching is deliberately **not** used (block `413875xxx` is shared with civilian vessels). Research keywords use word boundaries (`\b`) to avoid false hits (e.g. `AN TONG JING TANG` must not match `TONG JI`). Taiwan CGA (海巡署) is intentionally excluded. `plot_gov_vessel_tracks.py` renders combined historical tracks (colored by category) to `docs/cn_gov_vessel_tracks.png`.
 
 ### Combo Bonuses (also multiplied by vessel type)
-- Cable proximity + zigzag: +3 (possible anchor dragging)
+- Cable proximity + zigzag: +3 (possible anchor dragging) — **only if ≥3 turns happened
+  at ≤7kn** (`ANCHOR_DRAG_MAX_KNOTS`; a ship doing >7kn almost certainly has no anchor
+  down — high-speed zigzag is fishing/maneuvering, not anchor dragging)
 - Cable proximity + loitering: +2
 
 ### Geofence Buffer Bonuses (behavioral, multiplied by vessel type)
@@ -113,6 +123,8 @@ Refine the coarse 5km cable net using the per-vessel `geofence` annotation
 Constants: `CABLE_BUFFER_1KM_SCORE`, `CABLE_BUFFER_JURISDICTION_SCORE`,
 `JURISDICTION_ZONES`. Each scored vessel carries `cable_buffer_1km` /
 `cable_buffer_jurisdiction` booleans; summary adds the two trigger counts.
+**Not awarded when the last position is in port** — a berthed ship is always in
+internal waters near a cable landing; that is routine, not the gray-zone scenario.
 
 ### Final Score & Risk Levels
 ```
@@ -131,20 +143,30 @@ final_score = round(raw_behavioral_score × type_multiplier) + high_threat_indic
 ### Spoofing Detection Details
 
 **Impossible Physics** (`check_impossible_physics`):
-- Teleportation: calculated speed > 100 km/h between consecutive points
-- Speed mismatch: calc_speed / reported_SOG ratio > 3× or < 0.33×
-- Bearing mismatch: calc_bearing vs reported COG differs > 60°
+- Teleportation: calculated speed > 100 km/h between consecutive points. If the two
+  points carry **different vessel names**, it's counted as `mmsi_collision` (shared MMSI,
+  common among CN fishing fleets) instead of a teleport — not spoofing.
+- Speed mismatch (calc_speed / reported_SOG ratio > 3× or < 0.33×) and bearing mismatch
+  (calc_bearing vs reported COG > 60°) are **only evaluated when dt ≤ 1h**
+  (`PHYSICS_MISMATCH_MAX_DT_HOURS`) — at the normal 2h snapshot cadence, comparing an
+  instantaneous SOG against a 2h average speed only produces false positives.
 - Skips going-dark gaps (>18h) to avoid false positives
 
 **Box Pattern** (`check_box_pattern`):
 - ≥3 near-90° turns (65°-115° tolerance)
 - Path closed (start-end < 5km) or bounding box < 5km
 - Filters stationary points (speed < 0.5kn)
+- Suppressed when the pattern centroid is **in port** (berthing/anchorage maneuvering
+  is right-angle turns in a small closed area by nature)
 
 **Circle Pattern** (`check_circle_pattern`):
 - Centroid-based radius CV < 0.25 (low variation = symmetric)
 - Arc coverage > 270° (near-complete circle)
 - Radius range: 0.1-5.0 km (excludes GPS drift and normal sailing)
+- **Anchor-swing suppression**: radius ≤0.6km and (≥half points flagged `anc` or median
+  speed <2kn) → a ship swinging on its anchor, not spoofing
+- Suppressed when the centroid is **in port** (port-area GPS interference "crop circles"
+  are environmental, not vessel-intent spoofing)
 
 ### Output
 - `data/suspicious_vessels.json` — Top 50 suspicious vessels + top 200 classifications + full summary stats
