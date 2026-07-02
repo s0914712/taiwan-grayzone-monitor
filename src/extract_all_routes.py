@@ -2,7 +2,7 @@
 """
 Batch extract vessel routes from track history files.
 Reads both tier-1 (ais_track_history.json) and tier-2 (ais_track_commercial.json).
-Produces one JSON file per vessel in docs/vessel_routes/.
+Produces one JSON file per vessel in data/vessel_routes/.
 Only vessels with ≥2 distinct positions get a file.
 Cleans up stale files for vessels no longer in history.
 
@@ -89,7 +89,7 @@ def main():
     print(f'Found {len(all_vessels)} unique vessels across all track files')
 
     # Sort tracks by timestamp and deduplicate
-    out_dir = os.path.join(base, 'docs', 'vessel_routes')
+    out_dir = os.path.join(base, 'data', 'vessel_routes')
     os.makedirs(out_dir, exist_ok=True)
     written_mmsis = set()
 

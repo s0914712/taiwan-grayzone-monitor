@@ -67,7 +67,7 @@ def main():
         'track': deduped
     }
 
-    out_dir = os.path.join(base, 'docs', 'vessel_routes')
+    out_dir = os.path.join(base, 'data', 'vessel_routes')
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, f'{args.mmsi}.json')
 

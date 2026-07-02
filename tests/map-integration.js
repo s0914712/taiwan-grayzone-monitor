@@ -56,7 +56,7 @@ const ROUTE_FIXTURE = {
 const fetchLog = [];
 window.fetch = (url) => {
     fetchLog.push(String(url));
-    if (String(url).startsWith('vessel_routes/412345678.json')) {
+    if (String(url).includes('data/vessel_routes/412345678.json')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(JSON.stringify(ROUTE_FIXTURE))) });
     }
     return Promise.resolve({ ok: false, status: 404, json: () => Promise.reject(new Error('404')) });
@@ -152,7 +152,7 @@ MM.focusVessel('412345678', result.vessels);
 // ── 8. route loading via stubbed fetch ───────────────────────────────────
 (async () => {
     await MM.loadVesselRoute('412345678');
-    assert(fetchLog.some(u => u.startsWith('vessel_routes/412345678.json')), 'route file fetched');
+    assert(fetchLog.some(u => u.includes('data/vessel_routes/412345678.json')), 'route file fetched');
     const polylines = countLayers(l => l instanceof window.L.Polyline && !(l instanceof window.L.Polygon));
     assert(polylines >= 1, 'route polyline drawn, got ' + polylines);
 

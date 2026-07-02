@@ -387,6 +387,7 @@ def update_structured_data_dates():
     if sitemap.exists():
         text = sitemap.read_text(encoding='utf-8')
         new_text = bump_sitemap_lastmod(text, today)
+        new_text = sync_report_sitemap_entries(new_text)
         if new_text != text:
             sitemap.write_text(new_text, encoding='utf-8')
             print(f"📅 已更新 sitemap.xml lastmod（資料型頁面）→ {today}")
@@ -404,6 +405,37 @@ SITEMAP_DATA_PAGE_SUFFIXES = (
     'cn-fishing-animation.html',
     'reports/',                   # 每日報告索引
 )
+
+
+SITE_BASE_URL = 'https://s0914712.github.io/taiwan-grayzone-monitor/'
+
+
+def sync_report_sitemap_entries(text, reports_dir=None):
+    """把 docs/reports/YYYY-MM-DD.html 逐日報告補進 sitemap（GEO：讓搜尋/AI 引擎
+    收錄有日期的每日情報頁）。已列出的不重複加；報告發布後內容固定，
+    lastmod 用報告日期本身、changefreq=never。"""
+    reports_dir = Path(reports_dir) if reports_dir else DOCS_DIR / 'reports'
+    if not reports_dir.is_dir() or '</urlset>' not in text:
+        return text
+    date_name_re = re.compile(r'^\d{4}-\d{2}-\d{2}\.html$')
+    entries = []
+    for name in sorted(p.name for p in reports_dir.glob('*.html')
+                       if date_name_re.match(p.name)):
+        loc = f'{SITE_BASE_URL}reports/{name}'
+        if f'<loc>{loc}</loc>' in text:
+            continue
+        entries.append(
+            '  <url>\n'
+            f'    <loc>{loc}</loc>\n'
+            f'    <lastmod>{name[:-5]}</lastmod>\n'
+            '    <changefreq>never</changefreq>\n'
+            '    <priority>0.4</priority>\n'
+            '  </url>\n'
+        )
+    if entries:
+        text = text.replace('</urlset>', ''.join(entries) + '</urlset>')
+        print(f"🗺️ sitemap.xml 新增 {len(entries)} 篇每日報告")
+    return text
 
 
 def bump_sitemap_lastmod(text, today):

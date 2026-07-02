@@ -2,7 +2,7 @@
 """
 中國公務/特殊關注船歷史航跡圖產生器 — Taiwan Gray Zone Monitor
 
-掃描 docs/vessel_routes/ 內所有逐船航跡檔，挑出中國公務/特殊關注船並依子類別
+掃描 data/vessel_routes/ 內所有逐船航跡檔，挑出中國公務/特殊關注船並依子類別
 （海警 coastguard / 海巡 msa / 海救 rescue / 科研·情報 research）著色，
 將其 14 天歷史航跡疊繪於同一張暗色主題地圖上（含台灣輪廓與海底電纜背景）。
 
@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DOCS_DIR = BASE_DIR / "docs"
 DATA_DIR = BASE_DIR / "data"
 SRC_DIR = BASE_DIR / "src"
-ROUTES_DIR = DOCS_DIR / "vessel_routes"
+ROUTES_DIR = DATA_DIR / "vessel_routes"
 
 sys.path.insert(0, str(SRC_DIR))
 from fetch_ais_data import classify_gov_vessel  # noqa: E402

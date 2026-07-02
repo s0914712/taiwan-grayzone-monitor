@@ -134,7 +134,7 @@ def select_top_suspicious_vessels(n=2):
         return v.get("cable_details", {}).get("loiter_slow_hours", 0)
 
     def _with_track(v):
-        route_file = DOCS_DIR / "vessel_routes" / f"{v['mmsi']}.json"
+        route_file = DATA_DIR / "vessel_routes" / f"{v['mmsi']}.json"
         if not route_file.exists():
             return None
         try:
