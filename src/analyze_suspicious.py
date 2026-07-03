@@ -57,6 +57,9 @@ ZIGZAG_MIN_TURNS = 3              # 至少 3 次轉向才算 Z 字型
 DEPTH_200M_CONTOUR_KM = 10.0      # 200m 等深線緩衝區寬度
 NAME_CHANGE_THRESHOLD = 2         # 船名變更 ≥ 2 次
 GOING_DARK_GAP_HOURS = 18         # AIS 消失 > 18 小時
+ANALYSIS_ACTIVE_DAYS = 14         # 僅分析近 14 天活躍的船 — profile 保留 90 天，
+                                  # 但早已離開監測海域的船只剩舊 profile，
+                                  # 拿舊資料計分只會灌水統計（曾把 5 萬艘全算進來）
 
 # ── AIS 偽訊號偵測門檻 (Spoofing Detection) ───────────────
 SPOOF_TELEPORT_KMH = 100.0         # 最大合理速度 ~54kn；超過即瞬移
@@ -1109,6 +1112,28 @@ def load_track_history():
     return tracks
 
 
+def is_recently_active(profile, has_track, now=None):
+    """判斷船隻是否「近期活躍」（近 ANALYSIS_ACTIVE_DAYS 天內出現過）。
+
+    有航跡點（tier-1/tier-2 皆為 14/28 天滾動）即視為活躍；
+    否則看 profile 最後一次出現時間。早已離開監測海域的船
+    （只剩 90 天 profile）跳過分析，避免舊資料灌水統計。
+    """
+    if has_track:
+        return True
+    timestamps = profile.get('last_seen_timestamps') or []
+    if not timestamps:
+        return False
+    if now is None:
+        now = datetime.now(timezone.utc)
+    try:
+        last_seen = datetime.fromisoformat(
+            timestamps[-1].replace('Z', '+00:00'))
+    except (ValueError, AttributeError):
+        return False
+    return (now - last_seen) <= timedelta(days=ANALYSIS_ACTIVE_DAYS)
+
+
 def annotate_port_points(track_points):
     """對每個航跡點標註 in_port（台灣港口 2km / 大陸港灣 8km+，見 geofence）。
     港內的靠泊/錨泊/操船屬例行活動，海纜鄰近、徘徊、緩衝帶加分皆應排除。"""
@@ -1508,15 +1533,22 @@ def main():
     # 預載海纜資料
     load_cable_segments()
 
-    # 合併所有 MMSI（profile + track 的聯集）
+    # 合併所有 MMSI（profile + track 的聯集），僅保留近期活躍的船
     all_mmsi = set(profiles.keys()) | set(tracks.keys())
-    print(f"\n📊 分析 {len(all_mmsi)} 艘船隻...")
+    now = datetime.now(timezone.utc)
+    active_mmsi = {
+        m for m in all_mmsi
+        if is_recently_active(profiles.get(m, {}), m in tracks, now)
+    }
+    stale_skipped = len(all_mmsi) - len(active_mmsi)
+    print(f"\n📊 分析 {len(active_mmsi)} 艘活躍船隻"
+          f"（跳過 {stale_skipped} 艘 >{ANALYSIS_ACTIVE_DAYS} 天未見）...")
 
     classifications = []
     suspicious_vessels = []
     excluded_vessels = []
 
-    for mmsi in all_mmsi:
+    for mmsi in active_mmsi:
         profile = profiles.get(mmsi, {
             'mmsi': mmsi,
             'names_seen': [],
@@ -1678,7 +1710,9 @@ def main():
             {'id': 'moored_taiwan_port', 'label': '停泊台灣港內（最後位置）'},
         ],
         'summary': {
-            'total_analyzed': len(all_mmsi),
+            'total_analyzed': len(active_mmsi),
+            'stale_skipped': stale_skipped,
+            'active_window_days': ANALYSIS_ACTIVE_DAYS,
             'excluded_count': len(excluded_vessels),
             'exclusion_breakdown': exclusion_stats,
             'suspicious_count': len(suspicious_vessels),
@@ -1710,7 +1744,8 @@ def main():
     atomic_write_json(OUTPUT_FILE, output)
 
     print(f"\n📋 分析結果:")
-    print(f"   分析船隻數: {len(all_mmsi)}")
+    print(f"   分析船隻數: {len(active_mmsi)} "
+          f"(另跳過 {stale_skipped} 艘 >{ANALYSIS_ACTIVE_DAYS} 天未見)")
     print(f"   排除 (非船舶設備): {len(excluded_vessels)}")
     if exclusion_stats:
         for rid, cnt in sorted(exclusion_stats.items(), key=lambda x: -x[1]):
