@@ -92,6 +92,29 @@ jobs:
           }
           git push
 
+      # 航跡檔不進 main（27k 檔的歷史讓 repo 膨脹到 200MB+），
+      # 每輪以單一 commit force push 到 vessel-data 分支（歷史永遠只有一版）。
+      # 前端在 GitHub Pages 上經 raw.githubusercontent.com/.../vessel-data/ 讀取。
+      - name: Push vessel routes to vessel-data branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          if [ ! -d data/vessel_routes ] || [ -z "$(ls -A data/vessel_routes 2>/dev/null)" ]; then
+            echo "data/vessel_routes 不存在或為空，跳過"
+            exit 0
+          fi
+          TMP=$(mktemp -d)
+          mkdir -p "$TMP/data"
+          cp -r data/vessel_routes "$TMP/data/"
+          cd "$TMP"
+          git init -q -b vessel-data
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add -A
+          git commit -qm "vessel routes snapshot $(date -u +'%Y-%m-%d %H:%M') UTC"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" vessel-data
+
       - name: Fail if validation failed
         if: steps.validate.outcome == 'failure'
         run: |

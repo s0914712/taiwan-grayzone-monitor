@@ -21,6 +21,14 @@ jobs:
       - name: 取得程式碼 (Checkout)
         uses: actions/checkout@v4
 
+      # 航跡檔存在 vessel-data 分支（不在 main），SendMessage.py 讀圖需要
+      - name: 取得航跡檔 (vessel-data 分支)
+        run: |
+          git fetch --depth=1 origin vessel-data && \
+            git checkout FETCH_HEAD -- data/vessel_routes || \
+            echo "vessel-data 分支不存在或無檔案，略過（將以無航跡模式運行）"
+        continue-on-error: true
+
       - name: 設定 Python 環境
         uses: actions/setup-python@v5
         with:

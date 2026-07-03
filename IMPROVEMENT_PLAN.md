@@ -65,6 +65,6 @@
 
 **待辦：**
 - 兩個動畫頁腳本間的重複 helper 去重（外移後已可逐步比對合併，風險低於先前）
-- **git 歷史帳密清除**（filter-repo + force push）— 需使用者決策：force push 會影響所有 clone，且 CI 自動 commit 流程需暫停配合；無論是否清除，**pingproxies 憑證都必須先在供應商端輪換**
-- **repo 膨脹**（pack 216MB）— Pages 部署失敗的部分已於 2026-07 解決：`vessel_routes/` 移出 `docs/`（→ `data/vessel_routes/`，前端改經 raw.githubusercontent.com 載入），部署 artifact 從 195MB/27k 檔縮到 ~30MB/數百檔，並移除 update-ais/update-data 內與內建 pages-build-deployment 互搶的重複 deploy job。**git 歷史/pack 大小本身仍未縮**（需 filter-repo 或獨立資料分支，與帳密清除一併決策）
+- ✅ **git 歷史帳密清除**（2026-07-03 完成）— pingproxies 憑證已於供應商端輪換後，以 git filter-repo `--replace-text` 從全歷史移除並 force push 所有分支。GitHub 端 dangling commit 建議另開 support ticket 請 GitHub GC（見下）
+- ✅ **repo 膨脹**（2026-07-03 完成）— 兩階段解決：(1) `vessel_routes/` 移出 `docs/`，部署 artifact 195MB/27k 檔 → ~30MB/數百檔，移除重複 deploy job；(2) filter-repo 清除 `vessel_routes/` 全部歷史版本與大型滾動 JSON/PNG 舊版（現行版以 re-seed commit 保留），航跡檔改存單一 commit 的 **`vessel-data` 分支**（CI 每輪 force push，歷史零成長），前端 raw URL 改指該分支。main 不再 tracked `data/vessel_routes/`（.gitignore）
 - `data.json`（3.6MB）按主題分割 / 分頁載入 — 改善首屏載入，需同步調整各頁面 fetch 邏輯

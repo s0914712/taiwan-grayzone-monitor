@@ -59,6 +59,11 @@ jobs:
           python src/analyze_suspicious.py
         continue-on-error: true
 
+      # 產生逐船航跡檔（plot_gov_vessel_tracks 需要；main 不再 tracked，須現場產生）
+      - name: Extract all vessel routes
+        run: python src/extract_all_routes.py
+        continue-on-error: true
+
       - name: Exercise prediction analysis
         run: |
           python src/exercise_prediction.py
@@ -144,6 +149,27 @@ jobs:
             git pull -X ours origin main
           }
           git push
+
+      # 航跡檔不進 main — 單一 commit force push 到 vessel-data 分支（同 update-ais.yml）
+      - name: Push vessel routes to vessel-data branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          if [ ! -d data/vessel_routes ] || [ -z "$(ls -A data/vessel_routes 2>/dev/null)" ]; then
+            echo "data/vessel_routes 不存在或為空，跳過"
+            exit 0
+          fi
+          TMP=$(mktemp -d)
+          mkdir -p "$TMP/data"
+          cp -r data/vessel_routes "$TMP/data/"
+          cd "$TMP"
+          git init -q -b vessel-data
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add -A
+          git commit -qm "vessel routes snapshot $(date -u +'%Y-%m-%d %H:%M') UTC"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" vessel-data
 
       - name: Fail if validation failed
         if: steps.validate.outcome == 'failure'

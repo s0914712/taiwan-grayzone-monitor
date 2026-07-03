@@ -10,7 +10,7 @@ Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates A
 ## Directory Structure
 - `docs/` — Frontend (GitHub Pages root). HTML, CSS, JS, and JSON data files
 - `src/` — Python data pipeline scripts (fetch, analyze, generate)
-- `data/` — Working/intermediate data (not in the Pages artifact). Exception: `data/vessel_routes/{mmsi}.json` is fetched by the frontend via raw.githubusercontent.com — 27k route files were moved out of `docs/` because syncing them made Pages deployments time out
+- `data/` — Working/intermediate data (not in the Pages artifact). `data/vessel_routes/{mmsi}.json` is gitignored on main and lives on the single-commit **`vessel-data` branch** (CI regenerates + force-pushes it each run); the frontend fetches routes via raw.githubusercontent.com/.../vessel-data/ — 27k route files in main history bloated the repo to 200MB+ and made Pages deployments time out
 - `.github/workflows/` — 3 CI workflows (AIS every 2h, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, Threads weekly)
 
 ## Tech Stack

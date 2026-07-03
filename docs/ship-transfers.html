@@ -409,10 +409,11 @@
         let trackLayer;
         let cachedTrackHistory = null;
         let transferIndex = {};   // eventId -> { marker, t }
-        // Route files live in data/vessel_routes/ (outside the Pages artifact);
-        // on GitHub Pages fetch them from the repo via raw.githubusercontent.com.
+        // Route files live on the single-commit vessel-data branch (not in main,
+        // so 27k files don't bloat history); on GitHub Pages fetch them via
+        // raw.githubusercontent.com. Local dev/CI reads the extracted files.
         const ROUTE_FILE_BASE = /\.github\.io$/.test(location.hostname)
-            ? 'https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/data/vessel_routes/'
+            ? 'https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/vessel-data/data/vessel_routes/'
             : '../data/vessel_routes/';
 
         /**

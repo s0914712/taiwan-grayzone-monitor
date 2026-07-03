@@ -9,12 +9,13 @@
 var MapRoutesFactory = function(map, layers) {
     'use strict';
 
-    // Per-vessel route files live in data/vessel_routes/ (outside the Pages
-    // artifact — 27k files made deployments time out), so on GitHub Pages they
-    // are fetched from the repo via raw.githubusercontent.com. Elsewhere
-    // (local dev server at the repo root, tests) use the relative repo path.
+    // Per-vessel route files live on the single-commit vessel-data branch
+    // (outside the Pages artifact — 27k files made deployments time out — and
+    // outside main history so they don't bloat the repo), so on GitHub Pages
+    // they are fetched via raw.githubusercontent.com. Elsewhere (local dev
+    // server at the repo root, tests) use the relative repo path.
     var ROUTE_FILE_BASE = /\.github\.io$/.test(location.hostname)
-        ? 'https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/data/vessel_routes/'
+        ? 'https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/vessel-data/data/vessel_routes/'
         : '../data/vessel_routes/';
 
     /**
