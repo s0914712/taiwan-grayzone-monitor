@@ -384,3 +384,32 @@ def test_visited_taiwan_port_but_now_at_sea_not_excluded():
     pts = make_track([(22.6153, 120.2664), (OPEN_LAT, OPEN_LON)], speed=8.0)
     result = asus.classify_vessel(_profile('412000007'), pts)
     assert result['excluded'] is False
+
+
+# =========================================================================
+# 活躍船過濾：>14 天未見的舊 profile 不進入分析
+# =========================================================================
+
+def test_stale_profile_not_recently_active():
+    """無航跡、最後出現 30 天前 → 非活躍，跳過分析。"""
+    from datetime import datetime, timezone
+    now = datetime(2026, 7, 3, tzinfo=timezone.utc)
+    profile = {'mmsi': '412000009',
+               'last_seen_timestamps': ['2026-06-01T00:00:00+00:00']}
+    assert asus.is_recently_active(profile, has_track=False, now=now) is False
+
+
+def test_recent_profile_is_active():
+    """無航跡但 3 天前出現過 → 活躍。"""
+    from datetime import datetime, timezone
+    now = datetime(2026, 7, 3, tzinfo=timezone.utc)
+    profile = {'mmsi': '412000010',
+               'last_seen_timestamps': ['2026-06-30T12:00:00+00:00']}
+    assert asus.is_recently_active(profile, has_track=True, now=now) is True
+    assert asus.is_recently_active(profile, has_track=False, now=now) is True
+
+
+def test_track_only_vessel_is_active():
+    """有航跡但無 profile 時間戳（track-only）→ 活躍（航跡檔本身就是 14 天滾動）。"""
+    assert asus.is_recently_active({}, has_track=True) is True
+    assert asus.is_recently_active({}, has_track=False) is False

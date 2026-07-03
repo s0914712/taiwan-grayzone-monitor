@@ -662,6 +662,10 @@ var MapVesselsFactory = function(map, layers) {
         const riskColor = riskColors[sv.risk_level] || '#ff3366';
 
         // ── Header ──
+        // 曾用船名：系統標記「使用 N 個不同船名」時，把實際名字列出來
+        const namesSeenHtml = (sv.names && sv.names.length > 1)
+            ? `<div class="vic-vessel-aliases">${t('vic.names_seen')}: ${sv.names.join(' → ')}</div>`
+            : '';
         const headerHtml = `
             <div class="vic-header">
                 <div class="vic-header-left">
@@ -671,6 +675,7 @@ var MapVesselsFactory = function(map, layers) {
                         ${flagName ? ' | ' + t('app.flag') + ' ' + flagName : ''}
                         ${sv.vessel_type ? ' | ' + t('vic.vessel_type') + ': ' + sv.vessel_type : ''}
                     </div>
+                    ${namesSeenHtml}
                 </div>
                 <div class="vic-header-right">
                     <span class="risk-badge risk-${sv.risk_level}" style="font-size:11px;padding:3px 8px">${(sv.risk_level || '').toUpperCase()}</span>
@@ -737,7 +742,15 @@ var MapVesselsFactory = function(map, layers) {
             const items = anomalies.map(a => {
                 const desc = a.description || a.type || '';
                 const severity = a.severity ? ` <span class="vic-severity-${a.severity}">[${a.severity}]</span>` : '';
-                return `<div class="vic-anomaly-item">${desc}${severity}</div>`;
+                // 「使用 N 個不同船名」→ 列出實際名字；
+                // 「N 次身分變更」→ 列出 欄位: 舊 → 新 明細
+                let subItems = '';
+                if (a.names && a.names.length > 1) {
+                    subItems = a.names.map(n => `<div class="vic-sub-item">${n}</div>`).join('');
+                } else if (a.details && a.details.length > 0) {
+                    subItems = a.details.map(d => `<div class="vic-sub-item">${d}</div>`).join('');
+                }
+                return `<div class="vic-anomaly-item">${desc}${severity}${subItems}</div>`;
             }).join('');
             anomaliesHtml = `<div class="vic-section">
                 <div class="vic-section-title">${t('vic.anomalies')}</div>

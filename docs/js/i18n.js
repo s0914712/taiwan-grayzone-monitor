@@ -131,7 +131,7 @@ const i18n = (function () {
 
         // ── Index 頁面 ──
         'idx.vessel_count':      { zh: '船隻數', en: 'Vessels' },
-        'idx.top10pct':          { zh: 'Top 10% 高風險', en: 'Top 10% High Risk' },
+        'idx.top10pct':          { zh: '可疑船隻 (≥8分)', en: 'Suspicious (score ≥8)' },
         'idx.suspicious':        { zh: '可疑船隻', en: 'Suspicious' },
         'idx.layer_fishing':     { zh: '漁撈熱點', en: 'Fishing Hotspots' },
         'idx.layer_vessels':     { zh: '船隻', en: 'Vessels' },
@@ -516,6 +516,7 @@ const i18n = (function () {
         'vic.registry':          { zh: '官方登記 (ITU MARS)', en: 'Official Registry (ITU MARS)' },
         'vic.risk_score':        { zh: '風險分數', en: 'Risk Score' },
         'vic.anomalies':         { zh: 'AIS 異常紀錄', en: 'AIS Anomalies' },
+        'vic.names_seen':        { zh: '曾用船名', en: 'Names used' },
         'vic.cable':             { zh: '海纜活動', en: 'Cable Activity' },
         'vic.links':             { zh: '外部連結', en: 'External Links' },
         'vic.close':             { zh: '關閉', en: 'Close' },

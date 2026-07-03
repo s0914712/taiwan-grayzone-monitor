@@ -748,10 +748,11 @@ const App = (function () {
                 updateSuspiciousList();
                 updateBottomSheetSuspicious();
 
-                // Update top 10% high-risk count
+                // Update suspicious vessel count (score ≥8) — the old
+                // top_10pct_count was a quota (fleet ÷ 10), not a risk measure
                 const suspEl = document.getElementById('suspiciousCount');
                 if (suspEl && suspiciousData.summary) {
-                    suspEl.textContent = suspiciousData.summary.top_10pct_count || suspiciousData.summary.suspicious_count || 0;
+                    suspEl.textContent = suspiciousData.summary.suspicious_count || 0;
                 }
             }
 

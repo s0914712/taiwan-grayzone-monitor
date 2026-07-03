@@ -38,6 +38,13 @@ GitHub Actions → src/fetch_ais_data.py (AIS via SOCKS5 proxy)
 ### Architecture
 The engine loads multiple data sources, iterates all known vessels (profile ∪ track), and produces a per-vessel risk classification.
 
+**Active-vessel window**: only vessels seen within `ANALYSIS_ACTIVE_DAYS` (14) — has track
+points or profile `last_seen_timestamps[-1]` within the window — are analyzed
+(`is_recently_active()`). Profiles are retained 90 days, but scoring long-gone vessels on
+stale data inflated the stats (55k analyzed → dashboard "Top 10%" showed fleet÷10 ≈ 2.5-3.4k).
+Summary carries `stale_skipped` + `active_window_days`; the dashboard stat tile now shows
+`suspicious_count` (score ≥8) instead of the quota-based `top_10pct_count`.
+
 **Data sources loaded:**
 1. `vessel_profiles.json` — AIS-observed vessel metadata (names, types, timestamps)
 2. `ais_track_history.json` (tier-1) — CN fishing + suspicious vessel tracks (14 days)
