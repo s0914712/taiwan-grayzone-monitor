@@ -65,6 +65,15 @@ Current rules:
 
 **To add a new exclusion rule:** Append a dict to `EXCLUSION_RULES` list. No other code changes needed.
 
+**Taiwan-vessel exclusion** (in `classify_vessel`, not `EXCLUSION_RULES` — needs track/event
+data): vessels are also excluded when (a) the MMSI MID is `416` (Taiwan flag,
+`flag_taiwan`), or (b) the **last position** is inside a Taiwan port from `geofence.PORTS`
+(`moored_taiwan_port`; CN ports do NOT trigger this). **Anti-spoofing safety valve**: a
+vessel matching either rule is still fully analyzed if it has identity-change events
+(7-day window) or a UN sanctions hit — a CN vessel broadcasting a fake `416` MMSI must
+not escape detection. Both ids appear in the output's `exclusion_rules` list and
+`summary.exclusion_breakdown`.
+
 ### Scoring Criteria (8 criteria)
 
 | # | Criterion | Detection Method | Raw Score |

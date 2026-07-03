@@ -80,16 +80,29 @@ def test_out_of_port_near_cable_still_detected():
 
 
 def test_classify_moored_cargo_in_port_not_suspicious():
-    """整條航跡靠泊港內的貨船 — 修正前會拿 ~9 分直接判可疑，修正後應為 normal。"""
+    """整條航跡靠泊台灣港內的貨船 — 直接被「停泊台灣港內」規則排除。"""
     profile = {'mmsi': '412000001', 'names_seen': ['PORT SHIP'],
                'types_seen': ['cargo'], 'total_snapshots': 12}
     pts = make_track([(22.6153, 120.2664)] * 12, speed=0.2, anc=True)
     result = asus.classify_vessel(profile, pts)
+    assert result['excluded'] is True
+    assert result['suspicious'] is False
+
+
+def test_in_port_scoring_suppressed_for_analyzed_vessel():
+    """有身分變更事件的靠港船（安全閥 → 照常分析）：港內點計分抑制仍生效，
+    不因靠泊台灣港（緊鄰海纜登陸段）而觸發鄰近/徘徊/緩衝帶加分。"""
+    profile = {'mmsi': '412000008', 'names_seen': ['PORT SHIP B'],
+               'types_seen': ['cargo'], 'total_snapshots': 12}
+    events = [{'mmsi': '412000008', 'timestamp': '2026-07-01T00:00:00+00:00',
+               'changes': [{'field': 'name', 'old': 'X', 'new': 'PORT SHIP B'}]}]
+    pts = make_track([(22.6153, 120.2664)] * 12, speed=0.2, anc=True)
+    result = asus.classify_vessel(profile, pts, identity_events=events)
+    assert result['excluded'] is False
     assert result['cable_proximity'] is False
     assert result['cable_loitering'] is False
     assert result['cable_buffer_1km'] is False
     assert result['cable_buffer_jurisdiction'] is False
-    assert result['suspicious'] is False
 
 
 # =========================================================================
@@ -314,3 +327,60 @@ def test_sanction_name_only_scores_4():
     assert imo_hit['risk_score'] - name_hit['risk_score'] == (
         asus.SANCTION_IMO_SCORE - asus.SANCTION_NAME_ONLY_SCORE)
     assert any('僅船名匹配' in f for f in name_hit['flags'])
+
+
+# =========================================================================
+# 台灣船隻排除：船旗 416 / 停泊台灣港內（含防偽冒安全閥）
+# =========================================================================
+
+def _profile(mmsi):
+    return {'mmsi': mmsi, 'names_seen': ['TW TEST'],
+            'types_seen': ['cargo'], 'total_snapshots': 5}
+
+
+def test_taiwan_flag_excluded():
+    """MMSI 416 開頭（台灣船旗）→ 排除，不進入分析。"""
+    result = asus.classify_vessel(_profile('416123456'), [])
+    assert result['excluded'] is True
+    assert any(r['id'] == 'flag_taiwan' for r in result['exclusion_rules'])
+    assert result['risk_score'] == 0
+
+
+def test_taiwan_flag_with_identity_events_not_excluded():
+    """416 但有身分變更事件 → 安全閥生效，照常分析（防偽冒台灣 MMSI）。"""
+    events = [{'mmsi': '416123456', 'timestamp': '2026-07-01T00:00:00+00:00',
+               'changes': [{'field': 'name', 'old': 'A', 'new': 'B'}]}]
+    result = asus.classify_vessel(_profile('416123456'), [],
+                                  identity_events=events)
+    assert result['excluded'] is False
+
+
+def test_taiwan_flag_with_sanction_not_excluded():
+    """416 但命中制裁名單 → 安全閥生效，照常分析。"""
+    result = asus.classify_vessel(_profile('416123456'), [],
+                                  sanctions_match=_sanction_entry('imo'))
+    assert result['excluded'] is False
+    assert result['sanctioned'] is True
+
+
+def test_moored_in_taiwan_port_excluded():
+    """非 416、最後位置在高雄港 → 排除（停泊台灣港內）。"""
+    pts = make_track([(OPEN_LAT, OPEN_LON), (22.6153, 120.2664)], speed=1.0)
+    result = asus.classify_vessel(_profile('412000005'), pts)
+    assert result['excluded'] is True
+    assert any(r['id'] == 'moored_taiwan_port'
+               for r in result['exclusion_rules'])
+
+
+def test_moored_in_cn_port_not_excluded():
+    """最後位置在廈門（大陸港）→ 不觸發台灣港排除。"""
+    pts = make_track([(OPEN_LAT, OPEN_LON), (24.45, 118.07)], speed=1.0)
+    result = asus.classify_vessel(_profile('412000006'), pts)
+    assert result['excluded'] is False
+
+
+def test_visited_taiwan_port_but_now_at_sea_not_excluded():
+    """先前靠過台灣港、最後位置在開放海域 → 不排除，照常分析。"""
+    pts = make_track([(22.6153, 120.2664), (OPEN_LAT, OPEN_LON)], speed=8.0)
+    result = asus.classify_vessel(_profile('412000007'), pts)
+    assert result['excluded'] is False

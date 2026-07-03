@@ -1175,6 +1175,34 @@ def classify_vessel(profile, track_points, identity_events=None,
     if track_points:
         annotate_port_points(track_points)
 
+    # ── 台灣船隻排除（非監測對象；本監測針對大陸灰色地帶活動）──
+    # 1. 船旗國為台灣：MMSI MID 416 開頭
+    # 2. 停泊台灣港內：最後位置位於台灣港（geofence.PORTS；大陸港不觸發）
+    # 安全閥：有身分變更事件或命中 UN 制裁名單者不排除、照常分析 —
+    # 防止大陸船偽冒台灣 MMSI 躲過偵測（實務上有案例）。
+    if not identity_events and not sanctions_match:
+        tw_rules = []
+        if mmsi.startswith('416'):
+            tw_rules.append({'id': 'flag_taiwan',
+                             'label': '台灣船旗 (MID 416)'})
+        if track_points:
+            last_port = track_points[-1].get('in_port')
+            if last_port and last_port in geofence.PORTS:
+                tw_rules.append({'id': 'moored_taiwan_port',
+                                 'label': f'停泊台灣港內 ({last_port})'})
+        if tw_rules:
+            reasons = ' + '.join(r['label'] for r in tw_rules)
+            classification['excluded'] = True
+            classification['exclusion_rules'] = tw_rules
+            classification['risk_level'] = 'normal'
+            classification['risk_score'] = 0
+            classification['raw_score'] = 0
+            classification['suspicious'] = False
+            classification['vessel_type'] = 'unknown'
+            classification['type_multiplier'] = 0
+            classification['flags'] = [f'排除: {reasons}']
+            return classification
+
     # ── Criterion 1: 海纜鄰近活動 ──
     if track_points:
         cable_near, cable_details = check_cable_proximity(track_points)
@@ -1643,6 +1671,11 @@ def main():
         },
         'exclusion_rules': [
             {'id': r['id'], 'label': r['label']} for r in EXCLUSION_RULES
+        ] + [
+            # 台灣船隻排除（於 classify_vessel 內以航跡/事件資料判定，
+            # 非 EXCLUSION_RULES 機制；有身分變更或制裁命中者不排除）
+            {'id': 'flag_taiwan', 'label': '台灣船旗 (MID 416)'},
+            {'id': 'moored_taiwan_port', 'label': '停泊台灣港內（最後位置）'},
         ],
         'summary': {
             'total_analyzed': len(all_mmsi),
