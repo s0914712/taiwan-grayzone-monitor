@@ -317,6 +317,55 @@ def test_sanction_imo_match_scores_8():
     assert result['risk_score'] >= asus.SANCTION_IMO_SCORE
 
 
+def _blacklist_entry(name='SIA', imo='9397080', programs=('OFAC', 'UANI'),
+                     flag='Angola'):
+    return {'name': name, 'imo': imo, 'flag': flag,
+            'programs': list(programs), 'source': 'blacklist',
+            'matched_by': 'imo'}
+
+
+def test_blacklist_imo_hit_scores_8_and_lists_programs():
+    """黑名單 IMO 命中 → +8、flag 標出制裁機構。"""
+    profile = {'mmsi': '603928000', 'names_seen': ['SIA'],
+               'types_seen': ['tanker'], 'total_snapshots': 5}
+    r = asus.classify_vessel(profile, [], sanctions_match=_blacklist_entry())
+    assert r['sanctioned'] is True
+    assert r['risk_score'] >= asus.SANCTION_IMO_SCORE
+    assert any('受制裁油輪' in f and 'OFAC' in f for f in r['flags'])
+
+
+def test_blacklist_identity_concealment_flagged():
+    """IMO 命中但 AIS 廣播船名 ≠ 制裁登記名 → 身分掩蓋旗標
+    （如 STAR PIONE 廣播、登記名 LORIAN）。"""
+    profile = {'mmsi': '613617404', 'names_seen': ['STAR PIONE'],
+               'types_seen': ['tanker'], 'total_snapshots': 5}
+    entry = _blacklist_entry(name='LORIAN', imo='9259343',
+                             programs=('UANI',), flag='Cameroon')
+    r = asus.classify_vessel(profile, [], sanctions_match=entry)
+    assert r.get('sanction_identity_concealment') is True
+    assert any('身分掩蓋' in f and 'LORIAN' in f for f in r['flags'])
+
+
+def test_blacklist_matching_name_matches_no_concealment():
+    """AIS 船名 == 登記名時不觸發身分掩蓋。"""
+    profile = {'mmsi': '603928000', 'names_seen': ['SIA'],
+               'types_seen': ['tanker'], 'total_snapshots': 5}
+    r = asus.classify_vessel(profile, [], sanctions_match=_blacklist_entry())
+    assert r.get('sanction_identity_concealment') is not True
+
+
+def test_load_sanctions_list_includes_blacklist():
+    """load_sanctions_list 應把黑名單 IMO 併入 imo_set（真實檔案）。"""
+    by_imo, imo_set, name_set = asus.load_sanctions_list()
+    # 7 艘已確認在監測海域的受制裁油輪，其 IMO 應在集合中
+    for imo in ('9113379', '9397080', '9259343', '9194139',
+                '9395379', '9040118', '9202388'):
+        assert imo in imo_set, f'{imo} 應在制裁 IMO 集合'
+        assert by_imo[imo].get('source') == 'blacklist'
+    # 但這些黑名單船名不應污染 name_set（避免撞名）
+    assert 'SIA' not in name_set
+
+
 def test_sanction_name_only_scores_4():
     profile = {'mmsi': '412000004', 'names_seen': ['SANCTIONED SHIP'],
                'types_seen': ['cargo'], 'total_snapshots': 5}
