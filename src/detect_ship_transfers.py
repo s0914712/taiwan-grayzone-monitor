@@ -18,8 +18,9 @@ from io_utils import atomic_write_json
 
 DATA_DIR = Path("data")
 DOCS_DIR = Path("docs")
-# tier-1 軌跡歷史已搬至 docs/
-TRACK_HISTORY_FILE = DOCS_DIR / "ais_track_history.json"
+# tier-1 軌跡歷史已搬至 docs/；tier-2（商船/油輪/身分變更船）在 data/
+TRACK_HISTORY_FILE = DOCS_DIR / "ais_track_history.json"       # tier-1: 漁船/公務船
+TRACK_COMMERCIAL_FILE = DATA_DIR / "ais_track_commercial.json"  # tier-2: cargo/tanker/lng
 SNAPSHOT_FILE = DATA_DIR / "ais_snapshot.json"
 OUTPUT_FILE = DATA_DIR / "ship_transfers.json"
 
@@ -178,27 +179,64 @@ def find_pairs_in_snapshot(vessels):
     return pairs
 
 
+def _load_snapshots(path, label):
+    """載入單一軌跡檔（list 或 {snapshots:[...]}），回傳快照 list。"""
+    if not path.exists():
+        print(f"⚠️ 找不到 {label} ({path})，略過該層")
+        return []
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except (OSError, ValueError) as e:
+        print(f"⚠️ 讀取 {label} 失敗: {e}")
+        return []
+    return data if isinstance(data, list) else data.get("snapshots", [])
+
+
+def load_merged_snapshots():
+    """合併 tier-1（漁船/公務船）+ tier-2（商船/油輪/身分變更船）軌跡快照。
+
+    以**精確 timestamp**為鍵，把同一時刻兩層的 vessels 併進同一份快照，
+    find_pairs_in_snapshot 才能偵測**跨層旁靠**——尤其
+    **油輪↔油輪 = 影子船隊海上轉油**。僅讀 tier-1 時，商船軌跡完全不進偵測，
+    tanker-to-tanker STS 永遠抓不到（本次修正的核心）。
+
+    tier-1 與 tier-2 由 fetch_ais_data 於同一次執行用同一個 now_str 寫入，
+    故 timestamp 精確對齊。**不可用 period_key 當鍵** —— 同一 2h 時段的
+    重跑會產生多筆相同 period_key、但船已移動的快照，用 period_key 合併會把
+    不同時刻的位置併在一起，灌出假配對。
+
+    兩層 MMSI 互斥（fetch_ais_data 將已在 tier-1 的 MMSI 排除於 tier-2），
+    合併不需去重。
+    """
+    tier1 = _load_snapshots(TRACK_HISTORY_FILE, "tier-1 ais_track_history.json")
+    tier2 = _load_snapshots(TRACK_COMMERCIAL_FILE, "tier-2 ais_track_commercial.json")
+
+    merged = {}   # timestamp -> {"timestamp", "vessels": [...]}
+    for snaps in (tier1, tier2):
+        for s in snaps:
+            key = s.get("timestamp") or s.get("period_key", "")
+            if not key:
+                continue
+            slot = merged.setdefault(key, {"timestamp": key, "vessels": []})
+            slot["vessels"].extend(s.get("vessels", []))
+
+    result = sorted(merged.values(), key=lambda s: s.get("timestamp", ""))
+    print(f"📊 合併軌跡快照: {len(result)} 份 "
+          f"(tier-1 {len(tier1)} + tier-2 {len(tier2)} 筆)")
+    return result
+
+
 def process_track_history():
     """
-    掃描 14 天 AIS 軌跡歷史，偵測持續旁靠事件
+    掃描 tier-1 + tier-2 合併軌跡歷史，偵測持續旁靠事件。
+    合併兩層是為了涵蓋油輪↔油輪的海上轉油（影子船隊），詳見
+    load_merged_snapshots()。
     """
-    if not TRACK_HISTORY_FILE.exists():
-        print("⚠️ 找不到 ais_track_history.json，跳過歷史分析")
-        return []
-
-    with open(TRACK_HISTORY_FILE, 'r', encoding='utf-8') as f:
-        history = json.load(f)
-
-    # Track history can be a list of snapshots or a dict with "snapshots" key
-    if isinstance(history, list):
-        snapshots = history
-    else:
-        snapshots = history.get("snapshots", [])
+    snapshots = load_merged_snapshots()
     if not snapshots:
-        print("⚠️ ais_track_history.json 無快照資料")
+        print("⚠️ 無軌跡快照資料（tier-1/tier-2 皆缺）")
         return []
-
-    print(f"📊 載入 {len(snapshots)} 個歷史快照...")
 
     # 追蹤每對船的連續旁靠
     # active_pairs: {pair_key: {first_seen, last_seen, snapshots, v1_last, v2_last, min_dist}}
