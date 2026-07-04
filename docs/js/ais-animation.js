@@ -854,7 +854,7 @@
                 caption.style.borderLeftColor = ev.color;
                 caption.innerHTML = '<span class="ec-type" style="color:' + ev.color + '">' +
                     i18n.t('ais_anim.evt_' + ev.type) + more + '</span> · ' + ev.label +
-                    '<br><span style="color:#8aa4c8;font-size:10px">' + ev.detail + '</span>';
+                    '<br><span style="color:#8aa4c8;font-size:12px">' + ev.detail + '</span>';
                 caption.classList.add('show');
             } else {
                 caption.classList.remove('show');
@@ -1297,10 +1297,10 @@
 
             const headingText = heading !== null ? heading.toFixed(0) + '°' : 'N/A';
             const tagHtml = tags.map(t =>
-                '<span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.1);color:' + t.color + ';margin-right:3px">' + t.label + '</span>'
+                '<span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:12px;font-weight:600;background:rgba(255,255,255,0.1);color:' + t.color + ';margin-right:3px">' + t.label + '</span>'
             ).join('');
             const focusBtn = (focus && String(v.mmsi) === focus) ? '' :
-                '<button onclick="enterFocus(\'' + v.mmsi + '\')" style="margin-top:6px;background:#141e32;border:1px solid #00f5ff;color:#00f5ff;border-radius:4px;padding:3px 8px;font-size:12px;cursor:pointer">' + i18n.t('ais_anim.focus_btn') + '</button>';
+                '<button onclick="enterFocus(\'' + v.mmsi + '\')" style="margin-top:6px;background:#141e32;border:1px solid #00f5ff;color:#00f5ff;border-radius:4px;padding:3px 8px;font-size:13px;cursor:pointer">' + i18n.t('ais_anim.focus_btn') + '</button>';
             marker.bindPopup(
                 '<div style="font-size:14px;line-height:1.8;min-width:180px">' +
                 '<b style="color:' + color + ';font-size:15px">' + (v.name || v.mmsi) + '</b><br>' +
@@ -1382,7 +1382,7 @@
 
         tbody.innerHTML = rows.join('');
         if (sorted.length > 30) {
-            tbody.innerHTML += '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);font-size:9px">... ' + (sorted.length - 30) + ' more vessels</td></tr>';
+            tbody.innerHTML += '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);font-size:11px">... ' + (sorted.length - 30) + ' more vessels</td></tr>';
         }
     }
 
@@ -1724,7 +1724,7 @@
     function initBehaviorTips() {
         behTip = document.createElement('div');
         behTip.style.cssText = 'position:fixed;z-index:9998;max-width:240px;background:rgba(10,15,28,0.96);' +
-            'border:1px solid var(--accent-cyan);border-radius:6px;padding:8px 10px;font-size:11px;' +
+            'border:1px solid var(--accent-cyan);border-radius:6px;padding:8px 10px;font-size:12px;' +
             'line-height:1.5;color:#e8eef7;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.5)';
         document.body.appendChild(behTip);
         document.addEventListener('click', e => {

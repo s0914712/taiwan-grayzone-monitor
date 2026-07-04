@@ -880,7 +880,7 @@
 
         tbody.innerHTML = rows.join('');
         if (sorted.length > 30) {
-            tbody.innerHTML += '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);font-size:9px">... ' + (sorted.length - 30) + ' more vessels</td></tr>';
+            tbody.innerHTML += '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);font-size:11px">... ' + (sorted.length - 30) + ' more vessels</td></tr>';
         }
     }
 
