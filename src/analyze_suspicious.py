@@ -41,6 +41,7 @@ TRACK_COMMERCIAL_FILE = DATA_DIR / "ais_track_commercial.json"
 CABLE_GEO_FILE = DATA_DIR / "cable-geo.json"
 IDENTITY_EVENTS_FILE = DATA_DIR / "identity_events.json"
 SANCTIONS_FILE = DATA_DIR / "un_sanctions_vessels.json"
+SANCTIONS_BLACKLIST_FILE = DATA_DIR / "sanctions_blacklist.json"  # 多機構影子船隊黑名單
 OUTPUT_FILE = DATA_DIR / "suspicious_vessels.json"
 ITU_MARS_CACHE = DATA_DIR / "itu_mars_cache.json"
 SHIP_TRANSFERS_FILE = DATA_DIR / "ship_transfers.json"
@@ -929,26 +930,50 @@ def load_identity_events():
 
 
 def load_sanctions_list():
-    """載入 UN 制裁船舶清單，回傳 IMO set 與 name set 和詳細資料 dict"""
-    if not SANCTIONS_FILE.exists():
-        return {}, set(), set()
-    try:
-        with open(SANCTIONS_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-    except Exception:
-        return {}, set(), set()
+    """載入制裁船舶清單，回傳 (by_imo, imo_set, name_set)。
 
+    兩個來源合併：
+      1. UN 1718 清單（`un_sanctions_vessels.json`，~27 艘）—— IMO **與船名**皆可比對。
+      2. 多機構影子船隊黑名單（`sanctions_blacklist.json`，1400+ 艘 OFAC/EU/UANI…）
+         —— **僅以 IMO 比對**（船名不進 name_set：1400+ 筆含大量常見船名，
+         純名稱易撞名灌分）。黑名單條目標記 source='blacklist' + programs。
+    """
     by_imo = {}
     imo_set = set()
     name_set = set()
-    for v in data.get('vessels', []):
-        imo = v.get('imo', '')
-        name = v.get('name', '').upper().strip()
-        if imo:
-            imo_set.add(imo)
-            by_imo[imo] = v
-        if name:
-            name_set.add(name)
+
+    # 1) UN 清單（IMO + 名稱）
+    if SANCTIONS_FILE.exists():
+        try:
+            with open(SANCTIONS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            for v in data.get('vessels', []):
+                imo = v.get('imo', '')
+                name = v.get('name', '').upper().strip()
+                if imo:
+                    imo_set.add(imo)
+                    by_imo.setdefault(imo, dict(v, source='un'))
+                if name:
+                    name_set.add(name)
+        except Exception as e:
+            print(f"⚠️ 載入 UN 制裁清單失敗: {e}")
+
+    # 2) 多機構黑名單（僅 IMO；UN 已收錄的 IMO 不覆蓋）
+    if SANCTIONS_BLACKLIST_FILE.exists():
+        try:
+            with open(SANCTIONS_BLACKLIST_FILE, 'r', encoding='utf-8') as f:
+                bl = json.load(f)
+            n = 0
+            for v in bl.get('vessels', []):
+                imo = (v.get('imo') or '').strip()
+                if imo and imo not in by_imo:
+                    imo_set.add(imo)
+                    by_imo[imo] = dict(v, source='blacklist')
+                    n += 1
+            print(f"🚫 制裁黑名單: +{n} 艘（IMO 比對）")
+        except Exception as e:
+            print(f"⚠️ 載入制裁黑名單失敗: {e}")
+
     return by_imo, imo_set, name_set
 
 
@@ -1276,18 +1301,37 @@ def classify_vessel(profile, track_points, identity_events=None,
         classification['non_top10_flag'] = True
         classification['flags'].append(f'非前十大船旗國 (MID {mid})')
 
-    # ── Criterion 6: UN 制裁清單 ──
+    # ── Criterion 6: 制裁清單（UN 1718 + 多機構影子船隊黑名單）──
     if sanctions_match:
         classification['sanctioned'] = True
         classification['sanction_info'] = sanctions_match
-        res = sanctions_match.get('resolution', '1718')
-        measures = ', '.join(sanctions_match.get('measures', []))
-        # 純船名匹配（無 IMO 佐證）信度較低 — 中式船名重名率高
         name_only = sanctions_match.get('matched_by') == 'name'
         suffix = '｜僅船名匹配，無 IMO 佐證' if name_only else ''
-        classification['flags'].append(
-            f'⚠️ UN 制裁船舶 (UNSCR {res}: {measures}){suffix}'
-        )
+
+        if sanctions_match.get('source') == 'blacklist':
+            # 多機構黑名單：標出是哪些機構制裁 + 船旗
+            progs = ', '.join(sanctions_match.get('programs', [])) or '未列機構'
+            flag_ctry = sanctions_match.get('flag', '')
+            flag_str = f' 旗:{flag_ctry}' if flag_ctry else ''
+            classification['flags'].append(
+                f'⚠️ 受制裁油輪 ({progs}){flag_str}{suffix}'
+            )
+            # 身分掩蓋偵測：IMO 命中、但 AIS 廣播船名 ≠ 制裁登記名
+            reg_name = (sanctions_match.get('name') or '').upper().strip()
+            ais_names = {(n or '').upper().strip()
+                         for n in profile.get('names_seen', [])}
+            if not name_only and reg_name and ais_names and reg_name not in ais_names:
+                classification['sanction_identity_concealment'] = True
+                classification['flags'].append(
+                    f'🚨 身分掩蓋：AIS 船名 ≠ 制裁登記名（登記 {reg_name}）'
+                )
+        else:
+            # UN 1718 清單
+            res = sanctions_match.get('resolution', '1718')
+            measures = ', '.join(sanctions_match.get('measures', []))
+            classification['flags'].append(
+                f'⚠️ UN 制裁船舶 (UNSCR {res}: {measures}){suffix}'
+            )
 
     # ── Criterion 7: AIS 偽訊號偵測 (Spoofing) ──
     if track_points:
@@ -1508,9 +1552,9 @@ def main():
     id_event_count = sum(len(v) for v in id_events_by_mmsi.values())
     print(f"🔄 身分變更事件: {id_event_count} 筆 ({len(id_events_by_mmsi)} 艘船)")
 
-    # 載入 UN 制裁清單
+    # 載入制裁清單（UN 1718 + 多機構影子船隊黑名單）
     sanctions_by_imo, sanctions_imo_set, sanctions_name_set = load_sanctions_list()
-    print(f"🚫 UN 制裁船舶: {len(sanctions_imo_set)} 艘")
+    print(f"🚫 制裁船舶總計: {len(sanctions_imo_set)} 艘 IMO / {len(sanctions_name_set)} 名稱")
 
     # 載入船隻 profile（用於 AIS 異常偵測）
     profiles = {}

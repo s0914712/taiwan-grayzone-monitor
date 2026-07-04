@@ -51,7 +51,8 @@ Summary carries `stale_skipped` + `active_window_days`; the dashboard stat tile 
 3. `ais_track_commercial.json` (tier-2) — cargo/tanker/LNG + identity-changed vessel tracks
 4. `cable-geo.json` — Submarine cable route GeoJSON
 5. `identity_events.json` — AIS identity change events (7-day window)
-6. `un_sanctions_vessels.json` — UN sanctions vessel list
+6. `un_sanctions_vessels.json` — UN 1718 sanctions vessel list (IMO **and** name match)
+6b. `sanctions_blacklist.json` — multi-agency shadow-fleet tanker blacklist (1400+ vessels: OFAC/UK-FCDO/UANI/EU/SECO/MFAT…), built from `sanctions_blacklist.csv` by `build_sanctions_blacklist.py`. **IMO-match only** (name matching disabled — 1400+ common names collide); merged into the sanction IMO set by `load_sanctions_list()`. On an IMO hit whose AIS-broadcast name ≠ the sanctions-registered name, an identity-concealment flag is raised (`sanction_identity_concealment`)
 7. `itu_mars_cache.json` — ITU MARS ship station registry cache (30-day expiry)
 8. `ship_transfers.json` — STS rendezvous detection results
 
@@ -91,7 +92,7 @@ not escape detection. Both ids appear in the output's `exclusion_rules` list and
 | 3 | 200m Depth Contour | ≥30% of track time near continental shelf edge | +1 |
 | 4 | AIS Anomalies | Name changes ≥2, going dark >18hr gaps, type changes, identity events | +1 (medium) / +3 (high) |
 | 5 | Non-Top-10 Flag | MMSI MID not in top-10 flag state set | +1 |
-| 6 | UN Sanctions | IMO match +8 (high confidence); name-only match +4 (Chinese ship names collide often) | +4/+8 |
+| 6 | Sanctions (UN 1718 + multi-agency shadow-fleet blacklist) | IMO match +8 (high confidence); UN name-only match +4 (Chinese ship names collide often). Blacklist is **IMO-only**; on IMO hit with AIS name ≠ registered name → extra identity-concealment flag | +4/+8 |
 | 7 | AIS Spoofing | Impossible physics / box pattern / circle pattern (see false-positive suppression below) | +4 each |
 | 8 | ITU MARS Mismatch | Ship name, IMO, or call sign differs from ITU registry | +3 |
 | 9 | STS Transfer | Involved in ship-to-ship rendezvous (suspicious: +5, any: +2) | +2/+5 |
