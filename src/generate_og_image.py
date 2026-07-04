@@ -25,6 +25,8 @@ import numpy as np
 from matplotlib.patches import Polygon
 
 _REPO = Path(__file__).resolve().parent.parent
+# 陸地輪廓：優先用 g0v/twgeojson 解碼出的精細海岸線，退回領海基線
+LAND_GEOJSON = _REPO / "docs" / "data" / "taiwan_land.geojson"
 BASELINE_FILE = _REPO / "docs" / "data" / "territorial_baseline.json"
 CABLE_FILE = _REPO / "data" / "cable-geo.json"
 DATA_JSON = _REPO / "docs" / "data.json"
@@ -51,11 +53,27 @@ def _font():
     plt.rcParams['axes.unicode_minus'] = False
 
 
-def _load_baselines():
-    if not BASELINE_FILE.exists():
-        return []
-    d = json.loads(BASELINE_FILE.read_text(encoding='utf-8'))
-    return [pts for pts in d.values() if isinstance(pts, list) and len(pts) >= 3]
+def _load_land():
+    """回傳陸地多邊形 list（每個為 [(lon,lat), ...]）。
+
+    優先讀 g0v/twgeojson 解碼出的精細海岸線（含本島+澎湖+金馬+外島），
+    缺檔時退回領海基線（較粗）。
+    """
+    if LAND_GEOJSON.exists():
+        d = json.loads(LAND_GEOJSON.read_text(encoding='utf-8'))
+        polys = []
+        for feat in d.get('features', []):
+            geom = feat.get('geometry', {})
+            if geom.get('type') == 'Polygon':
+                for ring in geom['coordinates']:
+                    if len(ring) >= 3:
+                        polys.append(ring)
+        if polys:
+            return polys
+    if BASELINE_FILE.exists():
+        d = json.loads(BASELINE_FILE.read_text(encoding='utf-8'))
+        return [pts for pts in d.values() if isinstance(pts, list) and len(pts) >= 3]
+    return []
 
 
 def _load_cables():
@@ -103,8 +121,8 @@ def generate(out_path):
     ax.imshow(np.tile(rgb, (1, 2, 1)), extent=[LON0, LON1, LAT0, LAT1],
               aspect='auto', zorder=0, origin='lower')
 
-    # 陸地（台灣 / 東沙 領海基線輪廓）
-    for pts in _load_baselines():
+    # 陸地（台灣本島 + 澎湖/金門/馬祖/外島，g0v 精細海岸線）
+    for pts in _load_land():
         ax.add_patch(Polygon(pts, closed=True, facecolor=LAND,
                              edgecolor=LAND_EDGE, lw=1.2, zorder=2, alpha=0.95))
 
