@@ -428,6 +428,51 @@ def test_moored_in_cn_port_not_excluded():
     assert result['excluded'] is False
 
 
+def _loiter_track(n=80, speed=1.0, jitter=0.03, lat=OPEN_LAT, lon=OPEN_LON):
+    """離岸原地徘徊航跡：n 點、2h 間隔（跨度 >6 天）、小範圍低速。"""
+    import random
+    rng = random.Random(1)
+    positions = [(lat + rng.uniform(-jitter, jitter),
+                  lon + rng.uniform(-jitter, jitter)) for _ in range(n)]
+    return make_track(positions, speed=speed)
+
+
+def test_offshore_loiter_foc_tanker_flagged():
+    """權宜船旗（非前十大）油輪離岸徘徊 >5 天 → 觸發、計分、判可疑。"""
+    profile = {'mmsi': '668116337', 'names_seen': ['RUI WEI'],
+               'types_seen': ['tanker'], 'total_snapshots': 50}
+    r = asus.classify_vessel(profile, _loiter_track())
+    assert r['offshore_loitering'] is True
+    assert r['non_top10_flag'] is True
+    assert r['risk_score'] >= asus.OFFSHORE_LOITER_SCORE
+    assert any('離岸長期徘徊' in f for f in r['flags'])
+
+
+def test_offshore_loiter_top10_flag_not_scored():
+    """相同徘徊行為但掛前十大船旗（巴拿馬 352）→ 偵測到但不加分
+    （單純離岸徘徊可能是合法等泊，須搭配權宜船旗才可疑）。"""
+    profile = {'mmsi': '352999999', 'names_seen': ['LEGIT TANKER'],
+               'types_seen': ['tanker'], 'total_snapshots': 50}
+    r = asus.classify_vessel(profile, _loiter_track())
+    assert r['offshore_loitering'] is True
+    assert r['non_top10_flag'] is False
+    assert r['suspicious'] is False
+
+
+def test_offshore_loiter_ignores_fishing():
+    """漁船不套用此規則（僅商船 tanker/cargo/lng）。"""
+    ok, _ = asus.check_offshore_loitering(_loiter_track(), 'fishing')
+    assert ok is False
+
+
+def test_transiting_tanker_not_offshore_loiter():
+    """高速過境的油輪不算徘徊。"""
+    positions = [(OPEN_LAT + i * 0.05, OPEN_LON) for i in range(80)]
+    pts = make_track(positions, speed=11.0)
+    ok, _ = asus.check_offshore_loitering(pts, 'tanker')
+    assert ok is False
+
+
 def test_visited_taiwan_port_but_now_at_sea_not_excluded():
     """先前靠過台灣港、最後位置在開放海域 → 不排除，照常分析。"""
     pts = make_track([(22.6153, 120.2664), (OPEN_LAT, OPEN_LON)], speed=8.0)
