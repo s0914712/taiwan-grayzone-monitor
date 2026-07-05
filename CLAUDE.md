@@ -96,6 +96,7 @@ not escape detection. Both ids appear in the output's `exclusion_rules` list and
 | 7 | AIS Spoofing | Impossible physics / box pattern / circle pattern (see false-positive suppression below) | +4 each |
 | 8 | ITU MARS Mismatch | Ship name, IMO, or call sign differs from ITU registry | +3 |
 | 9 | STS Transfer | Involved in ship-to-ship rendezvous (suspicious: +5, any: +2) | +2/+5 |
+| 10 | Offshore Loitering | Commercial vessel (tanker/cargo/lng) milling offshore ≥5 days (`check_offshore_loitering`: >50% points <3kn, median radius from centre ≤20km, low-speed run spans ≥5 days, in-port excluded) — **cable-independent** shadow-fleet standby pattern. Scored **only when also non-top-10 flag** (FoC); plain loitering may be legitimate berth-waiting. | +4 |
 
 **In-port suppression:** cable landings sit next to ports, so a ship legally moored in
 Kaohsiung would otherwise score ~9 (proximity + loiter + combos + buffers) and cross the

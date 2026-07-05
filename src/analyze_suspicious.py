@@ -62,6 +62,17 @@ ANALYSIS_ACTIVE_DAYS = 14         # 僅分析近 14 天活躍的船 — profile 
                                   # 但早已離開監測海域的船只剩舊 profile，
                                   # 拿舊資料計分只會灌水統計（曾把 5 萬艘全算進來）
 
+# ── 離岸徘徊（影子船隊待命樣態，獨立於海纜）─────────────────────
+# 權宜船旗油輪/貨輪在離岸海域連續數天原地低速徘徊 = 浮動儲油/等待 STS 的
+# 典型影子船隊待命樣態。既有徘徊分只在「海纜附近」才給，會漏掉不靠海纜卻
+# 明顯待命的油輪（如高雄西南外海徘徊 35 天的 RUI WEI）。此規則不看海纜。
+OFFSHORE_LOITER_DAYS = 5.0        # 低速點連續跨度 ≥5 天
+OFFSHORE_LOITER_MAX_KNOTS = 3.0   # 低速定義 <3kn
+OFFSHORE_LOITER_MEDIAN_RADIUS_KM = 20.0  # 低速點距中心的中位半徑 ≤20km（原地打轉）
+OFFSHORE_LOITER_MIN_LOW_FRAC = 0.5       # 過半數航跡點低速
+OFFSHORE_LOITER_TYPES = ('tanker', 'cargo', 'lng')  # 僅商船（大噸位、有儲運能力）
+OFFSHORE_LOITER_SCORE = 4         # 中度指標（線索非鐵證；需搭配非前十大船旗）
+
 # ── AIS 偽訊號偵測門檻 (Spoofing Detection) ───────────────
 SPOOF_TELEPORT_KMH = 100.0         # 最大合理速度 ~54kn；超過即瞬移
 SPOOF_SPEED_MISMATCH_RATIO = 3.0   # 計算速度 / 回報速度 比值門檻
@@ -624,6 +635,72 @@ def check_starburst_pattern(track_points, vessel_type='unknown'):
         'spoke_count': spoke_count,
         'hub_fraction': round(hub_fraction, 3),
         'point_count': len(moving),
+    }
+
+
+def check_offshore_loitering(track_points, vessel_type):
+    """偵測商船的離岸長期徘徊（影子船隊待命樣態，與海纜無關）。
+
+    條件（皆須成立）：
+      - 船型為 tanker/cargo/lng（大噸位、具儲運能力）
+      - 過半數航跡點低速（<OFFSHORE_LOITER_MAX_KNOTS）
+      - 低速點距中心的**中位半徑** ≤OFFSHORE_LOITER_MEDIAN_RADIUS_KM（原地打轉，
+        用中位數對少數遠端 excursion 穩健）
+      - 低速點的**連續跨度** ≥OFFSHORE_LOITER_DAYS 天（gap>1天即斷開重算）
+      - 港內點排除（靠泊不算）
+    回傳: (is_loiter, details)
+    """
+    if vessel_type not in OFFSHORE_LOITER_TYPES:
+        return False, {}
+
+    pts = [p for p in track_points
+           if p.get('lat') is not None and p.get('lon') is not None
+           and not p.get('in_port')]
+    if len(pts) < 4:
+        return False, {}
+
+    slow = [p for p in pts if p.get('speed', 99) < OFFSHORE_LOITER_MAX_KNOTS]
+    low_frac = len(slow) / len(pts)
+    if low_frac < OFFSHORE_LOITER_MIN_LOW_FRAC or len(slow) < 4:
+        return False, {}
+
+    # 低速點的中位半徑（距中心）
+    clat = sum(p['lat'] for p in slow) / len(slow)
+    clon = sum(p['lon'] for p in slow) / len(slow)
+    radii = sorted(haversine_km(clat, clon, p['lat'], p['lon']) for p in slow)
+    median_radius = radii[len(radii) // 2]
+    if median_radius > OFFSHORE_LOITER_MEDIAN_RADIUS_KM:
+        return False, {}
+
+    # 低速點的最長連續跨度（相鄰間隔 >1 天即斷開）
+    times = []
+    for p in slow:
+        try:
+            times.append(datetime.fromisoformat(p['t'].replace('Z', '+00:00')))
+        except (ValueError, KeyError, AttributeError):
+            continue
+    times.sort()
+    max_span_days = 0.0
+    seg_start = prev = None
+    for t in times:
+        if seg_start is None:
+            seg_start = prev = t
+            continue
+        if (t - prev).total_seconds() / 3600 > 24:
+            seg_start = t
+        else:
+            max_span_days = max(
+                max_span_days, (t - seg_start).total_seconds() / 86400)
+        prev = t
+
+    is_loiter = max_span_days >= OFFSHORE_LOITER_DAYS
+    return is_loiter, {
+        'loiter_days': round(max_span_days, 1),
+        'low_speed_fraction': round(low_frac, 2),
+        'median_radius_km': round(median_radius, 1),
+        'center_lat': round(clat, 4),
+        'center_lon': round(clon, 4),
+        'point_count': len(pts),
     }
 
 
@@ -1410,6 +1487,20 @@ def classify_vessel(profile, track_points, identity_events=None,
                 f"半徑{starburst_details['mean_radius_km']}km"
             )
 
+    # ── 離岸長期徘徊（商船，獨立於海纜）──
+    classification['offshore_loitering'] = False
+    if track_points:
+        offshore, offshore_details = check_offshore_loitering(
+            track_points, vessel_type)
+        classification['offshore_loitering'] = offshore
+        classification['offshore_loiter_details'] = offshore_details
+        if offshore:
+            classification['flags'].append(
+                f"離岸長期徘徊：{offshore_details['loiter_days']}天原地"
+                f"（{offshore_details['low_speed_fraction']*100:.0f}%低速, "
+                f"中位半徑{offshore_details['median_radius_km']}km）"
+            )
+
     # ── 海域法域 + 海纜緩衝帶（最近位置）──────────────────────
     # 先算出 geofence 標註，供計分與輸出共用（失敗安全降級，不影響評分）。
     gf = None
@@ -1480,6 +1571,11 @@ def classify_vessel(profile, track_points, identity_events=None,
             score += 3  # 嚴重 AIS 異常（多次船名變更等）
         else:
             score += 1
+
+    # ── 離岸長期徘徊 + 非前十大船旗（權宜船旗油輪待命 = 影子船隊樣態）──
+    # 兩者並存才加分：單純離岸徘徊可能是合法等泊，搭配權宜船旗才是可疑輪廓。
+    if classification['offshore_loitering'] and classification['non_top10_flag']:
+        score += OFFSHORE_LOITER_SCORE
 
     # ── AIS 偽訊號（不受船型乘數影響，每項 +4）──
     if classification['spoof_impossible_physics']:
@@ -1669,6 +1765,7 @@ def main():
     spoof_starburst_count = 0
     mars_mismatch_count = 0
     sts_transfer_count = 0
+    offshore_loiter_count = 0
     zone_counts = {}
     cable_band_counts = {}
     cable_buffer_1km_count = 0
@@ -1711,6 +1808,8 @@ def main():
             mars_mismatch_count += 1
         if c.get('sts_transfer'):
             sts_transfer_count += 1
+        if c.get('offshore_loitering'):
+            offshore_loiter_count += 1
 
     output = {
         'updated_at': datetime.now(timezone.utc).isoformat(),
@@ -1723,6 +1822,9 @@ def main():
             'anchor_drag_max_knots': ANCHOR_DRAG_MAX_KNOTS,
             'stationary_max_knots': STATIONARY_MAX_KNOTS,
             'physics_mismatch_max_dt_hours': PHYSICS_MISMATCH_MAX_DT_HOURS,
+            'offshore_loiter_days': OFFSHORE_LOITER_DAYS,
+            'offshore_loiter_max_knots': OFFSHORE_LOITER_MAX_KNOTS,
+            'offshore_loiter_score': OFFSHORE_LOITER_SCORE,
             'sanction_imo_score': SANCTION_IMO_SCORE,
             'sanction_name_only_score': SANCTION_NAME_ONLY_SCORE,
             'port_exclusion': True,  # 港內點不計海纜鄰近/徘徊/緩衝帶
@@ -1775,6 +1877,7 @@ def main():
             'spoof_starburst_pattern': spoof_starburst_count,
             'itu_mars_mismatch': mars_mismatch_count,
             'sts_transfer': sts_transfer_count,
+            'offshore_loitering': offshore_loiter_count,
             'cable_buffer_1km': cable_buffer_1km_count,
             'cable_buffer_jurisdiction': cable_buffer_jur_count,
             'risk_distribution': risk_counts,
@@ -1808,6 +1911,7 @@ def main():
     print(f"   星爆軌跡(非漁船,僅標記): {spoof_starburst_count}")
     print(f"   ITU MARS不符: {mars_mismatch_count}")
     print(f"   STS旁靠涉入: {sts_transfer_count}")
+    print(f"   離岸長期徘徊(商船): {offshore_loiter_count}")
     print(f"   風險分布: {risk_counts}")
     print(f"\n📁 結果已輸出至: {OUTPUT_FILE}")
 
