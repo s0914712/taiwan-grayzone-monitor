@@ -12,7 +12,7 @@ body.theme-reading {
     --bg-card: #ffffff;
     --text-primary: #242424;
     --text-secondary: #4a4a4a;
-    --accent-cyan: #0b6fa4;          /* readable link/heading accent on white */
+    --accent-cyan: #17789c;          /* readable teal link/heading accent on white (oxxo v2) */
     --border-glow: rgba(0, 0, 0, 0.12);
 }
 
@@ -405,4 +405,385 @@ body.theme-reading .intro-section a > span { color: #8a8a8a !important; }
     body.theme-reading .intro-section h2 { font-size: 25px; }
     body.theme-reading .intro-section h3 { font-size: 20px; }
     body.theme-reading .intro-hero { padding: 40px 20px 24px; }
+}
+
+/* =============================================================================
+   Reading theme v2 — oxxostudio-inspired restyle
+   Extracted with the style-extractor workflow from www.oxxostudio.tw evidence
+   (see design/oxxostudio-reading-style-guide.md for tokens + evidence manifest).
+   DNA: pale-gray canvas + white rounded cards with soft shadows, per-category
+   color system (--cat), ribbon flags, dots-on-a-line nav, dashed separators,
+   letter-spaced identity type. Placed last so it wins the cascade over the
+   Medium-like v1 rules above (same 2-class specificity, later position).
+   ============================================================================= */
+
+body.theme-reading {
+    --ox-canvas: #eef0f1;
+    --ox-paper: #ffffff;
+    --ox-ink: #333333;
+    --ox-ink-2: #5f5f5f;
+    --ox-ink-3: #9a9a9a;
+    --ox-dash: #d8d8d8;
+    --ox-radius: 8px;
+    --ox-shadow: 0 1px 4px rgba(0, 0, 0, .14);
+    --ox-shadow-hover: 0 10px 26px rgba(0, 0, 0, .14);
+    /* category palette (oxxostudio nav rainbow) */
+    --cat-monitor: #3aa4c5;   /* 監測概念 teal (default) */
+    --cat-cable:   #35b558;   /* 海底電纜 green */
+    --cat-ref:     #f2a154;   /* 參考/詞彙 peach */
+    --cat-threat:  #e85d5d;   /* 威脅 coral */
+    --cat-law:     #9760b3;   /* 執法法律 purple */
+    --cat-ocean:   #5b7ec9;   /* 海洋法 indigo */
+    --cat-method:  #f5a623;   /* 方法論 orange */
+    --cat-gold:    #c8860a;   /* 學術研究 gold */
+}
+
+/* ── Header: white paper + soft shadow ─────────────────────────────────────── */
+body.theme-reading .header {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+
+/* ── Blog index: gray canvas so white cards pop (oxxo homepage) ────────────── */
+body.theme-reading:has(.blog-grid) {
+    background: var(--ox-canvas);
+}
+body.theme-reading:has(.blog-grid) .site-footer {
+    background: #e6e8ea;
+    border-top: 1px solid rgba(0, 0, 0, .06);
+}
+
+/* ── Hero → letter-spaced identity block (logo + tagline feel) ─────────────── */
+body.theme-reading .blog-hero {
+    background: var(--ox-paper);
+    border-bottom: none;
+    padding-bottom: 40px;
+}
+body.theme-reading .blog-hero::after { display: none; }   /* neon sweep line off */
+body.theme-reading .hero-canvas { display: none; }        /* radar grid off */
+body.theme-reading .hero-eyebrow {
+    color: #b9b9b9;
+    letter-spacing: 5px;
+}
+body.theme-reading .hero-title {
+    color: var(--ox-ink);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700;
+    font-size: clamp(30px, 5vw, 44px);
+    letter-spacing: 10px;
+    text-indent: 10px;      /* optically recenters letter-spaced CJK */
+}
+body.theme-reading .hero-sub {
+    color: var(--ox-ink-3);
+    letter-spacing: 1px;
+}
+/* stat numerals pick up the rainbow */
+body.theme-reading .h-stat-num { font-weight: 600; }
+body.theme-reading .hero-stat:nth-child(1) .h-stat-num { color: var(--cat-cable); }
+body.theme-reading .hero-stat:nth-child(2) .h-stat-num { color: var(--cat-monitor); }
+body.theme-reading .hero-stat:nth-child(3) .h-stat-num { color: var(--cat-method); }
+
+/* ── Series track → colored dots sitting on a thin line ────────────────────── */
+body.theme-reading .series-track {
+    background: var(--ox-paper);
+    border-bottom: none;
+    padding: 20px 24px 30px;
+}
+body.theme-reading .series-line {
+    background: #e2e2e2;
+    height: 1px;
+}
+body.theme-reading .series-dot {
+    --cat: var(--cat-monitor);
+    width: 32px; height: 32px;
+    background: var(--cat);
+    border: none;
+    color: #fff;
+    font-size: 11px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+}
+body.theme-reading .series-dot:hover {
+    background: var(--cat);
+    color: #fff;
+    border: none;
+    transform: scale(1.15);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, .22);
+}
+body.theme-reading .series-dot-label { color: #a8a8a8; font-size: 10px; }
+body.theme-reading .series-dot:hover .series-dot-label { color: var(--cat); }
+body.theme-reading .series-dot[href*="submarine-cable"]  { --cat: var(--cat-cable); }
+body.theme-reading .series-dot[href*="what-is-ais"]      { --cat: var(--cat-monitor); }
+body.theme-reading .series-dot[href*="cable-status"]     { --cat: var(--cat-ref); }
+body.theme-reading .series-dot[href*="cable-threats"]    { --cat: var(--cat-threat); }
+body.theme-reading .series-dot[href*="enforcement"]      { --cat: var(--cat-law); }
+body.theme-reading .series-dot[href*="methodology"]      { --cat: var(--cat-method); }
+
+/* ── Filter bar → borderless labels with colored dots (oxxo category nav) ──── */
+body.theme-reading .filter-bar {
+    background: var(--ox-paper);
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
+    padding: 12px 24px 14px;
+    justify-content: safe center;
+}
+body.theme-reading .filter-btn {
+    --cat: #666666;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: none;
+    background: transparent;
+    color: #777;
+    font-size: 12.5px;
+    padding: 4px 10px;
+    transition: color .2s;
+}
+body.theme-reading .filter-btn::before {
+    content: '';
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--cat);
+    flex-shrink: 0;
+}
+body.theme-reading .filter-btn:hover,
+body.theme-reading .filter-btn.active {
+    background: transparent;
+    border: none;
+    color: var(--cat);
+    font-weight: 700;
+}
+body.theme-reading .filter-btn[data-filter="all"]    { --cat: #4a4a4a; }
+body.theme-reading .filter-btn[data-filter="基礎"]   { --cat: var(--cat-monitor); }
+body.theme-reading .filter-btn[data-filter="AIS"]    { --cat: var(--cat-cable); }
+body.theme-reading .filter-btn[data-filter="威脅"]   { --cat: var(--cat-threat); }
+body.theme-reading .filter-btn[data-filter="執法"]   { --cat: var(--cat-law); }
+body.theme-reading .filter-btn[data-filter="海洋法"] { --cat: var(--cat-ocean); }
+body.theme-reading .filter-btn[data-filter="方法"]   { --cat: var(--cat-method); }
+body.theme-reading .filter-btn[data-filter="學術"]   { --cat: var(--cat-gold); }
+
+/* ── Section labels ────────────────────────────────────────────────────────── */
+body.theme-reading .section-label {
+    color: #a0a0a0;
+    border-top: none;
+    letter-spacing: 4px;
+}
+body.theme-reading .section-label.gold { color: var(--cat-gold); }
+
+/* ── Cards → white rounded paper with ribbon flags ─────────────────────────── */
+body.theme-reading .blog-card {
+    --cat: var(--cat-monitor);
+    background: var(--ox-paper);
+    border: none;
+    border-radius: var(--ox-radius);
+    box-shadow: var(--ox-shadow);
+    overflow: visible;               /* let the ribbon poke past the edge */
+    padding: 46px 24px 20px;
+}
+body.theme-reading .blog-card:hover {
+    background: var(--ox-paper);
+    border: none;
+    box-shadow: var(--ox-shadow-hover);
+}
+body.theme-reading .blog-card::before { display: none; }   /* neon top line off */
+body.theme-reading .card-bg-num { display: none; }         /* watermark off */
+
+/* category colors via data-tags (later rules override the teal default) */
+body.theme-reading .blog-card[data-tags*="海底電纜"],
+body.theme-reading .blog-card[data-tags*="台灣海纜"] { --cat: var(--cat-cable); }
+body.theme-reading .blog-card[data-tags*="詞彙"],
+body.theme-reading .blog-card[data-tags*="海域分區"] { --cat: var(--cat-ref); }
+body.theme-reading .blog-card[data-tags*="威脅"]     { --cat: var(--cat-threat); }
+body.theme-reading .blog-card[data-tags*="執法"],
+body.theme-reading .blog-card[data-tags*="法律"]     { --cat: var(--cat-law); }
+body.theme-reading .blog-card[data-tags*="海洋法"]   { --cat: var(--cat-ocean); }
+body.theme-reading .blog-card[data-tags*="方法"]     { --cat: var(--cat-method); }
+body.theme-reading .blog-card[data-tags*="學術"]     { --cat: var(--cat-gold); }
+
+/* ribbon flag: colored band, arrow tip on the right, fold under the overhang */
+body.theme-reading .card-num {
+    position: absolute;
+    top: 16px;
+    left: -8px;
+    background: var(--cat);
+    color: #fff;
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 4px 16px 4px 12px;
+    border-radius: 2px 0 0 0;
+    line-height: 1.4;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+}
+body.theme-reading .card-num::after {      /* arrow tip */
+    content: '';
+    position: absolute;
+    left: 100%; top: 0;
+    height: 100%;
+    border-left: 8px solid var(--cat);
+    border-top: 11px solid transparent;
+    border-bottom: 11px solid transparent;
+    box-sizing: border-box;
+    width: 8px;
+    border-top-width: 11px;
+    border-bottom-width: 11px;
+}
+body.theme-reading .card-num::before {     /* fold triangle under the overhang */
+    content: '';
+    position: absolute;
+    left: 0; top: 100%;
+    border-top: 6px solid rgba(0, 0, 0, .30);
+    border-left: 8px solid transparent;
+}
+@supports (color: color-mix(in srgb, red 50%, black)) {
+    body.theme-reading .card-num::before {
+        border-top-color: color-mix(in srgb, var(--cat) 55%, black);
+    }
+}
+
+body.theme-reading .card-title-zh { color: var(--ox-ink); }
+body.theme-reading .blog-card:hover .card-title-zh { color: var(--cat); }
+body.theme-reading .card-title-en { color: #a8a8a8; }
+body.theme-reading .card-desc {
+    color: var(--ox-ink-2);
+    border-top: 1px dashed var(--ox-dash);   /* oxxo dashed divider */
+    padding-top: 12px;
+    margin-top: 2px;
+}
+body.theme-reading .card-tag {
+    background: #f4f4f4;
+    border: none;
+    color: #8a8a8a;
+    border-radius: 12px;
+}
+body.theme-reading .card-reading { color: #b5b5b5; }
+body.theme-reading .card-arrow { color: var(--cat); }
+
+/* research card: gold ribbon on plain white paper (drop the tinted panel) */
+body.theme-reading .card-research,
+body.theme-reading .card-research:hover {
+    background: var(--ox-paper);
+    border: none;
+}
+body.theme-reading .card-research { box-shadow: var(--ox-shadow); }
+body.theme-reading .card-research:hover { box-shadow: var(--ox-shadow-hover); }
+body.theme-reading .card-research::before { display: none; }
+body.theme-reading .card-research .card-num { color: #fff; }
+body.theme-reading .card-research:hover .card-title-zh { color: var(--cat-gold); }
+
+/* CTA pills */
+body.theme-reading .cta-primary {
+    border-radius: 24px;
+    font-family: 'Noto Sans TC', sans-serif;
+    letter-spacing: 1px;
+}
+body.theme-reading .cta-secondary { border-radius: 24px; }
+
+/* =============================================================================
+   Article pages (blog-*.html) — oxxo reading column
+   ============================================================================= */
+
+/* h2: short rounded accent bar + dashed rule (dashed-separator DNA) */
+body.theme-reading .intro-section h2 {
+    position: relative;
+    padding-left: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--ox-dash);
+}
+body.theme-reading .intro-section h2::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 6px; bottom: 18px;
+    width: 5px;
+    border-radius: 3px;
+    background: var(--accent-cyan);
+}
+body.theme-reading .intro-hero .subtitle { letter-spacing: 1.5px; }
+
+/* callouts: tinted paper + dashed borders + radius */
+body.theme-reading .story-hook {
+    background: #f9f9f7;
+    border: 1px dashed #d9d9d3;
+    border-left: 4px solid var(--accent-cyan);
+    border-radius: 0 var(--ox-radius) var(--ox-radius) 0;
+}
+body.theme-reading .fact-box {
+    background: #fafafa;
+    border: 1px dashed var(--ox-dash);
+    border-radius: var(--ox-radius);
+}
+body.theme-reading .alert-box {
+    border-radius: var(--ox-radius);
+    border-style: dashed;
+}
+
+/* stat callouts: white cards, numerals rotate through the palette */
+body.theme-reading .stat-callout {
+    background: var(--ox-paper);
+    border: none !important;
+    border-radius: var(--ox-radius);
+    box-shadow: var(--ox-shadow);
+}
+body.theme-reading .stat-callout:nth-child(4n+1) .stat-number { color: var(--cat-monitor); }
+body.theme-reading .stat-callout:nth-child(4n+2) .stat-number { color: var(--cat-cable); }
+body.theme-reading .stat-callout:nth-child(4n+3) .stat-number { color: var(--cat-method); }
+body.theme-reading .stat-callout:nth-child(4n+4) .stat-number { color: var(--cat-threat); }
+
+/* tables: light header + dashed row rules */
+body.theme-reading .intro-section table th,
+body.theme-reading .ais-data-table th,
+body.theme-reading .gray-zone-table th {
+    background: #f3f4f5;
+    color: #555;
+    border-bottom: 1px solid #e3e3e3;
+}
+body.theme-reading .intro-section table td,
+body.theme-reading .ais-data-table td,
+body.theme-reading .gray-zone-table td {
+    border-bottom: 1px dashed #e6e6e6;
+    color: var(--ox-ink-2);
+}
+
+/* list-row components (dark-reason etc.) */
+body.theme-reading .dark-reason {
+    background: var(--ox-paper);
+    border: 1px solid #ececec;
+    border-radius: var(--ox-radius);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+}
+body.theme-reading .dark-reason-text { color: var(--ox-ink-2); }
+body.theme-reading .dark-reason-text strong { color: var(--ox-ink); }
+
+/* FAQ: white rounded cards */
+body.theme-reading .faq-item {
+    border: 1px solid #ececec;
+    border-radius: var(--ox-radius);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+}
+
+/* series chips: rounded pills, active = filled */
+body.theme-reading .series-chip {
+    border-radius: 14px;
+    border: 1px solid #e0e0e0;
+}
+body.theme-reading .series-chip.active {
+    background: var(--accent-cyan);
+    color: #fff;
+    border-color: var(--accent-cyan);
+}
+
+/* topic cluster + footer: quiet paper */
+body.theme-reading .topic-cluster {
+    background: #f7f8f8;
+    border: none;
+    border-radius: var(--ox-radius);
+}
+body.theme-reading .topic-cluster a {
+    background: var(--ox-paper);
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+}
+
+/* ── Mobile ────────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    body.theme-reading .hero-title { letter-spacing: 5px; text-indent: 5px; }
+    body.theme-reading .card-num { left: -6px; }
+    body.theme-reading .blog-card { padding: 44px 20px 18px; }
 }
