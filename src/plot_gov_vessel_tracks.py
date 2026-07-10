@@ -56,6 +56,10 @@ CATEGORY_LABEL = {
 }
 CATEGORY_ORDER = ['coastguard', 'msa', 'rescue', 'research']
 
+# 每類別最多標註船名的艘數（依軌跡點數取前 N）——公務船從 10 艘成長到 80+ 艘後
+# 全部標註會讓沿岸區域變成一團文字；未入選者仍繪製航跡但不標字
+MAX_LABELS_PER_CATEGORY = 4
+
 # 地理參考點 (lat, lon, 標籤) — 只繪製落在當前視野內者
 LANDMARKS = [
     (23.75, 120.95, '台灣 Taiwan'),
@@ -188,17 +192,33 @@ def plot_tracks(vessels, output_path):
     # 描邊樣式，讓航跡旁的船名在暗底上清晰可讀
     stroke = [pe.withStroke(linewidth=2.2, foreground='#0a1628')]
 
-    # 逐艘航跡（依子類別著色，並在終點旁標示船名 + 位置）
+    # 每類別依軌跡點數取前 N 艘標註船名（vessels 已依類別+點數排序）
+    label_counts = {}
+    labeled = set()
+    for v in vessels:
+        c = v['category']
+        if label_counts.get(c, 0) < MAX_LABELS_PER_CATEGORY:
+            label_counts[c] = label_counts.get(c, 0) + 1
+            labeled.add(id(v))
+
+    # 逐艘航跡（依子類別著色；入選者在終點旁標示船名 + 位置）
     for v in vessels:
         color = CATEGORY_COLOR.get(v['category'], '#888888')
+        has_label = id(v) in labeled
         lats = [p['lat'] for p in v['track']]
         lons = [p['lon'] for p in v['track']]
-        ax.plot(lons, lats, color=color, linewidth=1.6, alpha=0.9,
-                marker='o', markersize=2.5, zorder=3)
-        ax.plot(lons[0], lats[0], 'o', color=color, markersize=7, zorder=4,
+        alpha = 0.9 if has_label else 0.45
+        ax.plot(lons, lats, color=color, linewidth=1.6 if has_label else 1.0,
+                alpha=alpha, marker='o', markersize=2.5 if has_label else 1.5,
+                zorder=3)
+        ax.plot(lons[0], lats[0], 'o', color=color,
+                markersize=7 if has_label else 4, zorder=4, alpha=alpha,
                 markeredgecolor='white', markeredgewidth=0.6)
-        ax.plot(lons[-1], lats[-1], 's', color=color, markersize=7, zorder=4,
+        ax.plot(lons[-1], lats[-1], 's', color=color,
+                markersize=7 if has_label else 4, zorder=4, alpha=alpha,
                 markeredgecolor='white', markeredgewidth=0.6)
+        if not has_label:
+            continue
         # 航跡旁標示：船名 + 最新位置座標（終點＝方形標記）
         label = f"{_short_name(v['name'])}\n{lats[-1]:.2f}N,{lons[-1]:.2f}E"
         ax.annotate(label, (lons[-1], lats[-1]),
