@@ -3,7 +3,10 @@ name: Update Gray Zone Vessel Data
 on:
   schedule:
     # 每天 UTC 00:00, 12:00 執行（台灣時間 08:00, 20:00）— GFW/軍演等低頻資料
-    - cron: '0 0,12 * * *'
+    # 拆成兩條 cron：github.event.schedule 會帶觸發的那條，
+    # 供「每日一次」步驟判斷（GitHub cron 常延遲 2-3 小時，不能比對牆上時鐘）
+    - cron: '0 0 * * *'
+    - cron: '0 12 * * *'
   workflow_dispatch:  # 允許手動觸發
 
 concurrency:
@@ -108,16 +111,14 @@ jobs:
         run: |
           python src/generate_report.py
 
-      - name: Generate China gov/special-interest vessel track map (once daily, 00 UTC)
+      # 依觸發的 cron 判斷（而非牆上時鐘）：GitHub 排程常延遲 2-3 小時，
+      # 之前比對 date +%H == 00 永遠不成立，導致這張圖一個月沒更新過
+      - name: Generate China gov/special-interest vessel track map (once daily, 00 UTC cron)
+        if: github.event.schedule == '0 0 * * *' || github.event_name == 'workflow_dispatch'
         run: |
-          HOUR=$(date -u +%H)
-          if [ "$HOUR" = "00" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            pip install matplotlib
-            sudo apt-get update -qq && sudo apt-get install -y -qq fonts-wqy-zenhei
-            python src/plot_gov_vessel_tracks.py
-          else
-            echo "Skip gov vessel track map — runs once daily at 00 UTC (current hour=$HOUR)"
-          fi
+          pip install matplotlib
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-wqy-zenhei
+          python src/plot_gov_vessel_tracks.py
         continue-on-error: true
 
       - name: Save large data cache
