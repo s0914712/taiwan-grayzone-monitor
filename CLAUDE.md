@@ -23,6 +23,7 @@ Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates A
 ```
 GitHub Actions → src/fetch_ais_data.py (AIS via SOCKS5 proxy)
               → src/fetch_gfw_data.py (SAR dark vessels)
+              → src/match_sar_ais.py (re-match GFW dark detections vs local AIS)
               → src/detect_ship_transfers.py (STS rendezvous detection)
               → src/analyze_suspicious.py (threat scoring)
               → src/exercise_prediction.py (PLA sortie correlation)
@@ -197,10 +198,64 @@ final_score = round(raw_behavioral_score × type_multiplier) + high_threat_indic
 
 ---
 
+## match_sar_ais.py — SAR × Local-AIS Re-matching (dark-vessel de-noising)
+
+GFW's matched/unmatched flag uses GFW's own AIS feed; the Port Bureau AIS feed is
+denser near Taiwan. This module re-matches every GFW-**unmatched** SAR detection
+against local AIS to remove false dark ships. Runs in `update-data.yml` right after
+`fetch_gfw_data.py` (which now also writes `data/sar_detections.json` — the full,
+full-precision unmatched detection list; `dark_vessels.json`'s 400 rounded samples
+are only a fallback).
+
+Pipeline (per detection):
+1. **Fixed-infrastructure filter** — wind turbines/aquaculture platforms detected as
+   ships. Recurrence heuristic: same 0.01° cell dark-detected on ≥6 distinct dates →
+   infrastructure. Optional static mask `data/fixed_infrastructure.json`
+   (`[{lat, lon, radius_km?}]`, e.g. a GFW fixed-infrastructure export).
+2. **Time interpolation / dead reckoning** — SAR imaging is instantaneous; AIS is a 2h
+   snapshot cadence. AIS tracks (tier-1 + tier-2 + snapshot; AtoN/buoy/net-beacon
+   transmitters excluded) are interpolated to the SAR overpass instant. Overpass time
+   priority: per-detection timestamp > **real Sentinel-1 pass times from NASA CMR**
+   (`fetch_s1_passes.py` → `data/s1_pass_times.json`, per-date/per-platform IW-GRD
+   acquisition times + asc/desc, optional `EARTHDATA_TOKEN` Bearer; frames ≤30min
+   apart cluster into one pass) > fixed pass windows at Taiwan longitude (ascending
+   ≈09:50 UTC, descending ≈21:55 UTC; both tried, best kept). Summary carries
+   `s1_real_pass_dates`.
+3. **Dynamic gating radius** — gate = base error (SAR geolocation 0.5km + 4wings HIGH
+   grid quantization 0.8km + AIS 0.1km) + maneuver uncertainty (speed × Δt × method
+   factor), clamped to [1.5, 10] km. Never a fixed radius.
+4. **One-to-one assignment** — per (date × pass) group: Hungarian algorithm
+   (`scipy.optimize.linear_sum_assignment`) when scipy is available, else globally
+   cost-sorted greedy NN with gating. Prevents one vessel "absorbing" several
+   detections in dense areas.
+5. **Length cross-validation** — when a detection carries a SAR length estimate and the
+   AIS side has a registered length: relative diff >35% AND >30m → `length_mismatch`
+   (identity-spoofing lead). Dormant until a detection-level SAR source is wired (the
+   daily sar-presence dataset carries no lengths).
+
+Output `data/sar_ais_matches.json` (copied to `docs/`, summary embedded in
+`data.json` as `sar_ais_matching`):
+- `summary` — dark_total / infrastructure_filtered / in_ais_coverage /
+  rematched_local / residual_dark / false_dark_removed_pct (SAR window is 30 days but
+  local AIS retention is 14–28 days, so out-of-coverage detections are reported
+  separately, not counted as verified)
+- `rematched` / `residual_dark` / `infrastructure_cells` detail lists
+- `density_grid` — residual-dark 0.1° heatmap cells
+- `zone_series` — daily time series by maritime zone (12nm / 24nm contiguous / EEZ,
+  via `geofence.classify_maritime_zone`) and by compass sub-zone, both `raw_*` and
+  `screened_*` variants — ready for changepoint detection.
+
+Tests: `tests/test_match_sar_ais.py` (pure-function synthetic tests; CI has no scipy,
+so the greedy fallback path is exercised there and the Hungarian path when scipy is
+installed).
+
+---
+
 ## Common Commands
 ```bash
 python3 src/fetch_ais_data.py          # Fetch AIS data + update profiles + save tracks
 python3 src/fetch_gfw_data.py          # Fetch GFW SAR data
+python3 src/match_sar_ais.py           # Re-match GFW dark detections vs local AIS
 python3 src/detect_ship_transfers.py   # Detect STS rendezvous events
 python3 src/analyze_suspicious.py      # Run threat scoring engine
 python3 src/generate_dashboard.py      # Consolidate → docs/data.json
@@ -212,6 +267,7 @@ python3 src/publish_threads.py --dry-run       # Test Threads post
 
 ## Required Secrets (GitHub Actions)
 - `GFW_API_TOKEN` — Global Fishing Watch API (required)
+- `EARTHDATA_TOKEN` — NASA Earthdata Login user token (optional): passed as Bearer to CMR by `fetch_s1_passes.py` when querying real Sentinel-1 pass times. CMR metadata search also works anonymously, so the pipeline degrades gracefully if unset/expired (EDL tokens expire — regenerate at urs.earthdata.nasa.gov)
 - `THREADS_USER_ID`, `THREADS_ACCESS_TOKEN`, `THREADS_APP_SECRET` — Threads posting (optional)
 - `GEMINI_API_KEY` — Google Gemini LLM captions for Threads (optional)
 

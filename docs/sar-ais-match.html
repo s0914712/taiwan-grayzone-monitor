@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SAR×AIS 交叉比對報告 | SAR–AIS Cross-Match Report - Taiwan Gray Zone &amp; Submarine Cable Monitor</title>
+    <meta name="description" content="以航港局本地 AIS 重新比對 GFW SAR 暗船偵測：固定設施過濾、航位推算時間內插、動態匹配半徑與一對一指派，輸出殘餘暗船密度熱圖與海域法域時間序列">
+    <meta name="keywords" content="暗船,dark vessel,SAR,AIS,交叉比對,dead reckoning,台灣海峽,Taiwan Strait,maritime surveillance">
+    <meta name="author" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html">
+    <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html">
+    <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html?lang=en">
+    <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="SAR×AIS 交叉比對報告 | SAR–AIS Cross-Match Report">
+    <meta property="og:description" content="以航港局本地 AIS 重新比對 GFW SAR 暗船偵測，刪掉假暗船並輸出殘餘暗船密度與法域時間序列">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html">
+    <meta property="og:image" content="https://s0914712.github.io/taiwan-grayzone-monitor/og-banner.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Taiwan Gray Zone &amp; Submarine Cable Monitor 台灣灰色地帶與海底電纜監測">
+    <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:locale:alternate" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://s0914712.github.io/taiwan-grayzone-monitor/og-banner.png">
+    <meta name="twitter:title" content="SAR×AIS 交叉比對報告 | SAR–AIS Cross-Match Report">
+    <meta name="twitter:description" content="以航港局本地 AIS 重新比對 GFW SAR 暗船偵測，刪掉假暗船並輸出殘餘暗船密度與法域時間序列">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"></noscript>
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="css/leaflet.css" />
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/main.css">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebPage",
+                "name": "SAR×AIS 交叉比對報告 | SAR–AIS Cross-Match Report",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html",
+                "description": "以航港局本地 AIS 重新比對 GFW SAR 暗船偵測：固定設施過濾、航位推算時間內插、動態匹配半徑與一對一指派，輸出殘餘暗船密度熱圖與海域法域時間序列",
+                "inLanguage": "zh-TW",
+                "dateModified": "2026-07-12",
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" }
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "首頁 Home", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/" },
+                    { "@type": "ListItem", "position": 2, "name": "暗船偵測 Dark Vessels", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html" },
+                    { "@type": "ListItem", "position": 3, "name": "SAR×AIS 交叉比對 SAR–AIS Cross-Match", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html" }
+                ]
+            },
+            {
+                "@type": "Dataset",
+                "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html#dataset",
+                "name": "Taiwan SAR–AIS Cross-Match Dataset",
+                "alternateName": "台灣 SAR×AIS 交叉比對資料集",
+                "description": "GFW-unmatched SAR detections re-matched against local Port Bureau AIS: fixed-infrastructure filtering, dead-reckoning interpolation to overpass time, dynamic gating and one-to-one assignment; residual-dark density grid and per-maritime-zone daily series.",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html",
+                "inLanguage": ["zh-TW", "en"],
+                "isAccessibleForFree": true,
+                "keywords": ["dark vessels", "SAR", "AIS", "data fusion", "Taiwan Strait", "暗船", "交叉比對"],
+                "spatialCoverage": { "@type": "Place", "geo": { "@type": "GeoShape", "box": "15 110 35 128" } },
+                "license": "https://github.com/s0914712/taiwan-grayzone-monitor/blob/main/LICENSE",
+                "creator": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#org" },
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" },
+                "distribution": {
+                    "@type": "DataDownload",
+                    "encodingFormat": "application/json",
+                    "contentUrl": "https://s0914712.github.io/taiwan-grayzone-monitor/sar_ais_matches.json"
+                }
+            }
+        ]
+    }
+    </script>
+
+    <style>
+        body {
+            overflow-y: auto;
+        }
+
+        #map {
+            height: 420px;
+            border-radius: 0 0 6px 6px;
+        }
+
+        .stats-row.sixup {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+        }
+
+        .map-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 8px 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(0, 245, 255, 0.1);
+        }
+
+        .map-legend label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .legend-swatch {
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            border-radius: 2px;
+        }
+
+        .coverage-note {
+            font-size: 11px;
+            color: var(--text-secondary);
+            padding: 8px 14px;
+            line-height: 1.6;
+        }
+
+        .method-list {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            padding-left: 18px;
+            margin: 6px 0;
+        }
+
+        .method-list b { color: var(--text-primary); }
+
+        table.region-table td, table.region-table th { white-space: nowrap; }
+        .table-scroll { overflow-x: auto; }
+
+        @media (max-width: 900px) {
+            #map { height: calc(100vh - 48px - 56px - 20px); max-height: 350px; min-height: 200px; }
+            .stats-row.sixup { grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 8px 10px; }
+            .stat-card { padding: 10px 8px; }
+            .stat-card .value { font-size: 20px; }
+            .stat-card .label { font-size: 10px; }
+            .main-content { padding-bottom: 72px; }
+        }
+        @media (max-width: 600px) {
+            .stats-row.sixup { grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 6px 8px; }
+            .stat-card { padding: 8px 6px; }
+            .stat-card .value { font-size: 18px; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <header class="header">
+        <h1>🎯 <span class="lang-zh-only">SAR×AIS 交叉比對</span><span class="lang-en-only">SAR–AIS Cross-Match</span></h1>
+        <div class="header-nav">
+            <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
+            <a href="sar-ais-match.html" class="active"><span class="lang-zh-only">SAR×AIS 比對</span><span class="lang-en-only">SAR×AIS Match</span></a>
+            <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
+            <a href="ais-animation.html" data-i18n="nav.animation">軌跡動畫</a>
+            <a href="ship-transfers.html" data-i18n="nav.transfers">旁靠偵測</a>
+            <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
+            <a href="blog.html" data-i18n="nav.blog">深度文章</a>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:13px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
+        </div>
+    </header>
+
+    <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
+    <section class="ai-summary" aria-label="頁面摘要 Page summary">
+        <h2 class="lang-zh-only">本頁重點</h2>
+        <h2 class="lang-en-only">What this page shows</h2>
+        <p class="lang-zh-only">
+            GFW 的「暗船」標記是用他們自己的 AIS 來源比對的；本站接的航港局 AIS 在台海近岸密度更高。
+            本頁把 GFW 標為 unmatched 的 SAR 偵測，拿本地 AIS 重新比對一次 —— 先過濾風機／養殖平台等固定設施，
+            再把 AIS 軌跡以航位推算內插到衛星過境時刻、用動態半徑做一對一匹配。剩下的才是「驗證後殘餘暗船」。
+        </p>
+        <p class="lang-en-only">
+            GFW's "dark vessel" flag is made against GFW's own AIS feed; the local Port Bureau AIS feed
+            is denser near Taiwan. This page re-matches every GFW-unmatched SAR detection against local
+            AIS — first filtering fixed infrastructure (wind turbines, aquaculture platforms), then
+            dead-reckoning AIS tracks to the satellite overpass instant and matching one-to-one with a
+            dynamic gating radius. What remains is the screened residual dark-vessel set.
+        </p>
+        <ul>
+            <li class="lang-zh-only">被本地 AIS 對上的偵測 ＝ 假暗船（GFW 的 AIS 漏了，不是真的關 AIS）。</li>
+            <li class="lang-en-only">A detection matched by local AIS is a false dark ship (missed by GFW's AIS feed, not actually dark).</li>
+            <li class="lang-zh-only">殘餘暗船以 0.1° 密度熱圖與 12浬／24浬鄰接區／EEZ 每日時間序列呈現。</li>
+            <li class="lang-en-only">Residual dark ships are shown as a 0.1° density heatmap and daily series by 12 nm / 24 nm contiguous zone / EEZ.</li>
+        </ul>
+    </section>
+
+    <div class="stats-row sixup">
+        <div class="stat-card">
+            <div class="value" id="statDarkTotal">--</div>
+            <div class="label"><span class="lang-zh-only">GFW 暗偵測</span><span class="lang-en-only">GFW dark detections</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statInfra">--</div>
+            <div class="label"><span class="lang-zh-only">固定設施過濾</span><span class="lang-en-only">Infrastructure filtered</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statRematched" style="color:var(--accent-green)">--</div>
+            <div class="label"><span class="lang-zh-only">本地 AIS 對上</span><span class="lang-en-only">Re-matched locally</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="value alert" id="statResidual">--</div>
+            <div class="label"><span class="lang-zh-only">殘餘暗船</span><span class="lang-en-only">Residual dark</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statRemovedPct">--%</div>
+            <div class="label"><span class="lang-zh-only">假暗船剔除率</span><span class="lang-en-only">False-dark removed</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statCoverageRate">--%</div>
+            <div class="label"><span class="lang-zh-only">覆蓋內比中率</span><span class="lang-en-only">Match rate (in coverage)</span></div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="panel map-panel">
+            <div class="panel-title"><span class="lang-zh-only">📍 殘餘暗船密度熱圖（0.1° 網格）＋ 比對結果</span><span class="lang-en-only">📍 Residual-dark density heatmap (0.1° grid) + match results</span></div>
+            <div id="map"></div>
+            <div class="map-legend">
+                <label><input type="checkbox" id="lyrDensity" checked><span class="legend-swatch" style="background:#ff3366"></span><span class="lang-zh-only">殘餘暗船密度</span><span class="lang-en-only">Residual-dark density</span></label>
+                <label><input type="checkbox" id="lyrRematched" checked><span class="legend-swatch" style="background:#00ff88"></span><span class="lang-zh-only">本地 AIS 對上（假暗船）</span><span class="lang-en-only">Re-matched (false dark)</span></label>
+                <label><input type="checkbox" id="lyrInfra" checked><span class="legend-swatch" style="background:#ffd700"></span><span class="lang-zh-only">固定設施格</span><span class="lang-en-only">Infrastructure cells</span></label>
+            </div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-title"><span class="lang-zh-only">📊 每日暗船：GFW 原始 vs 驗證後殘餘</span><span class="lang-en-only">📊 Daily dark count: raw GFW vs screened residual</span></div>
+            <div class="chart-container">
+                <canvas id="seriesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-title"><span class="lang-zh-only">🗺️ 驗證後殘餘暗船 — 按海域法域（12浬／24浬鄰接區／EEZ）</span><span class="lang-en-only">🗺️ Screened residual dark — by maritime zone (12 nm / 24 nm / EEZ)</span></div>
+            <div class="chart-container">
+                <canvas id="zoneChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title"><span class="lang-zh-only">✅ 本地 AIS 對上的偵測（假暗船明細）</span><span class="lang-en-only">✅ Detections re-matched by local AIS (false-dark details)</span></div>
+            <div class="panel-body table-scroll">
+                <table class="region-table" id="rematchTable">
+                    <thead>
+                        <tr>
+                            <th><span class="lang-zh-only">日期</span><span class="lang-en-only">Date</span></th>
+                            <th><span class="lang-zh-only">過境</span><span class="lang-en-only">Pass</span></th>
+                            <th>MMSI</th>
+                            <th><span class="lang-zh-only">船名</span><span class="lang-en-only">Name</span></th>
+                            <th><span class="lang-zh-only">類型</span><span class="lang-en-only">Type</span></th>
+                            <th><span class="lang-zh-only">距離</span><span class="lang-en-only">Dist</span> (km)</th>
+                            <th>Gate (km)</th>
+                            <th>Δt (min)</th>
+                            <th><span class="lang-zh-only">方法</span><span class="lang-en-only">Method</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="rematchTableBody">
+                        <tr>
+                            <td colspan="9" class="empty-state" data-i18n="common.loading">載入中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="coverage-note" id="coverageNote"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded')"><span class="lang-zh-only">🔬 方法與限制</span><span class="lang-en-only">🔬 Method &amp; limitations</span></div>
+            <div class="panel-collapsible-body">
+                <div class="panel-body">
+                    <ol class="method-list lang-zh-only">
+                        <li><b>固定設施過濾</b>：同一 0.01° 網格在資料窗內 ≥6 個不同日期都被偵測為「暗船」→ 判定為風機／平台／養殖等固定設施（船不會天天停在同個 SAR 網格）。</li>
+                        <li><b>時間內插</b>：SAR 成像是瞬時的，AIS 為 2 小時快照。比對前先把 AIS 軌跡內插／航位推算（速度×航向）到 Sentinel-1 過境時刻（升軌 ≈09:50 UTC、降軌 ≈21:55 UTC）。</li>
+                        <li><b>動態匹配半徑</b>：門檻 = SAR 定位誤差 + 網格量化誤差 + AIS 誤差 + 航速×時距的機動不確定性，夾在 1.5–10 km，不用固定半徑。</li>
+                        <li><b>一對一指派</b>：每個過境內以匈牙利演算法（或貪婪最近鄰 + gating）指派，密集區不會一船吸掉多筆偵測。</li>
+                        <li><b>限制</b>：SAR 資料窗 30 天，但本地 AIS 軌跡僅保留 14–28 天 —— 覆蓋窗之前的偵測「無從驗證」，會標示為 no-coverage、不計入比中率；殘餘暗船代表「本地 AIS 也對不上的目標」，不必然代表違法行為。浮標／漁網信標等非船舶 AIS 發射器已排除，不會拿來「洗白」暗船。</li>
+                    </ol>
+                    <ol class="method-list lang-en-only">
+                        <li><b>Fixed-infrastructure filter</b>: a 0.01° cell dark-detected on ≥6 distinct dates in the window is classified as infrastructure (turbines, platforms, aquaculture) — ships don't park in the same SAR cell daily.</li>
+                        <li><b>Time interpolation</b>: SAR imaging is instantaneous while AIS is a 2-hour snapshot. AIS tracks are interpolated / dead-reckoned (speed × heading) to the Sentinel-1 overpass instant (ascending ≈09:50 UTC, descending ≈21:55 UTC).</li>
+                        <li><b>Dynamic gating radius</b>: threshold = SAR geolocation error + grid quantization + AIS error + speed×Δt maneuver uncertainty, clamped to 1.5–10 km — never a fixed radius.</li>
+                        <li><b>One-to-one assignment</b>: per satellite pass, detections are assigned via the Hungarian algorithm (or gated greedy nearest-neighbour), so one vessel cannot absorb several detections in dense areas.</li>
+                        <li><b>Limitations</b>: the SAR window is 30 days but local AIS tracks are retained 14–28 days — detections before the coverage window are unverifiable, flagged as no-coverage, and excluded from the match rate. A residual dark ship is a target local AIS also cannot explain, not necessarily illegal activity. Non-vessel AIS transmitters (buoys, net beacons) are excluded so they cannot "launder" dark ships.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script defer src="js/i18n.js"></script>
+    <script>
+        let map;
+        const layers = {};
+
+        function zh() { return (typeof i18n !== 'undefined' ? i18n.getLang() : 'zh') !== 'en'; }
+
+        function initMap() {
+            map = L.map('map', {
+                center: [24.0, 120.5],
+                zoom: 6,
+                zoomControl: true,
+                attributionControl: false
+            });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 18,
+                opacity: 0.9
+            }).addTo(map);
+            layers.density = L.layerGroup().addTo(map);
+            layers.rematched = L.layerGroup().addTo(map);
+            layers.infra = L.layerGroup().addTo(map);
+
+            [['lyrDensity', 'density'], ['lyrRematched', 'rematched'], ['lyrInfra', 'infra']].forEach(([id, key]) => {
+                document.getElementById(id).addEventListener('change', e => {
+                    if (e.target.checked) map.addLayer(layers[key]);
+                    else map.removeLayer(layers[key]);
+                });
+            });
+        }
+
+        function plotDensity(cells) {
+            const maxCount = Math.max(1, ...cells.map(c => c.count));
+            cells.forEach(c => {
+                const intensity = Math.sqrt(c.count / maxCount);   // 壓縮動態範圍
+                L.rectangle(
+                    [[c.lat - 0.05, c.lon - 0.05], [c.lat + 0.05, c.lon + 0.05]], {
+                        color: '#ff3366',
+                        weight: 0,
+                        fillColor: '#ff3366',
+                        fillOpacity: 0.12 + 0.55 * intensity
+                    }).addTo(layers.density).bindPopup(
+                        `<b style="color:#ff3366">${zh() ? '殘餘暗船密度' : 'Residual-dark density'}</b><br>` +
+                        `${c.lat.toFixed(1)}, ${c.lon.toFixed(1)}<br>` +
+                        `${zh() ? '偵測數' : 'Detections'}: ${c.count}`);
+            });
+        }
+
+        function plotRematched(items) {
+            items.forEach(r => {
+                L.circleMarker([r.lat, r.lon], {
+                    radius: 5,
+                    fillColor: '#00ff88',
+                    color: '#00ff88',
+                    weight: 1,
+                    opacity: 0.9,
+                    fillOpacity: 0.55
+                }).addTo(layers.rematched).bindPopup(
+                    `<b style="color:#00ff88">${zh() ? '假暗船（本地 AIS 對上）' : 'False dark (matched locally)'}</b><br>` +
+                    `${r.date} · ${r.pass}<br>` +
+                    `MMSI ${r.mmsi} ${r.name || ''}<br>` +
+                    `${zh() ? '距離' : 'Distance'} ${r.distance_km} km (gate ${r.gate_km} km)<br>` +
+                    `Δt ${r.dt_minutes} min · ${r.method}`);
+            });
+        }
+
+        function plotInfra(cells) {
+            cells.forEach(c => {
+                L.rectangle(
+                    [[c.lat - 0.005, c.lon - 0.005], [c.lat + 0.005, c.lon + 0.005]], {
+                        color: '#ffd700',
+                        weight: 1,
+                        fillColor: '#ffd700',
+                        fillOpacity: 0.4
+                    }).addTo(layers.infra).bindPopup(
+                        `<b style="color:#ffd700">${zh() ? '固定設施（重現性判定）' : 'Fixed infrastructure (recurrence)'}</b><br>` +
+                        `${c.lat.toFixed(3)}, ${c.lon.toFixed(3)}<br>` +
+                        `${zh() ? '出現日數' : 'Days seen'}: ${c.dates_seen}`);
+            });
+        }
+
+        const CHART_GRID = 'rgba(138,164,200,0.15)';
+        const CHART_TICKS = '#8aa4c8';
+        let seriesChart = null, zoneChart = null;
+
+        function baseChartOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { labels: { color: CHART_TICKS, boxWidth: 12, font: { size: 10 } } } },
+                scales: {
+                    x: { ticks: { color: CHART_TICKS, font: { size: 9 }, maxRotation: 45 }, grid: { color: CHART_GRID } },
+                    y: { beginAtZero: true, ticks: { color: CHART_TICKS, font: { size: 9 } }, grid: { color: CHART_GRID } }
+                }
+            };
+        }
+
+        function renderSeriesChart(zs) {
+            if (seriesChart) seriesChart.destroy();
+            seriesChart = new Chart(document.getElementById('seriesChart'), {
+                type: 'line',
+                data: {
+                    labels: zs.dates,
+                    datasets: [
+                        {
+                            label: zh() ? 'GFW 原始暗偵測' : 'Raw GFW dark',
+                            data: zs.raw_total,
+                            borderColor: '#8aa4c8',
+                            backgroundColor: 'rgba(138,164,200,0.12)',
+                            borderWidth: 1.5, pointRadius: 2, fill: true, tension: 0.25
+                        },
+                        {
+                            label: zh() ? '驗證後殘餘暗船' : 'Screened residual dark',
+                            data: zs.screened_total,
+                            borderColor: '#ff3366',
+                            backgroundColor: 'rgba(255,51,102,0.15)',
+                            borderWidth: 2, pointRadius: 2, fill: true, tension: 0.25
+                        },
+                        {
+                            label: zh() ? '殘餘・24浬內' : 'Residual within 24 nm',
+                            data: zs.screened_within_24nm,
+                            borderColor: '#ffd700',
+                            borderWidth: 1.5, pointRadius: 2, fill: false, tension: 0.25
+                        }
+                    ]
+                },
+                options: baseChartOptions()
+            });
+        }
+
+        function renderZoneChart(zs) {
+            if (zoneChart) zoneChart.destroy();
+            const bz = zs.screened_by_zone || {};
+            const zoneDefs = [
+                ['internal_waters', zh() ? '內水' : 'Internal waters', '#ff3366'],
+                ['territorial_sea', zh() ? '領海 (12浬)' : 'Territorial (12 nm)', '#ff6b35'],
+                ['contiguous_zone', zh() ? '鄰接區 (24浬)' : 'Contiguous (24 nm)', '#ffd700'],
+                ['eez', 'EEZ', '#00f5ff'],
+                ['high_seas', zh() ? '公海' : 'High seas', '#8aa4c8']
+            ];
+            const opts = baseChartOptions();
+            opts.scales.x.stacked = true;
+            opts.scales.y.stacked = true;
+            zoneChart = new Chart(document.getElementById('zoneChart'), {
+                type: 'bar',
+                data: {
+                    labels: zs.dates,
+                    datasets: zoneDefs
+                        .filter(([key]) => (bz[key] || []).some(v => v > 0))
+                        .map(([key, label, color]) => ({
+                            label,
+                            data: bz[key] || [],
+                            backgroundColor: color + 'aa',
+                            borderColor: color,
+                            borderWidth: 0.5
+                        }))
+                },
+                options: opts
+            });
+        }
+
+        function renderRematchTable(items) {
+            const tbody = document.getElementById('rematchTableBody');
+            if (!items.length) {
+                tbody.innerHTML = `<tr><td colspan="9" class="empty-state">${zh() ? '本輪沒有偵測被本地 AIS 對上' : 'No detections re-matched by local AIS this cycle'}</td></tr>`;
+                return;
+            }
+            const methodLabel = m => zh()
+                ? ({ interpolated: '內插', dead_reckoning: '航位推算', hold: '駐留' }[m] || m)
+                : m;
+            tbody.innerHTML = items
+                .slice()
+                .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+                .map(r => `
+                    <tr>
+                        <td>${r.date}</td>
+                        <td>${r.pass}</td>
+                        <td style="font-family:'JetBrains Mono',monospace">${r.mmsi}</td>
+                        <td>${r.name || '--'}</td>
+                        <td>${r.type_name || '--'}</td>
+                        <td style="color:var(--accent-green);font-weight:600">${r.distance_km}</td>
+                        <td>${r.gate_km}</td>
+                        <td>${r.dt_minutes}</td>
+                        <td>${methodLabel(r.method)}</td>
+                    </tr>`).join('');
+        }
+
+        function renderCoverageNote(s) {
+            const el = document.getElementById('coverageNote');
+            const start = s.ais_coverage && s.ais_coverage.start
+                ? new Date(s.ais_coverage.start).toLocaleDateString() : '--';
+            el.textContent = zh()
+                ? `ℹ️ 本地 AIS 軌跡自 ${start} 起（保留 14–28 天）。SAR 窗內較早的 ${s.no_ais_coverage} 筆偵測位於覆蓋窗之前、無從驗證（不計入比中率）；覆蓋內 ${s.in_ais_coverage} 筆中有 ${s.rematched_local} 筆被本地 AIS 對上。`
+                : `ℹ️ Local AIS tracks start ${start} (14–28-day retention). ${s.no_ais_coverage} earlier detections in the SAR window predate coverage and are unverifiable (excluded from the match rate); of ${s.in_ais_coverage} in-coverage detections, ${s.rematched_local} were re-matched by local AIS.`;
+        }
+
+        let cached = null;
+
+        function renderAll(d) {
+            const s = d.summary || {};
+            document.getElementById('statDarkTotal').textContent = (s.dark_total || 0).toLocaleString();
+            document.getElementById('statInfra').textContent = (s.infrastructure_filtered || 0).toLocaleString();
+            document.getElementById('statRematched').textContent = (s.rematched_local || 0).toLocaleString();
+            document.getElementById('statResidual').textContent = (s.residual_dark || 0).toLocaleString();
+            document.getElementById('statRemovedPct').textContent = (s.false_dark_removed_pct || 0) + '%';
+            document.getElementById('statCoverageRate').textContent = (s.rematch_rate_of_coverage_pct || 0) + '%';
+
+            Object.values(layers).forEach(l => l.clearLayers());
+            plotDensity(d.density_grid || []);
+            plotRematched(d.rematched || []);
+            plotInfra(d.infrastructure_cells || []);
+
+            if (d.zone_series && (d.zone_series.dates || []).length) {
+                renderSeriesChart(d.zone_series);
+                renderZoneChart(d.zone_series);
+            }
+            renderRematchTable(d.rematched || []);
+            renderCoverageNote(s);
+
+            document.getElementById('updateInfo').textContent =
+                (zh() ? '資料更新時間: ' : 'Updated: ') + new Date(d.updated_at).toLocaleString();
+            document.getElementById('dataStatus').textContent = '✅';
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch('sar_ais_matches.json?' + Date.now());
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                cached = await res.json();
+                renderAll(cached);
+            } catch (e) {
+                console.error('Load failed:', e);
+                document.getElementById('dataStatus').textContent = zh()
+                    ? '⏳ 比對結果尚未產生（下次資料管線執行後出現）'
+                    : '⏳ Match results not generated yet (appears after the next pipeline run)';
+                document.getElementById('rematchTableBody').innerHTML =
+                    `<tr><td colspan="9" class="empty-state">${zh() ? '無資料' : 'No data'}</td></tr>`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initMap();
+            loadData();
+        });
+        // 語言切換時重繪動態文字（圖表標籤、表格、註記、popup）
+        window.addEventListener('langchange', function () {
+            if (cached) renderAll(cached);
+        });
+    </script>
+    <script defer src="js/mobile-nav.js"></script>
+</body>
+
+</html>

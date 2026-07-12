@@ -23,6 +23,7 @@ DOCS_DIR.mkdir(exist_ok=True)
 DATA_SOURCE_SPECS = [
     ('ais',            'AIS 船舶定位',  'AIS vessel positions',      DATA_DIR / 'ais_snapshot.json',       2),
     ('dark_vessels',   'SAR 暗船偵測',  'SAR dark-vessel detection', DATA_DIR / 'dark_vessels.json',       12),
+    ('sar_ais_match',  'SAR×AIS 重比對', 'SAR–AIS local re-match',   DATA_DIR / 'sar_ais_matches.json',    12),
     ('suspicious',     '可疑船隻分析',  'Suspicious-vessel analysis', DATA_DIR / 'suspicious_vessels.json', 12),
     ('ship_transfers', '旁靠偵測',      'Ship-to-ship transfers',    DATA_DIR / 'ship_transfers.json',      2),
     ('identity',       'AIS 身分變更',  'AIS identity changes',      DATA_DIR / 'identity_events.json',      2),
@@ -193,6 +194,26 @@ def main():
     else:
         print("⚠️ 找不到 dark_vessels.json，跳過")
 
+    # 讀取 SAR×AIS 本地重比對結果（只嵌 summary，全檔另複製到 docs/）
+    sar_ais_path = DATA_DIR / 'sar_ais_matches.json'
+    sar_ais_summary = None
+    if sar_ais_path.exists():
+        try:
+            with open(sar_ais_path, 'r', encoding='utf-8') as f:
+                sar_ais_full = json.load(f)
+            sar_ais_summary = {
+                'updated_at': sar_ais_full.get('updated_at'),
+                'summary': sar_ais_full.get('summary', {}),
+            }
+            s = sar_ais_summary['summary']
+            print(f"🎯 已載入 SAR×AIS 重比對: 暗偵測 {s.get('dark_total', 0)} → "
+                  f"殘餘 {s.get('residual_dark', 0)} "
+                  f"(剔除 {s.get('false_dark_removed_pct', 0)}%)")
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"⚠️ 讀取 sar_ais_matches.json 失敗: {e}")
+    else:
+        print("⚠️ 找不到 sar_ais_matches.json，跳過")
+
     # 用最新暗船資料刷新並累積 vessel_monitoring 每日趨勢（避免凍結在舊日期）
     vessel_data = refresh_vessel_monitoring_daily(vessel_data, dark_vessels_data)
 
@@ -298,6 +319,7 @@ def main():
         'vessel_monitoring': vessel_data,
         'suspicious_analysis': suspicious_data,
         'dark_vessels': dark_vessels_data,
+        'sar_ais_matching': sar_ais_summary,
         'exercise_prediction': prediction_data,
         'scfi_correlation': scfi_correlation_data,
         'ais_snapshot': ais_snapshot or {'updated_at': '', 'ais_data': {}, 'vessels': []},
@@ -328,6 +350,11 @@ def main():
     if weekly_dark_path.exists():
         shutil.copy2(weekly_dark_path, DOCS_DIR / 'weekly_dark_vessels.json')
         print(f"🎬 已複製暗船動畫資料至 docs/weekly_dark_vessels.json")
+
+    # 複製 SAR×AIS 重比對全檔至 docs（密度網格 + 法域時間序列等輸出層）
+    if sar_ais_path.exists():
+        shutil.copy2(sar_ais_path, DOCS_DIR / 'sar_ais_matches.json')
+        print(f"🎯 已複製 SAR×AIS 重比對結果至 docs/sar_ais_matches.json")
 
     # 複製身分變更事件至 docs（供身分追蹤頁面使用）
     if identity_path.exists():
@@ -370,7 +397,7 @@ def update_structured_data_dates():
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
     html_files = [
-        'dark-vessels.html', 'statistics.html',
+        'dark-vessels.html', 'sar-ais-match.html', 'statistics.html',
         'identity-history.html', 'ship-transfers.html',
     ]
     date_re = re.compile(r'"dateModified"\s*:\s*"[0-9]{4}-[0-9]{2}-[0-9]{2}"')
@@ -398,6 +425,7 @@ def update_structured_data_dates():
 SITEMAP_DATA_PAGE_SUFFIXES = (
     'taiwan-grayzone-monitor/',   # 首頁儀表板（根 URL）
     'dark-vessels.html',
+    'sar-ais-match.html',
     'statistics.html',
     'identity-history.html',
     'ship-transfers.html',
