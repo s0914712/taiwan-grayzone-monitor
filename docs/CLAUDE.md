@@ -9,6 +9,7 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 |------|---------|-------------|
 | `index.html` | Main monitoring dashboard — live map, vessel markers, suspicious list, onboarding tour | `data.json` |
 | `dark-vessels.html` | SAR dark vessel analysis charts + map | `data.json` (dark_vessels section) |
+| `sar-ais-match.html` | SAR×AIS cross-match report — residual-dark density heatmap, raw-vs-screened daily series, per-zone stacked chart, re-matched (false-dark) table, method/limitations. Standalone Leaflet+Chart.js (no MapModule); bilingual via `lang-zh-only`/`lang-en-only` spans; re-renders on `langchange`. Shows a pending notice until the pipeline first generates the data file. | `sar_ais_matches.json` |
 | `statistics.html` | Historical trend charts (vessel counts, dark vessels, fishing effort) | `ais_history.json` |
 | `identity-history.html` | AIS identity change timeline table | `identity_events.json` |
 | `ais-animation.html` | AIS track playback animation + gray-zone events, focus narrative, AOI/tripwire, going-dark, export. Nav label "軌跡動畫" points here. | `ais_track_history.json`, `data.json`, `ship_transfers.json`, `identity_events.json` |
@@ -125,6 +126,7 @@ Animation page logic lives in external scripts `js/ais-animation.js` (~2,100 lin
 | `identity_events.json` | AIS identity change events (max 5,000) | `fetch_ais_data.py` |
 | `weekly_dark_vessels.json` | 90-day SAR detections for animation | `fetch_weekly_dark_vessels.py` |
 | `ship_transfers.json` | STS rendezvous events | `detect_ship_transfers.py` |
+| `sar_ais_matches.json` | SAR×AIS re-match results (summary, rematched/residual/infra lists, density grid, zone series) — copied from `data/` by `generate_dashboard.py` | `match_sar_ais.py` |
 | `cable_status.json` | Submarine cable status | Manual |
 | `taiwan_cables.json` | Cable route GeoJSON. Feature `properties`: `slug` (fault-match key, must stay in sync with `fetch_cable_status.py` `CABLE_NAME_TO_SLUG`), `color` (hex, no `#`), plus optional metadata rendered in the map popup: `name`, `status`, `cable_type`, `length`, `rfs`, `owners`, `tw_landings`, `cn_landings`. Planned cables (`status` 規劃中) render dashed. | Manual |
 | `../data/vessel_routes/{mmsi}.json` | Per-vessel route files (27,000+). **Not in docs/ and not tracked on main** — they live on the single-commit `vessel-data` branch (CI regenerates + force-pushes each run); the frontend fetches them from `raw.githubusercontent.com/.../vessel-data/` when on GitHub Pages (see `ROUTE_FILE_BASE` in `map-routes.js` / `ship-transfers.html`), relative `../data/` path otherwise | `extract_all_routes.py` |

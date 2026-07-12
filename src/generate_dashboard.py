@@ -397,7 +397,7 @@ def update_structured_data_dates():
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
     html_files = [
-        'dark-vessels.html', 'statistics.html',
+        'dark-vessels.html', 'sar-ais-match.html', 'statistics.html',
         'identity-history.html', 'ship-transfers.html',
     ]
     date_re = re.compile(r'"dateModified"\s*:\s*"[0-9]{4}-[0-9]{2}-[0-9]{2}"')
@@ -425,6 +425,7 @@ def update_structured_data_dates():
 SITEMAP_DATA_PAGE_SUFFIXES = (
     'taiwan-grayzone-monitor/',   # 首頁儀表板（根 URL）
     'dark-vessels.html',
+    'sar-ais-match.html',
     'statistics.html',
     'identity-history.html',
     'ship-transfers.html',
