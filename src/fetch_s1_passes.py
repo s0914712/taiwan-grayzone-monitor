@@ -15,9 +15,16 @@ Login 的 user token / JWT access_token），會以 Authorization: Bearer 帶上
 （未來若接需授權的資料集或遇到限流時有用）。token 過期或無效不影響
 搜尋 — 本腳本任何失敗都保留既有輸出檔，管線安全降級。
 
+備援來源：CMR 失敗或查無資料時，改查 Copernicus Data Space (CDSE) 的
+OData 目錄（匿名、免金鑰），從產品名稱解析同樣的成像時刻資訊 —
+兩個獨立機構的目錄互為備援，避免單點失效。
+
 API:
   GET https://cmr.earthdata.nasa.gov/search/granules.umm_json
       ?provider=ASF&platform[]=SENTINEL-1A&...&bounding_box=...&temporal=...
+  GET https://catalogue.dataspace.copernicus.eu/odata/v1/Products
+      ?$filter=Collection/Name eq 'SENTINEL-1' and contains(Name,'_IW_GRDH_')
+       and OData.CSC.Intersects(...) and ContentDate/Start ge ...
 
 輸出格式 data/s1_pass_times.json：
   {
@@ -44,6 +51,7 @@ from pathlib import Path
 from io_utils import atomic_write_json, load_json, make_retry_session
 
 CMR_URL = "https://cmr.earthdata.nasa.gov/search/granules.umm_json"
+CDSE_ODATA_URL = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
 EARTHDATA_TOKEN = os.environ.get('EARTHDATA_TOKEN', '').strip()
 
 DATA_DIR = Path("data")
@@ -155,20 +163,107 @@ def is_iw_grd(granule_ur):
     return '_IW_' in ur and 'GRD' in ur
 
 
-def build_pass_table(items):
-    """granule 列表 → {date: [pass dict]}。
-
-    同日、同方向、同平台且時間間隔 ≤PASS_GAP_MIN 分鐘的連續 frame
-    聚成一次過境，時間取第一個 frame（SAR 掃過台灣 bbox 只需數分鐘）。
-    """
-    per_key = defaultdict(list)   # (date, direction, platform) -> [dt]
-    for item in items:
+def cmr_records(items):
+    """CMR umm_json items → [(dt, direction, platform)]（僅 IW GRD）。"""
+    out = []
+    for item in items or []:
         f = _granule_fields(item)
         if f is None:
             continue
         dt, direction, plat, ur = f
         if not is_iw_grd(ur):
             continue
+        out.append((dt, direction, plat))
+    return out
+
+
+# ── CDSE OData 備援（匿名，免金鑰）────────────────────────────────────────────
+
+def _parse_s1_name(name):
+    """從 Sentinel-1 產品名稱解析 (platform, begin_dt)。
+
+    例：S1A_IW_GRDH_1SDV_20260708T095123_20260708T095148_...
+    無法解析回傳 None。
+    """
+    parts = (name or '').split('_')
+    if len(parts) < 6 or not parts[0].startswith('S1'):
+        return None
+    try:
+        dt = datetime.strptime(parts[4], '%Y%m%dT%H%M%S') \
+            .replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+    return parts[0], dt
+
+
+def cdse_records(items):
+    """CDSE OData Products → [(dt, direction, platform)]。
+
+    方向欄位不在名稱裡，依 UTC 時段推斷（與 CMR 缺屬性時同一規則）。
+    """
+    out = []
+    for item in items or []:
+        parsed = _parse_s1_name((item or {}).get('Name', ''))
+        if parsed is None:
+            continue
+        plat, dt = parsed
+        direction = 'ascending' if 6 <= dt.hour < 15 else 'descending'
+        out.append((dt, direction, plat))
+    return out
+
+
+def fetch_products_cdse(start_iso, end_iso):
+    """查 CDSE OData 目錄（分頁 $skip）；失敗回傳 None。"""
+    session = make_retry_session()
+    bbox_wkt = (f"POLYGON(({BBOX['lon_min']} {BBOX['lat_min']},"
+                f"{BBOX['lon_max']} {BBOX['lat_min']},"
+                f"{BBOX['lon_max']} {BBOX['lat_max']},"
+                f"{BBOX['lon_min']} {BBOX['lat_max']},"
+                f"{BBOX['lon_min']} {BBOX['lat_min']}))")
+    filt = (
+        "Collection/Name eq 'SENTINEL-1'"
+        " and contains(Name,'_IW_GRDH_')"
+        f" and OData.CSC.Intersects(area=geography'SRID=4326;{bbox_wkt}')"
+        f" and ContentDate/Start ge {start_iso}"
+        f" and ContentDate/Start le {end_iso}"
+    )
+    items = []
+    skip = 0
+    page = 1000  # CDSE $top 上限
+    while len(items) < PAGE_SIZE * MAX_PAGES:
+        try:
+            resp = session.get(CDSE_ODATA_URL, params={
+                '$filter': filt,
+                '$top': str(page),
+                '$skip': str(skip),
+                '$orderby': 'ContentDate/Start asc',
+            }, timeout=120)
+        except Exception as e:
+            print(f"   ❌ CDSE OData 請求失敗: {e}")
+            return None
+        if resp.status_code != 200:
+            print(f"   ❌ CDSE OData 錯誤 {resp.status_code}: {resp.text[:300]}")
+            return None
+        try:
+            batch = resp.json().get('value', [])
+        except ValueError as e:
+            print(f"   ❌ CDSE JSON 解析失敗: {e}")
+            return None
+        items.extend(batch)
+        if len(batch) < page:
+            break
+        skip += page
+    return items
+
+
+def build_pass_table(records):
+    """[(dt, direction, platform)] → {date: [pass dict]}。
+
+    同日、同方向、同平台且時間間隔 ≤PASS_GAP_MIN 分鐘的連續 frame
+    聚成一次過境，時間取第一個 frame（SAR 掃過台灣 bbox 只需數分鐘）。
+    """
+    per_key = defaultdict(list)   # (date, direction, platform) -> [dt]
+    for dt, direction, plat in records:
         per_key[(dt.strftime('%Y-%m-%d'), direction, plat)].append(dt)
 
     passes = defaultdict(list)
@@ -224,20 +319,32 @@ def main():
     end_iso = end.strftime('%Y-%m-%dT%H:%M:%SZ')
     print(f"📅 查詢範圍: {start_iso} ~ {end_iso}")
 
+    source = 'cmr'
     items = fetch_granules(start_iso, end_iso)
-    if items is None:
-        print("❌ CMR 查詢失敗，保留既有 s1_pass_times.json（不覆寫）")
-        return 0
-    print(f"   取得 {len(items)} 筆 granule metadata")
+    records = cmr_records(items) if items is not None else []
+    if items is not None:
+        print(f"   CMR 取得 {len(items)} 筆 granule、{len(records)} 筆 IW GRD")
 
-    passes = build_pass_table(items)
+    if not records:
+        print("↪️ CMR 失敗或無資料，改查 CDSE OData 目錄（備援）...")
+        source = 'cdse-odata'
+        items = fetch_products_cdse(start_iso, end_iso)
+        records = cdse_records(items) if items is not None else []
+        if items is not None:
+            print(f"   CDSE 取得 {len(items)} 筆產品、{len(records)} 筆可解析")
+
+    if not records:
+        print("❌ 兩個目錄都查不到，保留既有 s1_pass_times.json（不覆寫）")
+        return 0
+
+    passes = build_pass_table(records)
     if not passes:
         print("⚠️ 沒有解析出任何過境，保留既有檔案（不覆寫）")
         return 0
 
     output = {
         'updated_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
-        'source': 'cmr',
+        'source': source,
         'bbox': BBOX,
         'range': {'start': start_iso[:10], 'end': end_iso[:10]},
         'passes': passes,

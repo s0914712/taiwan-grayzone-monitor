@@ -267,7 +267,8 @@ python3 src/publish_threads.py --dry-run       # Test Threads post
 
 ## Required Secrets (GitHub Actions)
 - `GFW_API_TOKEN` — Global Fishing Watch API (required)
-- `EARTHDATA_TOKEN` — NASA Earthdata Login user token (optional): passed as Bearer to CMR by `fetch_s1_passes.py` when querying real Sentinel-1 pass times. CMR metadata search also works anonymously, so the pipeline degrades gracefully if unset/expired (EDL tokens expire — regenerate at urs.earthdata.nasa.gov)
+- `EARTHDATA_TOKEN` — NASA Earthdata Login user token (optional): passed as Bearer to CMR by `fetch_s1_passes.py` when querying real Sentinel-1 pass times. CMR metadata search also works anonymously, so the pipeline degrades gracefully if unset/expired (EDL tokens expire — regenerate at urs.earthdata.nasa.gov). When CMR fails entirely, `fetch_s1_passes.py` falls back to the CDSE OData catalogue (anonymous)
+- `CDSE_ACCESS_KEY` / `CDSE_SECRET_KEY` — Copernicus Data Space (CDSE) S3 keys (optional, **not used by CI**): for the local evidence tool `src/fetch_sar_chip.py`, which pulls a Sentinel-1 GRD image chip around a residual-dark detection via S3 range reads (a few MB, not the 1GB scene) for manual confirmation + rough target-length estimate. Generate at eodata-s3keysmanager.dataspace.copernicus.eu
 - `THREADS_USER_ID`, `THREADS_ACCESS_TOKEN`, `THREADS_APP_SECRET` — Threads posting (optional)
 - `GEMINI_API_KEY` — Google Gemini LLM captions for Threads (optional)
 
