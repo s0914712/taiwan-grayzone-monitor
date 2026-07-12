@@ -2,8 +2,8 @@
 
 ## Pipeline Execution Order
 ```
-fetch_ais_data.py → fetch_gfw_data.py → detect_ship_transfers.py
-→ analyze_suspicious.py → exercise_prediction.py
+fetch_ais_data.py → fetch_gfw_data.py → match_sar_ais.py
+→ detect_ship_transfers.py → analyze_suspicious.py → exercise_prediction.py
 → extract_all_routes.py → generate_dashboard.py
 ```
 
@@ -14,7 +14,8 @@ fetch_ais_data.py → fetch_gfw_data.py → detect_ship_transfers.py
 | File | Purpose | Input | Output |
 |------|---------|-------|--------|
 | `fetch_ais_data.py` | Fetch AIS from Taiwan Port Bureau (SOCKS5 proxy), update profiles, save tier-1/tier-2 tracks, detect identity changes | Port Bureau API | `data/ais_snapshot.json`, `docs/vessel_profiles.json`, `docs/ais_track_history.json`, `docs/ais_track_commercial.json`, `data/identity_events.json` |
-| `fetch_gfw_data.py` | Fetch GFW SAR satellite detections for dark vessels + fishing hotspots | GFW API (`GFW_API_TOKEN`) | `dark_vessels.json` |
+| `fetch_gfw_data.py` | Fetch GFW SAR satellite detections for dark vessels + fishing hotspots | GFW API (`GFW_API_TOKEN`) | `dark_vessels.json`, `sar_detections.json` (full-precision unmatched detections for re-matching) |
+| `match_sar_ais.py` | **SAR × local-AIS re-matching** — de-noise GFW dark detections with the denser Port Bureau AIS: fixed-infrastructure filter (recurrence heuristic + optional `data/fixed_infrastructure.json` mask), dead-reckoning interpolation to Sentinel-1 overpass time, dynamic gating radius (speed×Δt + SAR/grid/AIS error), one-to-one Hungarian/greedy assignment per pass, length cross-validation hook. Outputs residual-dark density grid + per-zone (12/24nm/EEZ + sub-zone) daily series for changepoint analysis. See root CLAUDE.md for full docs. | `sar_detections.json` (fallback `dark_vessels.json`), tier-1+2 tracks, `ais_snapshot.json` | `sar_ais_matches.json` |
 | `fetch_weekly_dark_vessels.py` | Extract 90-day SAR dark vessel data grouped by date | GFW API | `weekly_dark_vessels.json` |
 | `detect_ship_transfers.py` | Detect ship-to-ship rendezvous (<10m, >1hr), classify as pair trawling vs suspicious. **Merges tier-1 + tier-2 tracks by exact timestamp** (`load_merged_snapshots()`) so tanker↔tanker STS (shadow-fleet transfers) is detectable — tier-1-only would never see commercial vessels. | `ais_track_history.json` (tier-1), `ais_track_commercial.json` (tier-2), `ais_snapshot.json` | `ship_transfers.json` |
 | `analyze_suspicious.py` | **Core threat scoring engine** — see root CLAUDE.md for full scoring docs | profiles, tracks (tier-1+2), cables, identity events, sanctions, MARS cache, STS transfers | `suspicious_vessels.json` |

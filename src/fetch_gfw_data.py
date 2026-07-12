@@ -72,6 +72,8 @@ BASE_URL = "https://gateway.api.globalfishingwatch.org/v3"
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 OUTPUT_PATH = DATA_DIR / 'dark_vessels.json'
+# 全量暗船偵測點（完整精度，供 match_sar_ais.py 以本地 AIS 重比對）
+DETECTIONS_PATH = DATA_DIR / 'sar_detections.json'
 
 # 滾動資料窗口（天）
 DATA_RANGE_DAYS = 30
@@ -285,6 +287,41 @@ def build_region_summary(records):
     }
 
 
+def build_dark_detection_records(records):
+    """收集所有 GFW 標為 unmatched 的偵測點（完整精度，不截斷數量）。
+
+    dark_vessels.json 的 dark_details 只留 400 筆且座標捨入到 0.01°，
+    不足以做 SAR×AIS 重比對；此結構寫入 sar_detections.json 供
+    match_sar_ais.py 使用。若 API 回應帶有偵測層級欄位（timestamp /
+    船長估計），一併透傳。
+    """
+    dark = []
+    for r in records:
+        if r.get('vesselId'):
+            continue
+        lat = r.get('lat', r.get('latitude'))
+        lon = r.get('lon', r.get('longitude'))
+        try:
+            lat_f = float(lat)
+            lon_f = float(lon)
+        except (TypeError, ValueError):
+            continue
+        rec = {
+            'lat': round(lat_f, 5),
+            'lon': round(lon_f, 5),
+            'date': (r.get('date') or '')[:10],
+            'detections': r.get('detections', 1),
+        }
+        ts = r.get('timestamp') or r.get('datetime')
+        if ts:
+            rec['timestamp'] = ts
+        length = r.get('length_m', r.get('length'))
+        if length is not None:
+            rec['length_m'] = length
+        dark.append(rec)
+    return dark
+
+
 # =============================================================================
 # 主程式
 # =============================================================================
@@ -340,6 +377,17 @@ def main():
     }
 
     atomic_write_json(OUTPUT_PATH, output)
+
+    dark_records = build_dark_detection_records(records)
+    atomic_write_json(DETECTIONS_PATH, {
+        'updated_at': output['updated_at'],
+        'data_range': output['data_range'],
+        'bbox': TAIWAN_BBOX,
+        'total_detections': summary['total_detections'],
+        'matched_vessels': summary['matched_vessels'],
+        'dark_detections': dark_records,
+    }, compact=True)
+    print(f"\n✅ 已儲存全量暗船偵測點: {DETECTIONS_PATH} ({len(dark_records)} 筆)")
 
     print("\n" + "=" * 70)
     print(f"✅ 已儲存: {OUTPUT_PATH}")
