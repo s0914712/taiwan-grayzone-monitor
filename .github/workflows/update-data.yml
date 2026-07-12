@@ -57,6 +57,15 @@ jobs:
           python src/fetch_gfw_data.py
         continue-on-error: true
 
+      # 查 Sentinel-1 實際過境時刻（NASA CMR / Earthdata）供重比對使用；
+      # 失敗或無 token 時 match_sar_ais.py 自動退回固定過境窗
+      - name: Fetch Sentinel-1 real pass times (NASA CMR)
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: |
+          python src/fetch_s1_passes.py
+        continue-on-error: true
+
       - name: Re-match GFW dark detections against local AIS
         run: |
           python src/match_sar_ais.py

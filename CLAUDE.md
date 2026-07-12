@@ -214,10 +214,13 @@ Pipeline (per detection):
    (`[{lat, lon, radius_km?}]`, e.g. a GFW fixed-infrastructure export).
 2. **Time interpolation / dead reckoning** — SAR imaging is instantaneous; AIS is a 2h
    snapshot cadence. AIS tracks (tier-1 + tier-2 + snapshot; AtoN/buoy/net-beacon
-   transmitters excluded) are interpolated to the SAR overpass instant: both-side
-   points → time-weighted interpolation; single-side → speed×heading projection.
-   Without a per-detection timestamp, Sentinel-1 pass windows at Taiwan longitude are
-   used (ascending ≈09:50 UTC, descending ≈21:55 UTC; both tried, best kept).
+   transmitters excluded) are interpolated to the SAR overpass instant. Overpass time
+   priority: per-detection timestamp > **real Sentinel-1 pass times from NASA CMR**
+   (`fetch_s1_passes.py` → `data/s1_pass_times.json`, per-date/per-platform IW-GRD
+   acquisition times + asc/desc, optional `EARTHDATA_TOKEN` Bearer; frames ≤30min
+   apart cluster into one pass) > fixed pass windows at Taiwan longitude (ascending
+   ≈09:50 UTC, descending ≈21:55 UTC; both tried, best kept). Summary carries
+   `s1_real_pass_dates`.
 3. **Dynamic gating radius** — gate = base error (SAR geolocation 0.5km + 4wings HIGH
    grid quantization 0.8km + AIS 0.1km) + maneuver uncertainty (speed × Δt × method
    factor), clamped to [1.5, 10] km. Never a fixed radius.
@@ -264,6 +267,7 @@ python3 src/publish_threads.py --dry-run       # Test Threads post
 
 ## Required Secrets (GitHub Actions)
 - `GFW_API_TOKEN` — Global Fishing Watch API (required)
+- `EARTHDATA_TOKEN` — NASA Earthdata Login user token (optional): passed as Bearer to CMR by `fetch_s1_passes.py` when querying real Sentinel-1 pass times. CMR metadata search also works anonymously, so the pipeline degrades gracefully if unset/expired (EDL tokens expire — regenerate at urs.earthdata.nasa.gov)
 - `THREADS_USER_ID`, `THREADS_ACCESS_TOKEN`, `THREADS_APP_SECRET` — Threads posting (optional)
 - `GEMINI_API_KEY` — Google Gemini LLM captions for Threads (optional)
 

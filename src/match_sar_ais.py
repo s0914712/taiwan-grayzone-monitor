@@ -72,11 +72,14 @@ TIER2_PATHS = (DATA_DIR / 'ais_track_commercial.json',
                DOCS_DIR / 'ais_track_commercial.json')       # 後者為舊位置
 SNAPSHOT_PATH = DATA_DIR / 'ais_snapshot.json'
 FIXED_INFRA_PATH = DATA_DIR / 'fixed_infrastructure.json'
+S1_PASS_TIMES_PATH = DATA_DIR / 's1_pass_times.json'
 OUTPUT_PATH = DATA_DIR / 'sar_ais_matches.json'
 
-# Sentinel-1 過境窗（UTC 時 · 分）：台灣經度（~120°E，LST≈UTC+8）
+# Sentinel-1 固定過境窗（UTC 時 · 分）：台灣經度（~120°E，LST≈UTC+8）
 #   ascending  節點 18:00 LST → ~09:50 UTC
 #   descending 節點 06:00 LST → ~21:55 UTC（同一 UTC 日）
+# 這是 fallback — fetch_s1_passes.py（NASA CMR / Earthdata）產出的
+# data/s1_pass_times.json 有該日期的「實際」成像時刻時優先使用。
 S1_PASS_TIMES_UTC = (
     ('ascending', 9, 50),
     ('descending', 21, 55),
@@ -420,16 +423,48 @@ def build_infra_filter(dark_records, static_mask):
 # 過境時刻與指派
 # =============================================================================
 
-def pass_candidates(rec):
+def load_s1_pass_table(path=S1_PASS_TIMES_PATH):
+    """讀 fetch_s1_passes.py 的輸出 → {date: [(label, t_epoch)]}。
+
+    label 形如 'ascending·S1A'。檔案缺失/壞掉回傳空 dict（安全降級到
+    固定過境窗）。
+    """
+    data = load_json(path, None, expect_type=dict)
+    if not data or not isinstance(data.get('passes'), dict):
+        return {}
+    table = {}
+    for date, entries in data['passes'].items():
+        out = []
+        for e in entries or []:
+            if not isinstance(e, dict) or not e.get('time'):
+                continue
+            t = parse_ts(f"{date}T{e['time']}+00:00")
+            if t is None:
+                continue
+            direction = e.get('direction') or 'unknown'
+            plat = e.get('platform') or ''
+            label = f"{direction}·{plat}" if plat else direction
+            out.append((label, t))
+        if out:
+            table[date] = out
+    return table
+
+
+def pass_candidates(rec, pass_table=None):
     """一筆偵測的候選成像時刻 [(pass_label, t_epoch)]。
 
-    記錄帶 timestamp 時直接使用；否則用該日期的 Sentinel-1 兩個過境窗。
+    優先序：記錄自帶 timestamp > 該日期的 CMR 實際過境時刻
+    （data/s1_pass_times.json）> 固定 Sentinel-1 過境窗。
     """
     ts = rec.get('timestamp')
     if ts:
         t = parse_ts(ts)
         if t is not None:
             return [('exact', t)]
+    if pass_table:
+        real = pass_table.get(rec.get('date'))
+        if real:
+            return list(real)
     out = []
     for label, hh, mm in S1_PASS_TIMES_UTC:
         t = parse_ts(f"{rec['date']}T{hh:02d}:{mm:02d}:00+00:00")
@@ -643,8 +678,13 @@ def build_zone_series(all_dark, screened):
 # 主流程
 # =============================================================================
 
-def run_matching(dark_records, tracks, static_mask=(), profiles=None):
-    """核心比對流程（純函式，便於測試）。回傳輸出 dict（不含 updated_at）。"""
+def run_matching(dark_records, tracks, static_mask=(), profiles=None,
+                 pass_table=None):
+    """核心比對流程（純函式，便於測試）。回傳輸出 dict（不含 updated_at）。
+
+    pass_table: {date: [(label, t_epoch)]} 實際過境時刻（CMR），
+    None/缺日期時退回固定過境窗。
+    """
     profiles = profiles or {}
 
     # 1. 固定設施過濾
@@ -665,7 +705,7 @@ def run_matching(dark_records, tracks, static_mask=(), profiles=None):
     groups = defaultdict(list)   # (date, pass_label, t_epoch) -> [det_idx]
     in_coverage = set()
     for idx, r in enumerate(work_recs):
-        for label, t in pass_candidates(r):
+        for label, t in pass_candidates(r, pass_table):
             if coverage_start is not None and t < coverage_start - 3600 * MAX_DT_HOURS:
                 continue
             in_coverage.add(idx)
@@ -764,6 +804,9 @@ def run_matching(dark_records, tracks, static_mask=(), profiles=None):
         },
         'length_checked': len(length_checks),
         'length_mismatches': sum(1 for c in length_checks if c['mismatch']),
+        # 有多少偵測日期用上了 CMR 的實際過境時刻（其餘用固定過境窗）
+        's1_real_pass_dates': len({r['date'] for r in work_recs}
+                                  & set(pass_table or {})),
     }
 
     infra_details = [
@@ -816,7 +859,14 @@ def main():
     if static_mask:
         print(f"🏗️ 靜態固定設施遮罩: {len(static_mask)} 點")
 
-    result = run_matching(dark_records, tracks, static_mask)
+    pass_table = load_s1_pass_table()
+    if pass_table:
+        n = sum(len(v) for v in pass_table.values())
+        print(f"🛰️ Sentinel-1 實際過境時刻: {len(pass_table)} 天、{n} 次過境（CMR）")
+    else:
+        print("ℹ️ 無 s1_pass_times.json — 使用固定過境窗（可跑 fetch_s1_passes.py 取得實際時刻）")
+
+    result = run_matching(dark_records, tracks, static_mask, pass_table=pass_table)
     result['updated_at'] = datetime.now(timezone.utc).isoformat() \
         .replace('+00:00', 'Z')
     result['source'] = source
