@@ -8,7 +8,7 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 | File | Purpose | Data Source |
 |------|---------|-------------|
 | `index.html` | Main monitoring dashboard — live map, vessel markers, suspicious list, onboarding tour | `data.json` |
-| `dark-vessels.html` | SAR dark vessel analysis charts + map | `data.json` (dark_vessels section) |
+| `dark-vessels.html` | SAR dark vessel analysis charts + map. Map shows the **SAR×AIS verification result as targets + zones** when `sar_ais_matches.json` is available: verified residual dark (red), outside-coverage unverified (hollow orange), locally-identified false-dark targets (green, popup carries vessel name/MMSI), infrastructure cells (yellow), density heat (off by default), and baseline/12nm/24nm zone lines via `MapBaselineFactory`; toggleable legend, re-renders on `langchange`. Falls back to raw GFW sample dots when the match file is missing. | `data.json` (dark_vessels section), `sar_ais_matches.json` |
 | `sar-ais-match.html` | SAR×AIS cross-match report — residual-dark density heatmap, raw-vs-screened daily series, per-zone stacked chart, re-matched (false-dark) table, method/limitations. Standalone Leaflet+Chart.js (no MapModule); bilingual via `lang-zh-only`/`lang-en-only` spans; re-renders on `langchange`. Shows a pending notice until the pipeline first generates the data file. | `sar_ais_matches.json` |
 | `statistics.html` | Historical trend charts (vessel counts, dark vessels, fishing effort) | `ais_history.json` |
 | `identity-history.html` | AIS identity change timeline table | `identity_events.json` |
