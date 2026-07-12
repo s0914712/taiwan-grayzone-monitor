@@ -62,7 +62,7 @@ def test_consecutive_frames_cluster_into_one_pass():
         granule('2026-07-08T09:56:00Z', 'ASCENDING'),
         granule('2026-07-08T21:54:00Z', 'DESCENDING'),  # 晚間另一次過境
     ]
-    passes = fp.build_pass_table(items)
+    passes = fp.build_pass_table(fp.cmr_records(items))
     assert list(passes) == ['2026-07-08']
     day = passes['2026-07-08']
     assert len(day) == 2
@@ -76,7 +76,7 @@ def test_two_platforms_same_direction_are_separate_passes():
         granule('2026-07-08T09:51:00Z', 'ASCENDING', 'SENTINEL-1A'),
         granule('2026-07-08T10:03:00Z', 'ASCENDING', 'SENTINEL-1C'),
     ]
-    passes = fp.build_pass_table(items)
+    passes = fp.build_pass_table(fp.cmr_records(items))
     day = passes['2026-07-08']
     assert len(day) == 2
     assert {p['platform'] for p in day} == {'S1A', 'S1C'}
@@ -87,8 +87,38 @@ def test_gap_beyond_threshold_splits_pass():
         granule('2026-07-08T09:51:00Z', 'ASCENDING'),
         granule('2026-07-08T11:00:00Z', 'ASCENDING'),   # 69 分鐘後 → 另一次
     ]
-    passes = fp.build_pass_table(items)
+    passes = fp.build_pass_table(fp.cmr_records(items))
     assert len(passes['2026-07-08']) == 2
+
+
+# ── CDSE OData 備援 ──────────────────────────────────────────────────────────
+
+def test_parse_s1_name():
+    plat, dt = fp._parse_s1_name(
+        'S1A_IW_GRDH_1SDV_20260708T095123_20260708T095148_059123_0756AB_4C26')
+    assert plat == 'S1A'
+    assert dt.strftime('%Y-%m-%d %H:%M:%S') == '2026-07-08 09:51:23'
+    assert fp._parse_s1_name('') is None
+    assert fp._parse_s1_name('S2A_MSIL2A_20260708T021341') is None
+    assert fp._parse_s1_name('S1A_IW_GRDH_1SDV_notadate_x_y') is None
+
+
+def test_cdse_records_and_pass_table():
+    items = [
+        {'Name': 'S1A_IW_GRDH_1SDV_20260708T095123_20260708T095148_059123_0756AB_4C26'},
+        {'Name': 'S1A_IW_GRDH_1SDV_20260708T095148_20260708T095213_059123_0756AB_9F01'},
+        {'Name': 'S1C_IW_GRDH_1SDV_20260708T215402_20260708T215427_003210_00512F_AA11'},
+        {'Name': 'garbage'},
+    ]
+    recs = fp.cdse_records(items)
+    assert len(recs) == 3
+    passes = fp.build_pass_table(recs)
+    day = passes['2026-07-08']
+    assert len(day) == 2
+    asc = next(p for p in day if p['direction'] == 'ascending')
+    assert asc['platform'] == 'S1A' and asc['frames'] == 2
+    desc = next(p for p in day if p['direction'] == 'descending')
+    assert desc['platform'] == 'S1C' and desc['time'] == '21:54:02'
 
 
 # ── match_sar_ais 端的整合 ───────────────────────────────────────────────────
