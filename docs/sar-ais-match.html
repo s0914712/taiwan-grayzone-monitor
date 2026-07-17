@@ -309,6 +309,30 @@
         </div>
 
         <div class="panel">
+            <div class="panel-title"><span class="lang-zh-only">🧰 取證清單 — 東部＋西南殘餘暗船 × Sentinel-1 影像涵蓋</span><span class="lang-en-only">🧰 Chip-retrieval worklist — east/southwest residual dark × Sentinel-1 coverage</span></div>
+            <div class="panel-body" style="font-size:11px;color:var(--text-secondary);line-height:1.6" id="worklistIntro"></div>
+            <div class="panel-body table-scroll">
+                <table class="region-table" id="worklistTable">
+                    <thead>
+                        <tr>
+                            <th><span class="lang-zh-only">日期</span><span class="lang-en-only">Date</span></th>
+                            <th><span class="lang-zh-only">海域</span><span class="lang-en-only">Area</span></th>
+                            <th><span class="lang-zh-only">位置</span><span class="lang-en-only">Position</span></th>
+                            <th><span class="lang-zh-only">法域</span><span class="lang-en-only">Zone</span></th>
+                            <th><span class="lang-zh-only">影像</span><span class="lang-en-only">Imagery</span></th>
+                            <th><span class="lang-zh-only">取證指令（點擊複製）</span><span class="lang-en-only">Command (click to copy)</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="worklistTableBody">
+                        <tr>
+                            <td colspan="6" class="empty-state" data-i18n="common.loading">載入中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
             <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded')"><span class="lang-zh-only">🔬 方法與限制</span><span class="lang-en-only">🔬 Method &amp; limitations</span></div>
             <div class="panel-collapsible-body">
                 <div class="panel-body">
@@ -535,6 +559,80 @@
         }
 
         let cached = null;
+        let cachedWorklist = null;
+
+        // ── 取證清單（build_chip_worklist.py 產出）──
+        function renderWorklist(wl) {
+            const intro = document.getElementById('worklistIntro');
+            const tbody = document.getElementById('worklistTableBody');
+            if (!wl || !Array.isArray(wl.targets)) {
+                intro.textContent = '';
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${zh()
+                    ? '清單尚未產生（下次資料管線執行後出現）'
+                    : 'Worklist not generated yet (appears after the next pipeline run)'}</td></tr>`;
+                return;
+            }
+            const s = wl.summary || {};
+            intro.textContent = zh()
+                ? `每 12 小時自動預查：關注海域內 ${s.in_zone || 0} 筆殘餘暗船，其中 ${s.covered || 0} 筆當日有 Sentinel-1 影像可取證（成像時刻已附在指令裡）、${s.no_coverage || 0} 筆當日無影像涵蓋（不用手動試了）。在本機設定 CDSE 金鑰後，點指令複製直接執行。`
+                : `Pre-checked every 12 h: ${s.in_zone || 0} residual dark detections in the focus areas — ${s.covered || 0} have same-day Sentinel-1 imagery (acquisition time embedded in the command), ${s.no_coverage || 0} have no coverage that day (no need to try manually). Set your CDSE keys locally, click a command to copy, and run.`;
+
+            if (!wl.targets.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${zh()
+                    ? '目前關注海域內沒有殘餘暗船' : 'No residual dark detections in the focus areas'}</td></tr>`;
+                return;
+            }
+            const zoneName = t => {
+                const z = (wl.zones || {})[t.zone] || {};
+                return zh() ? (z.name || t.zone) : (z.name_en || t.zone);
+            };
+            tbody.innerHTML = wl.targets.map(t => `
+                <tr>
+                    <td>${t.date}</td>
+                    <td>${zoneName(t)}</td>
+                    <td style="font-family:'JetBrains Mono',monospace">${t.lat.toFixed(2)}, ${t.lon.toFixed(2)}</td>
+                    <td>${zoneLabelWl(t.maritime_zone)}</td>
+                    <td>${t.covered
+                        ? `<span style="color:var(--accent-green)">🎯 ${(t.time || '').slice(0, 5)} UTC</span>`
+                        : `<span style="color:var(--text-secondary)">${zh() ? '無涵蓋' : 'none'}</span>`}</td>
+                    <td>${t.covered
+                        ? `<code class="wl-cmd" style="cursor:pointer;font-size:10px" title="${zh() ? '點擊複製' : 'Click to copy'}">${t.command}</code>`
+                        : '--'}</td>
+                </tr>`).join('');
+            tbody.querySelectorAll('.wl-cmd').forEach(el => {
+                el.addEventListener('click', () => {
+                    navigator.clipboard && navigator.clipboard.writeText(el.textContent);
+                    const orig = el.textContent;
+                    el.textContent = zh() ? '✅ 已複製' : '✅ Copied';
+                    setTimeout(() => { el.textContent = orig; }, 900);
+                });
+            });
+        }
+
+        const WL_ZONE_LABELS = {
+            internal_waters: ['內水', 'Internal'],
+            territorial_sea: ['領海', '12 nm'],
+            contiguous_zone: ['鄰接區', '24 nm'],
+            eez: ['EEZ', 'EEZ'],
+            high_seas: ['公海', 'High seas'],
+            unknown: ['—', '—'],
+        };
+        function zoneLabelWl(z) {
+            const pair = WL_ZONE_LABELS[z] || WL_ZONE_LABELS.unknown;
+            return zh() ? pair[0] : pair[1];
+        }
+
+        async function loadWorklist() {
+            try {
+                const res = await fetch('sar_chip_worklist.json?' + Date.now());
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                cachedWorklist = await res.json();
+            } catch (e) {
+                console.warn('worklist unavailable:', e);
+                cachedWorklist = null;
+            }
+            renderWorklist(cachedWorklist);
+        }
 
         function renderAll(d) {
             const s = d.summary || {};
@@ -581,10 +679,12 @@
         document.addEventListener('DOMContentLoaded', function () {
             initMap();
             loadData();
+            loadWorklist();
         });
         // 語言切換時重繪動態文字（圖表標籤、表格、註記、popup）
         window.addEventListener('langchange', function () {
             if (cached) renderAll(cached);
+            renderWorklist(cachedWorklist);
         });
     </script>
     <script defer src="js/mobile-nav.js"></script>
