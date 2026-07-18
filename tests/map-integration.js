@@ -127,6 +127,45 @@ const plotted = MM.displayDarkVessels({
 });
 assert.strictEqual(plotted, 2, 'displayDarkVessels plots 2');
 
+// ── 4b. dark popup enrichment (SAR×AIS re-match + chip forensics) ────────
+// Inject match info AFTER render — popup content is a function evaluated on
+// open, so late-loading data must still show up.
+MM.setDarkMatchInfo({
+    rematched: [
+        { lat: 24.2, lon: 119.9, date: '2026-06-08', mmsi: '412000111', name: 'TEST REMATCH', distance_km: 1.7 },
+    ],
+    residual_dark: [
+        { lat: 23.8, lon: 120.2, date: '2026-06-09', zone: 'eez', in_ais_coverage: true },
+    ],
+}, [
+    { lat: 23.8, lon: 120.2, date: '2026-06-09', found: true, peak_ratio: 14.2, length_m: 85.0,
+      saturated: false, error: null, png: 'chips/2026-06-09_23.8_120.2.png' },
+]);
+
+function darkPopupHtml(lat, lon) {
+    let html = null;
+    map.eachLayer(l => {
+        if (l instanceof window.L.CircleMarker && l.getPopup()) {
+            const ll = l.getLatLng();
+            if (Math.abs(ll.lat - lat) < 1e-6 && Math.abs(ll.lng - lon) < 1e-6) {
+                const c = l.getPopup().getContent();
+                html = typeof c === 'function' ? c(l) : c;
+            }
+        }
+    });
+    return html;
+}
+
+const rematchHtml = darkPopupHtml(24.2, 119.9);
+assert(rematchHtml && rematchHtml.includes('dv.match_rematched'), 'rematched popup carries match line');
+assert(rematchHtml.includes('TEST REMATCH') && rematchHtml.includes('412000111'), 'rematched popup names the AIS vessel');
+
+const residualHtml = darkPopupHtml(23.8, 120.2);
+assert(residualHtml && residualHtml.includes('dv.match_residual'), 'residual popup carries residual-dark line');
+assert(residualHtml.includes('dv.zone_eez'), 'residual popup carries maritime zone');
+assert(residualHtml.includes('dv.chip_confirmed'), 'residual popup carries chip verdict (peak 14.2 ≥ 10)');
+assert(residualHtml.includes('2026-06-09_23.8_120.2.png'), 'residual popup links the chip PNG');
+
 // ── 5. suspicious + gov vessel layers ────────────────────────────────────
 const circlesBefore = countLayers(l => l instanceof window.L.CircleMarker);
 MM.displaySuspiciousVessels({
