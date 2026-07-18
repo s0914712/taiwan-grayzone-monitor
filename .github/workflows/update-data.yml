@@ -71,6 +71,12 @@ jobs:
           python src/match_sar_ais.py
         continue-on-error: true
 
+      # 取證清單：東部＋西南殘餘暗船 × Sentinel-1 產品涵蓋（CDSE OData，匿名）
+      - name: Build SAR chip-retrieval worklist
+        run: |
+          python src/build_chip_worklist.py
+        continue-on-error: true
+
       - name: Analyze suspicious vessels (CSIS methodology)
         run: |
           python src/analyze_suspicious.py

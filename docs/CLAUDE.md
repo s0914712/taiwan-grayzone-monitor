@@ -8,7 +8,7 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 | File | Purpose | Data Source |
 |------|---------|-------------|
 | `index.html` | Main monitoring dashboard — live map, vessel markers, suspicious list, onboarding tour | `data.json` |
-| `dark-vessels.html` | SAR dark vessel analysis charts + map | `data.json` (dark_vessels section) |
+| `dark-vessels.html` | SAR dark vessel analysis charts + map. Map shows the **SAR×AIS verification result as targets + zones** when `sar_ais_matches.json` is available: verified residual dark (red), outside-coverage unverified (hollow orange), locally-identified false-dark targets (green, popup carries vessel name/MMSI), infrastructure cells (yellow), density heat (off by default), and baseline/12nm/24nm zone lines via `MapBaselineFactory`; toggleable legend, re-renders on `langchange`. Falls back to raw GFW sample dots when the match file is missing. | `data.json` (dark_vessels section), `sar_ais_matches.json` |
 | `sar-ais-match.html` | SAR×AIS cross-match report — residual-dark density heatmap, raw-vs-screened daily series, per-zone stacked chart, re-matched (false-dark) table, method/limitations. Standalone Leaflet+Chart.js (no MapModule); bilingual via `lang-zh-only`/`lang-en-only` spans; re-renders on `langchange`. Shows a pending notice until the pipeline first generates the data file. | `sar_ais_matches.json` |
 | `statistics.html` | Historical trend charts (vessel counts, dark vessels, fishing effort) | `ais_history.json` |
 | `identity-history.html` | AIS identity change timeline table | `identity_events.json` |
@@ -127,6 +127,7 @@ Animation page logic lives in external scripts `js/ais-animation.js` (~2,100 lin
 | `weekly_dark_vessels.json` | 90-day SAR detections for animation | `fetch_weekly_dark_vessels.py` |
 | `ship_transfers.json` | STS rendezvous events | `detect_ship_transfers.py` |
 | `sar_ais_matches.json` | SAR×AIS re-match results (summary, rematched/residual/infra lists, density grid, zone series) — copied from `data/` by `generate_dashboard.py` | `match_sar_ais.py` |
+| `sar_chip_worklist.json` | Chip-retrieval worklist: east/southwest residual dark × Sentinel-1 coverage, with per-target acquisition time + ready-made `fetch_sar_chip.py` command — copied from `data/` by `generate_dashboard.py`; rendered by the report page's 取證清單 panel | `build_chip_worklist.py` |
 | `cable_status.json` | Submarine cable status | Manual |
 | `taiwan_cables.json` | Cable route GeoJSON. Feature `properties`: `slug` (fault-match key, must stay in sync with `fetch_cable_status.py` `CABLE_NAME_TO_SLUG`), `color` (hex, no `#`), plus optional metadata rendered in the map popup: `name`, `status`, `cable_type`, `length`, `rfs`, `owners`, `tw_landings`, `cn_landings`. Planned cables (`status` 規劃中) render dashed. | Manual |
 | `../data/vessel_routes/{mmsi}.json` | Per-vessel route files (27,000+). **Not in docs/ and not tracked on main** — they live on the single-commit `vessel-data` branch (CI regenerates + force-pushes each run); the frontend fetches them from `raw.githubusercontent.com/.../vessel-data/` when on GitHub Pages (see `ROUTE_FILE_BASE` in `map-routes.js` / `ship-transfers.html`), relative `../data/` path otherwise | `extract_all_routes.py` |

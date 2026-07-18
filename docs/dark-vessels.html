@@ -145,6 +145,36 @@
             border-radius: 0 0 6px 6px;
         }
 
+        .map-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 8px 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(0, 245, 255, 0.1);
+        }
+
+        .map-legend label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .legend-swatch {
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            border-radius: 2px;
+        }
+
+        .legend-swatch.hollow {
+            background: transparent !important;
+            border: 2px solid;
+            box-sizing: border-box;
+        }
+
         @media (max-width: 900px) {
             #map { height: calc(100vh - 48px - 56px - 20px); max-height: 350px; min-height: 200px; }
             .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px 10px; }
@@ -238,8 +268,16 @@
         </div>
 
         <div class="panel map-panel">
-            <div class="panel-title" data-i18n="dv.map_title">📍 暗船位置分布（SAR 衛星偵測、無 AIS 匹配）</div>
+            <div class="panel-title" id="mapPanelTitle" data-i18n="dv.map_title">📍 暗船位置分布（SAR 衛星偵測、無 AIS 匹配）</div>
             <div id="map"></div>
+            <div class="map-legend" id="sarLegend" style="display:none">
+                <label><input type="checkbox" id="lyrResidual" checked><span class="legend-swatch" style="background:#ff3366"></span><span class="lang-zh-only">殘餘暗船（已驗證）</span><span class="lang-en-only">Residual dark (verified)</span></label>
+                <label><input type="checkbox" id="lyrUnverified" checked><span class="legend-swatch hollow" style="border-color:#ff8c66"></span><span class="lang-zh-only">覆蓋外・未驗證</span><span class="lang-en-only">Outside coverage (unverified)</span></label>
+                <label><input type="checkbox" id="lyrIdentified" checked><span class="legend-swatch" style="background:#00ff88"></span><span class="lang-zh-only">已識別目標（本地 AIS）</span><span class="lang-en-only">Identified targets (local AIS)</span></label>
+                <label><input type="checkbox" id="lyrInfra" checked><span class="legend-swatch" style="background:#ffd700"></span><span class="lang-zh-only">固定設施</span><span class="lang-en-only">Fixed infrastructure</span></label>
+                <label><input type="checkbox" id="lyrDensity"><span class="legend-swatch" style="background:rgba(255,51,102,0.45)"></span><span class="lang-zh-only">密度熱區</span><span class="lang-en-only">Density heat</span></label>
+                <label><input type="checkbox" id="lyrZones" checked><span class="legend-swatch" style="background:linear-gradient(90deg,#e040fb,#00f5ff,#ffd700)"></span><span class="lang-zh-only">領海基線／12浬／24浬</span><span class="lang-en-only">Baseline / 12nm / 24nm</span></label>
+            </div>
         </div>
 
         <div class="panel chart-panel">
@@ -312,6 +350,24 @@
     <script defer src="js/charts.js"></script>
     <script>
         let map;
+        const sarLayers = {};   // 比對成果圖層（目標＋區域）
+        let sarData = null;     // sar_ais_matches.json 快取（langchange 重繪用）
+
+        function zh() { return (typeof i18n !== 'undefined' ? i18n.getLang() : 'zh') !== 'en'; }
+
+        // 海域法域標籤（residual_dark 每筆自帶 zone 欄位）
+        const ZONE_LABELS = {
+            internal_waters: ['內水', 'Internal waters'],
+            territorial_sea: ['領海（12浬內）', 'Territorial sea (12 nm)'],
+            contiguous_zone: ['鄰接區（24浬內）', 'Contiguous zone (24 nm)'],
+            eez: ['專屬經濟海域 EEZ', 'EEZ'],
+            high_seas: ['公海', 'High seas'],
+            unknown: ['未知海域', 'Unknown'],
+        };
+        function zoneLabel(z) {
+            const pair = ZONE_LABELS[z] || ZONE_LABELS.unknown;
+            return zh() ? pair[0] : pair[1];
+        }
 
         // Region bounds for dark vessel page
         // Single full-bbox region (lat 15–35, lon 110–128).
@@ -343,6 +399,100 @@
                     dashArray: '6,4'
                 }).addTo(map);
             });
+
+            // ── 比對成果圖層 ──
+            sarLayers.residual = L.layerGroup().addTo(map);     // 殘餘暗船（已驗證）
+            sarLayers.unverified = L.layerGroup().addTo(map);   // AIS 覆蓋外・未驗證
+            sarLayers.identified = L.layerGroup().addTo(map);   // 本地 AIS 已識別
+            sarLayers.infra = L.layerGroup().addTo(map);        // 固定設施
+            sarLayers.density = L.layerGroup();                 // 密度熱區（預設關）
+            sarLayers.zones = L.layerGroup().addTo(map);        // 領海基線/12nm/24nm
+
+            // 區域：領海基線 + 12浬領海 + 24浬鄰接區
+            if (typeof MapBaselineFactory !== 'undefined') {
+                try {
+                    MapBaselineFactory(map, { territorialBaseline: sarLayers.zones })
+                        .drawTerritorialBaseline();
+                } catch (e) { console.warn('baseline draw failed:', e); }
+            }
+
+            [['lyrResidual', 'residual'], ['lyrUnverified', 'unverified'],
+             ['lyrIdentified', 'identified'], ['lyrInfra', 'infra'],
+             ['lyrDensity', 'density'], ['lyrZones', 'zones']].forEach(([id, key]) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('change', e => {
+                    if (e.target.checked) map.addLayer(sarLayers[key]);
+                    else map.removeLayer(sarLayers[key]);
+                });
+            });
+        }
+
+        // ── 比對成果：目標與區域上圖 ──
+        function renderSarLayers(d) {
+            ['residual', 'unverified', 'identified', 'infra', 'density']
+                .forEach(k => sarLayers[k].clearLayers());
+
+            (d.residual_dark || []).forEach(r => {
+                const verified = r.in_ais_coverage !== false;
+                const marker = L.circleMarker([r.lat, r.lon], verified ? {
+                    radius: 5, fillColor: '#ff3366', color: '#ff3366',
+                    weight: 1, opacity: 0.9, fillOpacity: 0.7
+                } : {
+                    radius: 4, fillColor: 'transparent', color: '#ff8c66',
+                    weight: 1.5, opacity: 0.7, fillOpacity: 0
+                });
+                marker.addTo(verified ? sarLayers.residual : sarLayers.unverified)
+                    .bindPopup(
+                        `<b style="color:${verified ? '#ff3366' : '#ff8c66'}">` +
+                        (verified
+                            ? (zh() ? '🚨 殘餘暗船 — 本地 AIS 也無法解釋' : '🚨 Residual dark — unexplained by local AIS')
+                            : (zh() ? '⏳ 暗船偵測 — AIS 覆蓋外・未驗證' : '⏳ Dark detection — outside AIS coverage, unverified')) +
+                        `</b><br>` +
+                        `${zh() ? '日期' : 'Date'}: ${r.date}<br>` +
+                        `${zh() ? '海域' : 'Zone'}: ${zoneLabel(r.zone)}<br>` +
+                        `${zh() ? '位置' : 'Position'}: ${r.lat.toFixed(3)}, ${r.lon.toFixed(3)}`);
+            });
+
+            (d.rematched || []).forEach(r => {
+                L.circleMarker([r.lat, r.lon], {
+                    radius: 6, fillColor: '#00ff88', color: '#00ff88',
+                    weight: 1, opacity: 0.9, fillOpacity: 0.55
+                }).addTo(sarLayers.identified).bindPopup(
+                    `<b style="color:#00ff88">✅ ${zh() ? '已識別目標（假暗船）' : 'Identified target (false dark)'}</b><br>` +
+                    `${r.name ? `<b>${r.name}</b><br>` : ''}` +
+                    `MMSI: ${r.mmsi}${r.type_name ? ` · ${r.type_name}` : ''}<br>` +
+                    `${zh() ? '日期' : 'Date'}: ${r.date} (${r.pass})<br>` +
+                    `${zh() ? '偏差' : 'Offset'}: ${r.distance_km} km / gate ${r.gate_km} km`);
+            });
+
+            (d.infrastructure_cells || []).forEach(c => {
+                L.rectangle(
+                    [[c.lat - 0.005, c.lon - 0.005], [c.lat + 0.005, c.lon + 0.005]], {
+                        color: '#ffd700', weight: 1, fillColor: '#ffd700', fillOpacity: 0.4
+                    }).addTo(sarLayers.infra).bindPopup(
+                        `<b style="color:#ffd700">🏗 ${zh() ? '固定設施（風機／平台／養殖）' : 'Fixed infrastructure'}</b><br>` +
+                        `${c.lat.toFixed(3)}, ${c.lon.toFixed(3)}<br>` +
+                        `${zh() ? '重現日數' : 'Days seen'}: ${c.dates_seen}`);
+            });
+
+            const cells = d.density_grid || [];
+            const maxCount = Math.max(1, ...cells.map(c => c.count));
+            cells.forEach(c => {
+                L.rectangle(
+                    [[c.lat - 0.05, c.lon - 0.05], [c.lat + 0.05, c.lon + 0.05]], {
+                        color: '#ff3366', weight: 0, fillColor: '#ff3366',
+                        fillOpacity: 0.10 + 0.5 * Math.sqrt(c.count / maxCount)
+                    }).addTo(sarLayers.density);
+            });
+
+            // 標題與圖例切到「驗證後」模式
+            document.getElementById('sarLegend').style.display = 'flex';
+            const title = document.getElementById('mapPanelTitle');
+            title.removeAttribute('data-i18n');
+            title.innerHTML = zh()
+                ? '📍 暗船目標地圖 — 本地 AIS 交叉驗證（<a href="sar-ais-match.html" style="color:var(--accent-cyan)">完整報告 →</a>）'
+                : '📍 Dark-vessel targets — local-AIS verified (<a href="sar-ais-match.html" style="color:var(--accent-cyan)">full report →</a>)';
         }
 
         function plotDarkVessels(regions) {
@@ -436,8 +586,16 @@
                     ((overall.total_detections || 0) - (overall.dark_vessels || 0)).toLocaleString();
                 document.getElementById('statRatio').textContent = (overall.dark_ratio || 0) + '%';
 
-                // Plot dark vessels
-                plotDarkVessels(regions);
+                // 優先顯示比對成果（目標＋區域）；沒有比對檔才退回原始 GFW 樣本點
+                try {
+                    const sarRes = await fetch('sar_ais_matches.json?' + Date.now());
+                    if (!sarRes.ok) throw new Error('HTTP ' + sarRes.status);
+                    sarData = await sarRes.json();
+                    renderSarLayers(sarData);
+                } catch (e) {
+                    console.warn('sar_ais_matches.json unavailable, raw GFW dots:', e);
+                    plotDarkVessels(regions);
+                }
 
                 // Daily chart
                 if (overall.dark_by_date && Object.keys(overall.dark_by_date).length > 0) {
@@ -467,6 +625,10 @@
         document.addEventListener('DOMContentLoaded', function () {
             initMap();
             loadData();
+        });
+        // 語言切換時重繪比對圖層（popup／標題語言）
+        window.addEventListener('langchange', function () {
+            if (sarData) renderSarLayers(sarData);
         });
     </script>
     <script defer src="js/mobile-nav.js"></script>

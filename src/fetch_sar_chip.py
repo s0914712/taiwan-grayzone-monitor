@@ -264,14 +264,21 @@ def list_measurement_keys(s3path):
 def read_chip(key, lat, lon, size_km):
     """rasterio S3 視窗讀取：回傳 (chip 2D list, (row0, col0), (row, col))。"""
     import rasterio
+    from rasterio.session import AWSSession
     from rasterio.windows import Window
 
+    # rasterio 1.3+ 禁止把 AWS 憑證直接塞進 Env（EnvError:
+    # "AWS credentials are handled exclusively by boto3"）— 必須包成
+    # AWSSession；endpoint 不含 scheme（GDAL AWS_S3_ENDPOINT 格式）。
+    aws = AWSSession(
+        aws_access_key_id=CDSE_ACCESS_KEY,
+        aws_secret_access_key=CDSE_SECRET_KEY,
+        region_name='default',
+        endpoint_url=S3_ENDPOINT.replace('https://', ''),
+    )
     env = rasterio.Env(
-        AWS_S3_ENDPOINT=S3_ENDPOINT.replace('https://', ''),
-        AWS_ACCESS_KEY_ID=CDSE_ACCESS_KEY,
-        AWS_SECRET_ACCESS_KEY=CDSE_SECRET_KEY,
+        session=aws,
         AWS_VIRTUAL_HOSTING='FALSE',
-        AWS_REGION='default',
         GDAL_DISABLE_READDIR_ON_OPEN='EMPTY_DIR',
     )
     half_px = int(size_km * 1000 / GRD_PIXEL_M / 2)

@@ -356,6 +356,12 @@ def main():
         shutil.copy2(sar_ais_path, DOCS_DIR / 'sar_ais_matches.json')
         print(f"🎯 已複製 SAR×AIS 重比對結果至 docs/sar_ais_matches.json")
 
+    # 複製 SAR 取證清單至 docs（報告頁「取證清單」面板）
+    worklist_path = DATA_DIR / 'sar_chip_worklist.json'
+    if worklist_path.exists():
+        shutil.copy2(worklist_path, DOCS_DIR / 'sar_chip_worklist.json')
+        print(f"🧰 已複製 SAR 取證清單至 docs/sar_chip_worklist.json")
+
     # 複製身分變更事件至 docs（供身分追蹤頁面使用）
     if identity_path.exists():
         shutil.copy2(identity_path, DOCS_DIR / 'identity_events.json')
