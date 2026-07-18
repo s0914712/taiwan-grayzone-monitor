@@ -132,14 +132,18 @@ assert.strictEqual(plotted, 2, 'displayDarkVessels plots 2');
 // open, so late-loading data must still show up.
 MM.setDarkMatchInfo({
     rematched: [
-        { lat: 24.2, lon: 119.9, date: '2026-06-08', mmsi: '412000111', name: 'TEST REMATCH', distance_km: 1.7 },
+        { lat: 24.2, lon: 119.9, date: '2026-06-08', mmsi: '412000111', name: 'TEST REMATCH',
+          type_name: 'fishing', distance_km: 1.7, gate_km: 3.6, dt_minutes: 22,
+          method: 'interpolated', pass: 'descending·S1A' },
     ],
     residual_dark: [
         { lat: 23.8, lon: 120.2, date: '2026-06-09', zone: 'eez', in_ais_coverage: true },
     ],
 }, [
     { lat: 23.8, lon: 120.2, date: '2026-06-09', found: true, peak_ratio: 14.2, length_m: 85.0,
-      saturated: false, error: null, png: 'chips/2026-06-09_23.8_120.2.png' },
+      n_pixels: 37, time: '21:52:39', saturated: false, error: null,
+      product: 'S1A_IW_GRDH_1SDV_20260609T215239_20260609T215304_TEST.SAFE',
+      png: 'chips/2026-06-09_23.8_120.2.png' },
 ]);
 
 function darkPopupHtml(lat, lon) {
@@ -159,12 +163,21 @@ function darkPopupHtml(lat, lon) {
 const rematchHtml = darkPopupHtml(24.2, 119.9);
 assert(rematchHtml && rematchHtml.includes('dv.match_rematched'), 'rematched popup carries match line');
 assert(rematchHtml.includes('TEST REMATCH') && rematchHtml.includes('412000111'), 'rematched popup names the AIS vessel');
+assert(rematchHtml.includes('dv.pos'), 'popup carries position line');
+assert(rematchHtml.includes('descending·S1A'), 'rematched popup carries satellite pass');
+assert(rematchHtml.includes('dv.method_interpolated') && rematchHtml.includes('Δt 22 min'),
+    'rematched popup carries match method + Δt');
+assert(rematchHtml.includes('gate 3.6 km'), 'rematched popup carries gating radius');
 
 const residualHtml = darkPopupHtml(23.8, 120.2);
 assert(residualHtml && residualHtml.includes('dv.match_residual'), 'residual popup carries residual-dark line');
 assert(residualHtml.includes('dv.zone_eez'), 'residual popup carries maritime zone');
 assert(residualHtml.includes('dv.chip_confirmed'), 'residual popup carries chip verdict (peak 14.2 ≥ 10)');
 assert(residualHtml.includes('2026-06-09_23.8_120.2.png'), 'residual popup links the chip PNG');
+assert(residualHtml.includes('21:52 UTC'), 'residual popup carries acquisition time');
+assert(residualHtml.includes('37 px'), 'residual popup carries pixel count');
+assert(residualHtml.includes('S1A_IW_GRDH_1SDV_20260609T215239_') && residualHtml.includes('…'),
+    'residual popup carries truncated product name');
 
 // ── 5. suspicious + gov vessel layers ────────────────────────────────────
 const circlesBefore = countLayers(l => l instanceof window.L.CircleMarker);

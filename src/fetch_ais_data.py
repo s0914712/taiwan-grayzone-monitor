@@ -254,19 +254,47 @@ _GOV_VESSEL_PATTERNS = [
 ]
 
 
-def classify_gov_vessel(name):
-    """回傳子類別 'coastguard'/'msa'/'rescue'/'research'，非目標船回傳 None。"""
-    if not name:
-        return None
-    for category, pat in _GOV_VESSEL_PATTERNS:
-        if pat.search(name):
-            return category
+# 已知中國公務船「精確 MMSI」對照表 — 不是前綴判定（413875 段與民船共用的
+# 結論不變），而是逐艘、有船名廣播實證的個別 MMSI。用途：這些船之後若改播
+# 數字或無意義船名（海警船常見），仍能以 MMSI 辨識。新增條目時必附證據註解。
+KNOWN_GOV_MMSI = {
+    '413875010': 'coastguard',  # 海警1401 — 2026-07-11 廣播 CHINACOASTGUARD1401
+    '413875052': 'coastguard',  # 海警2102 — 廣播 CHINACOASTGUARD2102
+    '413875186': 'coastguard',  # 海警13601 — 廣播 CHINACOASTGUARD13601
+}
+
+# 純數字船名（3-5 位，如「1401」）＋中國 MID → 公務船「候選」旗標。
+# 注意：不能用「船名含四位數字」判定 — 中國漁船大量使用數字尾碼
+# （例：MINXIAYU01401 閩夏漁01401 是漁船），必須是「整個船名就是數字」才算。
+_PURE_DIGIT_NAME_RE = re.compile(r'^\d{3,5}$')
+_CN_MIDS = ('412', '413', '414')
+
+
+def classify_gov_vessel(name, mmsi=None):
+    """回傳子類別 'coastguard'/'msa'/'rescue'/'research'，非目標船回傳 None。
+
+    先比對船名關鍵字；未命中時查 KNOWN_GOV_MMSI 精確對照表（mmsi 有給才查）。
+    """
+    if name:
+        for category, pat in _GOV_VESSEL_PATTERNS:
+            if pat.search(name):
+                return category
+    if mmsi:
+        return KNOWN_GOV_MMSI.get(str(mmsi))
     return None
 
 
+def is_gov_candidate(name, mmsi):
+    """純數字船名＋中國 MID → 疑似公務/軍公船候選（不自動歸類，只標旗）。"""
+    if not name or not mmsi:
+        return False
+    return bool(_PURE_DIGIT_NAME_RE.match(name.replace(' ', ''))) and \
+        str(mmsi)[:3] in _CN_MIDS
+
+
 def is_coast_guard_vessel(name, mmsi=None):
-    """相容舊介面：判斷是否為海警船（coastguard 子類）。mmsi 不參與判定。"""
-    return classify_gov_vessel(name) == 'coastguard'
+    """相容舊介面：判斷是否為海警船（coastguard 子類）。"""
+    return classify_gov_vessel(name, mmsi) == 'coastguard'
 
 
 # --- 資料收集 ---
@@ -364,11 +392,13 @@ def collect_ais_data():
         is_lng = _is_lng_vessel(ship_name, type_code)
 
         # 中國公務船偵測（海警/海巡/海救），命中時覆寫 type_name，
-        # 修正 AIS 將公務船誤報為漁船/special/other 的問題
-        gov_type = classify_gov_vessel(ship_name)
+        # 修正 AIS 將公務船誤報為漁船/special/other 的問題。
+        # 名稱未命中時查 KNOWN_GOV_MMSI 精確對照表（防已知公務船改播數字船名）
+        gov_type = classify_gov_vessel(ship_name, mmsi)
         is_coast_guard = gov_type == 'coastguard'
         if gov_type:
             type_name = gov_type
+        gov_candidate = not gov_type and is_gov_candidate(ship_name, mmsi)
 
         vessels[mmsi] = {
             'mmsi': mmsi,
@@ -386,6 +416,7 @@ def collect_ais_data():
             'is_lng': is_lng,
             'is_coast_guard': is_coast_guard,
             'gov_type': gov_type,
+            **({'gov_candidate': True} if gov_candidate else {}),
             'in_fishing_hotspot': fishing_hotspot,
             'suspicious': suspicious,
             'record_time': record_time,
@@ -651,9 +682,12 @@ def save_all(vessels, stats):
             **({'anc': 1} if str(v.get('nav_status', '')) in ('1', '5') else {}),
             # 公務船旗標 — 供前端動畫/軌跡特別標示中國公務船(海警/海巡/海救)
             **({'gov': v['gov_type']} if v.get('gov_type') else {}),
+            # 公務船候選（純數字船名＋中國MID）— 保留航跡以累積人工檢視證據
+            **({'cand': 1} if v.get('gov_candidate') else {}),
         }
         for v in vessel_list
-        if is_cn_fishing_vessel(v.get('name')) or v.get('suspicious') or v.get('gov_type')
+        if is_cn_fishing_vessel(v.get('name')) or v.get('suspicious')
+        or v.get('gov_type') or v.get('gov_candidate')
     ]
 
     track_entry = {
