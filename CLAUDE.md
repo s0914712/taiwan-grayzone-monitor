@@ -11,7 +11,8 @@ Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates A
 - `docs/` — Frontend (GitHub Pages root). HTML, CSS, JS, and JSON data files
 - `src/` — Python data pipeline scripts (fetch, analyze, generate)
 - `data/` — Working/intermediate data (not in the Pages artifact). `data/vessel_routes/{mmsi}.json` is gitignored on main and lives on the single-commit **`vessel-data` branch** (CI regenerates + force-pushes it each run); the frontend fetches routes via raw.githubusercontent.com/.../vessel-data/ — 27k route files in main history bloated the repo to 200MB+ and made Pages deployments time out
-- `.github/workflows/` — 3 CI workflows (AIS every 2h, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, Threads weekly)
+- `.github/workflows/` — 4 CI workflows (AIS every 2h, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, darkship SAR forensics daily 22:00 UTC, Threads weekly)
+- `chips/` + `reports/` — darkship SAR forensics outputs (chip PNGs, `chips/results.json` cumulative log, daily Markdown reports), committed by `darkship-cron.yml`; **not** in the Pages artifact but public in the repo — a deliberate trade-off chosen when the cron was set up
 
 ## Tech Stack
 - **Frontend:** Vanilla HTML/CSS/JS, Leaflet 1.9.4 (maps), Chart.js 4.4.0 (charts)

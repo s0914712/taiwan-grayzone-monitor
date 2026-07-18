@@ -1,0 +1,95 @@
+# 暗船 SAR 取證自動化（cron 版）— 把本機取證工作站的「標準流程」搬進排程：
+# 讀取 CI 產生的取證清單（sar_chip_worklist.json）→ 逐一呼叫 fetch_sar_chip.py
+# 從 CDSE S3 抓 Sentinel-1 切片 → 判定亮目標 → 產生報告並 commit。
+#
+# 前置作業（人工，一次性）：
+#   Repo Settings -> Secrets and variables -> Actions 新增
+#   CDSE_ACCESS_KEY / CDSE_SECRET_KEY（eodata-s3keysmanager.dataspace.copernicus.eu）
+#
+# 已知取捨：chips/、reports/ 產出直接 commit 進這個 public repo，「確認實體
+# 目標」的研判結論會公開可見 —— 這是建立此 workflow 時的明確選擇，不是預設
+# 安全值（本機工作站的紅線仍是全部留在本機）。若之後想改成不公開，把最後的
+# commit step 換成 actions/upload-artifact。
+#
+# worklist 直接讀 checkout 內 CI 已 commit 的 data/sar_chip_worklist.json，
+# 不經 GitHub Pages（避免 Pages 部署/CDN 快取抓到舊清單）。清單由
+# update-data.yml（00:00 / 12:00 UTC）的 build_chip_worklist.py 產生，
+# 本排程訂在 22:00 UTC，晚於當日兩次更新。
+
+name: Darkship SAR Forensics (Cron)
+
+on:
+  schedule:
+    # 每天 UTC 22:00（台北時間 06:00）跑一輪；依需求調整
+    - cron: '0 22 * * *'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: '本輪最多測試幾筆新目標（0 = 全部）'
+        required: false
+        default: '10'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: darkship-cron
+  cancel-in-progress: false
+
+env:
+  SCRIPT_PATH: src/fetch_sar_chip.py
+  WORKLIST_PATH: data/sar_chip_worklist.json
+  MATCHES_PATH: data/sar_ais_matches.json
+  RESULTS_PATH: chips/results.json
+  CHIPS_DIR: chips
+  REPORTS_DIR: reports
+
+jobs:
+  fetch-and-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip requests boto3 rasterio numpy matplotlib
+
+      - name: Run darkship batch
+        env:
+          CDSE_ACCESS_KEY: ${{ secrets.CDSE_ACCESS_KEY }}
+          CDSE_SECRET_KEY: ${{ secrets.CDSE_SECRET_KEY }}
+          PYTHONIOENCODING: utf-8
+        run: |
+          python src/darkship_batch.py \
+            --worklist "${{ env.WORKLIST_PATH }}" \
+            --matches "${{ env.MATCHES_PATH }}" \
+            --fetch-script "${{ env.SCRIPT_PATH }}" \
+            --results "${{ env.RESULTS_PATH }}" \
+            --chips-dir "${{ env.CHIPS_DIR }}" \
+            --reports-dir "${{ env.REPORTS_DIR }}" \
+            --limit "${{ github.event.inputs.limit || '10' }}"
+
+      # update-ais.yml 每 2 小時 push main，直接 push 很容易撞 non-fast-forward；
+      # 比照 update-data.yml 先 rebase 再 push
+      - name: Commit results if changed
+        run: |
+          git config user.name "darkship-cron[bot]"
+          git config user.email "darkship-cron@users.noreply.github.com"
+          git add "${{ env.CHIPS_DIR }}" "${{ env.REPORTS_DIR }}"
+          if git diff --cached --quiet; then
+            echo "沒有新結果，略過 commit"
+          else
+            git commit -m "darkship: 自動取證批次 $(date -u +%Y-%m-%d)"
+            git pull --rebase -X ours origin main || {
+              echo "⚠️ Rebase 失敗，改用 merge 策略"
+              git rebase --abort
+              git pull --no-rebase -X ours origin main
+            }
+            git push
+          fi
