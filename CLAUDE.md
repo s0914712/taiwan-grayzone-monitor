@@ -126,7 +126,7 @@ Applied to **behavioral scores only** (criteria 1-3, 5). High-threat indicators 
 | `rescue` 海救 (救助局) | `(DONG\|NAN\|BEI)HAIJIU`, `海救` | orange `#ff9500` / 🛟 |
 | `research` 科研/情報 | `XIANGYANGHONG`, `DONGFANGHONG`, `\bTONGJI\b`, `\bKEXUE\b`, `SHIYAN`, `TANSUO`, 向陽紅/東方紅/同濟/實驗/探索… | purple `#c77dff` / 🔬 |
 
-On match `type_name` is overridden to the category and a `gov_type` field (+ `is_coast_guard` for the coastguard sub-type) is set; tier-1 tracks gain a `gov:<category>` flag and these vessels are always retained in tier-1 (so routes accumulate). MMSI-prefix matching is deliberately **not** used (block `413875xxx` is shared with civilian vessels). Research keywords use word boundaries (`\b`) to avoid false hits (e.g. `AN TONG JING TANG` must not match `TONG JI`). Taiwan CGA (海巡署) is intentionally excluded. `plot_gov_vessel_tracks.py` renders combined historical tracks (colored by category) to `docs/cn_gov_vessel_tracks.png`.
+On match `type_name` is overridden to the category and a `gov_type` field (+ `is_coast_guard` for the coastguard sub-type) is set; tier-1 tracks gain a `gov:<category>` flag and these vessels are always retained in tier-1 (so routes accumulate). MMSI-prefix matching is deliberately **not** used (block `413875xxx` is shared with civilian vessels). Two supplementary paths exist beyond name keywords: (1) `KNOWN_GOV_MMSI` — an **exact-MMSI** (not prefix) table of individually-evidenced gov vessels (e.g. `413875010` = 海警1401, observed broadcasting CHINACOASTGUARD1401 on 2026-07-11), consulted when the name doesn't match, so a known cutter that switches to a numeric/meaningless name is still classified; (2) `is_gov_candidate()` — a **pure-digit ship name** (3–5 digits, e.g. "1401") + China MID (412/413/414) sets a `gov_candidate` flag and forces tier-1 retention (compact `cand:1` track flag) for manual review, without auto-classifying. "Name contains 4 digits" is NOT usable as a signal — CN fishing fleets use digit suffixes (MINXIAYU01401 is a fishing boat). Research keywords use word boundaries (`\b`) to avoid false hits (e.g. `AN TONG JING TANG` must not match `TONG JI`). Taiwan CGA (海巡署) is intentionally excluded. `plot_gov_vessel_tracks.py` renders combined historical tracks (colored by category) to `docs/cn_gov_vessel_tracks.png`.
 
 ### Combo Bonuses (also multiplied by vessel type)
 - Cable proximity + zigzag: +3 (possible anchor dragging) — **only if ≥3 turns happened
@@ -277,7 +277,7 @@ python3 src/publish_threads.py --dry-run       # Test Threads post
 - No build step. Frontend is plain static files.
 - AIS data fetched via SOCKS5 proxy (configured in workflow env vars).
 - CSIS methodology from "Signals in the Swarm" report: cable proximity, zigzag detection, going-dark, identity manipulation.
-- Monitoring area: ~20-28°N, 112-128°E (Taiwan Strait, East Taiwan, South/East China Sea).
+- Monitoring area (`TAIWAN_BBOX` in `fetch_ais_data.py`): 19-30°N, 116-130°E (Taiwan Strait, East Taiwan, South/East China Sea).
 - Timestamps in ISO 8601 (UTC). Track points deduplicated by consecutive identical lat/lon.
 - Mobile-first design with `@media (max-width: 900px)` breakpoint; safe-area-inset for notched devices.
 - z-index stack: sidebar 2000, sidebar-overlay 1999, bottom-nav 1500, popover 1499, bottom-sheet 1400, onboarding 9999.

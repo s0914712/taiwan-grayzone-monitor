@@ -375,15 +375,27 @@ var MapVesselsFactory = function(map, layers) {
         return 'dv.chip_none';
     }
 
+    var MATCH_METHOD_KEYS = { interpolated: 1, dead_reckoning: 1, hold: 1 };
+
     function darkMatchHtml(d) {
         var t2 = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : function(k) { return k; };
         var key = dmKey(d.date, d.lat, d.lon);
-        var html = '';
+        var html = '<br>' + t2('dv.pos') + ' ' +
+            Number(d.lat).toFixed(2) + ', ' + Number(d.lon).toFixed(2);
         var rm = darkRematched && darkRematched[key];
         var rd = darkResidual && darkResidual[key];
         if (rm) {
             html += '<br><span style="color:#00ff88">' + t2('dv.match_rematched') + '</span><br>' +
-                (rm.name || '?') + ' (' + rm.mmsi + ') · ' + rm.distance_km + ' km';
+                (rm.name || '?') + ' (' + rm.mmsi + ')' +
+                (rm.type_name ? ' · ' + rm.type_name : '') +
+                '<br>' + t2('dv.dist') + ' ' + rm.distance_km + ' km' +
+                (rm.gate_km ? ' (gate ' + rm.gate_km + ' km)' : '');
+            if (rm.pass) html += '<br>' + t2('dv.pass') + ' ' + rm.pass;
+            var mk = MATCH_METHOD_KEYS[rm.method] ? t2('dv.method_' + rm.method) : rm.method;
+            if (rm.method) {
+                html += '<br>' + t2('dv.method') + ' ' + mk +
+                    (rm.dt_minutes != null ? ' · Δt ' + rm.dt_minutes + ' min' : '');
+            }
         } else if (rd) {
             if (rd.in_ais_coverage === false) {
                 html += '<br><span style="color:#8aa4c8">' + t2('dv.match_nocover') + '</span>';
@@ -397,7 +409,15 @@ var MapVesselsFactory = function(map, layers) {
         if (vk) {
             html += '<br>' + t2('dv.chip_title') + ' <b>' + t2(vk) + '</b>';
             if (ch.found && ch.length_m) {
-                html += '<br>' + t2('dv.chip_len') + ' ~' + ch.length_m + ' m · ' + ch.peak_ratio + '×';
+                html += '<br>' + t2('dv.chip_len') + ' ~' + ch.length_m + ' m · ' +
+                    ch.peak_ratio + '×' +
+                    (ch.n_pixels ? ' (' + ch.n_pixels + ' px)' : '');
+            }
+            if (ch.time) html += '<br>' + t2('dv.chip_time') + ' ' + String(ch.time).slice(0, 5) + ' UTC';
+            if (ch.product) {
+                var prod = String(ch.product);
+                html += '<br><span title="' + prod + '">' + t2('dv.chip_product') + ' ' +
+                    (prod.length > 32 ? prod.slice(0, 32) + '…' : prod) + '</span>';
             }
             if (ch.png) {
                 html += '<br><a href="' + CHIP_BASE + String(ch.png).replace(/^chips\//, '') +
