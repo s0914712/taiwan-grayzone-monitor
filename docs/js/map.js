@@ -98,6 +98,9 @@ const MapModule = (function() {
         // Load UN sanctions list for vessel warnings
         _vessels.loadSanctionsList();
 
+        // Load SAR×AIS re-match + darkship chip forensics (dark popup enrichment)
+        _vessels.loadDarkMatchInfo();
+
         return map;
     }
 
@@ -142,6 +145,7 @@ const MapModule = (function() {
         displayVessels: (...a) => _vessels.displayVessels(...a),
         renderVesselsForZoom: (...a) => _vessels.renderVesselsForZoom(...a),
         displayDarkVessels: (...a) => _vessels.displayDarkVessels(...a),
+        setDarkMatchInfo: (...a) => _vessels.setDarkMatchInfo(...a),
         displaySuspiciousVessels: (...a) => _vessels.displaySuspiciousVessels(...a),
         displayGovVessels: (...a) => _vessels.displayGovVessels(...a),
         focusVessel: (...a) => _vessels.focusVessel(...a),

@@ -324,6 +324,89 @@ var MapVesselsFactory = function(map, layers) {
         });
     }
 
+    // ── SAR×AIS re-match + darkship chip forensics (dark-vessel popup enrichment) ──
+    // sar_ais_matches.json is in the Pages artifact; chips/results.json is
+    // committed to the repo root by darkship-cron.yml (outside the Pages
+    // artifact), so on GitHub Pages it's fetched via raw.githubusercontent.com
+    // (same pattern as vessel route files in map-routes.js).
+    var CHIP_BASE = /\.github\.io$/.test(location.hostname)
+        ? 'https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/chips/'
+        : '../chips/';
+
+    var darkRematched = null;   // dmKey → rematched entry (false dark, local AIS hit)
+    var darkResidual = null;    // dmKey → residual dark entry
+    var darkChips = null;       // dmKey → chip forensics record
+    var ZONE_KEYS = { internal_waters: 1, territorial_sea: 1, contiguous_zone: 1, eez: 1, high_seas: 1 };
+
+    // dark_details / rematched / residual_dark / chips 座標同為 2 位小數精度
+    function dmKey(date, lat, lon) {
+        return date + '|' + Number(lat).toFixed(2) + '|' + Number(lon).toFixed(2);
+    }
+
+    function setDarkMatchInfo(matches, chipList) {
+        if (matches) {
+            darkRematched = {};
+            (matches.rematched || []).forEach(function(r) { darkRematched[dmKey(r.date, r.lat, r.lon)] = r; });
+            darkResidual = {};
+            (matches.residual_dark || []).forEach(function(r) { darkResidual[dmKey(r.date, r.lat, r.lon)] = r; });
+        }
+        if (chipList) {
+            darkChips = {};
+            chipList.forEach(function(r) { darkChips[dmKey(r.date, r.lat, r.lon)] = r; });
+        }
+    }
+
+    function loadDarkMatchInfo() {
+        fetch('sar_ais_matches.json?' + Date.now())
+            .then(function(res) { return res.ok ? res.json() : null; })
+            .then(function(m) { if (m) setDarkMatchInfo(m, null); })
+            .catch(function() {});
+        fetch(CHIP_BASE + 'results.json?' + Date.now())
+            .then(function(res) { return res.ok ? res.json() : null; })
+            .then(function(list) { if (Array.isArray(list)) setDarkMatchInfo(null, list); })
+            .catch(function() {});
+    }
+
+    // Mirrors verdict() in src/darkship_batch.py
+    function chipVerdictKey(r) {
+        if (r.error) return null;
+        if (r.saturated) return 'dv.chip_land';
+        if (r.found) return (r.peak_ratio || 0) >= 10 ? 'dv.chip_confirmed' : 'dv.chip_weak';
+        return 'dv.chip_none';
+    }
+
+    function darkMatchHtml(d) {
+        var t2 = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : function(k) { return k; };
+        var key = dmKey(d.date, d.lat, d.lon);
+        var html = '';
+        var rm = darkRematched && darkRematched[key];
+        var rd = darkResidual && darkResidual[key];
+        if (rm) {
+            html += '<br><span style="color:#00ff88">' + t2('dv.match_rematched') + '</span><br>' +
+                (rm.name || '?') + ' (' + rm.mmsi + ') · ' + rm.distance_km + ' km';
+        } else if (rd) {
+            if (rd.in_ais_coverage === false) {
+                html += '<br><span style="color:#8aa4c8">' + t2('dv.match_nocover') + '</span>';
+            } else {
+                html += '<br><span style="color:#ff3366">' + t2('dv.match_residual') + '</span>';
+                if (ZONE_KEYS[rd.zone]) html += '<br>' + t2('dv.zone_' + rd.zone);
+            }
+        }
+        var ch = darkChips && darkChips[key];
+        var vk = ch && chipVerdictKey(ch);
+        if (vk) {
+            html += '<br>' + t2('dv.chip_title') + ' <b>' + t2(vk) + '</b>';
+            if (ch.found && ch.length_m) {
+                html += '<br>' + t2('dv.chip_len') + ' ~' + ch.length_m + ' m · ' + ch.peak_ratio + '×';
+            }
+            if (ch.png) {
+                html += '<br><a href="' + CHIP_BASE + String(ch.png).replace(/^chips\//, '') +
+                    '" target="_blank" rel="noopener">' + t2('dv.chip_view') + '</a>';
+            }
+        }
+        return html;
+    }
+
     /**
      * Main render function — decides cluster vs detail based on zoom
      * Returns stats (always computed from full list)
@@ -364,7 +447,8 @@ var MapVesselsFactory = function(map, layers) {
                 const count = d.detections || 1;
                 const radius = Math.min(3 + Math.log2(count) * 2, 8);
 
-                const t2 = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+                // Popup content as a function: evaluated on open, so it picks
+                // up match/forensics data loaded after render + live language
                 L.circleMarker([d.lat, d.lon], {
                     radius: radius,
                     fillColor: color,
@@ -372,12 +456,14 @@ var MapVesselsFactory = function(map, layers) {
                     weight: 1,
                     opacity: 0.6,
                     fillOpacity: 0.35
-                }).addTo(layers.darkVessels).bindPopup(
-                    `<b style="color:${color}">${t2('map.sar_dark')}</b><br>` +
-                    `${t2('dv.popup_region')} ${name}<br>` +
-                    `${t2('dv.popup_date')} ${d.date}<br>` +
-                    `${t2('dv.popup_det')} ${count}`
-                );
+                }).addTo(layers.darkVessels).bindPopup(function() {
+                    const t2 = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+                    return `<b style="color:${color}">${t2('map.sar_dark')}</b><br>` +
+                        `${t2('dv.popup_region')} ${name}<br>` +
+                        `${t2('dv.popup_date')} ${d.date}<br>` +
+                        `${t2('dv.popup_det')} ${count}` +
+                        darkMatchHtml(d);
+                });
                 totalPlotted++;
             });
         });
@@ -822,6 +908,8 @@ var MapVesselsFactory = function(map, layers) {
     return {
         drawFishingHotspots,
         loadSanctionsList,
+        loadDarkMatchInfo,
+        setDarkMatchInfo,
         displayVessels,
         computeVesselStats,
         renderVesselsForZoom,
