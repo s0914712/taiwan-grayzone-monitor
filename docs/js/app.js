@@ -90,6 +90,17 @@ const App = (function () {
             });
         }
 
+        // Seascape bathymetry layer toggle (lazy-load TileJSON on first enable)
+        const bathyCheckbox = document.getElementById('showBathymetry');
+        if (bathyCheckbox) {
+            bathyCheckbox.addEventListener('change', async () => {
+                if (bathyCheckbox.checked) {
+                    await MapModule.loadBathymetry();
+                }
+                MapModule.toggleLayer('bathymetry', bathyCheckbox.checked);
+            });
+        }
+
         // Legend item click -> locate vessel type on map
         document.querySelectorAll('.legend-clickable').forEach(item => {
             item.addEventListener('click', () => {
@@ -209,6 +220,7 @@ const App = (function () {
                 <label class="layer-toggle"><input type="checkbox" id="bsShowDarkVessels" checked> <span data-i18n="idx.layer_dark">暗船 (SAR)</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="bsShowSubmarineCables" checked> <span data-i18n="ais_anim.layer_cables">海底電纜</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="bsShowVesselRoutes" checked> <span data-i18n="idx.layer_routes">船隻航跡</span></label>
+                <label class="layer-toggle"><input type="checkbox" id="bsShowBathymetry"> <span data-i18n="idx.layer_bathymetry">海床水深 (Seascape)</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="bsFilterFocVessels"> <span data-i18n="idx.filter_foc">過濾權宜船</span></label>
             </div>`;
         }
@@ -282,6 +294,10 @@ const App = (function () {
                 MapModule.toggleLayer('submarineCables', checked);
             });
             syncCheckbox('bsShowVesselRoutes', 'showVesselRoutes', layer => MapModule.toggleLayer('vesselRoutes', layer));
+            syncCheckbox('bsShowBathymetry', 'showBathymetry', async checked => {
+                if (checked) await MapModule.loadBathymetry();
+                MapModule.toggleLayer('bathymetry', checked);
+            });
             syncCheckbox('bsShowTerritorialBaseline', 'showTerritorialBaseline', checked => {
                 if (checked) MapModule.drawTerritorialBaseline();
                 MapModule.toggleLayer('territorialBaseline', checked);

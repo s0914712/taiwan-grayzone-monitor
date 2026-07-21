@@ -53,11 +53,21 @@ const ROUTE_FIXTURE = {
         { t: '2026-06-09T04:00:00+00:00', lat: 24.2, lon: 120.7, speed: 4, heading: 80 },
     ],
 };
+// Seascape raster TileJSON fixture (bathymetry layer resolves it at runtime)
+const TILEJSON_FIXTURE = {
+    tilejson: '3.0.0',
+    tiles: ['https://tiles.example.test/seascape/raster/{z}/{x}/{y}.png'],
+    minzoom: 0, maxzoom: 14,
+    attribution: '© Open Water Software, LLC',
+};
 const fetchLog = [];
 window.fetch = (url) => {
     fetchLog.push(String(url));
     if (String(url).includes('data/vessel_routes/412345678.json')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(JSON.stringify(ROUTE_FIXTURE))) });
+    }
+    if (String(url).includes('seascape/raster.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(JSON.stringify(TILEJSON_FIXTURE))) });
     }
     return Promise.resolve({ ok: false, status: 404, json: () => Promise.reject(new Error('404')) });
 };
@@ -221,6 +231,34 @@ MM.focusVessel('412345678', result.vessels);
     MM.setFilterFoc(true);
     MM.setFilterFoc(false);
     assert.strictEqual(typeof MM.getCableFaultStatus, 'function');
+
+    // ── 9. Seascape bathymetry: TileJSON load + toggle + attribution ─────
+    const bathyOk = await MM.loadBathymetry();
+    assert.strictEqual(bathyOk, true, 'loadBathymetry resolves true from TileJSON fixture');
+    assert(fetchLog.some(u => u.includes('seascape/raster.json')), 'bathymetry TileJSON fetched');
+
+    const depthGrids = () => countLayers(l =>
+        l instanceof window.L.GridLayer && !(l instanceof window.L.TileLayer));
+    assert.strictEqual(depthGrids(), 0, 'bathymetry hidden before toggle');
+    MM.toggleLayer('bathymetry', true);
+    assert.strictEqual(depthGrids(), 1, 'bathymetry grid layer shown after toggle on');
+    const attribEl = window.document.querySelector('.leaflet-control-attribution');
+    assert(attribEl && attribEl.textContent.includes('Open Water Software'),
+        'CC BY attribution shown while bathymetry is on');
+    MM.toggleLayer('bathymetry', false);
+    assert.strictEqual(depthGrids(), 0, 'bathymetry removed after toggle off');
+    assert(!window.document.querySelector('.leaflet-control-attribution'),
+        'attribution control removed with the layer');
+
+    // Terrarium decode + depth colormap pure functions
+    const bathy = window.MapBathymetryFactory(map, { bathymetry: window.L.layerGroup() });
+    assert.strictEqual(bathy.decodeTerrarium(128, 0, 0), 0, 'Terrarium sea level decodes to 0 m');
+    assert.strictEqual(bathy.decodeTerrarium(127, 156, 0), -100, 'Terrarium -100 m decodes');
+    assert.strictEqual(bathy.depthColor(0)[3], 0, 'land/dry pixels transparent');
+    assert(bathy.depthColor(100)[3] > 0, 'water pixels opaque');
+    const shallow = bathy.depthColor(199), deep = bathy.depthColor(201);
+    const jump = Math.abs(shallow[0] - deep[0]) + Math.abs(shallow[1] - deep[1]) + Math.abs(shallow[2] - deep[2]);
+    assert(jump > 60, 'visible color break at the 200 m shelf edge, got ' + jump);
 
     console.log('✅ map integration test passed —',
         `cluster=${clusterMarkers} detail=${detailMarkers} dark=${plotted} rings=2 route=OK`);
