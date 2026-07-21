@@ -9,6 +9,7 @@
  *   map-vessels.js  — vessel/dark/suspicious/gov rendering (MapVesselsFactory)
  *   map-routes.js   — route loading + track panel + snapshot (MapRoutesFactory)
  *   map-cables.js   — submarine cable layer + fault status (MapCablesFactory)
+ *   map-bathymetry.js — Seascape seabed depth shading (MapBathymetryFactory)
  * Load order in HTML must follow the list above, ending with this file.
  */
 
@@ -27,7 +28,8 @@ const MapModule = (function() {
         darkVessels: null,
         submarineCables: null,
         vesselRoutes: null,
-        territorialBaseline: null
+        territorialBaseline: null,
+        bathymetry: null
     };
 
     // Sub-module instances (created in init once map + layers exist)
@@ -35,6 +37,7 @@ const MapModule = (function() {
     let _routes = null;
     let _cables = null;
     let _baseline = null;
+    let _bathymetry = null;
 
     /**
      * Initialize the Leaflet map
@@ -63,12 +66,14 @@ const MapModule = (function() {
         layers.submarineCables = L.layerGroup();
         layers.vesselRoutes = L.layerGroup().addTo(map);
         layers.territorialBaseline = L.layerGroup();
+        layers.bathymetry = L.layerGroup();
 
         // Instantiate sub-modules now that map + layers exist
         _vessels = MapVesselsFactory(map, layers);
         _routes = MapRoutesFactory(map, layers);
         _cables = MapCablesFactory(map, layers);
         _baseline = MapBaselineFactory(map, layers);
+        _bathymetry = MapBathymetryFactory(map, layers);
 
         // Zoom/move events for cluster <-> detail transitions
         // (renderVesselsForZoom is a no-op while the vessel cache is empty)
@@ -164,6 +169,8 @@ const MapModule = (function() {
         getCableFaultStatus: (...a) => _cables.getCableFaultStatus(...a),
         // Territorial baseline
         drawTerritorialBaseline: (...a) => _baseline.drawTerritorialBaseline(...a),
+        // Seascape bathymetry
+        loadBathymetry: (...a) => _bathymetry.loadBathymetry(...a),
         // MapData passthroughs (kept on MapModule for backward compatibility)
         getMidFlag,
         getGovType,
