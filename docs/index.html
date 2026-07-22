@@ -217,16 +217,17 @@
                     style="font-size:13px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.statistics">統計分析</a>
                 <a href="ais-animation.html"
                     style="font-size:13px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.animation">軌跡動畫</a>
-                <a href="cn-fishing-animation.html"
-                    style="font-size:13px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.cn_fishing">大陸漁船</a>
-                <a href="ship-transfers.html"
-                    style="font-size:13px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.transfers">旁靠偵測</a>
-                <a href="identity-history.html"
-                    style="font-size:13px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.identity">身分追蹤</a>
-                <a href="research-submarine-cable-legal.html"
-                    style="font-size:13px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.research">研究報告</a>
-                <a href="blog.html"
-                    style="font-size:13px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.blog">深度文章</a>
+                <details class="nav-more">
+                    <summary><span class="lang-zh-only">更多</span><span class="lang-en-only">More</span> ▾</summary>
+                    <div class="nav-more-menu">
+                        <a href="cn-fishing-animation.html" data-i18n="nav.cn_fishing">大陸漁船</a>
+                        <a href="ship-transfers.html" data-i18n="nav.transfers">旁靠偵測</a>
+                        <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
+                        <a href="research-submarine-cable-legal.html" data-i18n="nav.research">研究報告</a>
+                        <a href="blog.html" data-i18n="nav.blog">深度文章</a>
+                        <a href="intro.html"><span class="lang-zh-only">關於本站</span><span class="lang-en-only">About</span></a>
+                    </div>
+                </details>
                 <button id="langToggle" onclick="i18n.toggle()" aria-label="切換語言 / Switch language" style="font-size:13px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
                 <div class="data-status" id="dataStatus" data-i18n="common.loading">⏳ 載入中...</div>
             </div>
@@ -238,13 +239,6 @@
             <div class="route-search" role="search">
                 <input type="text" id="mmsiSearchInput" placeholder="MMSI 查詢航跡..." aria-label="MMSI 查詢航跡 / Search vessel route by MMSI" maxlength="9" inputmode="numeric" pattern="[0-9]*">
                 <button onclick="MapModule.searchVesselRoute()" aria-label="查詢航跡 / Search route">查詢</button>
-            </div>
-
-            <div class="map-overlay">
-                <div class="overlay-card alert">
-                    <div class="label" data-i18n="idx.top10pct">可疑船隻 (≥8分)</div>
-                    <div class="value" id="suspiciousCount">0</div>
-                </div>
             </div>
 
             <div class="layer-toggles">
@@ -328,13 +322,16 @@
                 </div>
             </div>
 
-            <div class="sidebar-section" id="cableStatusSection" style="display:none">
-                <div class="section-title" data-i18n="cable.status_title">🔌 海纜狀態</div>
-                <div class="cable-status-summary" id="cableStatusSummary"></div>
-                <div class="cable-fault-list" id="cableFaultList" style="max-height:200px;overflow-y:auto;font-size:12px;line-height:1.6"></div>
-                <div style="margin-top:6px;font-size:11px;opacity:0.6">
-                    <a href="https://moda.gov.tw/major-policies/subseacable/fault/1749" target="_blank" rel="noopener" style="color:#00f5ff" data-i18n="cable.source_link">資料來源：數位發展部</a>
+            <div class="sidebar-section">
+                <div class="section-title"><span data-i18n="idx.suspicious_title">🔍 可疑船隻（海纜威脅偵測）</span><span class="section-count" id="suspiciousCount">0</span></div>
+                <div class="suspicious-list" id="suspiciousList">
+                    <div style="font-size:12px;color:var(--text-secondary);padding:4px" data-i18n="idx.suspicious_wait">累積觀測資料中...</div>
                 </div>
+            </div>
+
+            <div class="sidebar-section" id="govVesselSection" style="display:none">
+                <div class="section-title" data-i18n="idx.gov_title">🛡️ 中國公務／科研船追蹤</div>
+                <div class="suspicious-list" id="govVesselList"></div>
             </div>
 
             <div class="sidebar-section" id="gfwSection" style="display:none">
@@ -368,15 +365,12 @@
                 <div id="gfwAlerts" style="margin-top:5px"></div>
             </div>
 
-            <div class="sidebar-section" id="govVesselSection" style="display:none">
-                <div class="section-title" data-i18n="idx.gov_title">🛡️ 中國公務／科研船追蹤</div>
-                <div class="suspicious-list" id="govVesselList"></div>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="section-title" data-i18n="idx.suspicious_title">🔍 可疑船隻（海纜威脅偵測）</div>
-                <div class="suspicious-list" id="suspiciousList">
-                    <div style="font-size:8px;color:var(--text-secondary);padding:4px" data-i18n="idx.suspicious_wait">累積觀測資料中...</div>
+            <div class="sidebar-section" id="cableStatusSection" style="display:none">
+                <div class="section-title" data-i18n="cable.status_title">🔌 海纜狀態</div>
+                <div class="cable-status-summary" id="cableStatusSummary"></div>
+                <div class="cable-fault-list" id="cableFaultList" style="max-height:200px;overflow-y:auto;font-size:12px;line-height:1.6"></div>
+                <div style="margin-top:6px;font-size:11px;opacity:0.6">
+                    <a href="https://moda.gov.tw/major-policies/subseacable/fault/1749" target="_blank" rel="noopener" style="color:#00f5ff" data-i18n="cable.source_link">資料來源：數位發展部</a>
                 </div>
             </div>
 
@@ -397,38 +391,20 @@
                     </div>
                 </div>
                 <div class="identity-list" id="identityList">
-                    <div style="font-size:8px;color:var(--text-secondary);padding:4px" data-i18n="idx.identity_no_events">近期無身分變更事件</div>
-                </div>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="section-title">📖 <span class="lang-zh-only">深度文章</span><span class="lang-en-only">In-Depth Articles</span></div>
-                <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
-                    <a href="blog-cable-threats.html" style="display:flex;gap:7px;align-items:center;padding:6px 8px;background:var(--bg-secondary);border-radius:4px;text-decoration:none;border:1px solid transparent;transition:border-color .15s">
-                        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,245,255,.4);font-weight:700;flex-shrink:0">04</span>
-                        <span class="lang-zh-only" style="font-size:11px;color:var(--text-secondary)">海底電纜所受到的威脅</span>
-                        <span class="lang-en-only" style="font-size:11px;color:var(--text-secondary)">Threats to Cables</span>
-                    </a>
-                    <a href="blog-taiwan-enforcement.html" style="display:flex;gap:7px;align-items:center;padding:6px 8px;background:var(--bg-secondary);border-radius:4px;text-decoration:none;border:1px solid transparent;transition:border-color .15s">
-                        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,245,255,.4);font-weight:700;flex-shrink:0">05</span>
-                        <span class="lang-zh-only" style="font-size:11px;color:var(--text-secondary)">執法框架與挑戰</span>
-                        <span class="lang-en-only" style="font-size:11px;color:var(--text-secondary)">Enforcement Framework</span>
-                    </a>
-                    <a href="blog-methodology.html" style="display:flex;gap:7px;align-items:center;padding:6px 8px;background:var(--bg-secondary);border-radius:4px;text-decoration:none;border:1px solid transparent;transition:border-color .15s">
-                        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,245,255,.4);font-weight:700;flex-shrink:0">06</span>
-                        <span class="lang-zh-only" style="font-size:11px;color:var(--text-secondary)">本站所使用之方法</span>
-                        <span class="lang-en-only" style="font-size:11px;color:var(--text-secondary)">Our Methodology</span>
-                    </a>
-                    <a href="blog.html" style="font-size:11px;color:var(--accent-cyan);text-decoration:none;padding:6px 8px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:4px">
-                        <span class="lang-zh-only">→ 查看全部 6 篇文章</span>
-                        <span class="lang-en-only">→ All 6 Articles</span>
-                    </a>
+                    <div style="font-size:12px;color:var(--text-secondary);padding:4px" data-i18n="idx.identity_no_events">近期無身分變更事件</div>
                 </div>
             </div>
 
             <div class="sidebar-section">
                 <div class="section-title" data-i18n="idx.recent_title">🚢 近期船隻</div>
                 <div class="vessel-list" id="vesselList"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <a href="blog.html" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--accent-cyan);text-decoration:none;font-family:'JetBrains Mono',monospace">
+                    📖 <span class="lang-zh-only">深度文章（全部 6 篇）→</span>
+                    <span class="lang-en-only">In-Depth Articles (all 6) →</span>
+                </a>
             </div>
 
             <div class="update-info" id="updateInfo" data-i18n="common.update_time">
@@ -477,108 +453,11 @@
         </table>
     </section>
 
-    <!-- About Section (Chinese) -->
-    <section class="about-section lang-zh-only" id="aboutSection">
-        <div class="about-container">
-            <h2 class="about-title">📡 專案目的 Project Purpose</h2>
-            <div class="about-grid">
-                <div class="about-card">
-                    <h3>監測目標</h3>
-                    <p>本專案旨在透過多源衛星數據與 AI 分析技術，即時監測台灣周邊海域的「灰色地帶」活動。我們追蹤關閉 AIS 訊號的「暗船」(dark vessels)、異常船舶行為，以及可能與軍事活動相關的海上活動模式，為海洋安全研究與政策制定提供開放、透明的數據基礎。</p>
-                </div>
-                <div class="about-card">
-                    <h3>為什麼關注暗船？</h3>
-                    <p>全球漁業觀察 (Global Fishing Watch) 的研究指出，許多船隻會關閉自動識別系統 (AIS) 訊號，使其從公共監測系統中消失。這些「暗船」往往涉及非法、未報告及未受規範的捕魚活動 (IUU fishing)，也可能與灰色地帶軍事行動有關。</p>
-                </div>
-            </div>
-            <h2 class="about-title" style="margin-top:24px">🔬 研究方法 Methodology</h2>
-            <div class="about-grid">
-                <div class="about-card">
-                    <h3>合成孔徑雷達 (SAR) 衛星偵測</h3>
-                    <p>本專案採用與 Global Fishing Watch 相同的核心技術——合成孔徑雷達 (Synthetic Aperture Radar, SAR) 衛星影像分析。SAR 技術不受日夜與天候影響，能穿透厚雲層偵測海面船隻。</p>
-                </div>
-                <div class="about-card">
-                    <h3>海底電纜威脅偵測</h3>
-                    <p>本系統針對海底電纜破壞威脅，建立多層次可疑船隻識別機制：</p>
-                    <ul>
-                        <li><strong>海纜鄰近活動：</strong>偵測航跡經過海底電纜路線 5 公里內的船隻</li>
-                        <li><strong>Z字型移動模式：</strong>識別頻繁大幅轉向（疑似拖錨破壞行為）的船隻</li>
-                        <li><strong>200m等深線活動：</strong>在大陸棚邊緣（海纜密集區）持續活動的船隻</li>
-                        <li><strong>AIS 身分變更：</strong>變更船名、呼號、IMO 等識別資訊的異常行為</li>
-                    </ul>
-                </div>
-                <div class="about-card">
-                    <h3>多源數據整合</h3>
-                    <p>本系統整合以下數據來源，每 6 小時自動更新：</p>
-                    <ul>
-                        <li><strong>Global Fishing Watch API：</strong>SAR 衛星偵測、中國船隻活動、全球漁撈努力量數據</li>
-                        <li><strong>AISStream.io：</strong>即時 AIS 船舶自動識別系統資料</li>
-                        <li><strong>解放軍軍事出動記錄：</strong>日本防衛省公開的台海周邊軍事活動統計</li>
-                    </ul>
-                </div>
-                <div class="about-card">
-                    <h3>參考文獻</h3>
-                    <ul class="reference-list">
-                        <li>Global Fishing Watch, <em>"Satellite Radar Imagery Helps Reveal the True Scale of Hidden Fishing"</em></li>
-                        <li>Global Fishing Watch, <em>"Illuminating Dark Fishing Fleets in North Korea"</em> (2020)</li>
-                        <li>CSIS, <em>"Signals in the Swarm"</em></li>
-                        <li>European Space Agency, Sentinel-1 SAR Mission</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- About Section (English) -->
-    <section class="about-section lang-en-only" id="aboutSectionEn">
-        <div class="about-container">
-            <h2 class="about-title">📡 Project Purpose</h2>
-            <div class="about-grid">
-                <div class="about-card">
-                    <h3>Monitoring Objective</h3>
-                    <p>This project uses multi-source satellite data and AI analysis to monitor "gray zone" activities in waters around Taiwan in real time. We track "dark vessels" (ships with AIS turned off), anomalous vessel behavior in military exercise zones, and maritime activity patterns potentially linked to military exercises — providing an open, transparent data foundation for maritime security research and policy.</p>
-                </div>
-                <div class="about-card">
-                    <h3>Why Focus on Dark Vessels?</h3>
-                    <p>Research by Global Fishing Watch shows that many vessels disable their Automatic Identification System (AIS), disappearing from public monitoring systems. These "dark vessels" are often involved in illegal, unreported, and unregulated fishing (IUU fishing) and may also be linked to gray zone military operations.</p>
-                </div>
-            </div>
-            <h2 class="about-title" style="margin-top:24px">🔬 Research Methodology</h2>
-            <div class="about-grid">
-                <div class="about-card">
-                    <h3>Synthetic Aperture Radar (SAR) Detection</h3>
-                    <p>This project uses the same core technology as Global Fishing Watch — Synthetic Aperture Radar (SAR) satellite imagery analysis. SAR works day and night, in any weather, penetrating cloud cover to detect vessels at sea.</p>
-                </div>
-                <div class="about-card">
-                    <h3>Submarine Cable Threat Detection</h3>
-                    <p>The system detects potential submarine cable threats through multi-layered suspicious vessel identification:</p>
-                    <ul>
-                        <li><strong>Cable Proximity:</strong> Detecting vessels operating within 5km of submarine cable routes</li>
-                        <li><strong>Zigzag Pattern:</strong> Identifying vessels with frequent large heading changes (potential anchor-dragging behavior)</li>
-                        <li><strong>200m Depth Contour:</strong> Vessels persistently operating along the continental shelf edge (cable-dense area)</li>
-                        <li><strong>AIS Identity Changes:</strong> Detecting name, call sign, or IMO number manipulation</li>
-                    </ul>
-                </div>
-                <div class="about-card">
-                    <h3>Multi-Source Data Integration</h3>
-                    <p>The system integrates data from the following sources, updated every 6 hours:</p>
-                    <ul>
-                        <li><strong>Global Fishing Watch API:</strong> SAR dark vessel detection, fishing effort data</li>
-                        <li><strong>AISStream.io:</strong> Real-time AIS vessel tracking</li>
-                        <li><strong>PLA Military Sortie Records:</strong> Publicly available defense reports on military activity near Taiwan</li>
-                    </ul>
-                </div>
-                <div class="about-card">
-                    <h3>References</h3>
-                    <ul class="reference-list">
-                        <li>Global Fishing Watch, <em>"Satellite Radar Imagery Helps Reveal the True Scale of Hidden Fishing"</em></li>
-                        <li>Global Fishing Watch, <em>"Illuminating Dark Fishing Fleets in North Korea"</em> (2020)</li>
-                        <li>CSIS, <em>"Signals in the Swarm"</em></li>
-                        <li>European Space Agency, Sentinel-1 SAR Mission</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+    <!-- Project background moved to intro.html; keep a one-line pointer -->
+    <section class="about-teaser">
+        <span class="lang-zh-only">想了解監測方法與專案背景？</span>
+        <span class="lang-en-only">Want the methodology and project background?</span>
+        <a href="intro.html"><span class="lang-zh-only">關於本站 →</span><span class="lang-en-only">About this site →</span></a>
     </section>
 
     <footer class="site-footer">
@@ -603,6 +482,7 @@
     <script defer src="js/map-bathymetry.js"></script>
     <script defer src="js/map.js"></script>
     <script defer src="js/charts.js"></script>
+    <script defer src="js/mobile-nav.js"></script>
     <script defer src="js/app.js"></script>
 
     <!-- Onboarding Tour -->

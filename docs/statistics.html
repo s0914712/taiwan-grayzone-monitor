@@ -267,11 +267,18 @@
             <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
             <a href="statistics.html" class="active" data-i18n="nav.statistics">統計分析</a>
             <a href="ais-animation.html" data-i18n="nav.animation">軌跡動畫</a>
-            <a href="cn-fishing-animation.html" data-i18n="nav.cn_fishing">大陸漁船</a>
-            <a href="ship-transfers.html" data-i18n="nav.transfers">旁靠偵測</a>
-            <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
-            <a href="research-submarine-cable-legal.html" data-i18n="nav.research">研究報告</a>
-            <a href="blog.html" data-i18n="nav.blog">深度文章</a>
+            <details class="nav-more">
+                <summary><span class="lang-zh-only">更多</span><span class="lang-en-only">More</span> ▾</summary>
+                <div class="nav-more-menu">
+                    <a href="sar-ais-match.html"><span class="lang-zh-only">SAR×AIS 比對</span><span class="lang-en-only">SAR×AIS Match</span></a>
+                    <a href="cn-fishing-animation.html" data-i18n="nav.cn_fishing">大陸漁船</a>
+                    <a href="ship-transfers.html" data-i18n="nav.transfers">旁靠偵測</a>
+                    <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
+                    <a href="research-submarine-cable-legal.html" data-i18n="nav.research">研究報告</a>
+                    <a href="blog.html" data-i18n="nav.blog">深度文章</a>
+                    <a href="intro.html"><span class="lang-zh-only">關於本站</span><span class="lang-en-only">About</span></a>
+                </div>
+            </details>
             <button id="langToggle" onclick="i18n.toggle()" style="font-size:13px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
             <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
         </div>
@@ -326,6 +333,7 @@
     </div>
 
     <div class="main-content">
+        <h2 class="stats-group-title">🛰️ <span class="lang-zh-only">暗船趨勢與軍演預測</span><span class="lang-en-only">Dark-Vessel Trends &amp; Exercise Prediction</span></h2>
         <div class="panel" style="grid-column: 1 / -1;">
             <div class="panel-title" data-i18n="st.predict_title">🎯 軍演預測指標</div>
             <div class="panel-body">
@@ -360,24 +368,20 @@
             </div>
         </div>
 
-        <div class="panel">
-            <div class="panel-title" data-i18n="st.region_title">🗺️ 區域暗船分布</div>
-            <div class="chart-container" style="height: 200px;">
-                <canvas id="regionChart"></canvas>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded');if(!window._flagChartRendered){window._flagChartRendered=true;renderFlagChart()}" data-i18n="st.flag_title">🚩 有 AIS 船隻國旗分布 ▸ 點擊展開</div>
-            <div class="panel-collapsible-body">
-                <div class="chart-container" style="height: 200px;">
-                    <canvas id="flagChart"></canvas>
-                </div>
+        <!-- Region + flag distributions live on dark-vessels.html (richer table/list there);
+             the duplicate pie charts were removed from this page -->
+        <div class="panel" style="grid-column: 1 / -1;">
+            <div class="panel-title">
+                <a href="dark-vessels.html" style="color:var(--accent-cyan);text-decoration:none">
+                    🗺️ <span class="lang-zh-only">區域暗船分布與國旗統計 → 見「暗船偵測」頁</span>
+                    <span class="lang-en-only">Region &amp; flag distribution → see the Dark Vessels page</span>
+                </a>
             </div>
         </div>
 
         <div class="panel" style="grid-column: 1 / -1;">
-            <div class="panel-title" data-i18n="st.daily_title">📋 每日數據</div>
+            <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded')" data-i18n="st.daily_title">📋 每日數據</div>
+            <div class="panel-collapsible-body">
             <div class="panel-body">
                 <table class="region-table" id="dailyTable">
                     <thead>
@@ -396,27 +400,29 @@
                     </tbody>
                 </table>
             </div>
+            </div>
         </div>
     </div>
 
     <!-- AIS 歷史趨勢 -->
     <div class="main-content" style="margin-top: 0;">
+        <h2 class="stats-group-title">📡 <span class="lang-zh-only">AIS 船隊歷史</span><span class="lang-en-only">AIS Fleet History</span></h2>
         <div class="panel chart-panel" style="grid-column: 1 / -1;">
-            <div class="panel-title">📡 AIS 船舶歷史趨勢 (每日快照)</div>
+            <div class="panel-title"><span class="lang-zh-only">📈 船舶數量趨勢（每日快照）</span><span class="lang-en-only">📈 Vessel Count Trend (daily snapshots)</span></div>
             <div class="chart-container" style="height: 280px;">
                 <canvas id="aisHistoryChart"></canvas>
             </div>
         </div>
 
         <div class="panel chart-panel">
-            <div class="panel-title">🐟 可疑漁船數量趨勢</div>
+            <div class="panel-title"><span class="lang-zh-only">🐟 可疑漁船數量趨勢</span><span class="lang-en-only">🐟 Suspicious Fishing-Vessel Trend</span></div>
             <div class="chart-container" style="height: 200px;">
                 <canvas id="aisSuspiciousChart"></canvas>
             </div>
         </div>
 
         <div class="panel chart-panel">
-            <div class="panel-title">🚢 船型分布趨勢</div>
+            <div class="panel-title"><span class="lang-zh-only">🚢 船型分布趨勢</span><span class="lang-en-only">🚢 Ship-Type Distribution Trend</span></div>
             <div class="chart-container" style="height: 200px;">
                 <canvas id="aisTypeChart"></canvas>
             </div>
@@ -425,8 +431,9 @@
 
     <!-- SCFI vs 船舶流量相關性分析 -->
     <div class="main-content" id="scfiSection" style="margin-top: 0; display: none;">
+        <h2 class="stats-group-title">📊 <span class="lang-zh-only">SCFI 運價指數相關性</span><span class="lang-en-only">SCFI Freight-Index Correlation</span></h2>
         <div class="panel" style="grid-column: 1 / -1;">
-            <div class="panel-title">📊 SCFI 運價指數 vs 商船流量相關性分析</div>
+            <div class="panel-title"><span class="lang-zh-only">📊 SCFI 運價指數 vs 商船流量相關性分析</span><span class="lang-en-only">📊 SCFI vs Merchant-Traffic Correlation</span></div>
             <div class="panel-body">
                 <p id="scfiConclusion" style="font-size: 13px; line-height: 1.7; color: var(--text-primary); white-space: pre-line; margin: 0 0 12px 0;"></p>
                 <div id="scfiCaveat" style="font-size: 11px; color: var(--text-secondary); border-left: 3px solid var(--accent-yellow); padding-left: 10px; margin-top: 8px;"></div>
@@ -434,7 +441,7 @@
         </div>
 
         <div class="panel chart-panel" style="grid-column: 1 / -1;">
-            <div class="panel-title">📈 SCFI 指數 vs 商船數量（週資料，雙軸對照）</div>
+            <div class="panel-title"><span class="lang-zh-only">📈 SCFI 指數 vs 商船數量（週資料，雙軸）</span><span class="lang-en-only">📈 SCFI vs Merchant Count (weekly, dual-axis)</span></div>
             <div class="chart-container" style="height: 320px;">
                 <canvas id="scfiVesselChart"></canvas>
             </div>
@@ -446,7 +453,7 @@
         </div>
 
         <div class="panel chart-panel">
-            <div class="panel-title">📉 滯後相關係數</div>
+            <div class="panel-title"><span class="lang-zh-only">📉 滯後相關係數</span><span class="lang-en-only">📉 Lagged Correlation</span></div>
             <div class="chart-container" style="height: 220px;">
                 <canvas id="scfiLagChart"></canvas>
             </div>
@@ -456,7 +463,7 @@
         </div>
 
         <div class="panel">
-            <div class="panel-title">📏 相關性統計摘要</div>
+            <div class="panel-title"><span class="lang-zh-only">📏 相關性統計摘要</span><span class="lang-en-only">📏 Correlation Summary</span></div>
             <div class="panel-body" id="scfiStatsBody" style="font-size: 12px; line-height: 1.9;">
                 <div>樣本週數: <span id="scfiSampleN" style="color: var(--accent-cyan); font-weight: 600;">-</span></div>
                 <div>商船 Pearson r: <span id="scfiPearsonR" class="correlation-value">-</span></div>
@@ -470,7 +477,8 @@
         </div>
 
         <div class="panel" style="grid-column: 1 / -1;">
-            <div class="panel-title">📋 週資料明細</div>
+            <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded')"><span class="lang-zh-only">📋 週資料明細</span><span class="lang-en-only">📋 Weekly Data Detail</span></div>
+            <div class="panel-collapsible-body">
             <div class="panel-body">
                 <table class="region-table" id="scfiTable">
                     <thead>
@@ -485,6 +493,7 @@
                     </thead>
                     <tbody id="scfiTableBody"></tbody>
                 </table>
+            </div>
             </div>
         </div>
     </div>
@@ -571,37 +580,7 @@
                 });
             }
 
-            // Region chart
-            if (fullData.dark_vessels && fullData.dark_vessels.regions) {
-                const regions = fullData.dark_vessels.regions;
-                const labels = [];
-                const values = [];
-                const colors = ['#00f5ff', '#ff6b35', '#00ff88', '#ffd700'];
-
-                Object.entries(regions).forEach(([key, r], i) => {
-                    labels.push(r.name || key);
-                    values.push(r.dark_vessels || 0);
-                });
-
-                ChartsModule.renderPieChart('regionChart', labels, values, colors);
-            }
-
-            // Flag chart deferred to panel expand (see renderFlagChart)
-        }
-
-        function renderFlagChart() {
-            if (fullData.dark_vessels && fullData.dark_vessels.regions &&
-                fullData.dark_vessels.regions.taiwan_strait &&
-                fullData.dark_vessels.regions.taiwan_strait.matched_by_flag) {
-
-                const flags = fullData.dark_vessels.regions.taiwan_strait.matched_by_flag;
-                const entries = Object.entries(flags).slice(0, 6);
-                const labels = entries.map(([k]) => k);
-                const values = entries.map(([, v]) => v);
-                const colors = ['#ff3366', '#00f5ff', '#ff6b35', '#00ff88', '#ffd700', '#9b59b6'];
-
-                ChartsModule.renderPieChart('flagChart', labels, values, colors);
-            }
+            // Region / flag distributions moved to dark-vessels.html
         }
 
         function renderDailyTable() {

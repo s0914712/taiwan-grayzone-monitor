@@ -265,10 +265,12 @@ const ChartsModule = (function () {
             if (label) label.textContent = typeof i18n !== 'undefined' ? i18n.t('dark.total_detect_s') : 'SAR 總偵測';
         }
 
-        // Dark vessel card
+        // Dark vessel card — only when the count still lives in a map overlay
+        // card (index now shows it inline in the sidebar section title, where
+        // repurposing it as a dark-vessel total would mislead)
         if (dv && dv.overall) {
             const suspEl = document.getElementById('suspiciousCount');
-            if (suspEl) {
+            if (suspEl && suspEl.closest('.overlay-card')) {
                 suspEl.textContent = formatCompact(dv.overall.dark_vessels);
                 const label = suspEl.parentElement.querySelector('.label');
                 if (label) label.textContent = typeof i18n !== 'undefined' ? i18n.t('dark.dark_total') : '暗船總數';

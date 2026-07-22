@@ -7,21 +7,24 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 
 | File | Purpose | Data Source |
 |------|---------|-------------|
-| `index.html` | Main monitoring dashboard — live map, vessel markers, suspicious list, onboarding tour | `data.json` |
+| `index.html` | Main monitoring dashboard — live map, vessel markers, suspicious list, onboarding tour. Sidebar order is threat-first: AIS stats → suspicious (count lives in the section title as `#suspiciousCount`, the old map overlay card was removed) → gov vessels → GFW → cable status → identity → recent vessels → articles link. The 12-card bilingual About block moved to `intro.html`; index keeps a one-line `.about-teaser` pointer. | `data.json` |
 | `dark-vessels.html` | SAR dark vessel analysis charts + map. Map shows the **SAR×AIS verification result as targets + zones** when `sar_ais_matches.json` is available: verified residual dark (red), outside-coverage unverified (hollow orange), locally-identified false-dark targets (green, popup carries vessel name/MMSI), infrastructure cells (yellow), density heat (off by default), and baseline/12nm/24nm zone lines via `MapBaselineFactory`; toggleable legend, re-renders on `langchange`. Falls back to raw GFW sample dots when the match file is missing. | `data.json` (dark_vessels section), `sar_ais_matches.json` |
 | `sar-ais-match.html` | SAR×AIS cross-match report, deliberately slimmed to **three blocks**: 3 stat tiles (residual dark / re-matched locally / false-dark removed %), residual-dark density map (density + rematched + infra layers), and the chip-retrieval worklist. The daily-series/zone charts, false-dark detail table, and method panel were removed (Chart.js no longer loaded) — `zone_series` data still exists in the JSON for anyone who wants it. Standalone Leaflet (no MapModule); bilingual via `lang-zh-only`/`lang-en-only` spans; re-renders on `langchange`. Shows a pending notice until the pipeline first generates the data file. | `sar_ais_matches.json`, `sar_chip_worklist.json` |
-| `statistics.html` | Historical trend charts (vessel counts, dark vessels, fishing effort) | `ais_history.json` |
+| `statistics.html` | Historical trend charts (vessel counts, dark vessels, fishing effort). Panels are grouped under three `.stats-group-title` headings (暗船趨勢與軍演預測 / AIS 船隊歷史 / SCFI 相關性); the two raw-data tables (每日數據, 週資料明細) are collapsed by default via the `.panel-title.collapsible` pattern. The region/flag distribution pies were **removed** (duplicated dark-vessels.html's richer table/list) — a link panel points there instead. | `ais_history.json` |
 | `identity-history.html` | AIS identity change timeline table | `identity_events.json` |
 | `ais-animation.html` | AIS track playback animation + gray-zone events, focus narrative, AOI/tripwire, going-dark, export. Nav label "軌跡動畫" points here. | `ais_track_history.json`, `data.json`, `ship_transfers.json`, `identity_events.json` |
 | `cn-fishing-animation.html` | Chinese fishing vessel animation | `ais_track_history.json` |
 | `ship-transfers.html` | STS rendezvous detection results table + map | `ship_transfers.json` |
-| `intro.html` | Project introduction / about page | Static |
+| `intro.html` | Project introduction / about page. Hosts the bilingual 12-card About/Methodology sections (`#aboutSection` / `#aboutSectionEn`, moved from index.html) between FAQ and the article grid. | Static |
+
+### Desktop header nav (all data pages + index + blog)
+Every page's header shows the 4 primary links (灰色地帶監測 / 暗船偵測 / 統計分析 / 軌跡動畫), the current page's own link if it's a secondary one (kept visible as the `active` pill), and a native no-JS `<details class="nav-more">` "更多/More" dropdown holding the rest (SAR×AIS 比對, 大陸漁船, 旁靠偵測, 身分追蹤, 研究報告, 深度文章, 關於本站 — minus the current page). CSS: `.nav-more*` in main.css (z-index 1100, hidden ≤900px where the bottom nav takes over). `research-…` and `intro.html` keep their minimal 2-link headers. When adding a page, add it to the dropdown on the other pages.
 
 ## JavaScript Modules (`docs/js/`)
 
 | File | LOC | Responsibility |
 |------|-----|----------------|
-| `app.js` | ~900 | Main controller: init, data loading, freshness indicator, sidebar, bottom sheet, mobile nav, vessel list, suspicious list. Entry: `document.addEventListener('DOMContentLoaded', App.init)` |
+| `app.js` | ~900 | Main controller: init, data loading, freshness indicator, sidebar, vessel list, suspicious list. `setupMobileNavigation()` no longer builds the mobile shell — it **injects index-specific bottom-sheet sections** (route search, layer toggles, `bs*` stats/gov/suspicious) via `window.MobileNav.addSheetSection()` (no-op on desktop where the shell doesn't exist). Entry: `document.addEventListener('DOMContentLoaded', App.init)` |
 | `map-data.js` | ~480 | Static lookup tables (MID flag table, vessel colors, fishing hotspots, gov regex, FOC MIDs, region colors, territorial basepoints) + pure helpers (`getMidFlag`, `getGovType`, `govLabel`, `createVesselIcon`, `debounce`, `offsetPolygonNm`, `_decodeNavStatus`). Exports `MapData`. |
 | `map-baseline.js` | ~180 | Territorial baseline / 12nm / 24nm rendering. Exports `MapBaselineFactory(map, layers)`. |
 | `map-vessels.js` | ~920 | Vessel rendering (cluster + detail), dark/suspicious/gov layers, vessel list panel, info cards, FOC filter, sanctions matching. Dark-vessel popups are enriched with SAR×AIS re-match status (`sar_ais_matches.json`: false-dark AIS identity / residual dark + maritime zone / outside coverage) and darkship chip forensics verdicts + PNG link (`chips/results.json`, fetched via raw.githubusercontent on Pages — same pattern as vessel routes); lookup keyed on date+lat+lon at 2-decimal precision, popup content bound as a function so late-loading data and language switches show on open. Exports `MapVesselsFactory(map, layers)`. |
@@ -31,7 +34,7 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 | `map.js` | ~190 | Core: Leaflet init, layer groups, factory instantiation, public `MapModule` API (delegates to sub-modules). **HTML script order: map-data → map-baseline → map-vessels → map-routes → map-cables → map-bathymetry → map.js** (all `defer`). Regression gate: `node tests/map-integration.js` (jsdom + real Leaflet). |
 | `charts.js` | ~345 | Chart.js: AIS stats pie chart, overlay cards, trend charts. Exports `ChartsModule`. |
 | `i18n.js` | ~490 | Translation dict + auto-detect + toggle. Keys: `namespace.key` (e.g., `nav.grayzone`, `ob.t1`). `localStorage('lang')`. Fires `langchange` CustomEvent. |
-| `mobile-nav.js` | ~50 | Mobile hamburger menu toggle |
+| `mobile-nav.js` | ~160 | **Single shared mobile shell for ALL pages incl. index**: bottom nav (5 tabs), 6-entry Anim popover, bottom sheet + overlay + drag-to-dismiss. Bails out at `window.innerWidth > 900`. Exposes `window.MobileNav = { sheet, popover, closeAll, addSheetSection(html) }` so a page can inject sheet sections (injected above the always-last update-info section). Must load **before** `app.js` on index. |
 
 ## CSS (`docs/css/main.css`)
 
@@ -43,6 +46,9 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 --text-primary: #e8eef7; --accent-green: #00ff88;
 --text-secondary: #8aa4c8; --accent-yellow: #ffd700;
 ```
+
+### Typography floor (desktop)
+`:root` carries `--fs-label: 10px` (micro labels) / `--fs-caption: 11px` / `--fs-body: 12px` (lists, table cells, popups) / `--fs-title: 13px` (section & panel titles). **Nothing may go below 10px** — the old 6–9px sidebar/legend/popup sizes were raised to these tokens; new UI text should reference the tokens, not raw px. The ≤900px mobile block keeps its own 12px+ sizes; the `@media (min-width: 901px)` "desktop readability" block now only bumps numeric *values* (stat numbers), not labels. Desktop sidebar rail is 320px (`.app-container` grid).
 
 ### Vessel Type Colors
 `fishing: #00ff88` `cargo: #00f5ff` `tanker: #ff6b35` `lng: #f0e130` `coastguard: #ffffff` `msa: #4d9fff` `rescue: #ff9500` `research: #c77dff` `other: #ff3366` `unknown: #888`
