@@ -159,6 +159,7 @@ body {
     color: var(--text-secondary);
     text-decoration: none;
     padding: 6px 10px;
+    border: none; /* cancel the .header-nav a pill border inside the menu */
     border-radius: 4px;
     transition: all var(--transition-fast);
 }
@@ -857,6 +858,19 @@ body {
 
 .panel-body { padding: var(--spacing-sm); }
 
+/* Group heading spanning a full .main-content grid row (statistics page) */
+.stats-group-title {
+    grid-column: 1 / -1;
+    font-family: 'Orbitron', 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--accent-cyan);
+    padding: 10px 2px 2px;
+    border-bottom: 1px solid var(--border-glow);
+    margin-bottom: 2px;
+}
+
 /* Method / criteria footnote under a panel title (keeps titles short) */
 .panel-subtitle {
     font-size: var(--fs-caption);
@@ -1012,6 +1026,7 @@ body {
     .header-info { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .header-nav a,
     .header-info a,
+    .header-nav .nav-more,
     .header-info .nav-more { display: none; }
 
     /* Language toggle */
