@@ -127,78 +127,19 @@ const App = (function () {
     }
 
     /**
-     * Setup mobile navigation - 5-tab bottom nav with popover & bottom sheet
+     * Inject index-specific content into the shared mobile navigation.
+     * The bottom nav / popover / bottom sheet shell is built by mobile-nav.js
+     * (loaded before app.js); on desktop viewports the shell doesn't exist
+     * (mobile-nav.js bails out) and this is a no-op.
      */
     function setupMobileNavigation() {
-        if (document.querySelector('.mobile-bottom-nav')) return;
+        if (!window.MobileNav) return;
 
-        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-        const animPages = ['ais-animation.html', 'cn-fishing-animation.html', 'identity-history.html'];
-        const isAnimPage = animPages.includes(currentPage);
-
-        // --- Bottom Nav (5 tabs) ---
-        const bottomNav = document.createElement('nav');
-        bottomNav.className = 'mobile-bottom-nav';
-        bottomNav.innerHTML = `
-            <a href="index.html" ${currentPage === 'index.html' ? 'class="active"' : ''}>
-                <span class="nav-icon">🛰️</span>
-                <span data-i18n="nav.mob_monitor">監測</span>
-            </a>
-            <a href="dark-vessels.html" ${currentPage === 'dark-vessels.html' ? 'class="active"' : ''}>
-                <span class="nav-icon">🔦</span>
-                <span data-i18n="nav.mob_dark">暗船</span>
-            </a>
-            <a href="statistics.html" ${currentPage === 'statistics.html' ? 'class="active"' : ''}>
-                <span class="nav-icon">📊</span>
-                <span data-i18n="nav.mob_stats">統計</span>
-            </a>
-            <button id="navAnimBtn" ${isAnimPage ? 'class="active"' : ''}>
-                <span class="nav-icon">🎬</span>
-                <span data-i18n="nav.mob_anim">動畫</span>
-            </button>
-            <button id="navToolsBtn">
-                <span class="nav-icon">⚙️</span>
-                <span data-i18n="nav.mob_tools">工具</span>
-            </button>
-        `;
-        document.body.appendChild(bottomNav);
-
-        // --- Animation Popover ---
-        const popover = document.createElement('div');
-        popover.className = 'nav-popover';
-        popover.innerHTML = `
-            <a href="ais-animation.html" ${currentPage === 'ais-animation.html' ? 'class="active"' : ''}>
-                <span class="pop-icon">🎬</span>
-                <span data-i18n="nav.animation">軌跡動畫</span>
-            </a>
-            <a href="cn-fishing-animation.html" ${currentPage === 'cn-fishing-animation.html' ? 'class="active"' : ''}>
-                <span class="pop-icon">🐟</span>
-                <span data-i18n="nav.cn_fishing">大陸漁船</span>
-            </a>
-            <a href="identity-history.html" ${currentPage === 'identity-history.html' ? 'class="active"' : ''}>
-                <span class="pop-icon">🔄</span>
-                <span data-i18n="nav.identity">身分追蹤</span>
-            </a>
-        `;
-        document.body.appendChild(popover);
-
-        // --- Bottom Sheet Overlay ---
-        const sheetOverlay = document.createElement('div');
-        sheetOverlay.className = 'bottom-sheet-overlay';
-        document.body.appendChild(sheetOverlay);
-
-        // --- Bottom Sheet ---
-        const sheet = document.createElement('div');
-        sheet.className = 'bottom-sheet';
-        sheet.id = 'bottomSheet';
-
-        const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
-        const isIndex = currentPage === 'index.html';
-
-        let sheetHTML = `<div class="bottom-sheet-handle" role="button" aria-label="拖曳展開面板 / Drag to expand panel"></div>`;
-
-        // Route search section (only on pages with maps)
+        const closeAll = window.MobileNav.closeAll;
         const hasMap = document.getElementById('map');
+        let sheetHTML = '';
+
+        // Route search section
         if (hasMap) {
             sheetHTML += `
             <div class="bottom-sheet-section">
@@ -210,7 +151,7 @@ const App = (function () {
             </div>`;
         }
 
-        // Layer controls section (only on pages with maps)
+        // Layer controls section
         if (hasMap) {
             sheetHTML += `
             <div class="bottom-sheet-section">
@@ -225,9 +166,8 @@ const App = (function () {
             </div>`;
         }
 
-        // Stats + gov/research vessels + suspicious section (only on index)
-        if (isIndex) {
-            sheetHTML += `
+        // Stats + gov/research vessels + suspicious sections
+        sheetHTML += `
             <div class="bottom-sheet-section">
                 <div class="bottom-sheet-title" data-i18n="bs.realtime_stats">即時統計</div>
                 <div class="bs-stats-grid">
@@ -245,44 +185,8 @@ const App = (function () {
                 <div class="bottom-sheet-title" data-i18n="bs.suspicious">可疑船隻</div>
                 <div id="bsSuspiciousList"></div>
             </div>`;
-        }
 
-        // Update info
-        sheetHTML += `
-        <div class="bottom-sheet-section">
-            <div style="font-size:12px;color:var(--text-secondary)" id="bsUpdateInfo"></div>
-        </div>`;
-
-        sheet.innerHTML = sheetHTML;
-        document.body.appendChild(sheet);
-
-        // --- Event Handlers ---
-        let popoverOpen = false;
-        let sheetOpen = false;
-
-        function closeAll() {
-            popover.classList.remove('open');
-            sheet.classList.remove('open');
-            sheetOverlay.classList.remove('active');
-            popoverOpen = false;
-            sheetOpen = false;
-        }
-
-        document.getElementById('navAnimBtn').addEventListener('click', () => {
-            if (sheetOpen) { sheet.classList.remove('open'); sheetOpen = false; }
-            popoverOpen = !popoverOpen;
-            popover.classList.toggle('open', popoverOpen);
-            sheetOverlay.classList.toggle('active', popoverOpen);
-        });
-
-        document.getElementById('navToolsBtn').addEventListener('click', () => {
-            if (popoverOpen) { popover.classList.remove('open'); popoverOpen = false; }
-            sheetOpen = !sheetOpen;
-            sheet.classList.toggle('open', sheetOpen);
-            sheetOverlay.classList.toggle('active', sheetOpen);
-        });
-
-        sheetOverlay.addEventListener('click', closeAll);
+        window.MobileNav.addSheetSection(sheetHTML);
 
         // Sync bottom sheet checkboxes with page controls
         if (hasMap) {
@@ -335,17 +239,7 @@ const App = (function () {
             });
         }
 
-        // Touch drag to dismiss bottom sheet
-        let startY = 0;
-        sheet.querySelector('.bottom-sheet-handle').addEventListener('touchstart', e => {
-            startY = e.touches[0].clientY;
-        }, { passive: true });
-        sheet.addEventListener('touchmove', e => {
-            if (startY === 0) return;
-            const dy = e.touches[0].clientY - startY;
-            if (dy > 60) { closeAll(); startY = 0; }
-        }, { passive: true });
-        sheet.addEventListener('touchend', () => { startY = 0; }, { passive: true });
+        // (Drag-to-dismiss and open/close handlers live in mobile-nav.js)
 
         if (typeof i18n !== 'undefined') i18n.applyAll();
     }

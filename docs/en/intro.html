@@ -191,6 +191,59 @@
         </div>
     </section>
 
+    <!-- Project purpose & methodology cards (moved here from index.html) -->
+    
+    <section class="about-section lang-en-only" id="aboutSectionEn">
+        <div class="about-container">
+            <h2 class="about-title">📡 Project Purpose</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>Monitoring Objective</h3>
+                    <p>This project uses multi-source satellite data and AI analysis to monitor "gray zone" activities in waters around Taiwan in real time. We track "dark vessels" (ships with AIS turned off), anomalous vessel behavior in military exercise zones, and maritime activity patterns potentially linked to military exercises — providing an open, transparent data foundation for maritime security research and policy.</p>
+                </div>
+                <div class="about-card">
+                    <h3>Why Focus on Dark Vessels?</h3>
+                    <p>Research by Global Fishing Watch shows that many vessels disable their Automatic Identification System (AIS), disappearing from public monitoring systems. These "dark vessels" are often involved in illegal, unreported, and unregulated fishing (IUU fishing) and may also be linked to gray zone military operations.</p>
+                </div>
+            </div>
+            <h2 class="about-title" style="margin-top:24px">🔬 Research Methodology</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>Synthetic Aperture Radar (SAR) Detection</h3>
+                    <p>This project uses the same core technology as Global Fishing Watch — Synthetic Aperture Radar (SAR) satellite imagery analysis. SAR works day and night, in any weather, penetrating cloud cover to detect vessels at sea.</p>
+                </div>
+                <div class="about-card">
+                    <h3>Submarine Cable Threat Detection</h3>
+                    <p>The system detects potential submarine cable threats through multi-layered suspicious vessel identification:</p>
+                    <ul>
+                        <li><strong>Cable Proximity:</strong> Detecting vessels operating within 5km of submarine cable routes</li>
+                        <li><strong>Zigzag Pattern:</strong> Identifying vessels with frequent large heading changes (potential anchor-dragging behavior)</li>
+                        <li><strong>200m Depth Contour:</strong> Vessels persistently operating along the continental shelf edge (cable-dense area)</li>
+                        <li><strong>AIS Identity Changes:</strong> Detecting name, call sign, or IMO number manipulation</li>
+                    </ul>
+                </div>
+                <div class="about-card">
+                    <h3>Multi-Source Data Integration</h3>
+                    <p>The system integrates data from the following sources, updated every 6 hours:</p>
+                    <ul>
+                        <li><strong>Global Fishing Watch API:</strong> SAR dark vessel detection, fishing effort data</li>
+                        <li><strong>AISStream.io:</strong> Real-time AIS vessel tracking</li>
+                        <li><strong>PLA Military Sortie Records:</strong> Publicly available defense reports on military activity near Taiwan</li>
+                    </ul>
+                </div>
+                <div class="about-card">
+                    <h3>References</h3>
+                    <ul class="reference-list">
+                        <li>Global Fishing Watch, <em>"Satellite Radar Imagery Helps Reveal the True Scale of Hidden Fishing"</em></li>
+                        <li>Global Fishing Watch, <em>"Illuminating Dark Fishing Fleets in North Korea"</em> (2020)</li>
+                        <li>CSIS, <em>"Signals in the Swarm"</em></li>
+                        <li>European Space Agency, Sentinel-1 SAR Mission</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- 深度文章 Section -->
     <section class="intro-section">
                 <div class="lang-en-only">

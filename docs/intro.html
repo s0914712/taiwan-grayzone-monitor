@@ -258,6 +258,109 @@
         </div>
     </section>
 
+    <!-- Project purpose & methodology cards (moved here from index.html) -->
+    <section class="about-section lang-zh-only" id="aboutSection">
+        <div class="about-container">
+            <h2 class="about-title">📡 專案目的 Project Purpose</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>監測目標</h3>
+                    <p>本專案旨在透過多源衛星數據與 AI 分析技術，即時監測台灣周邊海域的「灰色地帶」活動。我們追蹤關閉 AIS 訊號的「暗船」(dark vessels)、異常船舶行為，以及可能與軍事活動相關的海上活動模式，為海洋安全研究與政策制定提供開放、透明的數據基礎。</p>
+                </div>
+                <div class="about-card">
+                    <h3>為什麼關注暗船？</h3>
+                    <p>全球漁業觀察 (Global Fishing Watch) 的研究指出，許多船隻會關閉自動識別系統 (AIS) 訊號，使其從公共監測系統中消失。這些「暗船」往往涉及非法、未報告及未受規範的捕魚活動 (IUU fishing)，也可能與灰色地帶軍事行動有關。</p>
+                </div>
+            </div>
+            <h2 class="about-title" style="margin-top:24px">🔬 研究方法 Methodology</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>合成孔徑雷達 (SAR) 衛星偵測</h3>
+                    <p>本專案採用與 Global Fishing Watch 相同的核心技術——合成孔徑雷達 (Synthetic Aperture Radar, SAR) 衛星影像分析。SAR 技術不受日夜與天候影響，能穿透厚雲層偵測海面船隻。</p>
+                </div>
+                <div class="about-card">
+                    <h3>海底電纜威脅偵測</h3>
+                    <p>本系統針對海底電纜破壞威脅，建立多層次可疑船隻識別機制：</p>
+                    <ul>
+                        <li><strong>海纜鄰近活動：</strong>偵測航跡經過海底電纜路線 5 公里內的船隻</li>
+                        <li><strong>Z字型移動模式：</strong>識別頻繁大幅轉向（疑似拖錨破壞行為）的船隻</li>
+                        <li><strong>200m等深線活動：</strong>在大陸棚邊緣（海纜密集區）持續活動的船隻</li>
+                        <li><strong>AIS 身分變更：</strong>變更船名、呼號、IMO 等識別資訊的異常行為</li>
+                    </ul>
+                </div>
+                <div class="about-card">
+                    <h3>多源數據整合</h3>
+                    <p>本系統整合以下數據來源，每 6 小時自動更新：</p>
+                    <ul>
+                        <li><strong>Global Fishing Watch API：</strong>SAR 衛星偵測、中國船隻活動、全球漁撈努力量數據</li>
+                        <li><strong>AISStream.io：</strong>即時 AIS 船舶自動識別系統資料</li>
+                        <li><strong>解放軍軍事出動記錄：</strong>日本防衛省公開的台海周邊軍事活動統計</li>
+                    </ul>
+                </div>
+                <div class="about-card">
+                    <h3>參考文獻</h3>
+                    <ul class="reference-list">
+                        <li>Global Fishing Watch, <em>"Satellite Radar Imagery Helps Reveal the True Scale of Hidden Fishing"</em></li>
+                        <li>Global Fishing Watch, <em>"Illuminating Dark Fishing Fleets in North Korea"</em> (2020)</li>
+                        <li>CSIS, <em>"Signals in the Swarm"</em></li>
+                        <li>European Space Agency, Sentinel-1 SAR Mission</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section lang-en-only" id="aboutSectionEn">
+        <div class="about-container">
+            <h2 class="about-title">📡 Project Purpose</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>Monitoring Objective</h3>
+                    <p>This project uses multi-source satellite data and AI analysis to monitor "gray zone" activities in waters around Taiwan in real time. We track "dark vessels" (ships with AIS turned off), anomalous vessel behavior in military exercise zones, and maritime activity patterns potentially linked to military exercises — providing an open, transparent data foundation for maritime security research and policy.</p>
+                </div>
+                <div class="about-card">
+                    <h3>Why Focus on Dark Vessels?</h3>
+                    <p>Research by Global Fishing Watch shows that many vessels disable their Automatic Identification System (AIS), disappearing from public monitoring systems. These "dark vessels" are often involved in illegal, unreported, and unregulated fishing (IUU fishing) and may also be linked to gray zone military operations.</p>
+                </div>
+            </div>
+            <h2 class="about-title" style="margin-top:24px">🔬 Research Methodology</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>Synthetic Aperture Radar (SAR) Detection</h3>
+                    <p>This project uses the same core technology as Global Fishing Watch — Synthetic Aperture Radar (SAR) satellite imagery analysis. SAR works day and night, in any weather, penetrating cloud cover to detect vessels at sea.</p>
+                </div>
+                <div class="about-card">
+                    <h3>Submarine Cable Threat Detection</h3>
+                    <p>The system detects potential submarine cable threats through multi-layered suspicious vessel identification:</p>
+                    <ul>
+                        <li><strong>Cable Proximity:</strong> Detecting vessels operating within 5km of submarine cable routes</li>
+                        <li><strong>Zigzag Pattern:</strong> Identifying vessels with frequent large heading changes (potential anchor-dragging behavior)</li>
+                        <li><strong>200m Depth Contour:</strong> Vessels persistently operating along the continental shelf edge (cable-dense area)</li>
+                        <li><strong>AIS Identity Changes:</strong> Detecting name, call sign, or IMO number manipulation</li>
+                    </ul>
+                </div>
+                <div class="about-card">
+                    <h3>Multi-Source Data Integration</h3>
+                    <p>The system integrates data from the following sources, updated every 6 hours:</p>
+                    <ul>
+                        <li><strong>Global Fishing Watch API:</strong> SAR dark vessel detection, fishing effort data</li>
+                        <li><strong>AISStream.io:</strong> Real-time AIS vessel tracking</li>
+                        <li><strong>PLA Military Sortie Records:</strong> Publicly available defense reports on military activity near Taiwan</li>
+                    </ul>
+                </div>
+                <div class="about-card">
+                    <h3>References</h3>
+                    <ul class="reference-list">
+                        <li>Global Fishing Watch, <em>"Satellite Radar Imagery Helps Reveal the True Scale of Hidden Fishing"</em></li>
+                        <li>Global Fishing Watch, <em>"Illuminating Dark Fishing Fleets in North Korea"</em> (2020)</li>
+                        <li>CSIS, <em>"Signals in the Swarm"</em></li>
+                        <li>European Space Agency, Sentinel-1 SAR Mission</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- 深度文章 Section -->
     <section class="intro-section">
         <div class="lang-zh-only">

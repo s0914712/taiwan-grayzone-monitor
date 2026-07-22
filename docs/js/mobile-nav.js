@@ -135,6 +135,18 @@
         }, { passive: true });
         sheet.addEventListener('touchend', () => { startY = 0; }, { passive: true });
 
+        // Public hook so a page (index/app.js) can inject page-specific sheet
+        // sections without rebuilding the shared shell. New sections land above
+        // the update-info section (always the sheet's last child).
+        window.MobileNav = {
+            sheet: sheet,
+            popover: popover,
+            closeAll: closeAll,
+            addSheetSection: function (html) {
+                sheet.lastElementChild.insertAdjacentHTML('beforebegin', html);
+            }
+        };
+
         if (typeof i18n !== 'undefined') i18n.applyAll();
     }
 

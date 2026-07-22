@@ -360,19 +360,14 @@
             </div>
         </div>
 
-        <div class="panel">
-            <div class="panel-title" data-i18n="st.region_title">🗺️ 區域暗船分布</div>
-            <div class="chart-container" style="height: 200px;">
-                <canvas id="regionChart"></canvas>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded');if(!window._flagChartRendered){window._flagChartRendered=true;renderFlagChart()}" data-i18n="st.flag_title">🚩 有 AIS 船隻國旗分布 ▸ 點擊展開</div>
-            <div class="panel-collapsible-body">
-                <div class="chart-container" style="height: 200px;">
-                    <canvas id="flagChart"></canvas>
-                </div>
+        <!-- Region + flag distributions live on dark-vessels.html (richer table/list there);
+             the duplicate pie charts were removed from this page -->
+        <div class="panel" style="grid-column: 1 / -1;">
+            <div class="panel-title">
+                <a href="dark-vessels.html" style="color:var(--accent-cyan);text-decoration:none">
+                    🗺️ <span class="lang-zh-only">區域暗船分布與國旗統計 → 見「暗船偵測」頁</span>
+                    <span class="lang-en-only">Region &amp; flag distribution → see the Dark Vessels page</span>
+                </a>
             </div>
         </div>
 
@@ -571,37 +566,7 @@
                 });
             }
 
-            // Region chart
-            if (fullData.dark_vessels && fullData.dark_vessels.regions) {
-                const regions = fullData.dark_vessels.regions;
-                const labels = [];
-                const values = [];
-                const colors = ['#00f5ff', '#ff6b35', '#00ff88', '#ffd700'];
-
-                Object.entries(regions).forEach(([key, r], i) => {
-                    labels.push(r.name || key);
-                    values.push(r.dark_vessels || 0);
-                });
-
-                ChartsModule.renderPieChart('regionChart', labels, values, colors);
-            }
-
-            // Flag chart deferred to panel expand (see renderFlagChart)
-        }
-
-        function renderFlagChart() {
-            if (fullData.dark_vessels && fullData.dark_vessels.regions &&
-                fullData.dark_vessels.regions.taiwan_strait &&
-                fullData.dark_vessels.regions.taiwan_strait.matched_by_flag) {
-
-                const flags = fullData.dark_vessels.regions.taiwan_strait.matched_by_flag;
-                const entries = Object.entries(flags).slice(0, 6);
-                const labels = entries.map(([k]) => k);
-                const values = entries.map(([, v]) => v);
-                const colors = ['#ff3366', '#00f5ff', '#ff6b35', '#00ff88', '#ffd700', '#9b59b6'];
-
-                ChartsModule.renderPieChart('flagChart', labels, values, colors);
-            }
+            // Region / flag distributions moved to dark-vessels.html
         }
 
         function renderDailyTable() {
