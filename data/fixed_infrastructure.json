@@ -1,0 +1,17 @@
+{
+  "_comment": "離岸固定設施（風機陣列/平台）靜態遮罩，供 match_sar_ais.py 的 load_fixed_infra_mask() 使用，把 GFW SAR 暗偵測中的固定設施剔除，避免污染殘餘暗船集與密度熱圖。每點半徑 radius_km 內的暗偵測即判為設施。此為種子清單：座標以 sar_detections.json 實測到的『同日、密集、規則排列(~1.5km 間距)』渦輪陣列訊號 + 公開離岸風場位置交叉確認；跨執行重現性判準(sar_detection_history.json)為一般化機制，本檔為已知大型風場的即時確定性後盾。可持續擴充；若取得 GFW fixed-infrastructure 資料集匯出，優先以其座標取代。",
+  "_source": "observed same-date turbine-array clusters in data/sar_detections.json (2026-06/07 window) + public offshore wind farm locations",
+  "_updated": "2026-07-23",
+  "points": [
+    {"lat": 24.30, "lon": 120.33, "radius_km": 15, "_name": "彰化外海風場群 Changhua (Greater Changhua/Hai Long/Zhong Neng/Taipower)"},
+    {"lat": 24.15, "lon": 120.28, "radius_km": 12, "_name": "彰化南段 Changhua south"},
+    {"lat": 24.85, "lon": 120.37, "radius_km": 12, "_name": "新竹/竹南外海 Hsinchu/Zhunan"},
+    {"lat": 24.70, "lon": 120.55, "radius_km": 10, "_name": "苗栗 Formosa 1 & 2 (海洋/海能)"},
+    {"lat": 23.85, "lon": 120.15, "radius_km": 12, "_name": "雲林外海 Yunlin"},
+    {"lat": 25.15, "lon": 119.10, "radius_km": 15, "_name": "福建 南日島/興化灣 Fujian Nanri/Xinghua Bay"},
+    {"lat": 25.45, "lon": 119.60, "radius_km": 15, "_name": "福建 平潭/長樂外海 Fujian Pingtan/Changle"},
+    {"lat": 25.05, "lon": 119.95, "radius_km": 12, "_name": "福建 湄洲灣外 Fujian Meizhou Bay"},
+    {"lat": 32.15, "lon": 121.80, "radius_km": 22, "_name": "江蘇 如東海上風電群 Jiangsu Rudong (world's largest offshore cluster)"},
+    {"lat": 32.00, "lon": 122.05, "radius_km": 15, "_name": "江蘇 如東外段 Jiangsu Rudong east"}
+  ]
+}

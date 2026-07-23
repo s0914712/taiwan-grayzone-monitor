@@ -210,9 +210,28 @@ are only a fallback).
 
 Pipeline (per detection):
 1. **Fixed-infrastructure filter** — wind turbines/aquaculture platforms detected as
-   ships. Recurrence heuristic: same 0.01° cell dark-detected on ≥6 distinct dates →
-   infrastructure. Optional static mask `data/fixed_infrastructure.json`
-   (`[{lat, lon, radius_km?}]`, e.g. a GFW fixed-infrastructure export).
+   ships. Two mechanisms:
+   - **Cross-run recurrence** (`data/sar_detection_history.json`): within a single
+     30-day GFW window fixed infrastructure does **not** recur — the aggregated
+     detections are full-precision and every one lands in a unique 0.01° cell (a wind
+     farm shows up instead as many *same-date* regularly-spaced array detections,
+     imaged once per window). The recurrence signal only emerges across cron runs, so
+     detections are accumulated per **0.03° cell** (`INFRA_CELL_DEG`; S1 geolocation
+     ~0.5km ≪ 3km, so a fixed target's centroid falls back in the same cell across
+     passes) over `HISTORY_RETENTION_DAYS` (90); a cell seen on ≥ `INFRA_MIN_DATES`
+     (3) distinct overpass dates → infrastructure (`update_detection_history` +
+     `recurring_cells_from_history`, both pure). History is committed via
+     `update-data.yml`'s `git add data/`, mirroring `dark_vessel_history.json`.
+     `detect_infrastructure_cells` (single-window) is kept only as the fallback when no
+     history is passed (synthetic tests).
+   - **Static mask** `data/fixed_infrastructure.json` (`{"points":[{lat, lon,
+     radius_km}]}`, `load_fixed_infra_mask()`) — committed hand-authored seed of known
+     offshore wind farm zones (Taiwan Changhua/Miaoli, Fujian, Jiangsu Rudong; grounded
+     in the observed same-date array signature), the immediate deterministic backstop
+     before history accumulates. Extend with a GFW fixed-infrastructure export when
+     available.
+   Summary carries `infrastructure_filtered` (recs removed), `infrastructure_cells_detected`
+   (recurring cells), and `infra_source` (`history`/`window`).
 2. **Time interpolation / dead reckoning** — SAR imaging is instantaneous; AIS is a 2h
    snapshot cadence. AIS tracks (tier-1 + tier-2 + snapshot; AtoN/buoy/net-beacon
    transmitters excluded) are interpolated to the SAR overpass instant. Overpass time
