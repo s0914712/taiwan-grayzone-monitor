@@ -135,6 +135,51 @@ def test_static_mask_filters_detection():
     assert not is_infra({'lat': 24.1, 'lon': 120.0, 'date': '2026-07-01'})
 
 
+# ── 跨執行偵測歷史（cron 累積 → 重現性判準）───────────────────────────────────
+
+def test_update_detection_history_accumulates_and_trims():
+    now = m.parse_ts('2026-07-23T00:00:00+00:00')
+    # 第一次執行：同一粗網格、兩個不同過境日（座標略有抖動仍落回同格）
+    h = m.update_detection_history({}, [
+        {'lat': 24.30, 'lon': 120.33, 'date': '2026-07-01'},
+        {'lat': 24.305, 'lon': 120.332, 'date': '2026-07-08'},
+    ], now)
+    key = m._cell_key(*m.infra_cell(24.30, 120.33))
+    assert h['cells'][key] == ['2026-07-01', '2026-07-08']
+    assert h['cell_deg'] == m.INFRA_CELL_DEG
+
+    # 第二次執行：新增一個過境日 + 一個超過保留期的舊日（應被裁掉）
+    h2 = m.update_detection_history(h, [
+        {'lat': 24.30, 'lon': 120.33, 'date': '2026-07-15'},
+        {'lat': 24.30, 'lon': 120.33, 'date': '2026-01-01'},   # >90 天 → 裁切
+        {'lat': 24.30, 'lon': 120.33, 'date': '2026-07-01'},   # 重覆日 → 去重
+    ], now)
+    assert '2026-07-15' in h2['cells'][key]
+    assert '2026-01-01' not in h2['cells'][key]
+    assert h2['cells'][key].count('2026-07-01') == 1
+
+
+def test_recurring_cells_from_history_threshold():
+    hist = {'cells': {
+        '810,4011': ['2026-07-01', '2026-07-08', '2026-07-15'],  # ≥3 日 → 設施
+        '999,999': ['2026-07-01', '2026-07-08'],                 # 2 日 → 非設施
+    }}
+    rec = m.recurring_cells_from_history(hist)
+    assert (810, 4011) in rec
+    assert (999, 999) not in rec
+
+
+def test_infra_filter_uses_history_recurrence():
+    # 當下窗此格只有 1 筆（單窗判不出重現），但歷史顯示跨 3 個過境日重現
+    ci, cj = m.infra_cell(24.30, 120.33)
+    recurring = {(ci, cj): ['2026-07-01', '2026-07-08', '2026-07-15']}
+    is_infra, cells = m.build_infra_filter(
+        [{'lat': 24.30, 'lon': 120.33, 'date': '2026-07-22'}], [],
+        recurring=recurring)
+    assert is_infra({'lat': 24.30, 'lon': 120.33, 'date': '2026-07-22'})
+    assert not is_infra({'lat': 26.0, 'lon': 122.0, 'date': '2026-07-22'})
+
+
 # ── 非船舶 AIS 發射器排除 ────────────────────────────────────────────────────
 
 def test_nonvessel_ais_excluded():

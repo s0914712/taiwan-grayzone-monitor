@@ -73,6 +73,7 @@ TIER2_PATHS = (DATA_DIR / 'ais_track_commercial.json',
 SNAPSHOT_PATH = DATA_DIR / 'ais_snapshot.json'
 FIXED_INFRA_PATH = DATA_DIR / 'fixed_infrastructure.json'
 S1_PASS_TIMES_PATH = DATA_DIR / 's1_pass_times.json'
+DETECTION_HISTORY_PATH = DATA_DIR / 'sar_detection_history.json'
 OUTPUT_PATH = DATA_DIR / 'sar_ais_matches.json'
 
 # Sentinel-1 固定過境窗（UTC 時 · 分）：台灣經度（~120°E，LST≈UTC+8）
@@ -103,9 +104,15 @@ STATIONARY_SPEED_KN = 0.5
 MAX_DT_HOURS = 3.0            # AIS 點與 SAR 時刻的最大時距（超過不推算）
 KN_TO_KMH = 1.852
 
-# 固定設施重現性啟發式
-INFRA_CELL_DEG = 0.01         # 與 4wings HIGH 網格一致
-INFRA_MIN_DATES = 6           # 同 cell ≥6 個不同日期有暗偵測 → 固定設施
+# 固定設施重現性啟發式（跨執行歷史）
+#   單一 30 天 GFW 彙整窗內，暗偵測座標為全精度、每格幾乎不重現（實測 1040
+#   筆 = 1040 個相異 0.01° 格），時間重現訊號等於不存在。真正能區分固定設施
+#   的是「同一位置在多個 S1 過境日反覆出現」——這需要跨 cron 執行累積
+#   （data/sar_detection_history.json）。風機/平台被 S1 反覆拍到；過境型暗船不會。
+INFRA_CELL_DEG = 0.03         # 粗網格：S1 定位誤差 ~0.5km ≪ 0.03°(~3km)，
+                             # 跨過境同一設施的偵測質心會落回同一格
+INFRA_MIN_DATES = 3           # 同格 ≥3 個不同過境日 → 固定設施（90 天窗內真設施必達）
+HISTORY_RETENTION_DAYS = 90   # 偵測歷史保留天數（跨執行累積）
 FIXED_INFRA_MASK_KM = 1.0     # 靜態遮罩點的預設半徑
 
 # 輸出層
@@ -384,9 +391,65 @@ def infra_cell(lat, lon):
     return (round(lat / INFRA_CELL_DEG), round(lon / INFRA_CELL_DEG))
 
 
+def _cell_key(ci, cj):
+    return f"{ci},{cj}"
+
+
+def _parse_cell_key(key):
+    ci, cj = key.split(',')
+    return (int(ci), int(cj))
+
+
+def update_detection_history(history, dark_records, now_epoch,
+                            retention_days=HISTORY_RETENTION_DAYS):
+    """把當下暗偵測併入跨執行的偵測歷史，去重日期並裁掉超期舊日期。
+
+    history / 回傳結構：
+      {'updated_at', 'cell_deg', 'retention_days', 'cells': {'ci,cj': [dates]}}
+    純函式（不做 I/O），便於測試。GFW 彙整窗每次會重送已見日期，故用集合去重。
+    """
+    cells = {}
+    src = (history or {}).get('cells') or {}
+    for key, dates in src.items():
+        if isinstance(dates, list):
+            cells[key] = set(d for d in dates if isinstance(d, str))
+
+    for r in dark_records:
+        key = _cell_key(*infra_cell(r['lat'], r['lon']))
+        cells.setdefault(key, set()).add(r['date'])
+
+    # 裁切：保留 now 之前 retention_days 內的日期；空格刪除
+    cutoff = now_epoch - retention_days * 86400
+    trimmed = {}
+    for key, dates in cells.items():
+        kept = sorted(d for d in dates
+                      if (parse_ts(f"{d}T00:00:00+00:00") or 0) >= cutoff)
+        if kept:
+            trimmed[key] = kept
+
+    return {
+        'updated_at': datetime.fromtimestamp(now_epoch, tz=timezone.utc)
+        .isoformat().replace('+00:00', 'Z'),
+        'cell_deg': INFRA_CELL_DEG,
+        'retention_days': retention_days,
+        'cells': trimmed,
+    }
+
+
+def recurring_cells_from_history(history, min_dates=INFRA_MIN_DATES):
+    """從跨執行偵測歷史取出重現格：≥ min_dates 個不同過境日 → 固定設施。
+    回傳 {(ci, cj): sorted dates}。"""
+    out = {}
+    for key, dates in ((history or {}).get('cells') or {}).items():
+        if isinstance(dates, list) and len(set(dates)) >= min_dates:
+            out[_parse_cell_key(key)] = sorted(set(dates))
+    return out
+
+
 def detect_infrastructure_cells(dark_records):
-    """重現性啟發式：同一 0.01° cell 在 ≥ INFRA_MIN_DATES 個不同日期
-    都有暗偵測 → 固定設施（風機/平台/養殖）。回傳 {cell: sorted dates}。"""
+    """單一窗內的重現性判準（歷史缺席時的退回；合成測試用）：同一粗網格
+    在 ≥ INFRA_MIN_DATES 個不同日期都有暗偵測 → 固定設施。回傳 {cell: sorted dates}。
+    正式管線改用 recurring_cells_from_history（跨執行歷史）——單窗內幾乎不重現。"""
     cell_dates = defaultdict(set)
     for r in dark_records:
         cell_dates[infra_cell(r['lat'], r['lon'])].add(r['date'])
@@ -394,9 +457,14 @@ def detect_infrastructure_cells(dark_records):
             if len(ds) >= INFRA_MIN_DATES}
 
 
-def build_infra_filter(dark_records, static_mask):
-    """回傳 (is_infra(rec) -> bool, infra_cells dict)。"""
-    infra_cells = detect_infrastructure_cells(dark_records)
+def build_infra_filter(dark_records, static_mask, recurring=None):
+    """回傳 (is_infra(rec) -> bool, infra_cells dict)。
+
+    recurring: {(ci,cj): dates} 跨執行歷史重現格。正式管線傳入此參數；
+    None 時退回單窗 detect_infrastructure_cells（保留既有合成測試路徑）。
+    """
+    infra_cells = (recurring if recurring is not None
+                   else detect_infrastructure_cells(dark_records))
 
     # 靜態遮罩粗網格索引（半徑通常 ~1km，0.1° 桶即可）
     mask_grid = defaultdict(list)
@@ -679,16 +747,18 @@ def build_zone_series(all_dark, screened):
 # =============================================================================
 
 def run_matching(dark_records, tracks, static_mask=(), profiles=None,
-                 pass_table=None):
+                 pass_table=None, recurring_cells=None):
     """核心比對流程（純函式，便於測試）。回傳輸出 dict（不含 updated_at）。
 
     pass_table: {date: [(label, t_epoch)]} 實際過境時刻（CMR），
     None/缺日期時退回固定過境窗。
+    recurring_cells: {(ci,cj): dates} 跨執行歷史重現格；None 時退回單窗判準。
     """
     profiles = profiles or {}
 
-    # 1. 固定設施過濾
-    is_infra, infra_cells = build_infra_filter(dark_records, list(static_mask))
+    # 1. 固定設施過濾（歷史重現格 + 靜態遮罩；歷史缺席退回單窗）
+    is_infra, infra_cells = build_infra_filter(dark_records, list(static_mask),
+                                               recurring=recurring_cells)
     infra_recs, work_recs = [], []
     for r in dark_records:
         (infra_recs if is_infra(r) else work_recs).append(r)
@@ -783,6 +853,8 @@ def run_matching(dark_records, tracks, static_mask=(), profiles=None,
     summary = {
         'dark_total': dark_total,
         'infrastructure_filtered': len(infra_recs),
+        'infrastructure_cells_detected': len(infra_cells),
+        'infra_source': 'history' if recurring_cells is not None else 'window',
         'in_ais_coverage': len(in_coverage),
         'no_ais_coverage': no_coverage,
         'rematched_local': len(rematched),
@@ -866,7 +938,18 @@ def main():
     else:
         print("ℹ️ 無 s1_pass_times.json — 使用固定過境窗（可跑 fetch_s1_passes.py 取得實際時刻）")
 
-    result = run_matching(dark_records, tracks, static_mask, pass_table=pass_table)
+    # 跨執行偵測歷史：併入當下偵測 → 重現格才是可靠的固定設施訊號
+    history = load_json(DETECTION_HISTORY_PATH, {}, expect_type=dict)
+    now_epoch = datetime.now(timezone.utc).timestamp()
+    history = update_detection_history(history, dark_records, now_epoch)
+    atomic_write_json(DETECTION_HISTORY_PATH, history, compact=True)
+    recurring_cells = recurring_cells_from_history(history)
+    n_days = sum(len(v) for v in history.get('cells', {}).values())
+    print(f"🗂️ 偵測歷史: {len(history.get('cells', {}))} 格、{n_days} 格·日"
+          f"（保留 {HISTORY_RETENTION_DAYS} 天）→ 重現設施格 {len(recurring_cells)}")
+
+    result = run_matching(dark_records, tracks, static_mask,
+                          pass_table=pass_table, recurring_cells=recurring_cells)
     result['updated_at'] = datetime.now(timezone.utc).isoformat() \
         .replace('+00:00', 'Z')
     result['source'] = source
@@ -877,7 +960,8 @@ def main():
     print("\n" + "=" * 70)
     print(f"✅ 已儲存: {OUTPUT_PATH}")
     print(f"   暗偵測總數:      {s['dark_total']}")
-    print(f"   固定設施過濾:    {s['infrastructure_filtered']}")
+    print(f"   固定設施過濾:    {s['infrastructure_filtered']} "
+          f"（重現格 {s['infrastructure_cells_detected']}，來源 {s['infra_source']}）")
     print(f"   AIS 覆蓋內:      {s['in_ais_coverage']}")
     print(f"   本地重比對成功:  {s['rematched_local']} "
           f"({s['rematch_rate_of_coverage_pct']}% of coverage)")
