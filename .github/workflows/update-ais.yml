@@ -92,6 +92,34 @@ jobs:
           }
           git push
 
+      # 永久歸檔：主檔 append-and-trim（14/28 天）會丟棄舊 snapshot。此步把 fetch 腳本
+      # 寫出的本輪 delta（單行 JSONL）append 進 ais-archive 分支的月度檔，累積全部歷史，
+      # 供離線（本機）航跡預測模型訓練。與 vessel-data 不同：這裡是一般 push（累積），
+      # 不可 force。ais-archive 不進 Pages artifact；月度檔下載完可自行從分支刪除。
+      - name: Append snapshot to ais-archive branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          [ -f data/track_delta.jsonl ] || { echo "無 delta，跳過"; exit 0; }
+          MONTH=$(date -u +%Y-%m)
+          TMP=$(mktemp -d)
+          URL="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          # 淺 clone 既有分支；不存在則初始化一個新的 orphan 分支
+          if ! git clone --depth 1 --branch ais-archive "$URL" "$TMP" 2>/dev/null; then
+            git init -q -b ais-archive "$TMP"
+            git -C "$TMP" remote add origin "$URL"
+          fi
+          mkdir -p "$TMP/archive"
+          cat data/track_delta.jsonl >> "$TMP/archive/ais_track_${MONTH}.jsonl"
+          [ -f data/track_commercial_delta.jsonl ] && \
+            cat data/track_commercial_delta.jsonl >> "$TMP/archive/ais_commercial_${MONTH}.jsonl" || true
+          git -C "$TMP" config user.email "action@github.com"
+          git -C "$TMP" config user.name "GitHub Action"
+          git -C "$TMP" add archive/
+          git -C "$TMP" commit -qm "archive snapshot $(date -u +'%Y-%m-%d %H:%M') UTC" || { echo "無變更"; exit 0; }
+          git -C "$TMP" push origin ais-archive
+
       # 航跡檔不進 main（27k 檔的歷史讓 repo 膨脹到 200MB+），
       # 每輪以單一 commit force push 到 vessel-data 分支（歷史永遠只有一版）。
       # 前端在 GitHub Pages 上經 raw.githubusercontent.com/.../vessel-data/ 讀取。
