@@ -335,6 +335,7 @@ var MapVesselsFactory = function(map, layers) {
 
     var darkRematched = null;   // dmKey → rematched entry (false dark, local AIS hit)
     var darkResidual = null;    // dmKey → residual dark entry
+    var darkInfra = null;       // dmKey → fixed-infrastructure entry (wind farm / platform)
     var darkChips = null;       // dmKey → chip forensics record
     var ZONE_KEYS = { internal_waters: 1, territorial_sea: 1, contiguous_zone: 1, eez: 1, high_seas: 1 };
 
@@ -349,6 +350,8 @@ var MapVesselsFactory = function(map, layers) {
             (matches.rematched || []).forEach(function(r) { darkRematched[dmKey(r.date, r.lat, r.lon)] = r; });
             darkResidual = {};
             (matches.residual_dark || []).forEach(function(r) { darkResidual[dmKey(r.date, r.lat, r.lon)] = r; });
+            darkInfra = {};
+            (matches.infrastructure || []).forEach(function(r) { darkInfra[dmKey(r.date, r.lat, r.lon)] = r; });
         }
         if (chipList) {
             darkChips = {};
@@ -384,6 +387,8 @@ var MapVesselsFactory = function(map, layers) {
             Number(d.lat).toFixed(2) + ', ' + Number(d.lon).toFixed(2);
         var rm = darkRematched && darkRematched[key];
         var rd = darkResidual && darkResidual[key];
+        var inf = darkInfra && darkInfra[key];
+        // 判決順序：已重比對 → 固定設施 → 殘餘/覆蓋外 → fallback（永不空白）
         if (rm) {
             html += '<br><span style="color:#00ff88">' + t2('dv.match_rematched') + '</span><br>' +
                 (rm.name || '?') + ' (' + rm.mmsi + ')' +
@@ -396,6 +401,11 @@ var MapVesselsFactory = function(map, layers) {
                 html += '<br>' + t2('dv.method') + ' ' + mk +
                     (rm.dt_minutes != null ? ' · Δt ' + rm.dt_minutes + ' min' : '');
             }
+        } else if (inf) {
+            html += '<br><span style="color:#ffd700">' + t2('dv.match_infra') + '</span>';
+            var rk = inf.reason === 'recurrence' ? 'dv.infra_recurrence'
+                : (inf.reason === 'mask' ? 'dv.infra_mask' : null);
+            if (rk) html += '<br>' + t2(rk);
         } else if (rd) {
             if (rd.in_ais_coverage === false) {
                 html += '<br><span style="color:#8aa4c8">' + t2('dv.match_nocover') + '</span>';
@@ -403,6 +413,9 @@ var MapVesselsFactory = function(map, layers) {
                 html += '<br><span style="color:#ff3366">' + t2('dv.match_residual') + '</span>';
                 if (ZONE_KEYS[rd.zone]) html += '<br>' + t2('dv.zone_' + rd.zone);
             }
+        } else if (darkRematched || darkResidual || darkInfra) {
+            // 比對檔已載入但三張表都沒中（座標對位差）→ 中性字樣，避免空白卡
+            html += '<br><span style="color:#8aa4c8">' + t2('dv.match_unknown') + '</span>';
         }
         var ch = darkChips && darkChips[key];
         var vk = ch && chipVerdictKey(ch);

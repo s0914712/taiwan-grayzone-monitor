@@ -259,7 +259,10 @@ Output `data/sar_ais_matches.json` (copied to `docs/`, summary embedded in
   rematched_local / residual_dark / false_dark_removed_pct (SAR window is 30 days but
   local AIS retention is 14–28 days, so out-of-coverage detections are reported
   separately, not counted as verified)
-- `rematched` / `residual_dark` / `infrastructure_cells` detail lists
+- `rematched` / `residual_dark` / `infrastructure_cells` (recurring-cell centers) detail lists
+- `infrastructure` — **per-detection** fixed-infrastructure list (`{lat, lon, date,
+  detections, reason}`, `reason` ∈ `recurrence`/`mask`), so every dark-vessel card can
+  show a definitive verdict instead of going blank on a filtered point
 - `density_grid` — residual-dark 0.1° heatmap cells
 - `zone_series` — daily time series by maritime zone (12nm / 24nm contiguous / EEZ,
   via `geofence.classify_maritime_zone`) and by compass sub-zone, both `raw_*` and
