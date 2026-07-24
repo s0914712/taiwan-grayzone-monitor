@@ -36,6 +36,11 @@ AIS_HISTORY_FILE = os.path.join(DATA_DIR, 'ais_history.json')
 AIS_TRACK_FILE = os.path.join(DOCS_DIR, 'ais_track_history.json')
 AIS_TRACK_ANIMATION_FILE = os.path.join(DOCS_DIR, 'ais_track_animation.json')
 AIS_TRACK_COMMERCIAL_FILE = os.path.join(DATA_DIR, 'ais_track_commercial.json')
+# 本輪 delta（單行 JSONL）— workflow 每輪把它 append 進 ais-archive 分支永久歸檔。
+# 主檔 append-and-trim（14/28 天）會丟棄舊 snapshot；歸檔分支累積全部歷史，
+# 供離線（本機）航跡預測模型訓練使用。
+AIS_TRACK_DELTA_FILE = os.path.join(DATA_DIR, 'track_delta.jsonl')
+AIS_TRACK_COMMERCIAL_DELTA_FILE = os.path.join(DATA_DIR, 'track_commercial_delta.jsonl')
 DASHBOARD_FILE = os.path.join(DOCS_DIR, 'data.json')
 IDENTITY_EVENTS_FILE = os.path.join(DATA_DIR, 'identity_events.json')
 
@@ -705,6 +710,10 @@ def save_all(vessels, stats):
     atomic_write_json(AIS_TRACK_FILE, track_history, compact=True)
     print(f"  🎬 軌跡歷史已更新: {AIS_TRACK_FILE} ({len(track_history)} 筆, {len(track_vessels)} 艘船)")
 
+    # 歸檔 delta：把本輪 track_entry 寫成單行 JSONL，供 workflow append 進 ais-archive 分支。
+    with open(AIS_TRACK_DELTA_FILE, 'w', encoding='utf-8') as f:
+        f.write(json.dumps(track_entry, ensure_ascii=False, separators=(',', ':')) + '\n')
+
     # 2c-1. 動畫專用精簡檔（僅最近 7 天）— 動畫頁載入加速
     anim_cutoff = (datetime.now(timezone.utc) - timedelta(days=AIS_TRACK_ANIMATION_DAYS)).isoformat()
     anim_history = [e for e in track_history if e.get('timestamp', '') >= anim_cutoff]
@@ -759,6 +768,10 @@ def save_all(vessels, stats):
     # Compact JSON (see tier-1 note)
     atomic_write_json(AIS_TRACK_COMMERCIAL_FILE, commercial_history, compact=True)
     print(f"  🚢 商船軌跡已更新: {AIS_TRACK_COMMERCIAL_FILE} ({len(commercial_history)} 筆, {len(commercial_vessels)} 艘船)")
+
+    # 歸檔 delta（tier-2）：同上，供 workflow append 進 ais-archive 分支。
+    with open(AIS_TRACK_COMMERCIAL_DELTA_FILE, 'w', encoding='utf-8') as f:
+        f.write(json.dumps(commercial_entry, ensure_ascii=False, separators=(',', ':')) + '\n')
 
     # 3. 更新 Dashboard 資料（與 generate_dashboard.py 格式一致）
     existing = load_json(DASHBOARD_FILE, {}, expect_type=dict)

@@ -7,6 +7,11 @@ Pool.txt
 data/vessel_profiles.json
 data/ais_track_commercial.json
 
+# Per-run archive deltas: written by fetch_ais_data.py, consumed by the workflow's
+# "Append snapshot to ais-archive branch" step. Ephemeral — never tracked on main.
+data/track_delta.jsonl
+data/track_commercial_delta.jsonl
+
 # Guard against accidentally committing the old docs/ locations.
 docs/vessel_profiles.json
 docs/ais_track_commercial.json
