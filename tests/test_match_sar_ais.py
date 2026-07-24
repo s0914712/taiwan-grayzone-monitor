@@ -248,6 +248,12 @@ def test_run_matching_end_to_end():
     assert s['rematched_local'] == 1
     assert s['residual_dark'] == 2
 
+    # 逐筆固定設施清單：長度 == 過濾數，且每筆帶來源 reason（前端卡片判決用）
+    infra = result['infrastructure']
+    assert len(infra) == m.INFRA_MIN_DATES
+    assert all(e['reason'] == 'recurrence' for e in infra)
+    assert all(e['lat'] == 23.5001 for e in infra)
+
     rm = result['rematched'][0]
     assert rm['mmsi'] == '412000001'
     assert rm['method'] == 'interpolated'

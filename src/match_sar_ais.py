@@ -120,7 +120,8 @@ DENSITY_CELL_DEG = 0.1        # 熱圖密度網格
 CANDIDATE_CELL_DEG = 0.3      # 候選船空間索引網格（>MAX_GATE_KM×2）
 MAX_REMATCH_DETAILS = 500
 MAX_RESIDUAL_DETAILS = 1200
-MAX_INFRA_DETAILS = 400
+MAX_INFRA_DETAILS = 400          # 固定設施「重現格中心」清單上限
+MAX_INFRA_POINT_DETAILS = 1200   # 固定設施「逐筆偵測」清單上限（前端卡片判決用）
 
 # 船長交叉驗證
 LENGTH_MISMATCH_FRAC = 0.35   # 相對差 >35%
@@ -458,8 +459,10 @@ def detect_infrastructure_cells(dark_records):
 
 
 def build_infra_filter(dark_records, static_mask, recurring=None):
-    """回傳 (is_infra(rec) -> bool, infra_cells dict)。
+    """回傳 (is_infra(rec) -> reason|None, infra_cells dict)。
 
+    is_infra 回傳命中來源標籤 'recurrence'（歷史重現格）/ 'mask'（靜態遮罩），
+    未命中回傳 None。字串為 truthy、None 為 falsy，故沿用 `if is_infra(r)` 的呼叫。
     recurring: {(ci,cj): dates} 跨執行歷史重現格。正式管線傳入此參數；
     None 時退回單窗 detect_infrastructure_cells（保留既有合成測試路徑）。
     """
@@ -473,7 +476,7 @@ def build_infra_filter(dark_records, static_mask, recurring=None):
 
     def is_infra(rec):
         if infra_cell(rec['lat'], rec['lon']) in infra_cells:
-            return True
+            return 'recurrence'
         if mask_grid:
             base_lat, base_lon = round(rec['lat'], 1), round(rec['lon'], 1)
             for dlat in (-0.1, 0.0, 0.1):
@@ -481,8 +484,8 @@ def build_infra_filter(dark_records, static_mask, recurring=None):
                     key = (round(base_lat + dlat, 1), round(base_lon + dlon, 1))
                     for lat, lon, radius in mask_grid.get(key, ()):
                         if haversine_km(rec['lat'], rec['lon'], lat, lon) <= radius:
-                            return True
-        return False
+                            return 'mask'
+        return None
 
     return is_infra, infra_cells
 
@@ -759,9 +762,13 @@ def run_matching(dark_records, tracks, static_mask=(), profiles=None,
     # 1. 固定設施過濾（歷史重現格 + 靜態遮罩；歷史缺席退回單窗）
     is_infra, infra_cells = build_infra_filter(dark_records, list(static_mask),
                                                recurring=recurring_cells)
-    infra_recs, work_recs = [], []
+    infra_recs, work_recs = [], []   # infra_recs: [(rec, reason)]
     for r in dark_records:
-        (infra_recs if is_infra(r) else work_recs).append(r)
+        reason = is_infra(r)
+        if reason:
+            infra_recs.append((r, reason))
+        else:
+            work_recs.append(r)
 
     # AIS 覆蓋範圍：早於本地軌跡起點的偵測無從驗證
     all_times = [p[0] for tr in tracks.values() for p in (tr['points'][:1] or ())]
@@ -846,6 +853,13 @@ def run_matching(dark_records, tracks, static_mask=(), profiles=None,
                 no_coverage += 1
             residual.append(entry)
 
+    # 固定設施逐筆清單（前端暗船卡片判決用；帶命中來源 reason）
+    infrastructure = [
+        {'lat': r['lat'], 'lon': r['lon'], 'date': r['date'],
+         'detections': r.get('detections', 1), 'reason': reason}
+        for r, reason in infra_recs
+    ][:MAX_INFRA_POINT_DETAILS]
+
     zone_series = build_zone_series(dark_records, residual)
     density = build_density_grid(residual)
 
@@ -902,6 +916,7 @@ def run_matching(dark_records, tracks, static_mask=(), profiles=None,
         'summary': summary,
         'rematched': rematched[:MAX_REMATCH_DETAILS],
         'infrastructure_cells': infra_details[:MAX_INFRA_DETAILS],
+        'infrastructure': infrastructure,
         'residual_dark': residual[:MAX_RESIDUAL_DETAILS],
         'density_grid': density,
         'zone_series': zone_series,
