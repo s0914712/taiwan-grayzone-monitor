@@ -30,7 +30,8 @@ jobs:
           
       - name: Install dependencies
         run: |
-          pip install requests pandas numpy websockets scipy statsmodels pysocks beautifulsoup4
+          # pillow：每日報告頁的 SAR 切片縮圖（缺了只會退回引用 GitHub 原圖，不會失敗）
+          pip install requests pandas numpy websockets scipy statsmodels pysocks beautifulsoup4 pillow
           
       - name: Restore large data cache
         uses: actions/cache/restore@v4
