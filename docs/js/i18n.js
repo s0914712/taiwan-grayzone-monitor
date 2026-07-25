@@ -148,28 +148,15 @@ const i18n = (function () {
         'idx.legend_hotspot':    { zh: '漁撈熱點', en: 'Fishing Hotspots' },
 
         // ── Index 側邊欄 ──
-        'idx.ais_title':         { zh: '📊 AIS 即時統計', en: '📊 AIS Real-time Stats' },
         'idx.total_vessels':     { zh: '總船隻', en: 'Total Vessels' },
-        'idx.gfw_title':         { zh: '🛰️ GFW 衛星監測 (30天)', en: '🛰️ GFW Satellite (30 days)' },
-        'idx.avg_dark':          { zh: '日均暗船數', en: 'Avg Daily Dark' },
-        'idx.trend_7d':          { zh: '7日趨勢', en: '7-day Trend' },
         'idx.chn_hours':         { zh: '中國船時(萬)', en: 'CHN Hours (10k)' },
-        'idx.fishing_hours':     { zh: '漁撈時數(萬)', en: 'Fishing Hrs (10k)' },
-        'idx.data_days':         { zh: '資料天數', en: 'Data Days' },
-        'idx.sparkline':         { zh: '每日 SAR 偵測量', en: 'Daily SAR Detections' },
         'idx.suspicious_title':  { zh: '🔍 可疑船隻（海纜威脅）', en: '🔍 Suspicious (Cable Threat)' },
         'idx.suspicious_wait':   { zh: '累積觀測資料中...', en: 'Accumulating data...' },
         'idx.gov_title':         { zh: '🛡️ 中國公務／科研船追蹤', en: '🛡️ China Gov / Research Vessels' },
         'idx.gov_none':          { zh: '目前海域無公務／科研船', en: 'No gov / research vessels in area' },
-        'idx.identity_title':    { zh: '🔄 AIS 身分變更', en: '🔄 AIS Identity Changes' },
-        'idx.identity_24h':      { zh: '24h 事件', en: '24h Events' },
-        'idx.identity_7d':       { zh: '7d 事件', en: '7d Events' },
-        'idx.identity_vessels':  { zh: '涉及船隻', en: 'Vessels' },
-        'idx.identity_no_events':{ zh: '近期無身分變更事件', en: 'No recent identity changes' },
         'idx.identity_name':     { zh: '船名變更', en: 'Name Change' },
         'idx.identity_callsign': { zh: '呼號變更', en: 'Call Sign Change' },
         'idx.identity_imo':      { zh: 'IMO 變更', en: 'IMO Change' },
-        'idx.identity_multi':    { zh: '多欄位', en: 'Multi-field' },
         'idx.identity_ago_h':    { zh: '{0}小時前', en: '{0}h ago' },
         'idx.identity_ago_d':    { zh: '{0}天前', en: '{0}d ago' },
         'idx.identity_just_now': { zh: '剛才', en: 'Just now' },
@@ -193,7 +180,6 @@ const i18n = (function () {
         'id.th_location':        { zh: '位置', en: 'Location' },
         'id.no_events':          { zh: '尚無身分變更事件紀錄。資料會在 AIS 排程執行後自動累積。', en: 'No identity change events yet. Data will accumulate after AIS scheduled runs.' },
 
-        'idx.recent_title':      { zh: '🚢 近期船隻', en: '🚢 Recent Vessels' },
 
         // ── Index 關於 ──
         'idx.about_purpose':     { zh: '📡 專案目的 Project Purpose', en: '📡 Project Purpose' },

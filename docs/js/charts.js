@@ -19,26 +19,6 @@ const ChartsModule = (function () {
     }
 
     /**
-     * Render sparkline bar chart
-     */
-    function renderSparkline(containerId, dailyData) {
-        const container = document.getElementById(containerId);
-        if (!container || !dailyData || dailyData.length === 0) return;
-
-        const maxVal = Math.max(...dailyData.map(d => d.total_detections));
-
-        container.innerHTML = dailyData.map(d => {
-            const h = maxVal > 0 ? Math.max(2, (d.total_detections / maxVal) * 30) : 2;
-            const darkRatio = d.dark_vessels / Math.max(1, d.total_detections);
-            const color = darkRatio > 0.8 ? 'var(--accent-red)' :
-                darkRatio > 0.5 ? 'var(--accent-orange)' : 'var(--accent-cyan)';
-            const lDet = typeof i18n !== 'undefined' ? i18n.t('chart.detect') : '偵測';
-            const lDark = typeof i18n !== 'undefined' ? i18n.t('chart.dark') : '暗船';
-            return `<div class="sparkline-bar" style="height:${h}px;background:${color}" title="${d.date}: ${d.total_detections} ${lDet}, ${d.dark_vessels} ${lDark}"></div>`;
-        }).join('');
-    }
-
-    /**
      * Render daily dark vessel bar chart
      */
     function renderDailyChart(canvasId, darkByDate) {
@@ -174,78 +154,6 @@ const ChartsModule = (function () {
     }
 
     /**
-     * Update GFW statistics display
-     */
-    function displayGfwStats(vm, elementIds) {
-        const section = document.getElementById(elementIds.section || 'gfwSection');
-        if (section) section.style.display = '';
-
-        const s = vm.summary;
-
-        // Dark vessels
-        const darkEl = document.getElementById(elementIds.darkVessels || 'gfwDarkVessels');
-        if (darkEl) darkEl.textContent = Math.round(s.avg_daily_dark_vessels);
-
-        // Trend
-        const trendPct = s.trend_pct || 0;
-        const trendEl = document.getElementById(elementIds.trend || 'gfwTrend');
-        if (trendEl) {
-            if (trendPct > 0) {
-                trendEl.textContent = '+' + trendPct.toFixed(1) + '%';
-                trendEl.className = 'value trend-up';
-            } else if (trendPct < 0) {
-                trendEl.textContent = trendPct.toFixed(1) + '%';
-                trendEl.className = 'value trend-down';
-            } else {
-                trendEl.textContent = '0%';
-                trendEl.className = 'value trend-flat';
-            }
-        }
-
-        // CHN hours
-        const chnEl = document.getElementById(elementIds.chnHours || 'gfwChnHours');
-        if (chnEl) chnEl.textContent = (s.chn_presence_hours / 10000).toFixed(1);
-
-        // Fishing hours
-        const fishEl = document.getElementById(elementIds.fishingHours || 'gfwFishingHours');
-        if (fishEl) fishEl.textContent = (s.total_fishing_hours / 10000).toFixed(1);
-
-        // Data days
-        const daysEl = document.getElementById(elementIds.dataDays || 'gfwDataDays');
-        if (daysEl) daysEl.textContent = s.total_days;
-
-        // Sparkline
-        if (vm.daily && vm.daily.length > 0) {
-            renderSparkline(elementIds.sparkline || 'gfwSparkline', vm.daily);
-        }
-
-        // Alerts
-        if (vm.alerts && vm.alerts.length > 0) {
-            const alertsEl = document.getElementById(elementIds.alerts || 'gfwAlerts');
-            if (alertsEl) {
-                alertsEl.innerHTML = vm.alerts.map(a => `
-                    <div class="alert-item">⚠️ ${a.message}</div>
-                `).join('');
-            }
-        }
-    }
-
-    /**
-     * Update AIS statistics display
-     */
-    function updateAisStats(stats, elementIds = {}) {
-        const setEl = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = val;
-        };
-
-        setEl(elementIds.total || 'statTotal', stats.total);
-        setEl(elementIds.fishing || 'statFishing', stats.fishing);
-        setEl(elementIds.cargo || 'statCargo', stats.cargo);
-        setEl(elementIds.tanker || 'statTanker', stats.tanker);
-    }
-
-    /**
      * Update overlay cards
      */
     function updateOverlayCards(data, hasAis) {
@@ -340,12 +248,9 @@ const ChartsModule = (function () {
     // Public API
     return {
         formatCompact,
-        renderSparkline,
         renderDailyChart,
         renderTrendChart,
         renderPieChart,
-        displayGfwStats,
-        updateAisStats,
         updateOverlayCards,
         updateZoneCounts,
         destroyChart,
