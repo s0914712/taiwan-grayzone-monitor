@@ -300,28 +300,6 @@
         </div>
 
         <aside class="sidebar">
-            <div class="sidebar-section" id="aisStatsSection">
-                <div class="section-title" data-i18n="idx.ais_title">📊 AIS 即時統計</div>
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <div class="value" id="statTotal">0</div>
-                        <div class="label" data-i18n="idx.total_vessels">總船隻</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="value" id="statFishing">0</div>
-                        <div class="label" data-i18n="vessel.fishing">漁船</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="value" id="statCargo">0</div>
-                        <div class="label" data-i18n="vessel.cargo">貨船</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="value" id="statTanker">0</div>
-                        <div class="label" data-i18n="vessel.tanker">油輪</div>
-                    </div>
-                </div>
-            </div>
-
             <div class="sidebar-section">
                 <div class="section-title"><span data-i18n="idx.suspicious_title">🔍 可疑船隻（海纜威脅偵測）</span><span class="section-count" id="suspiciousCount">0</span></div>
                 <div class="suspicious-list" id="suspiciousList">
@@ -334,37 +312,6 @@
                 <div class="suspicious-list" id="govVesselList"></div>
             </div>
 
-            <div class="sidebar-section" id="gfwSection" style="display:none">
-                <div class="section-title" data-i18n="idx.gfw_title">🛰️ GFW 衛星監測 (30天)</div>
-                <div class="gfw-stats-grid">
-                    <div class="gfw-stat-box">
-                        <div class="value" id="gfwDarkVessels">--</div>
-                        <div class="label" data-i18n="idx.avg_dark">日均暗船數</div>
-                    </div>
-                    <div class="gfw-stat-box">
-                        <div class="value" id="gfwTrend">--</div>
-                        <div class="label" data-i18n="idx.trend_7d">7日趨勢</div>
-                    </div>
-                    <div class="gfw-stat-box warn">
-                        <div class="value" id="gfwChnHours">--</div>
-                        <div class="label" data-i18n="idx.chn_hours">中國船時(萬)</div>
-                    </div>
-                    <div class="gfw-stat-box">
-                        <div class="value" id="gfwFishingHours">--</div>
-                        <div class="label" data-i18n="idx.fishing_hours">漁撈時數(萬)</div>
-                    </div>
-                    <div class="gfw-stat-box">
-                        <div class="value" id="gfwDataDays">--</div>
-                        <div class="label" data-i18n="idx.data_days">資料天數</div>
-                    </div>
-                </div>
-                <div class="sparkline-container">
-                    <div class="sparkline-label" data-i18n="idx.sparkline">每日 SAR 偵測量</div>
-                    <div class="sparkline-bar-row" id="gfwSparkline"></div>
-                </div>
-                <div id="gfwAlerts" style="margin-top:5px"></div>
-            </div>
-
             <div class="sidebar-section" id="cableStatusSection" style="display:none">
                 <div class="section-title" data-i18n="cable.status_title">🔌 海纜狀態</div>
                 <div class="cable-status-summary" id="cableStatusSummary"></div>
@@ -372,39 +319,6 @@
                 <div style="margin-top:6px;font-size:11px;opacity:0.6">
                     <a href="https://moda.gov.tw/major-policies/subseacable/fault/1749" target="_blank" rel="noopener" style="color:#00f5ff" data-i18n="cable.source_link">資料來源：數位發展部</a>
                 </div>
-            </div>
-
-            <div class="sidebar-section" id="identitySection" style="display:none">
-                <div class="section-title" data-i18n="idx.identity_title">🔄 AIS 身分變更</div>
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <div class="value" id="identity24h">0</div>
-                        <div class="label" data-i18n="idx.identity_24h">24h 事件</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="value" id="identity7d">0</div>
-                        <div class="label" data-i18n="idx.identity_7d">7d 事件</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="value" id="identityVessels7d">0</div>
-                        <div class="label" data-i18n="idx.identity_vessels">涉及船隻</div>
-                    </div>
-                </div>
-                <div class="identity-list" id="identityList">
-                    <div style="font-size:12px;color:var(--text-secondary);padding:4px" data-i18n="idx.identity_no_events">近期無身分變更事件</div>
-                </div>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="section-title" data-i18n="idx.recent_title">🚢 近期船隻</div>
-                <div class="vessel-list" id="vesselList"></div>
-            </div>
-
-            <div class="sidebar-section">
-                <a href="blog.html" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--accent-cyan);text-decoration:none;font-family:'JetBrains Mono',monospace">
-                    📖 <span class="lang-zh-only">深度文章（全部 6 篇）→</span>
-                    <span class="lang-en-only">In-Depth Articles (all 6) →</span>
-                </a>
             </div>
 
             <div class="update-info" id="updateInfo" data-i18n="common.update_time">

@@ -88,6 +88,18 @@ def test_verdict_rules():
     assert d.verdict({"found": False}) == "⚪ 無目標（雜訊或低RCS）"
 
 
+def test_verdict_key_rules():
+    # 判定鍵是穩定介面（generate_report.py 的取證區塊、map-vessels.js 都依賴它）
+    assert d.verdict_key({"error": "x"}) == "error"
+    assert d.verdict_key({"saturated": True, "found": True}) == "land"
+    assert d.verdict_key({"found": True, "peak_ratio": 14.0}) == "confirmed"
+    assert d.verdict_key({"found": True, "peak_ratio": 10}) == "confirmed"  # 門檻含等於
+    assert d.verdict_key({"found": True, "peak_ratio": 6.0}) == "weak"
+    assert d.verdict_key({"found": True}) == "weak"       # 無峰值比視為弱目標
+    assert d.verdict_key({"found": False}) == "none"
+    assert set(d.VERDICT_LABELS) == {"error", "land", "confirmed", "weak", "none"}
+
+
 # ── build_todo：篩選 / 去重 / 排序 / 上限 ────────────────────────────────────
 
 def tgt(date, lat=23.0, lon=122.0, covered=True):

@@ -117,9 +117,6 @@ const App = (function () {
                 if (rawVesselList.length > 0) {
                     const result = MapModule.renderVesselsForZoom(rawVesselList, vessels);
                     vessels = result.vessels;
-                    ChartsModule.updateAisStats(result.stats);
-
-                    updateVesselList();
                     updateGovVesselList();
                 }
             });
@@ -211,9 +208,6 @@ const App = (function () {
                 if (rawVesselList.length > 0) {
                     const result = MapModule.renderVesselsForZoom(rawVesselList, vessels);
                     vessels = result.vessels;
-                    ChartsModule.updateAisStats(result.stats);
-
-                    updateVesselList();
                     updateBottomSheetStats(result.stats);
                     updateGovVesselList();
                 }
@@ -358,23 +352,6 @@ const App = (function () {
     }
 
     /**
-     * Update vessel list in sidebar
-     */
-    function updateVesselList() {
-        const list = document.getElementById('vesselList');
-        if (!list) return;
-
-        const recent = Array.from(vessels.values()).slice(0, 12);
-
-        list.innerHTML = recent.map(v => `
-            <div class="vessel-item" onclick="App.focusVessel('${v.mmsi}')">
-                <span style="color:${MapModule.VESSEL_COLORS[v.type_name] || MapModule.VESSEL_COLORS.other}">${(v.name || 'Unknown').substring(0, 14)}</span>
-                <span style="font-size:11px;color:var(--text-secondary)">${v.type_name || '未知'}</span>
-            </div>
-        `).join('');
-    }
-
-    /**
      * Update suspicious vessels list in sidebar
      */
     function updateSuspiciousList() {
@@ -514,90 +491,6 @@ const App = (function () {
     }
 
     /**
-     * Format time-ago string
-     */
-    function timeAgo(isoStr) {
-        try {
-            const diff = Date.now() - new Date(isoStr).getTime();
-            const hours = Math.floor(diff / 3600000);
-            if (hours < 1) return typeof i18n !== 'undefined' ? i18n.t('idx.identity_just_now') : '剛才';
-            if (hours < 24) {
-                const tpl = typeof i18n !== 'undefined' ? i18n.t('idx.identity_ago_h') : '{0}小時前';
-                return tpl.replace('{0}', hours);
-            }
-            const days = Math.floor(hours / 24);
-            const tpl = typeof i18n !== 'undefined' ? i18n.t('idx.identity_ago_d') : '{0}天前';
-            return tpl.replace('{0}', days);
-        } catch (_) {
-            return '--';
-        }
-    }
-
-    /**
-     * Update identity change alerts section
-     */
-    function updateIdentitySection(data) {
-        const section = document.getElementById('identitySection');
-        const list = document.getElementById('identityList');
-        if (!section || !list) return;
-
-        const idData = data.identity_events;
-        if (!idData || !idData.summary) return;
-
-        const summary = idData.summary;
-        if (summary.count_7d === 0 && summary.count_24h === 0) return;
-
-        // Show section
-        section.style.display = '';
-
-        // Update counters
-        const el24h = document.getElementById('identity24h');
-        const el7d = document.getElementById('identity7d');
-        const elVessels = document.getElementById('identityVessels7d');
-        if (el24h) el24h.textContent = summary.count_24h || 0;
-        if (el7d) el7d.textContent = summary.count_7d || 0;
-        if (elVessels) elVessels.textContent = summary.vessels_7d || 0;
-
-        // Use 24h events if available, otherwise 7d
-        const events = (idData.events_24h && idData.events_24h.length > 0)
-            ? idData.events_24h
-            : (idData.events_7d || []);
-
-        if (events.length === 0) return;
-
-        list.innerHTML = events.slice(0, 10).map(ev => {
-            const changes = ev.changes || [];
-            const desc = changes.map(c => {
-                const oldShort = (c.old || '').substring(0, 10);
-                const newShort = (c.new || '').substring(0, 10);
-                return `${oldShort} → ${newShort}`;
-            }).join(', ');
-
-            const multiBadge = ev.multi_field
-                ? `<span class="risk-badge risk-high" style="font-size:9px;margin-left:4px">${typeof i18n !== 'undefined' ? i18n.t('idx.identity_multi') : '多欄位'}</span>`
-                : '';
-
-            const hasCoords = ev.lat != null && ev.lon != null;
-            const onclick = hasCoords ? `onclick="App.focusSuspicious(${ev.lat}, ${ev.lon})"` : '';
-
-            return `
-                <div class="vessel-item" ${onclick} style="cursor:${hasCoords ? 'pointer' : 'default'}">
-                    <div style="flex:1;overflow:hidden">
-                        <div style="font-size:12px;color:var(--accent-cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                            MMSI ${ev.mmsi}${multiBadge}
-                        </div>
-                        <div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                            ${desc}
-                        </div>
-                    </div>
-                    <span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;margin-left:4px">${timeAgo(ev.timestamp)}</span>
-                </div>`;
-        }).join('');
-
-        if (typeof i18n !== 'undefined') i18n.applyAll();
-    }
-
-    /**
      * Load data from JSON
      */
     async function loadData() {
@@ -631,20 +524,6 @@ const App = (function () {
                 });
             }
 
-            // Load GFW satellite monitoring data
-            if (data.vessel_monitoring) {
-                ChartsModule.displayGfwStats(data.vessel_monitoring, {
-                    section: 'gfwSection',
-                    darkVessels: 'gfwDarkVessels',
-                    trend: 'gfwTrend',
-                    chnHours: 'gfwChnHours',
-                    fishingHours: 'gfwFishingHours',
-                    dataDays: 'gfwDataDays',
-                    sparkline: 'gfwSparkline',
-                    alerts: 'gfwAlerts'
-                });
-            }
-
             // Plot dark vessels on map
             if (data.dark_vessels && data.dark_vessels.regions) {
                 MapModule.displayDarkVessels(data.dark_vessels);
@@ -666,9 +545,6 @@ const App = (function () {
                 }
             }
 
-            // Load identity change alerts
-            updateIdentitySection(data);
-
             // Load AIS real-time vessels (zoom-based: clusters when zoomed out, details when zoomed in)
             const hasAis = data.ais_snapshot && data.ais_snapshot.vessels && data.ais_snapshot.vessels.length > 0;
             console.log('[Monitor] AIS check:', hasAis, 'vessels:', data.ais_snapshot?.vessels?.length || 0);
@@ -678,20 +554,14 @@ const App = (function () {
                 vessels = result.vessels;
                 console.log('[Monitor] AIS rendered:', result.stats);
 
-                ChartsModule.updateAisStats(result.stats);
-
                 // White-circle markers for gov/research vessels (always visible)
                 MapModule.displayGovVessels(rawVesselList);
 
-                updateVesselList();
                 updateBottomSheetStats(result.stats);
                 updateGovVesselList();
 
                 setDataStatus(typeof i18n !== 'undefined' ? i18n.t('app.ais_sat_loaded') : '✅ AIS + 衛星資料已載入', true);
             } else if (data.vessel_monitoring) {
-                const aisSection = document.getElementById('aisStatsSection');
-                if (aisSection) aisSection.style.display = 'none';
-
                 ChartsModule.updateOverlayCards(data, false);
                 setDataStatus(typeof i18n !== 'undefined' ? i18n.t('app.sat_loaded') : '🛰️ 衛星資料已載入', true);
             } else {

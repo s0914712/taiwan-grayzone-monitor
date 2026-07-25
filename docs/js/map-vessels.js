@@ -370,7 +370,7 @@ var MapVesselsFactory = function(map, layers) {
             .catch(function() {});
     }
 
-    // Mirrors verdict() in src/darkship_batch.py
+    // Mirrors verdict_key() in src/darkship_batch.py
     function chipVerdictKey(r) {
         if (r.error) return null;
         if (r.saturated) return 'dv.chip_land';

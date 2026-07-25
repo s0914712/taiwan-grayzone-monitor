@@ -182,14 +182,33 @@ def run_one(fetch_script, target, chips_dir, size_km=None):
     return record, is_failure
 
 
-def verdict(r):
+CONFIRMED_PEAK_RATIO = 10
+
+# 判定鍵 → 中文標籤。鍵是給其他消費者用的穩定識別字串
+# （src/generate_report.py 的每日報告取證區塊、docs/js/map-vessels.js
+#  的 chipVerdictKey()），標籤只在本檔的 Markdown 報告出現。
+VERDICT_LABELS = {
+    "error": "❌ 失敗",
+    "land": "⚠️ 疑似陸地/固定結構",
+    "confirmed": "✅ 確認實體目標",
+    "weak": "🟡 弱目標",
+    "none": "⚪ 無目標（雜訊或低RCS）",
+}
+
+
+def verdict_key(r):
+    """切片結果 → 判定鍵（純函式）。"""
     if r.get("error"):
-        return "❌ 失敗"
+        return "error"
     if r.get("saturated"):
-        return "⚠️ 疑似陸地/固定結構"
+        return "land"
     if r.get("found"):
-        return "✅ 確認實體目標" if (r.get("peak_ratio") or 0) >= 10 else "🟡 弱目標"
-    return "⚪ 無目標（雜訊或低RCS）"
+        return "confirmed" if (r.get("peak_ratio") or 0) >= CONFIRMED_PEAK_RATIO else "weak"
+    return "none"
+
+
+def verdict(r):
+    return VERDICT_LABELS[verdict_key(r)]
 
 
 def write_report(report_path, reports_dir, run_summary, match_summary,
