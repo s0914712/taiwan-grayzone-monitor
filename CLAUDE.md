@@ -11,7 +11,7 @@ Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates A
 - `docs/` — Frontend (GitHub Pages root). HTML, CSS, JS, and JSON data files
 - `src/` — Python data pipeline scripts (fetch, analyze, generate)
 - `data/` — Working/intermediate data (not in the Pages artifact). `data/vessel_routes/{mmsi}.json` is gitignored on main and lives on the single-commit **`vessel-data` branch** (CI regenerates + force-pushes it each run); the frontend fetches routes via raw.githubusercontent.com/.../vessel-data/ — 27k route files in main history bloated the repo to 200MB+ and made Pages deployments time out
-- `.github/workflows/` — 4 CI workflows (AIS every 2h, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, darkship SAR forensics daily 22:00 UTC, Threads weekly)
+- `.github/workflows/` — 5 CI workflows (AIS every 2h, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, darkship SAR forensics daily 22:00 UTC, Threads weekly, LINE daily push 00:00 UTC = 08:00 TW)
 - `chips/` + `reports/` — darkship SAR forensics outputs (chip PNGs, `chips/results.json` cumulative log, daily Markdown reports), committed by `darkship-cron.yml`; **not** in the Pages artifact but public in the repo — a deliberate trade-off chosen when the cron was set up. The public daily report page (`docs/reports/<date>.html`, `generate_report.py`) surfaces this work: SAR×AIS 比對成效 funnel + the latest run's chip images (520px thumbnails in `docs/reports/chips/`, 14-day mtime rotation, `<img onerror>` falls back to the raw.githubusercontent original) with verdict badges
 
 ## Tech Stack
@@ -286,6 +286,8 @@ python3 src/extract_all_routes.py      # Batch extract vessel routes (tier-1 + t
 python3 src/lookup_itu_mars.py <MMSI>  # Single/batch ITU MARS lookup
 python3 src/generate_summary.py --mode daily   # Generate report
 python3 src/publish_threads.py --dry-run       # Test Threads post
+python3 src/SendMessage.py --dry-run           # Test LINE daily push (text + 2 maps)
+python3 src/gov_daily_activity.py -o out.png   # 昨日海警／公務船動態摘要 + 動態圖
 ```
 
 ## Required Secrets (GitHub Actions)
@@ -293,7 +295,8 @@ python3 src/publish_threads.py --dry-run       # Test Threads post
 - `EARTHDATA_TOKEN` — NASA Earthdata Login user token (optional): passed as Bearer to CMR by `fetch_s1_passes.py` when querying real Sentinel-1 pass times. CMR metadata search also works anonymously, so the pipeline degrades gracefully if unset/expired (EDL tokens expire — regenerate at urs.earthdata.nasa.gov). When CMR fails entirely, `fetch_s1_passes.py` falls back to the CDSE OData catalogue (anonymous)
 - `CDSE_ACCESS_KEY` / `CDSE_SECRET_KEY` — Copernicus Data Space (CDSE) S3 keys (optional, **not used by CI**): for the local evidence tool `src/fetch_sar_chip.py`, which pulls a Sentinel-1 GRD image chip around a residual-dark detection via S3 range reads (a few MB, not the 1GB scene) for manual confirmation + rough target-length estimate. Generate at eodata-s3keysmanager.dataspace.copernicus.eu
 - `THREADS_USER_ID`, `THREADS_ACCESS_TOKEN`, `THREADS_APP_SECRET` — Threads posting (optional)
-- `GEMINI_API_KEY` — Google Gemini LLM captions for Threads (optional)
+- `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID` — LINE Bot daily push (`LINEBot.yml` / `SendMessage.py`; optional). Images need the workflow's `GITHUB_TOKEN` (uploaded to `data/charts/` via the Contents API to get public raw URLs)
+- `GEMINI_API_KEY` — Google Gemini LLM captions for Threads + LINE daily report (optional; both fall back to fixed templates)
 
 ## Architecture Notes
 - No build step. Frontend is plain static files.
