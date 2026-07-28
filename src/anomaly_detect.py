@@ -57,6 +57,34 @@ def _parse_ts(ts):
 
 
 
+def resample_hourly(timestamps, values):
+    """把任意解析度的序列重採樣成逐時（每小時取中位數）。
+
+    IODA 的訊號不是逐時的：bgp / merit-nt 是 5 分鐘、ping-slash24 是 10 分鐘。
+    直接餵進偵測有兩個問題：
+      1. `detect_anomalies` 以「一個點＝一小時」算持續時數，嚴重度會差 12 倍
+      2. 連續 2 點的門檻在 5 分鐘解析度下只有 10 分鐘，太過敏感（實測澎湖的
+         darknet 訊號因此一週噴出 12 件假異常）
+    取中位數而非平均：低計數訊號偶爾的尖刺不該把整小時拉走。
+
+    代價是失去小時內的解析度 —— 海纜中斷是數小時等級的事件，可以接受。
+    """
+    buckets = {}
+    for ts, v in zip(timestamps, values):
+        dt = _parse_ts(ts)
+        if dt is None:
+            continue
+        hour = dt.astimezone(timezone.utc).replace(minute=0, second=0, microsecond=0)
+        buckets.setdefault(hour, []).append(v)
+
+    out_ts, out_vals = [], []
+    for hour in sorted(buckets):
+        vals = [v for v in buckets[hour] if v is not None]
+        out_ts.append(hour.isoformat().replace("+00:00", "Z"))
+        out_vals.append(statistics.median(vals) if vals else None)
+    return out_ts, out_vals
+
+
 def mask_reporting_gaps(values):
     """把「剛好等於 0」的點視為缺值（回傳新 list）。
 
@@ -131,7 +159,8 @@ def effective_scale(residuals, baseline, floor_ratio=SCALE_FLOOR_RATIO):
 
 def detect_anomalies(timestamps, values, baseline=None, direction="drop",
                      z_threshold=Z_THRESHOLD, min_consecutive=MIN_CONSECUTIVE,
-                     min_deviation_pct=MIN_DEVIATION_PCT):
+                     min_deviation_pct=MIN_DEVIATION_PCT,
+                     min_baseline_level=0.0):
     """偵測相對季節基線的持續性偏離。
 
     direction='drop' 抓下掉（流量），'spike' 抓上衝（延遲）。
@@ -155,6 +184,10 @@ def detect_anomalies(timestamps, values, baseline=None, direction="drop",
         z = r / scale
         dev_pct = (r / b) * 100.0
         # 方向要對、z 要夠大、相對幅度也要夠大（避免小基數的假警報）
+        # 低計數守衛：基線只有 1~2 的序列上，百分比毫無意義（2→1 就是 -50%）。
+        # 實測澎湖的 darknet 背景流量值域就在個位數，是假異常的主要來源。
+        if abs(b) < min_baseline_level:
+            continue
         if sign * z >= z_threshold and sign * dev_pct >= min_deviation_pct:
             flagged.append({"index": i, "timestamp": timestamps[i], "value": v,
                             "baseline": b, "z": round(z, 2),
@@ -207,17 +240,21 @@ def classify_severity(event):
 
 
 
-def analyze_values(timestamps, values, direction="drop"):
+def analyze_values(timestamps, values, direction="drop", min_baseline_level=0.0,
+                   resample=False):
     """對一條序列跑完整偵測流程，回傳含基線與事件的 dict（來源無關）。
 
     Cloudflare Radar 與 IODA 兩條線都走這裡，判讀才不會各自漂移。
     `points` 記錄偵測實際用了幾點，`reporting_gaps` 記錄遮蔽掉幾個 0 值。
     """
+    if resample:
+        timestamps, values = resample_hourly(timestamps, values)
     masked = mask_reporting_gaps(values)
     gaps = sum(1 for a, b in zip(values, masked) if a is not None and b is None)
     baseline = hour_of_week_baseline(timestamps, masked)
     events = detect_anomalies(timestamps, masked, baseline=baseline,
-                              direction=direction)
+                              direction=direction,
+                              min_baseline_level=min_baseline_level)
     covered = sum(1 for b in baseline if b is not None)
     return {
         "direction": direction,

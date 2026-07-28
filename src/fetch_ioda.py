@@ -65,12 +65,18 @@ ISLANDS = [
 ]
 
 # 三種獨立訊號。全部是「越低越糟」，所以 direction 一律 drop。
+#
+# `min_level`：低計數守衛。實測 IODA 對離島這種小區域，darknet 背景流量的值域
+# 就在個位數（澎湖首點值＝1.0），百分比門檻在這種尺度下毫無意義（2→1 就是
+# -50%），一週噴出 12 件假異常。BGP 前綴數（400~500）與可達 /24 數（50~90）
+# 則有足夠的量級可以用相對變化判讀。
 DATASOURCES = [
-    {"id": "bgp", "label_zh": "BGP 可見前綴", "label_en": "BGP visible prefixes"},
+    {"id": "bgp", "label_zh": "BGP 可見前綴", "label_en": "BGP visible prefixes",
+     "min_level": 20},
     {"id": "ping-slash24", "label_zh": "主動探測可達 /24",
-     "label_en": "Active probing (/24 reachable)"},
+     "label_en": "Active probing (/24 reachable)", "min_level": 10},
     {"id": "merit-nt", "label_zh": "Darknet 背景流量",
-     "label_en": "Darknet background traffic"},
+     "label_en": "Darknet background traffic", "min_level": 20},
 ]
 
 # 離島異常 × 船隻關聯：只看該島周邊這個半徑內的海纜旁滯留船隻。
@@ -303,7 +309,12 @@ def main():
                                dump=args.dump_raw)
             if sig is None:
                 continue
-            out = analyze_values(sig["timestamps"], sig["values"], direction="drop")
+            # IODA 的原始解析度是 5~10 分鐘（不是逐時），必須重採樣：
+            # 否則「一個點＝一小時」的持續時數會差 12 倍，連續 2 點的門檻也
+            # 只剩 10 分鐘，過於敏感。
+            out = analyze_values(sig["timestamps"], sig["values"], direction="drop",
+                                 min_baseline_level=ds.get("min_level", 0),
+                                 resample=True)
             out.update({"datasource": ds["id"],
                         "label_zh": ds["label_zh"], "label_en": ds["label_en"]})
             series.append(out)
