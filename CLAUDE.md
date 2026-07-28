@@ -11,7 +11,7 @@ Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates A
 - `docs/` — Frontend (GitHub Pages root). HTML, CSS, JS, and JSON data files
 - `src/` — Python data pipeline scripts (fetch, analyze, generate)
 - `data/` — Working/intermediate data (not in the Pages artifact). `data/vessel_routes/{mmsi}.json` is gitignored on main and lives on the single-commit **`vessel-data` branch** (CI regenerates + force-pushes it each run); the frontend fetches routes via raw.githubusercontent.com/.../vessel-data/ — 27k route files in main history bloated the repo to 200MB+ and made Pages deployments time out
-- `.github/workflows/` — 6 CI workflows (AIS hourly daytime / 2h overnight, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, **Cloudflare Radar traffic-anomaly scan every 2h**, darkship SAR forensics daily 22:00 UTC, Threads weekly, LINE daily push 00:00 UTC = 08:00 TW). All data workflows share the `data-pipeline` concurrency group — they commit to main and would otherwise race on rebase
+- `.github/workflows/` — 6 CI workflows (AIS hourly daytime / 2h overnight, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, **網路異常掃描 every 2h（Cloudflare Radar 國家級 + IODA 離島縣市級）**, darkship SAR forensics daily 22:00 UTC, Threads weekly, LINE daily push 00:00 UTC = 08:00 TW). All data workflows share the `data-pipeline` concurrency group — they commit to main and would otherwise race on rebase
 - `chips/` + `reports/` — darkship SAR forensics outputs (chip PNGs, `chips/results.json` cumulative log, daily Markdown reports), committed by `darkship-cron.yml`; **not** in the Pages artifact but public in the repo — a deliberate trade-off chosen when the cron was set up. The public daily report page (`docs/reports/<date>.html`, `generate_report.py`) surfaces this work: SAR×AIS 比對成效 funnel + the latest run's chip images (520px thumbnails in `docs/reports/chips/`, 14-day mtime rotation, `<img onerror>` falls back to the raw.githubusercontent original) with verdict badges
 
 ## Tech Stack
@@ -30,6 +30,7 @@ GitHub Actions → src/fetch_ais_data.py (AIS via SOCKS5 proxy)
               → src/exercise_prediction.py (PLA sortie correlation)
               → src/extract_all_routes.py (per-vessel route JSONs)
               → src/fetch_cloudflare_radar.py (網路流量異常 × 海纜旁滯留船隻)
+              → src/fetch_ioda.py (金門/馬祖/澎湖離島可達性，三來源互相印證)
               → src/generate_dashboard.py (consolidate → docs/data.json)
               → GitHub Pages deploy
 ```
