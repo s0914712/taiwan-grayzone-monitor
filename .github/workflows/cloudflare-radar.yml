@@ -1,4 +1,4 @@
-name: Network Traffic Anomaly (Cloudflare Radar)
+name: Network Anomaly Scan (Cloudflare Radar + IODA)
 
 on:
   schedule:
@@ -53,27 +53,33 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLAUDEFLAREACCOUNTID }}
         run: python src/fetch_cloudflare_radar.py
 
+      # IODA 給的是**離島縣市級**的可達性訊號（金門／馬祖／澎湖），補上 Cloudflare
+      # Radar 給不了的粒度——Radar 的 location 只吃 alpha-2 國碼。不需要任何憑證，
+      # 因此與 Cloudflare token 的 gate 無關，獨立執行。
+      - name: Detect island reachability anomalies (IODA)
+        run: python src/fetch_ioda.py
+        continue-on-error: true
+
       # 前端 network-traffic.html 直接讀 docs/cf_radar.json（data.json 內嵌的
       # network_anomalies 已剝掉原始陣列，畫不了圖）。data.json 的摘要則由下一次
       # update-ais / update-data 執行 generate_dashboard 時一併刷新。
       - name: Copy to docs for GitHub Pages
-        if: steps.gate.outputs.enabled == 'true'
         run: |
-          [ -f data/cf_radar.json ] || { echo "無輸出檔，跳過"; exit 0; }
-          cp data/cf_radar.json docs/cf_radar.json
-          ls -l docs/cf_radar.json
+          for f in cf_radar ioda; do
+            [ -f "data/$f.json" ] && cp "data/$f.json" "docs/$f.json" && ls -l "docs/$f.json"
+          done
+          true
 
       # 只提交 docs/ 那一份：這個檔每 2 小時重寫一次，兩份會讓 repo 的成長速度
       # 直接翻倍（本專案已經因為 vessel_routes 被撐到 200MB+ 過）。
       # generate_dashboard 找不到 data/cf_radar.json 時會退回讀 docs/ 這份。
       - name: Commit and push changes
-        if: steps.gate.outputs.enabled == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add docs/cf_radar.json
+          git add docs/cf_radar.json docs/ioda.json 2>/dev/null || true
           git diff --staged --quiet && { echo "無變更"; exit 0; }
-          git commit -m "🌐 Network traffic anomaly scan $(date -u +'%Y-%m-%d %H:%M') UTC"
+          git commit -m "🌐 Network anomaly scan $(date -u +'%Y-%m-%d %H:%M') UTC"
           git pull --rebase -X theirs origin main || {
             echo "⚠️ Rebase 失敗，改用 merge 策略"
             git rebase --abort || true
