@@ -137,7 +137,13 @@ def find_gov_routes():
     return vessels
 
 
-def plot_tracks(vessels, output_path):
+def plot_tracks(vessels, output_path, title=None, max_labels=None, pad=0.5):
+    """繪製公務/關注船航跡圖。
+
+    title: 覆寫資訊框第一行（例如單日動態圖標明日期），預設為 14 天歷史航跡標題。
+    max_labels: 每類別最多標註船名的艘數，預設 MAX_LABELS_PER_CATEGORY。
+    pad: 視野邊界留白（度）。船數少的單日圖留白大一點，船名標註才不會被切掉。
+    """
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -157,7 +163,6 @@ def plot_tracks(vessels, output_path):
 
     all_lats = [p['lat'] for v in vessels for p in v['track']]
     all_lons = [p['lon'] for v in vessels for p in v['track']]
-    pad = 0.5
     lat_min, lat_max = min(all_lats) - pad, max(all_lats) + pad
     lon_min, lon_max = min(all_lons) - pad, max(all_lons) + pad
 
@@ -193,11 +198,12 @@ def plot_tracks(vessels, output_path):
     stroke = [pe.withStroke(linewidth=2.2, foreground='#0a1628')]
 
     # 每類別依軌跡點數取前 N 艘標註船名（vessels 已依類別+點數排序）
+    label_quota = MAX_LABELS_PER_CATEGORY if max_labels is None else max_labels
     label_counts = {}
     labeled = set()
     for v in vessels:
         c = v['category']
-        if label_counts.get(c, 0) < MAX_LABELS_PER_CATEGORY:
+        if label_counts.get(c, 0) < label_quota:
             label_counts[c] = label_counts.get(c, 0) + 1
             labeled.add(id(v))
 
@@ -231,8 +237,8 @@ def plot_tracks(vessels, output_path):
     counts = {}
     for v in vessels:
         counts[v['category']] = counts.get(v['category'], 0) + 1
-    info_lines = [
-        f"China Gov / Special-interest Vessel Tracks  ({len(vessels)} vessels)"]
+    info_lines = [title or
+                  f"China Gov / Special-interest Vessel Tracks  ({len(vessels)} vessels)"]
     if spans:
         info_lines.append(f"Track window: {min(spans)[:10]} → {max(spans)[:10]}")
     summary = "  ".join(f"{CATEGORY_LABEL[c].split(' (')[0]}: {counts[c]}"
