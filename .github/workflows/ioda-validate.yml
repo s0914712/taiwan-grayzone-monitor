@@ -1,0 +1,186 @@
+name: IODA 離島監測驗證（手動）
+
+# 一鍵驗證 src/fetch_ioda.py 能不能真的跟 IODA 對上。
+#
+# 為什麼是手動而不是排程：正式的離島掃描已經掛在 cloudflare-radar.yml 裡（每 2
+# 小時跟 Cloudflare Radar 一起跑），這支只是**驗證用**，按了才跑，而且全程
+# 不 commit 任何東西，重複按也不會弄髒 repo。
+#
+# 結果會整理成表格顯示在 run 頁面的 Summary（不用翻 log），
+# data/ioda.json 會存成 artifact 供下載。
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: '抓幾天資料（驗證用 2~7 天就夠，正式跑是 28）'
+        required: false
+        default: '7'
+      dump_raw:
+        description: '印出 IODA 的原始回應（形狀對不上時打開）'
+        type: boolean
+        required: false
+        default: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安裝套件
+        run: pip install requests pytest
+
+      # ── 步驟 1：region 代碼能不能查到 ──────────────────────────────────
+      - name: 1️⃣ 解析三個離島的 region 代碼
+        id: regions
+        run: |
+          python - <<'PY' | tee /tmp/step1.txt
+          import sys; sys.path.insert(0, 'src')
+          import requests
+          from fetch_ioda import ISLANDS, resolve_region_code
+          s = requests.Session()
+          ok = 0
+          for spec in ISLANDS:
+              code = resolve_region_code(spec['search'], s)
+              print(f"{spec['label_zh']:<12} search={spec['search']:<12} → code={code}")
+              ok += 1 if code else 0
+          print(f"RESULT {ok}/{len(ISLANDS)}")
+          PY
+          grep -q "RESULT 3/3" /tmp/step1.txt && echo "pass=true" >> "$GITHUB_OUTPUT" || echo "pass=false" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      # ── 步驟 2：訊號端點的原始回應長什麼樣 ────────────────────────────
+      # 這是唯一沒被驗證過的部分 —— 開發沙箱連不上 IODA，parse_signal_payload
+      # 是照文件猜的形狀寫的多層容錯。這一步把真實回應印出來。
+      - name: 2️⃣ 訊號端點原始回應（形狀確認）
+        if: ${{ inputs.dump_raw }}
+        run: |
+          python - <<'PY' | tee /tmp/step2.txt
+          import sys, json; sys.path.insert(0, 'src')
+          import requests
+          from datetime import datetime, timedelta, timezone
+          from fetch_ioda import IODA_API, _ts
+          end = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+          start = end - timedelta(days=2)
+          # 用馬祖（連江 4210）+ 主動探測當樣本
+          url = f"{IODA_API}/signals/raw/region/4210"
+          r = requests.get(url, params={"from": _ts(start), "until": _ts(end),
+                                        "datasource": "ping-slash24"}, timeout=45)
+          print("URL   :", r.url)
+          print("STATUS:", r.status_code)
+          body = r.text
+          print("BODY  :", body[:1500])
+          print("..." if len(body) > 1500 else "")
+          PY
+        continue-on-error: true
+
+      # ── 步驟 3：解析器吃不吃得下真實回應 ──────────────────────────────
+      - name: 3️⃣ 解析器對真實回應的結果
+        id: parse
+        run: |
+          python - <<'PY' | tee /tmp/step3.txt
+          import sys; sys.path.insert(0, 'src')
+          import requests
+          from datetime import datetime, timedelta, timezone
+          from fetch_ioda import DATASOURCES, ISLANDS, fetch_signal, resolve_region_code
+          end = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+          start = end - timedelta(days=2)
+          s = requests.Session()
+          ok = total = 0
+          for spec in ISLANDS:
+              code = resolve_region_code(spec['search'], s)
+              if not code:
+                  continue
+              for ds in DATASOURCES:
+                  total += 1
+                  sig = fetch_signal(code, ds['id'], start, end, s)
+                  if sig and sig['timestamps']:
+                      n = len(sig['timestamps'])
+                      nn = sum(1 for v in sig['values'] if v is not None)
+                      print(f"✅ {spec['label_zh']:<12} {ds['id']:<13} {n} 點（非空 {nn}）"
+                            f" 首點={sig['timestamps'][0]} 值={sig['values'][0]}")
+                      ok += 1
+                  else:
+                      print(f"❌ {spec['label_zh']:<12} {ds['id']:<13} 解析不出序列")
+          print(f"RESULT {ok}/{total}")
+          PY
+          if grep -qE "RESULT ([1-9][0-9]*)/" /tmp/step3.txt && ! grep -q "RESULT 0/" /tmp/step3.txt; then
+            echo "pass=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pass=false" >> "$GITHUB_OUTPUT"
+          fi
+        continue-on-error: true
+
+      # ── 步驟 4：完整跑一次（含船隻關聯）────────────────────────────────
+      - name: 4️⃣ 完整執行 fetch_ioda.py
+        id: full
+        run: |
+          python src/fetch_ioda.py --days ${{ inputs.days }} 2>&1 | tee /tmp/step4.txt
+          test -f data/ioda.json && echo "pass=true" >> "$GITHUB_OUTPUT" || echo "pass=false" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      # ── 步驟 5：單元測試 ──────────────────────────────────────────────
+      - name: 5️⃣ 單元測試
+        id: tests
+        run: |
+          # 注意：pytest -q 失敗時的結尾是「1 failed, 43 passed」，也含 passed，
+          # 所以不能只 grep passed —— 直接用 exit code 判定
+          set +e
+          python -m pytest tests/test_fetch_ioda.py tests/test_cloudflare_radar.py -q 2>&1 | tee /tmp/step5.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          [ "$rc" = "0" ] && echo "pass=true" >> "$GITHUB_OUTPUT" || echo "pass=false" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      # ── 整理成 Summary（不用翻 log）──────────────────────────────────
+      - name: 📋 產生結果摘要
+        if: always()
+        run: |
+          {
+            echo "## IODA 離島監測驗證結果"
+            echo ""
+            echo "| 步驟 | 結果 |"
+            echo "|---|---|"
+            echo "| 1️⃣ region 代碼解析 | ${{ steps.regions.outputs.pass == 'true' && '✅ 三個離島都查到' || '❌ 失敗' }} |"
+            echo "| 3️⃣ 訊號序列解析 | ${{ steps.parse.outputs.pass == 'true' && '✅ 解析得出序列' || '❌ 形狀對不上' }} |"
+            echo "| 4️⃣ 完整執行 | ${{ steps.full.outputs.pass == 'true' && '✅ 產出 ioda.json' || '❌ 失敗' }} |"
+            echo "| 5️⃣ 單元測試 | ${{ steps.tests.outputs.pass == 'true' && '✅ 通過' || '❌ 失敗' }} |"
+            echo ""
+            echo "### 1️⃣ region 代碼"
+            echo '```'; cat /tmp/step1.txt 2>/dev/null || echo "(無)"; echo '```'
+            echo "### 3️⃣ 各訊號解析結果"
+            echo '```'; cat /tmp/step3.txt 2>/dev/null || echo "(無)"; echo '```'
+            echo "### 4️⃣ 完整執行輸出"
+            echo '```'; tail -40 /tmp/step4.txt 2>/dev/null || echo "(無)"; echo '```'
+            if [ "${{ steps.parse.outputs.pass }}" != "true" ]; then
+              echo "### ⚠️ 訊號形狀對不上 — 原始回應（把這段貼回對話）"
+              echo '```json'; sed -n 's/^BODY  ://p' /tmp/step2.txt 2>/dev/null | head -c 3000; echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 上傳 ioda.json 供下載
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ioda-json
+          path: data/ioda.json
+          if-no-files-found: warn
+
+      # 任一關鍵步驟失敗就讓整個 run 顯示紅燈，一眼看得出來
+      - name: 判定整體結果
+        if: always()
+        run: |
+          fail=0
+          for s in "${{ steps.regions.outputs.pass }}" "${{ steps.parse.outputs.pass }}" \
+                   "${{ steps.full.outputs.pass }}" "${{ steps.tests.outputs.pass }}"; do
+            [ "$s" = "true" ] || fail=1
+          done
+          [ "$fail" = "0" ] && echo "✅ 全部通過" || {
+            echo "::error::有步驟未通過 — 詳見本次 run 的 Summary"; exit 1; }
