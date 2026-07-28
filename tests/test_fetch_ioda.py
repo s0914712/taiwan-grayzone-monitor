@@ -214,3 +214,97 @@ def test_islands_config_covers_the_three_target_counties():
 
 def test_datasources_are_the_three_independent_signals():
     assert [d["id"] for d in M.DATASOURCES] == ["bgp", "ping-slash24", "merit-nt"]
+
+
+# ── 逐時重採樣與低計數守衛（實測 IODA 資料暴露出來的問題）─────────────────
+
+from anomaly_detect import detect_anomalies, resample_hourly  # noqa: E402
+
+
+def test_resample_hourly_collapses_five_minute_data():
+    """IODA 的 bgp/merit-nt 是 5 分鐘、ping-slash24 是 10 分鐘，不是逐時。"""
+    start = datetime(2026, 7, 1, tzinfo=UTC)
+    ts = [(start + timedelta(minutes=5 * i)).isoformat().replace("+00:00", "Z")
+          for i in range(24)]                      # 2 小時 × 12 點
+    vals = [10.0] * 12 + [20.0] * 12
+    out_ts, out_vals = resample_hourly(ts, vals)
+    assert len(out_ts) == 2
+    assert out_ts[0] == "2026-07-01T00:00:00Z"
+    assert out_vals == [10.0, 20.0]
+
+
+def test_resample_takes_median_not_mean():
+    """低計數訊號偶爾的尖刺不該把整小時拉走。"""
+    start = datetime(2026, 7, 1, tzinfo=UTC)
+    ts = [(start + timedelta(minutes=5 * i)).isoformat().replace("+00:00", "Z")
+          for i in range(12)]
+    vals = [10.0] * 11 + [1000.0]                  # 一個尖刺
+    _, out = resample_hourly(ts, vals)
+    assert out == [10.0]
+
+
+def test_resample_hour_with_only_gaps_becomes_none():
+    start = datetime(2026, 7, 1, tzinfo=UTC)
+    ts = [(start + timedelta(minutes=5 * i)).isoformat().replace("+00:00", "Z")
+          for i in range(12)]
+    _, out = resample_hourly(ts, [None] * 12)
+    assert out == [None]
+
+
+def test_resample_fixes_duration_semantics():
+    """重採樣前『4 點』被當成 4 小時，實際只有 20 分鐘 —— 嚴重度差 12 倍。"""
+    import math
+    start = datetime(2026, 7, 1, tzinfo=UTC)
+    ts, vals = [], []
+    for i in range(28 * 24 * 12):                  # 28 天的 5 分鐘資料
+        d = start + timedelta(minutes=5 * i)
+        v = 100 + 20 * math.sin((d.hour - 3) / 24 * 2 * math.pi)
+        vals.append(v)
+        ts.append(d.isoformat().replace("+00:00", "Z"))
+    out = analyze_values(ts, vals, direction="drop", resample=True)
+    assert out["points"] == 28 * 24               # 已收斂成逐時
+    assert out["anomalies"] == []
+
+
+def test_low_count_guard_suppresses_percentage_noise():
+    """澎湖的 darknet 值域在個位數，2→1 就是 -50%，一週噴出 12 件假異常。
+
+    重點是**連續**幾個時段都掉到 1 —— 孤立的單點本來就會被 min_consecutive
+    擋掉，真正漏過去的是低計數下的連續小波動。
+    """
+    start = datetime(2026, 7, 1, tzinfo=UTC)
+    ts, vals = [], []
+    for h in range(28 * 24):
+        d = start + timedelta(hours=h)
+        ts.append(d.isoformat().replace("+00:00", "Z"))
+        # 每 24 小時有連續 3 小時掉到 1（背景輻射流量本來就是這樣跳動）
+        vals.append(1.0 if (h % 24) in (3, 4, 5) else 2.0)
+    baseline = [2.0] * len(vals)
+    noisy = detect_anomalies(ts, vals, baseline=baseline, min_baseline_level=0)
+    guarded = detect_anomalies(ts, vals, baseline=baseline, min_baseline_level=20)
+    assert noisy, "沒有守衛時應該噴出假異常（重現實測狀況）"
+    assert all(e["max_deviation_pct"] == -50.0 for e in noisy)
+    assert guarded == [], "有守衛時應該全部濾掉"
+
+
+def test_low_count_guard_does_not_suppress_real_signal_at_scale():
+    """BGP 前綴數在 400~500，量級足夠，守衛不該擋掉真事件。"""
+    import math
+    start = datetime(2026, 7, 1, tzinfo=UTC)
+    ts, vals = [], []
+    for h in range(28 * 24):
+        d = start + timedelta(hours=h)
+        ts.append(d.isoformat().replace("+00:00", "Z"))
+        vals.append(450 + 20 * math.sin((d.hour - 3) / 24 * 2 * math.pi))
+    for i in range(20 * 24, 20 * 24 + 5):
+        vals[i] *= 0.4                             # 掉 60%
+    out = analyze_values(ts, vals, direction="drop", min_baseline_level=20)
+    assert len(out["anomalies"]) == 1
+    assert out["anomalies"][0]["severity"] == "critical"
+
+
+def test_datasources_carry_min_level_floors():
+    floors = {d["id"]: d.get("min_level") for d in M.DATASOURCES}
+    assert floors["merit-nt"] >= 20      # 個位數值域，必須擋
+    assert floors["bgp"] >= 10
+    assert all(v is not None for v in floors.values())
