@@ -383,6 +383,12 @@ def main():
         shutil.copy2(sar_ais_path, DOCS_DIR / 'sar_ais_matches.json')
         print(f"🎯 已複製 SAR×AIS 重比對結果至 docs/sar_ais_matches.json")
 
+    # 複製流量異常全檔至 docs（network-traffic.html 要畫時間序列，
+    # 而 data.json 裡的 network_anomalies 已把原始陣列剝掉）
+    if cf_radar_path.exists():
+        shutil.copy2(cf_radar_path, DOCS_DIR / 'cf_radar.json')
+        print(f"🌐 已複製流量異常偵測結果至 docs/cf_radar.json")
+
     # 複製 SAR 取證清單至 docs（報告頁「取證清單」面板）
     worklist_path = DATA_DIR / 'sar_chip_worklist.json'
     if worklist_path.exists():
