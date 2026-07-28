@@ -269,6 +269,13 @@ jobs:
       # 監測（斷纜→微波備援→延遲飆高）。
       # 判斷方式：反解 PTR（中華電信的路由器命名常含地名）＋ whois 的 netname
       # ＋ TCP traceroute 看最後幾跳。
+      #
+      # ⚠️ 2026-07 實測結論（已寫進 src/CLAUDE.md，這步保留供日後重驗）：
+      #   - whois 是決定性的：GSN 登記在台北市中正區延平南路 143 號；
+      #     matsu.edu.tw 屬 TANet 桃園區網（中壢中央大學）。都不在島上。
+      #   - 8c 的 traceroute 在 GitHub runner 上**完全無效** —— 四個目標
+      #     （含對照組）全部 20 跳都是 `*`，Azure 擋掉回程的 ICMP
+      #     time-exceeded。留著只是為了讓人自己看到這個限制，別期待有輸出。
       - name: 8️⃣ 候選主機是否實體位於馬祖
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq traceroute
