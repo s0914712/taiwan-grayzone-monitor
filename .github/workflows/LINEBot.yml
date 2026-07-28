@@ -37,6 +37,10 @@ jobs:
       - name: 安裝套件
         run: pip install requests matplotlib
 
+      # 地圖上的中文（標題、地名、船種）在 runner 上沒有 CJK 字型會變成豆腐方塊
+      - name: 安裝中文字型
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-wqy-zenhei
+
       - name: 產生並推送每日報告
         env:
           # 將 Secrets 轉成腳本讀取的環境變數

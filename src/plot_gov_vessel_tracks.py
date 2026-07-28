@@ -112,6 +112,8 @@ def plot_tracks(vessels, output_path, title=None, max_labels=None, pad=0.5,
 
     title: 覆寫資訊框第一行（例如單日動態圖標明日期），預設為 14 天歷史航跡標題。
     max_labels: 每類別最多標註船名的艘數，預設 MAX_LABELS_PER_CATEGORY。
+        可傳 dict 依類別分配配額（如 {'coastguard': 6, 'msa': 2}），讓主角類別
+        全部標名、陪襯類別少標幾艘，避免沿岸擠成一團字。
     pad: 視野邊界留白（度）。船數少的單日圖留白大一點，船名標註才不會被切掉。
     include_bounds: (lat_min, lat_max, lon_min, lon_max)，強制納入視野的範圍。
         單日圖常常只有兩三艘船擠在廈門外海，若只用資料範圍會縮到看不出跟台灣的
@@ -162,12 +164,18 @@ def plot_tracks(vessels, output_path, title=None, max_labels=None, pad=0.5,
     stroke = [pe.withStroke(linewidth=2.2, foreground='#0a1628')]
 
     # 每類別依軌跡點數取前 N 艘標註船名（vessels 已依類別+點數排序）
-    label_quota = MAX_LABELS_PER_CATEGORY if max_labels is None else max_labels
+    def _quota(category):
+        if max_labels is None:
+            return MAX_LABELS_PER_CATEGORY
+        if isinstance(max_labels, dict):
+            return max_labels.get(category, MAX_LABELS_PER_CATEGORY)
+        return max_labels
+
     label_counts = {}
     labeled = set()
     for v in vessels:
         c = v['category']
-        if label_counts.get(c, 0) < label_quota:
+        if label_counts.get(c, 0) < _quota(c):
             label_counts[c] = label_counts.get(c, 0) + 1
             labeled.add(id(v))
 

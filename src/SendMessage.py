@@ -6,9 +6,10 @@ LINE Bot 每日報告推送 — Taiwan Gray Zone Monitor
 （可用 Gemini LLM 潤飾，否則退回固定模板），並以 LINE Push Message API
 推送給指定使用者。報告聚焦兩件事：
 
-  1. 昨日（台灣時間日曆日）中國海警船動態 —— 逐船點名出現時段、位置、速度、
-     日內移動距離與最近距台灣基線的法域，其餘公務船（海巡／海救／科研·情報）
-     只報艘數；並附上昨日海警船航跡圖
+  1. 昨日（台灣時間日曆日）中國海警船**海上**動態 —— 逐船點名出現時段、位置、
+     速度、日內移動距離與最近距台灣基線的法域，其餘公務船（海巡／海救／科研·
+     情報）只報艘數；並附上昨日海警船航跡圖。
+     靠港停泊（廈門、福州等港灣）不算海上活動，一律不列入報告與地圖
   2. 本週商船危險係數最高者（cargo/tanker/lng，依海纜旁低速滯留時數排序）
      —— 並附上該船的航跡圖
 
@@ -48,6 +49,7 @@ from publish_threads import (  # noqa: E402
 )
 from gov_daily_activity import (  # noqa: E402
     annotate_zones,
+    at_sea_only,
     build_daily_gov_map,
     category_counts,
     collect_daily_gov_activity,
@@ -161,15 +163,16 @@ def generate_llm_report(summary, data, top_vessel=None, gov_context=""):
 請根據以下數據，用**繁體中文**撰寫一則 LINE 每日推送報告。
 
 報告聚焦兩件事，其餘數字不要展開：
-1. 昨日中國海警船動態（重點）：依「昨日中國公務船動態」資料，點名說明昨天有哪幾艘海警船、
-   在什麼時段出現、位置在哪、跑了多遠或是否定點停留、最近距台灣基線多少浬（落在領海／鄰接區／
-   EEZ 哪一層）。並用一到兩句解讀其「入侵」意涵：
+1. 昨日中國海警船「海上」動態（重點）：依「昨日中國公務船海上動態」資料，點名說明昨天有哪幾艘
+   海警船在海上、在什麼時段出現、位置在哪、跑了多遠或是否定點停留、最近距台灣基線多少浬
+   （落在領海／鄰接區／EEZ 哪一層）。並用一到兩句解讀其「入侵」意涵：
    - 海警船：以執法為名在台灣周邊海域常態化巡弋、施壓，是典型灰色地帶脅迫手段；
      越靠近基線（領海、鄰接區）代表壓迫強度越高
    - 若同時出現科研／情報船（如「同濟號」「向陽紅18號」「東方紅3號」「實驗2號」），可補一句：
      名為海洋科研，實則曾涉嫌違法投放儀器、闖入台灣限制水域進行水文與海底地形測繪，具軍事偵察用途
-   只描述資料中實際出現的船種與船名，沒出現的別硬掰；若昨日沒有海警船，就直說未偵測到，
-   並改述其他公務船（海巡／海救／科研）的艘數。文中提到「下方附上昨日海警船動態圖」。
+   靠港停泊不是活動，資料已排除，不要提到港內的船。
+   只描述資料中實際出現的船種與船名，沒出現的別硬掰；若昨日沒有海警船在海上，就直說未偵測到，
+   並改述其他在海上的公務船（海巡／海救／科研）艘數。文中提到「下方附上昨日海警船動態圖」。
 2. 本週商船危險係數最高者：報告船名、船型、在海纜附近低速滯留多久、風險等級與分數，
    並用一句話解讀其威脅意涵（例如疑似錨拖海纜或偵察海底設施）。文中提到「下方附上其航跡圖」。
 
@@ -274,9 +277,11 @@ def main():
     gov_activity = annotate_zones(
         collect_daily_gov_activity(load_tier1_entries(), start, end))
     gov_context = summarize_activity(gov_activity, day_label)
-    print(f"  → {day_label} 公務船 {len(gov_activity)} 艘 {category_counts(gov_activity)}")
+    gov_at_sea = at_sea_only(gov_activity)
+    print(f"  → {day_label} 公務船 {len(gov_activity)} 艘（海上 {len(gov_at_sea)}／"
+          f"整日在港 {len(gov_activity) - len(gov_at_sea)}）{category_counts(gov_at_sea)}")
     gov_image_local = None
-    if gov_activity:
+    if gov_at_sea:
         gov_out = str(BASE_DIR / CHART_DIR / GOV_MAP_NAME)
         print("🗺️  產生昨日海警船動態圖...")
         gov_image_local = build_daily_gov_map(gov_activity, gov_out, day_label)

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from gov_daily_activity import (
     TW_TZ,
+    at_sea_only,
     category_counts,
     collect_daily_gov_activity,
     summarize_activity,
@@ -142,6 +143,77 @@ def test_sorted_coastguard_first_then_by_point_count():
     activity = collect_daily_gov_activity(entries, start, end)
     assert [a["category"] for a in activity] == ["coastguard", "msa", "research"]
     assert category_counts(activity) == {"coastguard": 1, "msa": 1, "research": 1}
+
+
+# ── 靠港過濾（在港內的活動不報告）──────────────────────────────────────────
+
+# 假的港口查詢：經度 <119 當作廈門港內，其餘視為海上
+def _fake_port(lat, lon):
+    return "廈門 Xiamen" if lon < 119.0 else None
+
+
+def test_vessel_moored_all_day_is_not_at_sea():
+    start, end, _ = tw_day_window(now=datetime(2026, 7, 27, 8, tzinfo=TW_TZ))
+    entries = _day([(h, [_ccg(lat=24.42, lon=118.02, speed=0.0)])
+                    for h in (2, 8, 14, 20)])
+    a = collect_daily_gov_activity(entries, start, end, port_lookup=_fake_port)[0]
+    assert a["at_sea"] is False
+    assert a["in_port_points"] == 4
+    assert a["port_name"] == "廈門 Xiamen"
+    assert at_sea_only([a]) == []
+
+
+def test_sortie_keeps_only_the_at_sea_leg():
+    """在港 → 出海 → 回港：動態只算海上那段。"""
+    start, end, _ = tw_day_window(now=datetime(2026, 7, 27, 8, tzinfo=TW_TZ))
+    entries = _day([
+        (2, [_ccg(lat=24.42, lon=118.02, speed=0.0)]),    # 港內
+        (10, [_ccg(lat=24.30, lon=119.50, speed=12.0)]),  # 海上
+        (14, [_ccg(lat=24.30, lon=120.00, speed=11.0)]),  # 海上
+        (22, [_ccg(lat=24.42, lon=118.02, speed=0.0)]),   # 回港
+    ])
+    a = collect_daily_gov_activity(entries, start, end, port_lookup=_fake_port)[0]
+    assert a["at_sea"] is True
+    assert a["point_count"] == 2          # 只留海上兩點
+    assert a["in_port_points"] == 2
+    assert a["max_speed"] == 12.0         # 港內的 0 節不影響
+    assert a["last_lon"] == 120.00        # 最新位置是海上那點，不是回港後的泊位
+    assert a["moving"] is True
+
+
+def test_summary_and_counts_exclude_in_port_vessels():
+    start, end, label = tw_day_window(now=datetime(2026, 7, 27, 8, tzinfo=TW_TZ))
+    entries = _day([(3, [
+        _ccg(mmsi="413875053", name="CHINACOASTGUARD2103", lat=24.29, lon=119.22),
+        _ccg(mmsi="413875051", name="CHINACOASTGUARD2101", lat=24.42, lon=118.02),
+        _ccg(mmsi="413225690", name="HAIXUN0807", lat=24.50, lon=118.07, gov="msa"),
+    ])])
+    activity = collect_daily_gov_activity(entries, start, end, port_lookup=_fake_port)
+    assert len(activity) == 3
+    assert category_counts(at_sea_only(activity)) == {"coastguard": 1}
+
+    text = summarize_activity(activity, label)
+    assert "海警船共 1 艘在海上活動" in text
+    assert "CHINACOASTGUARD2103" in text
+    assert "CHINACOASTGUARD2101" not in text   # 停在廈門，不報告
+    assert "海巡" not in text                   # 唯一的海巡也在港內
+    assert "港內" not in text                   # 預設不提在港艘數
+
+
+def test_summary_can_note_in_port_count_for_debugging():
+    start, end, label = tw_day_window(now=datetime(2026, 7, 27, 8, tzinfo=TW_TZ))
+    entries = _day([(3, [_ccg(lat=24.42, lon=118.02)])])
+    activity = collect_daily_gov_activity(entries, start, end, port_lookup=_fake_port)
+    text = summarize_activity(activity, label, note_in_port=True)
+    assert "另有 1 艘整日停泊港內" in text
+
+
+def test_summary_says_none_when_every_coastguard_is_in_port():
+    start, end, label = tw_day_window(now=datetime(2026, 7, 27, 8, tzinfo=TW_TZ))
+    entries = _day([(3, [_ccg(lat=24.42, lon=118.02)])])
+    activity = collect_daily_gov_activity(entries, start, end, port_lookup=_fake_port)
+    text = summarize_activity(activity, label)
+    assert "未偵測到中國海警船在海上活動" in text
 
 
 # ── 文字彙整 ────────────────────────────────────────────────────────────────
