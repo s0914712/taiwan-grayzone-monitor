@@ -98,24 +98,15 @@ SERIES_SPECS = [
         "params": {"location": "TW", "metric": "latency"},
         "direction": "spike",   # 延遲是越高越糟
     },
-    {
-        # 連江縣（馬祖）。Radar 的行政區粒度不保證有資料，抓不到就跳過
-        "id": "tw_lie_http",
-        "label": "連江縣（馬祖）HTTP 請求量",
-        "path": "radar/http/timeseries",
-        "params": {"location": "TW-LIE"},
-        "direction": "drop",
-        "optional": True,
-    },
-    {
-        "id": "tw_kin_http",
-        "label": "金門縣 HTTP 請求量",
-        "path": "radar/http/timeseries",
-        "params": {"location": "TW-KIN"},
-        "direction": "drop",
-        "optional": True,
-    },
 ]
+
+# ⚠️ `location` 只接受 **ISO 3166-1 alpha-2 國家碼**（TW）。曾經試過用 3166-2 的
+# 行政區碼（TW-LIE 連江縣／TW-KIN 金門縣）取得馬祖、金門的離島粒度，Radar 直接
+# 回 HTTP 400：
+#     Invalid location codes. Must be valid alpha-2 location codes
+# Radar 沒有縣市粒度，別再加回來。離島層級的中斷偵測要另尋來源（IODA 有
+# region-level 的 BGP／主動探測資料），或退而求其次看 AS3462 這種承載離島對外
+# 連線的 ASN。
 
 # ── 偵測參數 ────────────────────────────────────────────────────────────────
 Z_THRESHOLD = 3.0          # 穩健 z 分數門檻
@@ -299,6 +290,17 @@ def _parse_ts(ts):
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
+def mask_reporting_gaps(values):
+    """把「剛好等於 0」的點視為缺值（回傳新 list）。
+
+    首次真實執行就抓到一筆假警報：全台灣的 HTTP 請求量連續兩小時剛好是 0，
+    偏離基線 -100%、z=-45.8，被判成 high。整個國家的請求量歸零在物理上不可能，
+    那是 Radar 的回報缺口。真正的斷纜是深跌但非零（同一批資料裡的 -75.9% 那筆
+    才是像樣的候選），把 0 當缺值不會漏掉真事件，卻能擋掉整類假警報。
+    """
+    return [None if (v is not None and v == 0) else v for v in values]
+
+
 def hour_of_week_baseline(timestamps, values, min_samples=BASELINE_MIN_SAMPLES,
                          fallback_window=FALLBACK_WINDOW):
     """每點的季節基線：同一（星期幾, 小時）其他週的中位數（leave-one-out）。
@@ -440,7 +442,9 @@ def classify_severity(event):
 def analyze_series(spec, series):
     """對一條序列跑偵測，回傳含基線與事件的結果 dict。"""
     timestamps = series["timestamps"]
-    values = series["values"]
+    values = mask_reporting_gaps(series["values"])
+    gaps = sum(1 for a, b in zip(series["values"], values)
+               if a is not None and b is None)
     baseline = hour_of_week_baseline(timestamps, values)
     events = detect_anomalies(timestamps, values, baseline=baseline,
                               direction=spec.get("direction", "drop"))
@@ -450,6 +454,7 @@ def analyze_series(spec, series):
         "label": spec["label"],
         "direction": spec.get("direction", "drop"),
         "points": len(values),
+        "reporting_gaps": gaps,
         "baseline_coverage": round(covered / len(values), 3) if values else 0.0,
         "timestamps": timestamps,
         "values": [None if v is None else round(v, 4) for v in values],
@@ -541,13 +546,27 @@ def correlate_with_vessels(events, track_entries, cable_index,
     """
     if port_lookup is None:
         port_lookup = _default_port_lookup()
+
+    # tier-1 軌跡只留 14 天，但 Radar 視窗是 28 天：比軌跡更早的異常永遠比不到船。
+    # 那和「比對過但沒有嫌疑船」是完全不同的結論，必須分開標記，否則報告會把
+    # 「查不到」講成「沒有」。
+    track_times = [t for t in (_parse_ts(e.get("timestamp")) for e in track_entries)
+                   if t is not None]
+    earliest_track = min(track_times) if track_times else None
+
     out = []
     for event in events:
         onset = _parse_ts(event.get("onset"))
         if onset is None:
-            out.append({**event, "correlated_vessels": []})
+            out.append({**event, "correlated_vessels": [],
+                        "correlation_coverage": "unknown"})
             continue
         window_start = onset - timedelta(hours=window_hours)
+        if earliest_track is None or onset < earliest_track:
+            out.append({**event, "correlated_vessels": [],
+                        "candidate_summary": candidate_summary([]),
+                        "correlation_coverage": "outside_ais_window"})
+            continue
 
         candidates = {}
         for entry in track_entries:
@@ -602,6 +621,7 @@ def correlate_with_vessels(events, track_entries, cable_index,
             **event,
             "correlated_vessels": ranked[:max_vessels],
             "candidate_summary": candidate_summary(ranked),
+            "correlation_coverage": "ok",
         })
     return out
 
@@ -680,12 +700,15 @@ def build_summary(analyzed, outages):
     actionable = sum(1 for _, e in all_events
                      if (e.get("candidate_summary") or {}).get("commercial")
                      or (e.get("candidate_summary") or {}).get("gov"))
+    uncorrelatable = sum(1 for _, e in all_events
+                         if e.get("correlation_coverage") == "outside_ais_window")
     return {
         "series_analyzed": len(analyzed),
         "anomaly_count": len(all_events),
         "by_severity": dict(by_sev),
         "anomalies_with_vessel_candidates": correlated,
         "anomalies_with_commercial_or_gov_candidates": actionable,
+        "anomalies_outside_ais_window": uncorrelatable,
         "latest_anomaly_onset": latest,
         "cloudflare_outage_annotations": len(outages),
     }
