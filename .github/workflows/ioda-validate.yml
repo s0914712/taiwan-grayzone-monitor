@@ -262,6 +262,67 @@ jobs:
           PY
         continue-on-error: true
 
+      # ── 步驟 8：那些 IP 到底在不在馬祖島上 ────────────────────────────
+      # 7c 已確認：馬祖公家網站掛在 AS4782 GSNET（政府網際服務網，全國 gov.tw
+      # 共用）與 AS1659 TANet，沒有任何馬祖專屬前綴 —— 所以 BGP 可見性監測對
+      # 馬祖無效。剩下的問題是：這些主機**實體**在不在島上？在的話還能靠 RTT
+      # 監測（斷纜→微波備援→延遲飆高）。
+      # 判斷方式：反解 PTR（中華電信的路由器命名常含地名）＋ whois 的 netname
+      # ＋ TCP traceroute 看最後幾跳。
+      - name: 8️⃣ 候選主機是否實體位於馬祖
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq traceroute
+          python - <<'PY' | tee /tmp/step8.txt
+          import socket, subprocess
+          import requests
+
+          # 馬祖候選 + 對照組（台北的 GSN 與 TANet，用來看路徑差異）
+          TARGETS = [
+              ("馬祖縣府 www.matsu.gov.tw", "117.56.181.161"),
+              ("馬祖日報",                  "117.56.181.98"),
+              ("連江縣教育網 matsu.edu.tw", "163.25.24.25"),
+              ("對照：金門大學 nqu.edu.tw",  "120.125.96.159"),
+          ]
+
+          print("=== 8a. 反解 PTR（中華電信路由器/主機命名常含地名）===")
+          for name, ip in TARGETS:
+              try:
+                  host = socket.gethostbyaddr(ip)[0]
+              except Exception:
+                  host = "(無 PTR)"
+              print(f"  {name:28} {ip:16} {host}")
+
+          print("\n=== 8b. whois netname / descr（是否登記給連江縣）===")
+          for name, ip in TARGETS:
+              try:
+                  r = requests.get("https://stat.ripe.net/data/whois/data.json",
+                                   params={"resource": ip}, timeout=45)
+                  recs = ((r.json() or {}).get("data") or {}).get("records") or []
+                  keep = []
+                  for block in recs:
+                      for row in block:
+                          k = (row.get("key") or "").lower()
+                          if k in ("netname", "descr", "org-name", "country",
+                                   "owner", "ownerid"):
+                              keep.append(f"{row['key']}={row['value']}")
+                  print(f"  {name:28} {' | '.join(keep[:6]) or '(無)'}")
+              except Exception as e:
+                  print(f"  {name:28} whois 失敗: {e}")
+
+          print("\n=== 8c. TCP traceroute（看最後幾跳的位置）===")
+          for name, ip in TARGETS:
+              print(f"\n  --- {name} ({ip}) ---")
+              try:
+                  out = subprocess.run(
+                      ["sudo", "traceroute", "-T", "-p", "443", "-w", "2",
+                       "-q", "1", "-m", "20", ip],
+                      capture_output=True, text=True, timeout=180)
+                  print(out.stdout or out.stderr)
+              except Exception as e:
+                  print(f"  traceroute 失敗: {e}")
+          PY
+        continue-on-error: true
+
       # ── 整理成 Summary（不用翻 log）──────────────────────────────────
       - name: 📋 產生結果摘要
         if: always()
@@ -286,6 +347,8 @@ jobs:
             echo '```'; cat /tmp/step6.txt 2>/dev/null || echo "(無)"; echo '```'
             echo "### 7️⃣ 馬祖 IP 前綴探索（BGP 監測的前置）"
             echo '```'; cat /tmp/step7.txt 2>/dev/null || echo "(無)"; echo '```'
+            echo "### 8️⃣ 候選主機是否實體位於馬祖"
+            echo '```'; cat /tmp/step8.txt 2>/dev/null || echo "(無)"; echo '```'
             if [ "${{ steps.parse.outputs.pass }}" != "true" ]; then
               echo "### ⚠️ 訊號形狀對不上 — 原始回應（把這段貼回對話）"
               echo '```json'; sed -n 's/^BODY  ://p' /tmp/step2.txt 2>/dev/null | head -c 3000; echo '```'
