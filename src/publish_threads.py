@@ -28,6 +28,7 @@ from pathlib import Path
 import requests
 
 from geo_utils import haversine_km as _haversine_km
+from map_basemap import TAIWAN_COASTLINE, draw_land  # noqa: F401 (常數保留供相容)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DOCS_DIR = BASE_DIR / "docs"
@@ -45,18 +46,8 @@ TW_TZ = timezone(timedelta(hours=8))
 # LLM 產文模型（Google Generativelanguage API；可改用 gemini-* 或 gemma-* 系列）
 LLM_MODEL = "gemma-4-26b-a4b-it"
 
-# ── 台灣本島簡化輪廓座標 (lat, lon) ─────────────────────────
-TAIWAN_COASTLINE = [
-    (25.29, 121.57), (25.17, 121.74), (25.03, 121.96),
-    (24.98, 121.98), (24.83, 121.84), (24.59, 121.60),
-    (24.32, 121.51), (24.08, 121.59), (23.76, 121.48),
-    (23.47, 121.35), (23.09, 121.17), (22.76, 121.07),
-    (22.52, 120.75), (22.37, 120.59), (22.00, 120.70),
-    (22.35, 120.30), (22.59, 120.27), (22.92, 120.26),
-    (23.28, 120.18), (23.56, 120.21), (23.93, 120.30),
-    (24.25, 120.47), (24.64, 120.68), (24.84, 120.85),
-    (25.10, 121.25), (25.29, 121.57),
-]
+# 台灣本島簡化輪廓 (lat, lon) 與陸地底圖繪製都移到 map_basemap.py，
+# 由 draw_land() 統一畫真實海岸線（底圖檔缺失時自動退回簡化輪廓）。
 
 MIN_TRACK_POINTS = 15
 
@@ -202,10 +193,8 @@ def generate_track_map(vessel, output_path):
     fig.patch.set_facecolor('#0a1628')
     ax.set_facecolor('#0a1628')
 
-    # Taiwan coastline
-    tw_lats = [p[0] for p in TAIWAN_COASTLINE]
-    tw_lons = [p[1] for p in TAIWAN_COASTLINE]
-    ax.fill(tw_lons, tw_lats, facecolor='#1a2640', edgecolor='#2a3a5a', linewidth=1, zorder=1)
+    # Land basemap (real coastlines: Taiwan + China coast + offshore islands)
+    draw_land(ax, (lat_min, lat_max, lon_min, lon_max))
 
     # Cable routes within bounding box
     for cable in cable_segments:
