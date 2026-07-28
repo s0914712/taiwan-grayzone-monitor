@@ -230,9 +230,20 @@ jobs:
                       print(f"  [{name}] {et} 查詢失敗: {e}")
 
           print("\n=== 7b. 馬祖公家機關網域解析 ===")
+          # 已知 matsu.edu.tw → 桃園區網（中壢中央大學），縣網集中託管。
+          # 這裡多加各校與縣屬機構的候選，驗證是否真的全部託管在島外：
+          #   *.matsu.edu.tw — 各校（介壽/中正/敬恆/塘岐/東引/馬祖高中）
+          #   縣屬企業（酒廠/醫院/漁會）比 gov/edu 更可能有島上自架主機
           DOMAINS = ["www.matsu.gov.tw", "matsu.gov.tw", "www.matsu.edu.tw",
                      "www.matsu-news.gov.tw", "www.matsuhb.gov.tw",
-                     "www.mtjh.matsu.edu.tw", "www.nqu.edu.tw"]
+                     "www.mtjh.matsu.edu.tw", "www.nqu.edu.tw",
+                     # 各校（縣網 domain 慣例 <代碼>.matsu.edu.tw）
+                     "www.jsjh.matsu.edu.tw", "www.ccjh.matsu.edu.tw",
+                     "www.dyjh.matsu.edu.tw", "www.mssh.matsu.edu.tw",
+                     "www.tcps.matsu.edu.tw", "www.chps.matsu.edu.tw",
+                     # 縣屬機構／企業（較可能有島上自架設備）
+                     "www.matsu-news.com.tw", "www.matsuwine.com.tw",
+                     "www.mtha.gov.tw", "www.lcgh.gov.tw"]
           found = []
           for d in DOMAINS:
               try:
