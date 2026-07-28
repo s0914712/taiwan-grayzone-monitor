@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>網路流量異常監控 | Network Traffic Anomaly Monitor - Taiwan Gray Zone &amp; Submarine Cable Monitor</title>
+    <meta name="description" content="以 Cloudflare Radar 監測台灣網路流量與延遲：同時段季節基線、穩健 z 分數與持續性雙門檻偵測異常，並比對異常發生前在海纜旁低速滯留的船隻">
+    <meta name="keywords" content="海底電纜,網路流量異常,Cloudflare Radar,submarine cable,internet outage,台灣,Taiwan,馬祖,gray zone">
+    <meta name="author" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/network-traffic.html">
+    <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/network-traffic.html">
+    <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/network-traffic.html?lang=en">
+    <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/network-traffic.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="網路流量異常監控 | Network Traffic Anomaly Monitor">
+    <meta property="og:description" content="海纜被破壞的「後果」會出現在網路層：流量掉、延遲跳。本頁偵測台灣網路流量異常，並回頭比對當時在海纜旁滯留的船隻">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/network-traffic.html">
+    <meta property="og:image" content="https://s0914712.github.io/taiwan-grayzone-monitor/og-banner.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Taiwan Gray Zone &amp; Submarine Cable Monitor 台灣灰色地帶與海底電纜監測">
+    <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:locale:alternate" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://s0914712.github.io/taiwan-grayzone-monitor/og-banner.png">
+    <meta name="twitter:title" content="網路流量異常監控 | Network Traffic Anomaly Monitor">
+    <meta name="twitter:description" content="海纜被破壞的「後果」會出現在網路層。偵測流量異常，並比對當時在海纜旁滯留的船隻">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"></noscript>
+
+    <!-- Chart.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/main.css">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebPage",
+                "name": "網路流量異常監控 | Network Traffic Anomaly Monitor",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/network-traffic.html",
+                "description": "以 Cloudflare Radar 監測台灣網路流量與延遲，偵測持續性異常並比對異常發生前在海纜旁低速滯留的船隻",
+                "inLanguage": "zh-TW",
+                "dateModified": "2026-07-28",
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" }
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "首頁 Home", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/" },
+                    { "@type": "ListItem", "position": 2, "name": "網路流量異常監控 Network Traffic Anomaly Monitor", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/network-traffic.html" }
+                ]
+            },
+            {
+                "@type": "Dataset",
+                "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/network-traffic.html#dataset",
+                "name": "Taiwan Network Traffic Anomaly Dataset",
+                "alternateName": "台灣網路流量異常資料集",
+                "description": "Cloudflare Radar traffic/latency time series for Taiwan with hour-of-week seasonal baselines, robust-z anomaly events, and correlated cable-adjacent loitering vessels from AIS.",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/network-traffic.html",
+                "inLanguage": ["zh-TW", "en"],
+                "isAccessibleForFree": true,
+                "keywords": ["submarine cable", "internet outage", "anomaly detection", "Cloudflare Radar", "Taiwan", "海底電纜", "流量異常"],
+                "license": "https://github.com/s0914712/taiwan-grayzone-monitor/blob/main/LICENSE",
+                "creator": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#org" },
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" },
+                "distribution": {
+                    "@type": "DataDownload",
+                    "encodingFormat": "application/json",
+                    "contentUrl": "https://s0914712.github.io/taiwan-grayzone-monitor/cf_radar.json"
+                }
+            }
+        ]
+    }
+    </script>
+
+    <style>
+        body { overflow-y: auto; }
+
+        .demo-banner {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 12px 0;
+            padding: 9px 12px;
+            border: 1px solid var(--accent-orange);
+            border-left-width: 4px;
+            border-radius: 5px;
+            background: rgba(255, 107, 53, 0.09);
+            color: var(--text-primary);
+            font-size: var(--fs-body);
+            line-height: 1.55;
+        }
+        .demo-banner .demo-tag {
+            flex: 0 0 auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: var(--fs-caption);
+            color: var(--accent-orange);
+            border: 1px solid var(--accent-orange);
+            border-radius: 3px;
+            padding: 2px 6px;
+        }
+
+        .chart-wrap { height: 320px; padding: 10px 12px 4px; }
+        #chartCaption {
+            padding: 0 12px 10px;
+            font-size: var(--fs-caption);
+            color: var(--text-secondary);
+        }
+
+        .series-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 10px 12px 0;
+        }
+        .series-tab {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(0, 245, 255, 0.18);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: var(--fs-caption);
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .series-tab:hover { border-color: var(--accent-cyan); color: var(--text-primary); }
+        .series-tab.active {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            background: rgba(0, 245, 255, 0.08);
+        }
+        .tab-badge {
+            display: inline-block;
+            min-width: 15px;
+            padding: 0 4px;
+            border-radius: 8px;
+            background: var(--accent-red);
+            color: #fff;
+            font-size: var(--fs-label);
+            font-weight: 600;
+        }
+
+        .anomaly-card {
+            border: 1px solid rgba(0, 245, 255, 0.12);
+            border-left: 4px solid var(--accent-yellow);
+            border-radius: 5px;
+            background: var(--bg-secondary);
+            padding: 10px 12px;
+            margin: 10px 12px;
+        }
+        .anomaly-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .sev-badge {
+            font-size: var(--fs-label);
+            font-weight: 700;
+            color: #0a0f1c;
+            border-radius: 3px;
+            padding: 2px 7px;
+        }
+        .anomaly-series { font-size: var(--fs-body); color: var(--text-primary); }
+        .anomaly-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .anomaly-metrics .m-label {
+            display: block;
+            font-size: var(--fs-label);
+            color: var(--text-secondary);
+        }
+        .anomaly-metrics .m-value {
+            display: block;
+            font-size: var(--fs-body);
+            color: var(--text-primary);
+        }
+        .anomaly-lead {
+            font-size: var(--fs-caption);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .table-scroll { overflow-x: auto; }
+        table.region-table td, table.region-table th { white-space: nowrap; }
+
+        .method-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 10px;
+            padding: 10px 12px 14px;
+        }
+        .method-step {
+            border: 1px solid rgba(0, 245, 255, 0.12);
+            border-radius: 5px;
+            padding: 10px;
+            background: rgba(10, 15, 28, 0.5);
+        }
+        .method-step h4 {
+            font-size: var(--fs-title);
+            color: var(--accent-cyan);
+            margin: 0 0 6px;
+        }
+        .method-step p {
+            font-size: var(--fs-caption);
+            color: var(--text-secondary);
+            line-height: 1.65;
+            margin: 0;
+        }
+
+        @media (max-width: 900px) {
+            .chart-wrap { height: 250px; }
+            .anomaly-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .main-content { padding-bottom: 72px; }
+            .stat-card { padding: 10px 8px; }
+            .stat-card .value { font-size: 20px; }
+            .stat-card .label { font-size: 10px; }
+        }
+        @media (max-width: 600px) {
+            .stat-card { padding: 8px 6px; }
+            .stat-card .value { font-size: 18px; }
+            /* 窄螢幕藏掉 MMSI 與座標欄：留下船型／船名／航速／距海纜這幾個能判讀的，
+               整張表仍在 .table-scroll 內，需要時可橫向捲動 */
+            .anomaly-card table.region-table th:nth-child(3),
+            .anomaly-card table.region-table td:nth-child(3),
+            .anomaly-card table.region-table th:nth-child(6),
+            .anomaly-card table.region-table td:nth-child(6) { display: none; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <header class="header">
+        <h1>🌐 <span class="lang-zh-only">網路流量異常</span><span class="lang-en-only">Network Traffic</span></h1>
+        <div class="header-nav">
+            <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
+            <a href="network-traffic.html" class="active"><span class="lang-zh-only">網路流量</span><span class="lang-en-only">Network Traffic</span></a>
+            <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
+            <a href="ais-animation.html" data-i18n="nav.animation">軌跡動畫</a>
+            <details class="nav-more">
+                <summary><span class="lang-zh-only">更多</span><span class="lang-en-only">More</span> ▾</summary>
+                <div class="nav-more-menu">
+                    <a href="sar-ais-match.html"><span class="lang-zh-only">SAR×AIS 比對</span><span class="lang-en-only">SAR×AIS Match</span></a>
+                    <a href="cn-fishing-animation.html" data-i18n="nav.cn_fishing">大陸漁船</a>
+                    <a href="ship-transfers.html" data-i18n="nav.transfers">旁靠偵測</a>
+                    <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
+                    <a href="research-submarine-cable-legal.html" data-i18n="nav.research">研究報告</a>
+                    <a href="blog.html" data-i18n="nav.blog">深度文章</a>
+                    <a href="intro.html"><span class="lang-zh-only">關於本站</span><span class="lang-en-only">About</span></a>
+                </div>
+            </details>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:13px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
+        </div>
+    </header>
+
+    <div class="demo-banner" id="demoBanner">
+        <span class="demo-tag">DEMO</span>
+        <span class="lang-zh-only">目前顯示的是<strong>示範資料</strong>（合成序列，含一次注入的模擬海纜中斷），用來展示這頁的呈現方式。資料管線首次執行並產生 <code>cf_radar.json</code> 後，此橫幅會消失並改為真實觀測。</span>
+        <span class="lang-en-only">Showing <strong>demo data</strong> — a synthetic series with one injected simulated cable cut, to illustrate what this page renders. Once the pipeline produces <code>cf_radar.json</code>, this banner disappears and real observations take over.</span>
+    </div>
+
+    <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
+    <section class="ai-summary" aria-label="頁面摘要 Page summary">
+        <h2 class="lang-zh-only">本頁重點</h2>
+        <h2 class="lang-en-only">What this page shows</h2>
+        <p class="lang-zh-only">
+            海纜被破壞的「後果」會出現在網路層：流量掉下去、延遲跳上去。本頁以 Cloudflare Radar 監測台灣整體流量、
+            中華電信 HiNet（馬祖與金門的對外連線都掛在這個 ASN）與連線延遲，先扣掉日／週作息週期算出季節基線，
+            再用穩健 z 分數與「連續時數 × 相對幅度」雙門檻挑出持續性異常。
+            每一個異常事件都會回頭比對<strong>異常發生前 12 小時內在海纜旁低速滯留的船隻</strong> ——
+            這是關聯而非因果，真正的破壞者可能關閉 AIS，那要靠暗船偵測那條線索。
+        </p>
+        <p class="lang-en-only">
+            When a submarine cable is damaged, the consequence shows up at the network layer: traffic drops,
+            latency spikes. This page monitors Taiwan-wide traffic, Chunghwa Telecom HiNet (the ASN carrying
+            Matsu and Kinmen connectivity) and connection latency via Cloudflare Radar. Daily and weekly
+            rhythms are removed to form a seasonal baseline, then a robust z-score plus a duration ×
+            relative-magnitude threshold isolates sustained anomalies. Each anomaly is cross-referenced with
+            <strong>vessels loitering near a cable in the 12 hours before onset</strong> — correlation, not
+            causation: a deliberate actor may have switched AIS off, which is what dark-vessel detection is for.
+        </p>
+    </section>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="value" id="statSeries">--</div>
+            <div class="label"><span class="lang-zh-only">監測序列</span><span class="lang-en-only">Series monitored</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statAnomalies">--</div>
+            <div class="label"><span class="lang-zh-only">異常事件</span><span class="lang-en-only">Anomalies</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statWorst">--</div>
+            <div class="label"><span class="lang-zh-only">最高嚴重度</span><span class="lang-en-only">Worst severity</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="value alert" id="statLeads">--</div>
+            <div class="label"><span class="lang-zh-only">有商船／公務船線索</span><span class="lang-en-only">With vessel leads</span></div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="panel">
+            <div class="panel-title"><span class="lang-zh-only">📈 流量／延遲時間序列 — 觀測值 vs 季節基線</span><span class="lang-en-only">📈 Traffic / latency time series — observed vs seasonal baseline</span></div>
+            <div class="series-tabs" id="seriesTabs"></div>
+            <div class="chart-wrap"><canvas id="trafficChart"></canvas></div>
+            <div id="chartCaption"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title"><span class="lang-zh-only">🚨 異常事件 × 海纜旁滯留船隻</span><span class="lang-en-only">🚨 Anomaly events × cable-adjacent loitering vessels</span></div>
+            <div id="anomalyList"><div class="empty-state" data-i18n="common.loading">載入中...</div></div>
+        </div>
+
+        <div class="panel" id="outagePanel" style="display:none">
+            <div class="panel-title"><span class="lang-zh-only">📋 Cloudflare 已知中斷標註</span><span class="lang-en-only">📋 Cloudflare known outage annotations</span></div>
+            <div class="panel-body table-scroll">
+                <table class="region-table">
+                    <thead>
+                        <tr>
+                            <th><span class="lang-zh-only">開始</span><span class="lang-en-only">Start</span></th>
+                            <th><span class="lang-zh-only">結束</span><span class="lang-en-only">End</span></th>
+                            <th><span class="lang-zh-only">範圍</span><span class="lang-en-only">Scope</span></th>
+                            <th><span class="lang-zh-only">成因</span><span class="lang-en-only">Cause</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="outageBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title"><span class="lang-zh-only">🔬 偵測方法</span><span class="lang-en-only">🔬 Detection method</span></div>
+            <div class="method-grid">
+                <div class="method-step">
+                    <h4><span class="lang-zh-only">1. 同時段季節基線</span><span class="lang-en-only">1. Hour-of-week baseline</span></h4>
+                    <p class="lang-zh-only">網路流量有很強的日／週週期 —— 凌晨三點本來就只有下午的一半，直接對原始值設門檻毫無意義。基線取「同一星期幾＋同一小時」其他週的中位數，而且是 leave-one-out：異常點不會把自己的基線拉下去。</p>
+                    <p class="lang-en-only">Traffic has strong daily/weekly cycles — 3 a.m. is naturally half of mid-afternoon, so thresholding raw values is meaningless. The baseline is the median of the same weekday-and-hour slot in other weeks, computed leave-one-out so an anomaly cannot drag down its own baseline.</p>
+                </div>
+                <div class="method-step">
+                    <h4><span class="lang-zh-only">2. 穩健 z 分數</span><span class="lang-en-only">2. Robust z-score</span></h4>
+                    <p class="lang-zh-only">殘差除以 MAD×1.4826，不用標準差 —— 一次大掉點就會把 σ 撐大到之後什麼都偵測不到。另設尺度下限（基線的 0.5%）：序列極平穩時 MAD 會是 0，沒有下限就會放棄偵測；反之 MAD 過小時，1% 的抖動也會被算成異常。</p>
+                    <p class="lang-en-only">Residuals are divided by MAD×1.4826 rather than the standard deviation — one large drop would inflate σ enough to mask everything after it. A floor (0.5% of baseline) is applied: on a very flat series MAD is 0 and detection would give up entirely, while a tiny MAD would turn 1% jitter into an "anomaly".</p>
+                </div>
+                <div class="method-step">
+                    <h4><span class="lang-zh-only">3. 持續性雙門檻</span><span class="lang-en-only">3. Dual sustained threshold</span></h4>
+                    <p class="lang-zh-only">要求連續 ≥2 小時<strong>且</strong>相對基線偏離 ≥10% 才成案。單一時段的尖刺多半是量測雜訊；海纜中斷的特徵是持續性的位階下移，因此嚴重度由「幅度 × 時數」決定（≥30% 且 ≥3 小時 → 嚴重）。</p>
+                    <p class="lang-en-only">An event requires ≥2 consecutive hours <strong>and</strong> ≥10% deviation from baseline. Single-bucket spikes are usually measurement noise; a cable cut looks like a sustained level shift, so severity is graded by magnitude × duration (≥30% for ≥3 h → critical).</p>
+                </div>
+                <div class="method-step">
+                    <h4><span class="lang-zh-only">4. 船隻關聯</span><span class="lang-en-only">4. Vessel correlation</span></h4>
+                    <p class="lang-zh-only">取異常前 12 小時內、距海纜 5 公里內、航速 ≤5 節的船。海纜旁最密集的低速目標其實是漁網信標，因此沿用威脅評分引擎的排除規則；港內位置也一併排除 —— 海纜登陸點就在港邊，合法靠泊必然「0 節、離海纜很近」。候選依船型威脅權重排序，商船與公務船優先於漁船。</p>
+                    <p class="lang-en-only">Vessels within 12 h before onset, 5 km of a cable and ≤5 kn. The densest slow targets near cables are actually fishing-net beacons, so the threat engine's exclusion rules are reused; in-port positions are dropped too — cable landings sit next to ports, so a lawfully berthed ship is always "0 kn, very close to a cable". Candidates are ranked by vessel-type threat weight, commercial and government vessels above fishing boats.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>
+
+    <footer class="site-footer">
+        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script defer src="js/i18n.js"></script>
+    <script defer src="js/network-traffic.js"></script>
+    <script defer src="js/mobile-nav.js"></script>
+</body>
+
+</html>

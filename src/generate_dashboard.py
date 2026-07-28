@@ -194,6 +194,36 @@ def main():
     else:
         print("⚠️ 找不到 dark_vessels.json，跳過")
 
+    # 讀取 Cloudflare Radar 流量異常（只嵌 summary + 異常事件，不嵌完整時間序列）。
+    # 這個檔每 2 小時被 cloudflare-radar.yml 重寫一次，為了不讓 repo 膨脹，**只有
+    # docs/ 那一份會被提交**；data/ 的版本只在同一輪 job 內存在，所以兩處都要找。
+    cf_radar_path = DATA_DIR / 'cf_radar.json'
+    if not cf_radar_path.exists():
+        cf_radar_path = DOCS_DIR / 'cf_radar.json'
+    cf_radar_data = None
+    if cf_radar_path.exists():
+        try:
+            with open(cf_radar_path, 'r', encoding='utf-8') as f:
+                cf_full = json.load(f)
+            cf_radar_data = {
+                'generated_at': cf_full.get('generated_at'),
+                'window_days': cf_full.get('window_days'),
+                'summary': cf_full.get('summary', {}),
+                # 每條序列只留 metadata 與異常事件；672 點 × 6 序列不進 data.json
+                'series': [{k: v for k, v in s.items()
+                            if k not in ('timestamps', 'values', 'baseline')}
+                           for s in cf_full.get('series', [])],
+                'outage_annotations': cf_full.get('outage_annotations', [])[:20],
+            }
+            cs = cf_radar_data['summary']
+            print(f"🌐 已載入流量異常偵測: {cs.get('anomaly_count', 0)} 件異常 "
+                  f"({cs.get('by_severity', {})})，"
+                  f"其中 {cs.get('anomalies_with_commercial_or_gov_candidates', 0)} 件有商船／公務船候選")
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"⚠️ 讀取 cf_radar.json 失敗: {e}")
+    else:
+        print("⚠️ 找不到 cf_radar.json，跳過")
+
     # 讀取 SAR×AIS 本地重比對結果（只嵌 summary，全檔另複製到 docs/）
     sar_ais_path = DATA_DIR / 'sar_ais_matches.json'
     sar_ais_summary = None
@@ -320,6 +350,7 @@ def main():
         'suspicious_analysis': suspicious_data,
         'dark_vessels': dark_vessels_data,
         'sar_ais_matching': sar_ais_summary,
+        'network_anomalies': cf_radar_data,
         'exercise_prediction': prediction_data,
         'scfi_correlation': scfi_correlation_data,
         'ais_snapshot': ais_snapshot or {'updated_at': '', 'ais_data': {}, 'vessels': []},
@@ -355,6 +386,12 @@ def main():
     if sar_ais_path.exists():
         shutil.copy2(sar_ais_path, DOCS_DIR / 'sar_ais_matches.json')
         print(f"🎯 已複製 SAR×AIS 重比對結果至 docs/sar_ais_matches.json")
+
+    # 複製流量異常全檔至 docs（network-traffic.html 要畫時間序列，
+    # 而 data.json 裡的 network_anomalies 已把原始陣列剝掉）
+    if cf_radar_path.exists() and cf_radar_path != DOCS_DIR / 'cf_radar.json':
+        shutil.copy2(cf_radar_path, DOCS_DIR / 'cf_radar.json')
+        print(f"🌐 已複製流量異常偵測結果至 docs/cf_radar.json")
 
     # 複製 SAR 取證清單至 docs（報告頁「取證清單」面板）
     worklist_path = DATA_DIR / 'sar_chip_worklist.json'

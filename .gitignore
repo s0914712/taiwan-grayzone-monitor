@@ -12,6 +12,10 @@ data/ais_track_commercial.json
 data/track_delta.jsonl
 data/track_commercial_delta.jsonl
 
+# 流量異常偵測輸出：cloudflare-radar.yml 每 2 小時重寫一次，只提交 docs/ 那一份
+# （兩份會讓 repo 成長速度翻倍）。generate_dashboard 找不到這個檔會退回讀 docs/。
+data/cf_radar.json
+
 # Guard against accidentally committing the old docs/ locations.
 docs/vessel_profiles.json
 docs/ais_track_commercial.json

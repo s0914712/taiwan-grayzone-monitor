@@ -1,0 +1,82 @@
+name: Network Traffic Anomaly (Cloudflare Radar)
+
+on:
+  schedule:
+    # 每 2 小時一次。偏移到 :15 是為了避開 update-ais.yml（:30 / 整點）與
+    # update-data.yml（整點），減少排隊等待。
+    - cron: '15 */2 * * *'
+  workflow_dispatch:
+
+# 與其他資料管線共用同一個 concurrency group：這個 job 會 commit 並 push 到
+# main，和 update-ais / update-data 同時跑會互相踩到 rebase。
+concurrency:
+  group: data-pipeline
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      # token 未設定時整個 job 靜默結束（不算失敗）——這是選配資料源
+      - name: Check Cloudflare token
+        id: gate
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLAUDEFARETOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::CLAUDEFARETOKEN 未設定，略過流量異常偵測"
+          fi
+
+      # 偵測用完整 28 天視窗（同時段基線需要多週樣本），
+      # 但寫進檔案的原始序列只留 14 天，避免每 2 小時提交一次把 repo 撐大。
+      - name: Detect traffic anomalies
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLAUDEFARETOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLAUDEFLAREACCOUNTID }}
+        run: python src/fetch_cloudflare_radar.py
+
+      # 前端 network-traffic.html 直接讀 docs/cf_radar.json（data.json 內嵌的
+      # network_anomalies 已剝掉原始陣列，畫不了圖）。data.json 的摘要則由下一次
+      # update-ais / update-data 執行 generate_dashboard 時一併刷新。
+      - name: Copy to docs for GitHub Pages
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          [ -f data/cf_radar.json ] || { echo "無輸出檔，跳過"; exit 0; }
+          cp data/cf_radar.json docs/cf_radar.json
+          ls -l docs/cf_radar.json
+
+      # 只提交 docs/ 那一份：這個檔每 2 小時重寫一次，兩份會讓 repo 的成長速度
+      # 直接翻倍（本專案已經因為 vessel_routes 被撐到 200MB+ 過）。
+      # generate_dashboard 找不到 data/cf_radar.json 時會退回讀 docs/ 這份。
+      - name: Commit and push changes
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/cf_radar.json
+          git diff --staged --quiet && { echo "無變更"; exit 0; }
+          git commit -m "🌐 Network traffic anomaly scan $(date -u +'%Y-%m-%d %H:%M') UTC"
+          git pull --rebase -X theirs origin main || {
+            echo "⚠️ Rebase 失敗，改用 merge 策略"
+            git rebase --abort || true
+            git pull -X ours origin main
+          }
+          git push

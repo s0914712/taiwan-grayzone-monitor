@@ -120,6 +120,10 @@ jobs:
           python src/fetch_cable_status.py
         continue-on-error: true
 
+      # 流量異常偵測改由專屬的 cloudflare-radar.yml 每 2 小時執行（海纜中斷要在
+      # 數小時內知道，12 小時太慢）。它提交 data/cf_radar.json，這裡的
+      # generate_dashboard 讀該檔把摘要嵌進 data.json。
+
       - name: Generate dashboard data
         run: |
           python src/generate_dashboard.py

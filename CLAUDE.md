@@ -11,7 +11,7 @@ Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates A
 - `docs/` — Frontend (GitHub Pages root). HTML, CSS, JS, and JSON data files
 - `src/` — Python data pipeline scripts (fetch, analyze, generate)
 - `data/` — Working/intermediate data (not in the Pages artifact). `data/vessel_routes/{mmsi}.json` is gitignored on main and lives on the single-commit **`vessel-data` branch** (CI regenerates + force-pushes it each run); the frontend fetches routes via raw.githubusercontent.com/.../vessel-data/ — 27k route files in main history bloated the repo to 200MB+ and made Pages deployments time out
-- `.github/workflows/` — 5 CI workflows (AIS every 2h, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, darkship SAR forensics daily 22:00 UTC, Threads weekly, LINE daily push 00:00 UTC = 08:00 TW)
+- `.github/workflows/` — 6 CI workflows (AIS hourly daytime / 2h overnight, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, **Cloudflare Radar traffic-anomaly scan every 2h**, darkship SAR forensics daily 22:00 UTC, Threads weekly, LINE daily push 00:00 UTC = 08:00 TW). All data workflows share the `data-pipeline` concurrency group — they commit to main and would otherwise race on rebase
 - `chips/` + `reports/` — darkship SAR forensics outputs (chip PNGs, `chips/results.json` cumulative log, daily Markdown reports), committed by `darkship-cron.yml`; **not** in the Pages artifact but public in the repo — a deliberate trade-off chosen when the cron was set up. The public daily report page (`docs/reports/<date>.html`, `generate_report.py`) surfaces this work: SAR×AIS 比對成效 funnel + the latest run's chip images (520px thumbnails in `docs/reports/chips/`, 14-day mtime rotation, `<img onerror>` falls back to the raw.githubusercontent original) with verdict badges
 
 ## Tech Stack
@@ -29,6 +29,7 @@ GitHub Actions → src/fetch_ais_data.py (AIS via SOCKS5 proxy)
               → src/analyze_suspicious.py (threat scoring)
               → src/exercise_prediction.py (PLA sortie correlation)
               → src/extract_all_routes.py (per-vessel route JSONs)
+              → src/fetch_cloudflare_radar.py (網路流量異常 × 海纜旁滯留船隻)
               → src/generate_dashboard.py (consolidate → docs/data.json)
               → GitHub Pages deploy
 ```
@@ -278,6 +279,7 @@ installed).
 ```bash
 python3 src/fetch_ais_data.py          # Fetch AIS data + update profiles + save tracks
 python3 src/fetch_gfw_data.py          # Fetch GFW SAR data
+python3 src/fetch_cloudflare_radar.py  # 網路流量異常偵測 + 海纜旁滯留船隻關聯
 python3 src/match_sar_ais.py           # Re-match GFW dark detections vs local AIS
 python3 src/detect_ship_transfers.py   # Detect STS rendezvous events
 python3 src/analyze_suspicious.py      # Run threat scoring engine
@@ -297,6 +299,7 @@ python3 src/gov_daily_activity.py -o out.png   # 昨日海警／公務船動態�
 - `THREADS_USER_ID`, `THREADS_ACCESS_TOKEN`, `THREADS_APP_SECRET` — Threads posting (optional)
 - `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID` — LINE Bot daily push (`LINEBot.yml` / `SendMessage.py`; optional). Images need the workflow's `GITHUB_TOKEN` (uploaded to `data/charts/` via the Contents API to get public raw URLs)
 - `GEMINI_API_KEY` — Google Gemini LLM captions for Threads + LINE daily report (optional; both fall back to fixed templates)
+- `CLAUDEFARETOKEN` / `CLAUDEFLAREACCOUNTID` — Cloudflare Radar API（optional，`fetch_cloudflare_radar.py`）。Token 需具備 **Radar Read** 權限；Radar 端點不需要 account ID（只作記錄）。未設定時 `update-data.yml` 的偵測步驟自動跳過。程式亦接受標準名稱 `CLOUDFLARE_API_TOKEN`（注意 secret 名稱是 Cloud**flare**，目前的 `CLAUDEFARE`/`CLAUDEFLARE` 拼法已在別名清單中支援）
 
 ## Architecture Notes
 - No build step. Frontend is plain static files.
