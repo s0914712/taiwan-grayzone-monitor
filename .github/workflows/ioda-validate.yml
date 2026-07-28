@@ -139,6 +139,129 @@ jobs:
           [ "$rc" = "0" ] && echo "pass=true" >> "$GITHUB_OUTPUT" || echo "pass=false" >> "$GITHUB_OUTPUT"
         continue-on-error: true
 
+      # ── 步驟 6：馬祖有沒有 RIPE Atlas 觀測點 ──────────────────────────
+      # IODA 對連江縣（4210）三種訊號全部回 data:[[]]，該區被 geolocate 的 /24
+      # 太少。若島上有 Atlas probe，就能直接讀它的內建量測當替代訊號。
+      - name: 6️⃣ RIPE Atlas 離島觀測點盤點
+        id: atlas
+        run: |
+          python - <<'PY' | tee /tmp/step6.txt
+          import sys; sys.path.insert(0, 'src')
+          import requests
+          from geo_utils import haversine_km
+          from fetch_ioda import ISLANDS
+
+          probes, url = [], "https://atlas.ripe.net/api/v2/probes/"
+          params = {"country_code": "TW", "status": 1, "page_size": 500,
+                    "format": "json"}
+          try:
+              while url and len(probes) < 2000:
+                  r = requests.get(url, params=params, timeout=45)
+                  r.raise_for_status()
+                  j = r.json()
+                  probes.extend(j.get("results") or [])
+                  url, params = j.get("next"), None
+          except Exception as e:
+              print("ATLAS_ERROR", e)
+
+          print(f"台灣在線 probe 總數: {len(probes)}")
+          located = 0
+          for p in probes:
+              geo = (p.get("geometry") or {}).get("coordinates")
+              if geo and len(geo) >= 2:
+                  p["_lon"], p["_lat"] = geo[0], geo[1]
+                  located += 1
+          print(f"其中有座標的: {located}")
+
+          hits = 0
+          for isl in ISLANDS:
+              near = []
+              for p in probes:
+                  if "_lat" not in p:
+                      continue
+                  d = haversine_km(isl["lat"], isl["lon"], p["_lat"], p["_lon"])
+                  near.append((d, p))
+              near.sort(key=lambda x: x[0])
+              on_island = [x for x in near if x[0] <= 60]
+              hits += len(on_island)
+              print(f"\n{isl['label_zh']}（{isl['lat']},{isl['lon']}）")
+              if on_island:
+                  for d, p in on_island[:5]:
+                      print(f"  ✅ {d:6.1f} km  probe {p['id']}  "
+                            f"AS{p.get('asn_v4')}  {p.get('address_v4')}")
+              else:
+                  print("  ❌ 60km 內沒有 probe。最近的三個：")
+                  for d, p in near[:3]:
+                      print(f"     {d:7.1f} km  probe {p['id']}  AS{p.get('asn_v4')}")
+          print(f"\nRESULT on_island_probes={hits}")
+          PY
+        continue-on-error: true
+
+      # ── 步驟 7：馬祖的 IP 前綴怎麼找（BGP 監測的前置作業）────────────
+      # 要監測「馬祖的前綴是否從路由表消失」，得先知道哪些前綴是馬祖的。
+      # 三條線索：IODA 自己關聯到的 ASN、馬祖公家機關網域解析到的 IP、
+      # 以及該 IP 所屬的 ASN／前綴（並排除 CDN —— 解析到 Cloudflare 就代表
+      # 量到的是邊緣節點，不是離島鏈路）。
+      - name: 7️⃣ 馬祖 IP 前綴探索
+        id: prefix
+        run: |
+          python - <<'PY' | tee /tmp/step7.txt
+          import socket, sys
+          import requests
+
+          IODA = "https://api.ioda.inetintel.cc.gatech.edu/v2"
+          # 雲端／CDN 的 ASN —— 解析到這些代表網站不在島上
+          CDN_ASNS = {13335: "Cloudflare", 16509: "AWS", 15169: "Google",
+                      8075: "Microsoft", 20940: "Akamai", 54113: "Fastly",
+                      139070: "Google Cloud", 24429: "Alibaba"}
+
+          print("=== 7a. IODA 把哪些實體關聯到連江縣(4210) / 金門(4209) ===")
+          for code, name in (("4210", "連江"), ("4209", "金門")):
+              for et in ("asn", "region"):
+                  try:
+                      r = requests.get(f"{IODA}/entities/query",
+                                       params={"entityType": et,
+                                               "relatedTo": f"region/{code}"},
+                                       timeout=45)
+                      body = r.text[:400]
+                      print(f"  [{name} {code}] relatedTo entityType={et} "
+                            f"HTTP {r.status_code}: {body}")
+                  except Exception as e:
+                      print(f"  [{name}] {et} 查詢失敗: {e}")
+
+          print("\n=== 7b. 馬祖公家機關網域解析 ===")
+          DOMAINS = ["www.matsu.gov.tw", "matsu.gov.tw", "www.matsu.edu.tw",
+                     "www.matsu-news.gov.tw", "www.matsuhb.gov.tw",
+                     "www.mtjh.matsu.edu.tw", "www.nqu.edu.tw"]
+          found = []
+          for d in DOMAINS:
+              try:
+                  ip = socket.gethostbyname(d)
+                  found.append((d, ip))
+                  print(f"  {d:28} → {ip}")
+              except Exception as e:
+                  print(f"  {d:28} → 解析失敗 ({type(e).__name__})")
+
+          print("\n=== 7c. 這些 IP 屬於哪個 ASN／前綴（是不是 CDN）===")
+          for d, ip in found:
+              try:
+                  r = requests.get("https://stat.ripe.net/data/prefix-overview/data.json",
+                                   params={"resource": ip}, timeout=45)
+                  data = (r.json() or {}).get("data") or {}
+                  pfx = data.get("resource")
+                  asns = [a.get("asn") for a in (data.get("asns") or [])]
+                  holder = (data.get("asns") or [{}])[0].get("holder", "")
+                  tag = ""
+                  for a in asns:
+                      if a in CDN_ASNS:
+                          tag = f"  ⚠️ {CDN_ASNS[a]}（CDN／雲端，不在島上）"
+                  print(f"  {d:28} {ip:16} prefix={pfx}  AS{asns}  {holder}{tag}")
+              except Exception as e:
+                  print(f"  {d:28} {ip:16} RIPEstat 查詢失敗: {e}")
+          print("\nRESULT domains_resolved=%d" % len(found))
+          PY
+        continue-on-error: true
+
       # ── 整理成 Summary（不用翻 log）──────────────────────────────────
       - name: 📋 產生結果摘要
         if: always()
@@ -159,6 +282,10 @@ jobs:
             echo '```'; cat /tmp/step3.txt 2>/dev/null || echo "(無)"; echo '```'
             echo "### 4️⃣ 完整執行輸出"
             echo '```'; tail -40 /tmp/step4.txt 2>/dev/null || echo "(無)"; echo '```'
+            echo "### 6️⃣ RIPE Atlas 離島觀測點（馬祖替代訊號的可行性）"
+            echo '```'; cat /tmp/step6.txt 2>/dev/null || echo "(無)"; echo '```'
+            echo "### 7️⃣ 馬祖 IP 前綴探索（BGP 監測的前置）"
+            echo '```'; cat /tmp/step7.txt 2>/dev/null || echo "(無)"; echo '```'
             if [ "${{ steps.parse.outputs.pass }}" != "true" ]; then
               echo "### ⚠️ 訊號形狀對不上 — 原始回應（把這段貼回對話）"
               echo '```json'; sed -n 's/^BODY  ://p' /tmp/step2.txt 2>/dev/null | head -c 3000; echo '```'
