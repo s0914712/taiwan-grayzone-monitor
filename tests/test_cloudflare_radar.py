@@ -10,9 +10,12 @@ import pytest
 import random
 
 from fetch_cloudflare_radar import (
+    SERIES_SPECS,
     _get_env,
     _near_cable_km,
     analyze_series,
+    build_summary,
+    mask_reporting_gaps,
     build_cable_index,
     classify_severity,
     correlate_with_vessels,
@@ -274,6 +277,85 @@ def test_severity_thresholds():
                               "peak_z": -3.5}) == "high"
     assert classify_severity({"max_deviation_pct": -11, "duration_hours": 2,
                               "peak_z": -3.1}) == "medium"
+
+
+def test_all_series_use_alpha2_location_codes():
+    """回歸測試：Radar 的 location 只吃 alpha-2 國家碼。
+
+    曾經用 TW-LIE / TW-KIN 想拿馬祖、金門的離島粒度，Radar 回 HTTP 400
+    （Invalid location codes）。Radar 沒有縣市粒度，別再加回來。
+    """
+    for spec in SERIES_SPECS:
+        loc = spec.get("params", {}).get("location")
+        if loc is None:
+            continue
+        assert "-" not in loc, f"{spec['id']}: location={loc} 不是 alpha-2 國家碼"
+        assert len(loc) == 2, f"{spec['id']}: location={loc} 不是 alpha-2 國家碼"
+
+
+def test_mask_reporting_gaps_turns_exact_zero_into_missing():
+    assert mask_reporting_gaps([1.0, 0, 2.0, None, 0.0]) == [1.0, None, 2.0, None, None]
+
+
+def test_zero_valued_reporting_gap_does_not_become_an_anomaly():
+    """首次真實執行的假警報：全台 HTTP 請求量連兩小時剛好 0 → -100%、z=-45.8。"""
+    ts, vals = _hourly_series()
+    at = 22 * 24 + 4
+    dirty = list(vals)
+    for i in range(at, at + 3):
+        dirty[i] = 0.0                       # 回報缺口，不是真的沒有流量
+    out = analyze_series({"id": "s", "label": "s", "direction": "drop"},
+                         {"timestamps": ts, "values": dirty})
+    assert out["anomalies"] == []
+    assert out["reporting_gaps"] == 3
+
+
+def test_genuine_deep_drop_still_detected_alongside_zero_masking():
+    """把 0 當缺值不能連真事件一起擋掉（真實資料裡的 -75.9% 那類）。"""
+    ts, vals = _hourly_series()
+    dirty = _inject_drop(vals, 22 * 24 + 4, 4, 76)
+    out = analyze_series({"id": "s", "label": "s", "direction": "drop"},
+                         {"timestamps": ts, "values": dirty})
+    assert len(out["anomalies"]) == 1
+    assert out["anomalies"][0]["severity"] == "critical"
+    assert out["reporting_gaps"] == 0
+
+
+# ── 關聯涵蓋範圍 ────────────────────────────────────────────────────────────
+
+def test_event_older_than_ais_tracks_is_marked_not_silently_empty():
+    """AIS 軌跡只留 14 天、Radar 視窗 28 天：更早的異常比不到船。
+
+    「比不到」和「比對過但沒有嫌疑船」是完全不同的結論，不能都回空陣列。
+    """
+    onset = datetime(2026, 7, 9, 7, tzinfo=UTC)          # 早於軌跡
+    entries = [_entry(datetime(2026, 7, 20, 12, tzinfo=UTC), [_vessel()])]
+    out = correlate_with_vessels([{"onset": onset.isoformat().replace("+00:00", "Z")}],
+                                 entries, build_cable_index(_CABLE),
+                                 port_lookup=lambda la, lo: None)[0]
+    assert out["correlation_coverage"] == "outside_ais_window"
+    assert out["correlated_vessels"] == []
+    assert out["candidate_summary"]["total"] == 0
+
+
+def test_event_inside_track_window_is_marked_ok():
+    onset = datetime(2026, 7, 20, 12, tzinfo=UTC)
+    entries = [_entry(onset - timedelta(hours=3), [_vessel()])]
+    out = correlate_with_vessels([{"onset": onset.isoformat().replace("+00:00", "Z")}],
+                                 entries, build_cable_index(_CABLE),
+                                 port_lookup=lambda la, lo: None)[0]
+    assert out["correlation_coverage"] == "ok"
+    assert len(out["correlated_vessels"]) == 1
+
+
+def test_summary_counts_uncorrelatable_events():
+    old = {"onset": "2026-07-09T07:00:00Z", "severity": "critical"}
+    entries = [_entry(datetime(2026, 7, 20, 12, tzinfo=UTC), [_vessel()])]
+    events = correlate_with_vessels([old], entries, build_cable_index(_CABLE),
+                                    port_lookup=lambda la, lo: None)
+    s = build_summary([{"id": "s", "anomalies": events}], [])
+    assert s["anomalies_outside_ais_window"] == 1
+    assert s["anomalies_with_commercial_or_gov_candidates"] == 0
 
 
 def test_trim_series_keeps_recent_arrays_and_all_anomalies():

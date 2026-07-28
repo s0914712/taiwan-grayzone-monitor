@@ -331,14 +331,23 @@
         var leads = (cs.commercial || 0) + (cs.gov || 0);
         var vessels = e.correlated_vessels || [];
 
-        var leadNote = leads
-            ? '<span style="color:var(--accent-orange)">⚑ ' +
-              t(leads + ' 艘商船／公務船在異常前於海纜旁滯留',
-                leads + ' commercial/gov vessel(s) loitering near a cable beforehand') + '</span>'
-            : '<span style="color:var(--text-secondary)">' +
-              t('無商船／公務船候選（' + (cs.other || 0) + ' 艘漁船等，屬常態背景）',
-                'No commercial/gov candidate (' + (cs.other || 0) + ' fishing etc., normal background)') +
-              '</span>';
+        var leadNote;
+        if (e.correlation_coverage === 'outside_ais_window') {
+            // 「比不到」不等於「沒有」—— AIS 軌跡只留 14 天，Radar 視窗是 28 天
+            leadNote = '<span style="color:var(--text-secondary)">⏳ ' +
+                t('此事件早於 AIS 軌跡保留範圍（14 天），無法比對船隻',
+                  'Predates the 14-day AIS track retention — vessel correlation not possible') +
+                '</span>';
+        } else if (leads) {
+            leadNote = '<span style="color:var(--accent-orange)">⚑ ' +
+                t(leads + ' 艘商船／公務船在異常前於海纜旁滯留',
+                  leads + ' commercial/gov vessel(s) loitering near a cable beforehand') + '</span>';
+        } else {
+            leadNote = '<span style="color:var(--text-secondary)">' +
+                t('無商船／公務船候選（' + (cs.other || 0) + ' 艘漁船等，屬常態背景）',
+                  'No commercial/gov candidate (' + (cs.other || 0) + ' fishing etc., normal background)') +
+                '</span>';
+        }
 
         return '<div class="anomaly-card" style="border-left-color:' + sev.color + '">' +
             '<div class="anomaly-head">' +
