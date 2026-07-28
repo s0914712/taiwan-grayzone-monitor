@@ -173,10 +173,10 @@ def collect_daily_gov_activity(entries, start, end, classifier=None):
     for rec in by_mmsi.values():
         pts = sorted(rec["points"], key=lambda p: p["t"])
         speeds = [p["speed"] for p in pts]
-        dist = sum(
+        dist = float(sum(
             haversine_km(a["lat"], a["lon"], b["lat"], b["lon"])
             for a, b in zip(pts, pts[1:])
-        )
+        ))
         activity.append({
             "mmsi": rec["mmsi"],
             "category": rec["category"],
@@ -191,7 +191,8 @@ def collect_daily_gov_activity(entries, start, end, classifier=None):
             "max_speed": round(max(speeds), 1) if speeds else 0.0,
             "avg_speed": round(sum(speeds) / len(speeds), 1) if speeds else 0.0,
             "distance_km": round(dist, 1),
-            "moving": dist >= 5.0,
+            # 只有一筆位置時談不上移動與否（距離必為 0），另外標記避免誤導
+            "moving": dist >= 5.0 and len(pts) >= 2,
         })
 
     order = {c: i for i, c in enumerate(CATEGORY_ORDER)}
@@ -251,12 +252,17 @@ def _hhmm(iso_ts):
 
 def _vessel_activity_line(a):
     """單艘公務船的單行動態描述（給模板／LLM context 用）。"""
+    if a["point_count"] < 2:
+        # 單筆位置：距離必為 0，講「幾乎定點」會誤導
+        movement = "｜僅 1 筆位置，無法判斷移動"
+    else:
+        movement = (f"｜日內移動約 {a['distance_km']} 公里"
+                    + ("" if a["moving"] else "（幾乎定點）"))
     parts = [
         f"- {a['name']}（MMSI {a['mmsi']}）",
         f"  出現 {_hhmm(a['first_seen'])}–{_hhmm(a['last_seen'])}（{a['point_count']} 筆位置）",
         f"  最新位置 {a['last_lat']:.2f}N,{a['last_lon']:.2f}E｜最高速 {a['max_speed']} 節"
-        f"｜日內移動約 {a['distance_km']} 公里"
-        + ("" if a["moving"] else "（幾乎定點）"),
+        + movement,
     ]
     if a.get("closest_nm") is not None:
         zone = ZONE_LABEL.get(a.get("closest_zone"), a.get("closest_zone") or "?")
@@ -299,7 +305,7 @@ def build_daily_gov_map(activity, output_path, day_label,
     回傳輸出路徑，無資料或 matplotlib 不可用時回傳 None。
     """
     try:
-        from plot_gov_vessel_tracks import plot_tracks
+        from plot_gov_vessel_tracks import TAIWAN_VIEW_BOUNDS, plot_tracks
     except Exception as e:
         print(f"⚠️ 無法載入繪圖模組，略過公務船動態圖: {e}")
         return None
@@ -321,7 +327,8 @@ def build_daily_gov_map(activity, output_path, day_label,
     } for a in subset]
 
     title = f"China {scope_label} Daily Activity {day_label}  ({len(vessels)} vessels)"
-    return plot_tracks(vessels, output_path, title=title, max_labels=6, pad=0.8)
+    return plot_tracks(vessels, output_path, title=title, max_labels=6, pad=0.8,
+                       include_bounds=TAIWAN_VIEW_BOUNDS)
 
 
 def main():

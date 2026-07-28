@@ -27,19 +27,7 @@ ROUTES_DIR = DATA_DIR / "vessel_routes"
 
 sys.path.insert(0, str(SRC_DIR))
 from fetch_ais_data import classify_gov_vessel  # noqa: E402
-
-# 台灣本島簡化輪廓座標 (lat, lon) — 與 publish_threads.py 一致
-TAIWAN_COASTLINE = [
-    (25.29, 121.57), (25.17, 121.74), (25.03, 121.96),
-    (24.98, 121.98), (24.83, 121.84), (24.59, 121.60),
-    (24.32, 121.51), (24.08, 121.59), (23.76, 121.48),
-    (23.47, 121.35), (23.09, 121.17), (22.76, 121.07),
-    (22.52, 120.75), (22.37, 120.59), (22.00, 120.70),
-    (22.35, 120.30), (22.59, 120.27), (22.92, 120.26),
-    (23.28, 120.18), (23.56, 120.21), (23.93, 120.30),
-    (24.25, 120.47), (24.64, 120.68), (24.84, 120.85),
-    (25.10, 121.25), (25.29, 121.57),
-]
+from map_basemap import TAIWAN_COASTLINE, draw_cables, draw_land  # noqa: E402,F401
 
 # 各子類別配色（與前端 docs/js/map.js VESSEL_COLORS 一致）
 CATEGORY_COLOR = {
@@ -55,6 +43,10 @@ CATEGORY_LABEL = {
     'research':   'Research / Intel (科研)',
 }
 CATEGORY_ORDER = ['coastguard', 'msa', 'rescue', 'research']
+
+# 台灣本島範圍 (lat_min, lat_max, lon_min, lon_max)：單日圖用來當作視野下限，
+# 確保無論船隻聚在哪，圖上都看得到台灣、判讀得出相對位置
+TAIWAN_VIEW_BOUNDS = (21.9, 25.3, 120.0, 122.0)
 
 # 每類別最多標註船名的艘數（依軌跡點數取前 N）——公務船從 10 艘成長到 80+ 艘後
 # 全部標註會讓沿岸區域變成一團文字；未入選者仍繪製航跡但不標字
@@ -81,29 +73,6 @@ def _short_name(name):
     s = re.sub(r'\s+', ' ', (name or '').strip())
     s = re.sub(r'CHINA\s*COAST\s*GUARD', 'CCG', s, flags=re.I)
     return s or '?'
-
-
-def _load_cable_segments():
-    """讀取 data/cable-geo.json 取得海底電纜路徑作為背景。"""
-    cable_file = DATA_DIR / "cable-geo.json"
-    if not cable_file.exists():
-        return []
-    try:
-        with open(cable_file, 'r', encoding='utf-8') as f:
-            geo = json.load(f)
-    except Exception as e:
-        print(f"⚠️ 讀取 {cable_file} 失敗: {e}")
-        return []
-    segments = []
-    for feat in geo.get('features', []):
-        geom = feat.get('geometry', {})
-        if geom.get('type') != 'LineString':
-            continue
-        # GeoJSON 為 [lon, lat]
-        pts = [(c[1], c[0]) for c in geom.get('coordinates', []) if len(c) >= 2]
-        if pts:
-            segments.append(pts)
-    return segments
 
 
 def find_gov_routes():
@@ -137,12 +106,16 @@ def find_gov_routes():
     return vessels
 
 
-def plot_tracks(vessels, output_path, title=None, max_labels=None, pad=0.5):
+def plot_tracks(vessels, output_path, title=None, max_labels=None, pad=0.5,
+                include_bounds=None):
     """繪製公務/關注船航跡圖。
 
     title: 覆寫資訊框第一行（例如單日動態圖標明日期），預設為 14 天歷史航跡標題。
     max_labels: 每類別最多標註船名的艘數，預設 MAX_LABELS_PER_CATEGORY。
     pad: 視野邊界留白（度）。船數少的單日圖留白大一點，船名標註才不會被切掉。
+    include_bounds: (lat_min, lat_max, lon_min, lon_max)，強制納入視野的範圍。
+        單日圖常常只有兩三艘船擠在廈門外海，若只用資料範圍會縮到看不出跟台灣的
+        相對位置——傳入 TAIWAN_VIEW_BOUNDS 可確保台灣一定在畫面裡。
     """
     import matplotlib
     matplotlib.use('Agg')
@@ -159,10 +132,12 @@ def plot_tracks(vessels, output_path, title=None, max_labels=None, pad=0.5):
         print("⚠️ 找不到任何公務/關注船航跡，略過繪圖")
         return None
 
-    cable_segments = _load_cable_segments()
-
     all_lats = [p['lat'] for v in vessels for p in v['track']]
     all_lons = [p['lon'] for v in vessels for p in v['track']]
+    if include_bounds:
+        inc_lat_min, inc_lat_max, inc_lon_min, inc_lon_max = include_bounds
+        all_lats += [inc_lat_min, inc_lat_max]
+        all_lons += [inc_lon_min, inc_lon_max]
     lat_min, lat_max = min(all_lats) - pad, max(all_lats) + pad
     lon_min, lon_max = min(all_lons) - pad, max(all_lons) + pad
 
@@ -170,22 +145,11 @@ def plot_tracks(vessels, output_path, title=None, max_labels=None, pad=0.5):
     fig.patch.set_facecolor('#0a1628')
     ax.set_facecolor('#0a1628')
 
-    # 台灣輪廓
-    tw_lats = [p[0] for p in TAIWAN_COASTLINE]
-    tw_lons = [p[1] for p in TAIWAN_COASTLINE]
-    ax.fill(tw_lons, tw_lats, facecolor='#1a2640', edgecolor='#2a3a5a',
-            linewidth=1, zorder=1)
+    # 陸地底圖（真實海岸線：台灣＋中國沿岸＋離島）
+    draw_land(ax, (lat_min, lat_max, lon_min, lon_max))
 
     # 海底電纜背景
-    for pts in cable_segments:
-        clats = [p[0] for p in pts]
-        clons = [p[1] for p in pts]
-        visible = any(lat_min - 0.5 <= la <= lat_max + 0.5 and
-                      lon_min - 0.5 <= lo <= lon_max + 0.5
-                      for la, lo in zip(clats, clons))
-        if visible:
-            ax.plot(clons, clats, color='#00f5ff', alpha=0.18, linewidth=0.7,
-                    linestyle='--', zorder=2)
+    draw_cables(ax, (lat_min, lat_max, lon_min, lon_max))
 
     # 地理參考地名（僅繪製視野內者）
     for la, lo, label in LANDMARKS:

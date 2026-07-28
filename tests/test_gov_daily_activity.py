@@ -100,6 +100,18 @@ def test_moored_vessel_is_not_moving():
     assert a["distance_km"] < 1
 
 
+def test_single_point_vessel_is_not_labelled_stationary():
+    start, end, label = tw_day_window(now=datetime(2026, 7, 27, 8, tzinfo=TW_TZ))
+    activity = collect_daily_gov_activity(
+        _day([(15, [_ccg(speed=9.1)])]), start, end)
+    a = activity[0]
+    assert a["point_count"] == 1
+    assert a["moving"] is False
+    text = summarize_activity(activity, label)
+    assert "僅 1 筆位置" in text
+    assert "幾乎定點" not in text  # 只有一筆位置談不上定點
+
+
 def test_name_variants_collapse_to_most_common():
     start, end, _ = tw_day_window(now=datetime(2026, 7, 27, 8, tzinfo=TW_TZ))
     entries = _day([

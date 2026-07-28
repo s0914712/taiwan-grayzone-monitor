@@ -304,6 +304,7 @@ python3 src/gov_daily_activity.py -o out.png   # 昨日海警／公務船動態�
 - CSIS methodology from "Signals in the Swarm" report: cable proximity, zigzag detection, going-dark, identity manipulation.
 - Monitoring area (`TAIWAN_BBOX` in `fetch_ais_data.py`): 19-30°N, 116-130°E (Taiwan Strait, East Taiwan, South/East China Sea).
 - Timestamps in ISO 8601 (UTC). Track points deduplicated by consecutive identical lat/lon.
+- Static matplotlib maps (gov-vessel tracks, LINE daily 海警 map, suspicious-vessel track map) share their basemap via `src/map_basemap.py`: real coastlines from the committed `data/land_basemap.geojson` (Natural Earth 1:10m clipped to the monitoring area by `build_land_basemap.py`) + submarine cables from `cable-geo.json`. Frontend Leaflet maps are unaffected — they use tile layers.
 - Mobile-first design with `@media (max-width: 900px)` breakpoint; safe-area-inset for notched devices.
 - z-index stack: sidebar 2000, sidebar-overlay 1999, bottom-nav 1500, popover 1499, bottom-sheet 1400, onboarding 9999.
 - MIT License.
