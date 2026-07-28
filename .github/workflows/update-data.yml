@@ -120,19 +120,9 @@ jobs:
           python src/fetch_cable_status.py
         continue-on-error: true
 
-      # 海纜被破壞的「後果」在網路層：流量掉／延遲跳。跑在船隻分析之後，
-      # 因為異常事件要回頭比對當時在海纜旁滯留的船。token 未設定時自動跳過。
-      - name: Detect network traffic anomalies (Cloudflare Radar)
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLAUDEFARETOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLAUDEFLAREACCOUNTID }}
-        run: |
-          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
-            python src/fetch_cloudflare_radar.py
-          else
-            echo "CLAUDEFARETOKEN 未設定，略過流量異常偵測"
-          fi
-        continue-on-error: true
+      # 流量異常偵測改由專屬的 cloudflare-radar.yml 每 2 小時執行（海纜中斷要在
+      # 數小時內知道，12 小時太慢）。它提交 data/cf_radar.json，這裡的
+      # generate_dashboard 讀該檔把摘要嵌進 data.json。
 
       - name: Generate dashboard data
         run: |

@@ -214,14 +214,19 @@
         if (!s || typeof Chart === 'undefined' || !canvas) return;
 
         var labels = s.timestamps.map(fmtTime);
-        var bands = (s.anomalies || []).map(function (e) {
+        // 輸出檔只保留最近 N 天的原始陣列（見 trim_series_for_output），
+        // 比圖表範圍更早的異常事件仍列在下方卡片，但沒有對應的 x 座標可畫，
+        // 這裡直接略過 —— 夾到 0 會在最左邊畫出一條假的異常帶
+        var bands = [];
+        (s.anomalies || []).forEach(function (e) {
             var from = s.timestamps.indexOf(e.onset);
+            if (from < 0) return;
             var to = s.timestamps.indexOf(e.end);
-            return {
-                from: from < 0 ? 0 : from,
-                to: to < 0 ? (from < 0 ? 0 : from) : to,
+            bands.push({
+                from: from,
+                to: to < 0 ? from : to,
                 color: (SEVERITY[e.severity] || SEVERITY.medium).color
-            };
+            });
         });
 
         if (state.chart) state.chart.destroy();

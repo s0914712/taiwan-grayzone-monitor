@@ -22,6 +22,7 @@ from fetch_cloudflare_radar import (
     hour_of_week_baseline,
     parse_timeseries_payload,
     robust_scale,
+    trim_series_for_output,
 )
 
 UTC = timezone.utc
@@ -273,6 +274,42 @@ def test_severity_thresholds():
                               "peak_z": -3.5}) == "high"
     assert classify_severity({"max_deviation_pct": -11, "duration_hours": 2,
                               "peak_z": -3.1}) == "medium"
+
+
+def test_trim_series_keeps_recent_arrays_and_all_anomalies():
+    """檔案每 2 小時被重寫提交一次，原始陣列要裁短，但偵測結果不能動。"""
+    ts, vals = _hourly_series()                      # 28 天
+    spec = {"id": "tw", "label": "TW", "direction": "drop"}
+    dirty = _inject_drop(vals, 5 * 24, 6, 45)        # 異常落在會被裁掉的舊區間
+    analyzed = [analyze_series(spec, {"timestamps": ts, "values": dirty})]
+    assert len(analyzed[0]["anomalies"]) == 1
+
+    out = trim_series_for_output(analyzed, retain_days=14)[0]
+    assert len(out["timestamps"]) == 14 * 24
+    assert len(out["values"]) == 14 * 24
+    assert len(out["baseline"]) == 14 * 24
+    assert out["timestamps"][-1] == ts[-1]           # 保留的是「最近」的
+    assert out["points"] == len(ts)                  # 偵測用的點數原樣保留
+    assert out["series_retained_days"] == 14
+    assert len(out["anomalies"]) == 1                # 舊異常事件仍完整保留
+
+
+def test_trim_series_does_not_mutate_input():
+    ts, vals = _hourly_series()
+    analyzed = [analyze_series({"id": "tw", "label": "TW", "direction": "drop"},
+                               {"timestamps": ts, "values": vals})]
+    before = len(analyzed[0]["timestamps"])
+    trim_series_for_output(analyzed, retain_days=7)
+    assert len(analyzed[0]["timestamps"]) == before
+
+
+def test_trim_series_rounds_values():
+    series = [{"id": "s", "timestamps": ["t1", "t2"],
+               "values": [1.23456789, None], "baseline": [9.87654321, 2.0],
+               "anomalies": []}]
+    out = trim_series_for_output(series, retain_days=14, precision=2)[0]
+    assert out["values"] == [1.23, None]
+    assert out["baseline"] == [9.88, 2.0]
 
 
 def test_analyze_series_reports_baseline_coverage():

@@ -60,6 +60,13 @@ ACCOUNT_ENV_NAMES = ("CLOUDFLARE_ACCOUNT_ID", "CLAUDEFLAREACCOUNTID",
 DEFAULT_DAYS = 28
 AGG_INTERVAL = "1h"
 
+# 偵測用整個 DEFAULT_DAYS 視窗（同時段基線需要多週樣本），但**寫進檔案的原始
+# 陣列只留最近這幾天**：這個檔每 2 小時被 cron 重寫並提交一次，完整 28 天 × 6
+# 條序列每次約 160KB，一年會替 repo 累積上百 MB（本專案已經被 vessel_routes
+# 撐爆過一次）。前端畫圖 14 天綽綽有餘，異常事件本身很小、完整保留。
+SERIES_RETAIN_DAYS = 14
+OUTPUT_PRECISION = 2
+
 # 抓哪些序列。optional=True 者抓不到就跳過（Radar 對小行政區可能沒有足夠樣本）
 SERIES_SPECS = [
     {
@@ -637,6 +644,31 @@ def load_track_entries():
 
 # ── 主流程 ──────────────────────────────────────────────────────────────────
 
+def trim_series_for_output(series, retain_days=SERIES_RETAIN_DAYS,
+                           precision=OUTPUT_PRECISION):
+    """只保留最近 retain_days 的原始陣列並降低小數位（純函式，回傳新 dict）。
+
+    偵測結果（anomalies）與 metadata 完全不動——被裁掉的只是圖表用不到的舊點。
+    `points` 仍記錄偵測時實際用了幾點，避免看檔案的人以為偵測只吃了 14 天。
+    """
+    keep = int(retain_days * 24)
+
+    def _round(v):
+        return None if v is None else round(v, precision)
+
+    out = []
+    for s in series:
+        ts = s.get("timestamps") or []
+        trimmed = dict(s)
+        trimmed["series_retained_days"] = retain_days
+        trimmed["timestamps"] = ts[-keep:]
+        for key in ("values", "baseline"):
+            arr = s.get(key) or []
+            trimmed[key] = [_round(v) for v in arr[-keep:]]
+        out.append(trimmed)
+    return out
+
+
 def build_summary(analyzed, outages):
     all_events = [(s["id"], e) for s in analyzed for e in s["anomalies"]]
     by_sev = defaultdict(int)
@@ -665,6 +697,9 @@ def main():
                     help=f"抓幾天的資料（預設 {DEFAULT_DAYS}；季節基線至少需 14 天）")
     ap.add_argument("--no-correlate", action="store_true",
                     help="不比對海纜旁滯留船隻")
+    ap.add_argument("--retain-days", type=int, default=SERIES_RETAIN_DAYS,
+                    help=f"輸出檔保留幾天的原始序列（預設 {SERIES_RETAIN_DAYS}；"
+                         f"偵測仍使用完整視窗）")
     ap.add_argument("-o", "--output", default=str(DATA_DIR / "cf_radar.json"))
     args = ap.parse_args()
 
@@ -731,7 +766,7 @@ def main():
             "min_consecutive": MIN_CONSECUTIVE,
             "min_deviation_pct": MIN_DEVIATION_PCT,
         },
-        "series": analyzed,
+        "series": trim_series_for_output(analyzed, retain_days=args.retain_days),
         "outage_annotations": outages,
         "summary": build_summary(analyzed, outages),
     }

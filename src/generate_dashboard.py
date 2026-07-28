@@ -194,8 +194,12 @@ def main():
     else:
         print("⚠️ 找不到 dark_vessels.json，跳過")
 
-    # 讀取 Cloudflare Radar 流量異常（只嵌 summary + 異常事件，不嵌完整時間序列）
+    # 讀取 Cloudflare Radar 流量異常（只嵌 summary + 異常事件，不嵌完整時間序列）。
+    # 這個檔每 2 小時被 cloudflare-radar.yml 重寫一次，為了不讓 repo 膨脹，**只有
+    # docs/ 那一份會被提交**；data/ 的版本只在同一輪 job 內存在，所以兩處都要找。
     cf_radar_path = DATA_DIR / 'cf_radar.json'
+    if not cf_radar_path.exists():
+        cf_radar_path = DOCS_DIR / 'cf_radar.json'
     cf_radar_data = None
     if cf_radar_path.exists():
         try:
@@ -385,7 +389,7 @@ def main():
 
     # 複製流量異常全檔至 docs（network-traffic.html 要畫時間序列，
     # 而 data.json 裡的 network_anomalies 已把原始陣列剝掉）
-    if cf_radar_path.exists():
+    if cf_radar_path.exists() and cf_radar_path != DOCS_DIR / 'cf_radar.json':
         shutil.copy2(cf_radar_path, DOCS_DIR / 'cf_radar.json')
         print(f"🌐 已複製流量異常偵測結果至 docs/cf_radar.json")
 
