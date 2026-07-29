@@ -404,6 +404,60 @@ jobs:
           PY
         continue-on-error: true
 
+      # ── 步驟 10：使用者提供的馬祖住宅段 —— BGP 公告粒度 ────────────────
+      # 42.79.169.0/24 與 114.136.0.0/24 被 geo-IP 庫標為馬祖（連江）。若是 HiNet
+      # 的住宅存取池，實體在馬祖的機率比託管伺服器高（存取池按當地機房分配），
+      # 但住宅段動態且 CPE 不回應，無法 TCP 探測 —— 唯一可行的是 BGP：
+      #   - 若被大 aggregate（如 42.79.0.0/17）蓋住 → BGP 看不到馬祖，無效
+      #   - 若有針對這些段的獨立、較小公告 → 斷纜的路由變化監測得到
+      - name: 🔟 使用者提供馬祖住宅段的 BGP 公告粒度
+        run: |
+          python - <<'PY' | tee /tmp/step10.txt
+          import requests
+          BLOCKS = ["42.79.169.0/24", "114.136.0.0/24"]
+          SAMPLE = {"42.79.169.0/24": "42.79.169.1", "114.136.0.0/24": "114.136.0.1"}
+
+          print("=== 10a. BGP 實際公告的前綴（RIPEstat network-info）===")
+          print("    關鍵：announced prefix 若比 /24 大很多，代表被 aggregate 蓋住，BGP 監測無效\n")
+          for cidr in BLOCKS:
+              try:
+                  r = requests.get("https://stat.ripe.net/data/network-info/data.json",
+                                   params={"resource": cidr}, timeout=45)
+                  d = (r.json() or {}).get("data") or {}
+                  print(f"  {cidr:18} → 實際公告 {d.get('prefix')}  ASNs={d.get('asns')}")
+              except Exception as e:
+                  print(f"  {cidr:18} network-info 失敗: {e}")
+
+          print("\n=== 10b. 該前綴的 BGP 能見度與 origin（routing-status）===")
+          for cidr in BLOCKS:
+              try:
+                  r = requests.get("https://stat.ripe.net/data/routing-status/data.json",
+                                   params={"resource": cidr}, timeout=45)
+                  d = (r.json() or {}).get("data") or {}
+                  vis = (d.get("visibility") or {}).get("v4") or {}
+                  origins = [o.get("origin") for o in (d.get("origins") or [])]
+                  print(f"  {cidr:18} announced={d.get('announced')}  "
+                        f"origins={origins}  能見度={vis.get('ris_peers_seeing')}/{vis.get('total_ris_peers')}")
+              except Exception as e:
+                  print(f"  {cidr:18} routing-status 失敗: {e}")
+
+          print("\n=== 10c. geo-IP 標記（印證：標成馬祖 ≠ 實體在馬祖）===")
+          for cidr, ip in SAMPLE.items():
+              try:
+                  r = requests.get(
+                      f"http://ip-api.com/json/{ip}",
+                      params={"fields": "country,regionName,city,isp,as,lat,lon,query"},
+                      timeout=20)
+                  print(f"  {ip:16} {r.json()}")
+              except Exception as e:
+                  print(f"  {ip:16} geo 查詢失敗: {e}")
+
+          print("\n判讀：")
+          print("  10a 若兩段都被 /16~/17 大 aggregate 蓋住 → BGP 無馬祖粒度，這條路也斷。")
+          print("  只有出現 /24 或接近 /24 的獨立公告，才可能靠 BGP 監測馬祖路由撤回。")
+          PY
+        continue-on-error: true
+
       # ── 整理成 Summary（不用翻 log）──────────────────────────────────
       - name: 📋 產生結果摘要
         if: always()
@@ -432,6 +486,8 @@ jobs:
             echo '```'; cat /tmp/step8.txt 2>/dev/null || echo "(無)"; echo '```'
             echo "### 9️⃣ TCP 握手延遲（RTT 監測可行性）"
             echo '```'; cat /tmp/step9.txt 2>/dev/null || echo "(無)"; echo '```'
+            echo "### 🔟 使用者提供馬祖住宅段的 BGP 公告粒度"
+            echo '```'; cat /tmp/step10.txt 2>/dev/null || echo "(無)"; echo '```'
             if [ "${{ steps.parse.outputs.pass }}" != "true" ]; then
               echo "### ⚠️ 訊號形狀對不上 — 原始回應（把這段貼回對話）"
               echo '```json'; sed -n 's/^BODY  ://p' /tmp/step2.txt 2>/dev/null | head -c 3000; echo '```'
