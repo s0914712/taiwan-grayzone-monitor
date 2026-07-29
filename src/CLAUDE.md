@@ -29,9 +29,11 @@ fetch_ais_data.py → fetch_gfw_data.py → match_sar_ais.py
 > |---|---|---|
 > | RIPE Atlas probe | ❌ | 台灣 89 個在線 probe，馬祖 60km 內掛零（最近 180km）。唯一的離島 probe 在澎湖（0.9km），而澎湖本來就有 IODA |
 > | BGP 前綴可見性 | ❌ | 馬祖公家網站掛在 `117.56.0.0/16` / `210.241.0.0/17`（AS4782 GSNET）與 `163.24.0.0/14`（AS1659 TANet）—— **全國共用，沒有馬祖專屬前綴** |
-> | RTT／主機在島上 | ❌ | whois 決定性：GSN 登記在**台北市中正區延平南路 143 號**；`matsu.edu.tw`（163.25.24.25）屬 **TANet 桃園區網（中壢中央大學）**。網站是「關於馬祖」，不是「在馬祖」|
+> | RTT／主機在島上 | ❌ | 見下方 HiNet 候選的完整分析 |
 >
-> 另：**GitHub runner 上的 traceroute 完全無效** —— TCP traceroute 對四個目標（含對照組）全部 20 跳都是 `*`，Azure 擋掉回程的 ICMP time-exceeded。別再用 runner 做路徑探測。
+> 另：**GitHub runner 上的 traceroute 完全無效** —— TCP traceroute 對六個目標（含對照組）幾乎全部 20 跳都是 `*`（只有 60.250.127.222 在第 20 跳現身，146ms），Azure 擋掉回程的 ICMP time-exceeded。別再用 runner 做路徑探測。
+>
+> **HiNet 候選的 RTT 分析（2026-07 實測，最接近可行的一次）**：政府（GSN 台北）／學術（TANet 桃園）託管都排除後，找到兩個掛在 HiNet(AS3462) 的候選 —— 馬祖酒廠 `60.250.127.222`、馬管處 `220.130.177.158`（實際 ISP，第一次「可能走海纜到島上」）。但 (1) HiNet 的 whois 對**所有** IP 都寫台北總部（`No.21, Sec.1, Xinyi Rd.`），PTR 是無地理資訊的 `hinet-ip.hinet.net`，**遠端無法證實 IP 實體在馬祖**；(2) TCP:443 握手 RTT：馬祖酒廠 147ms vs 台大對照 140ms，差 7.4ms —— 勉強相容於台北→馬祖海纜段（~4ms），但 runner 基線 140ms（在美國/歐洲），解析不出 2-4ms，且兩者範圍重疊（酒廠 146-148 落在台大 139-148 內），統計上分不開；(3) 馬管處與縣府對 runner 的 TCP 逾時（防火牆）。**結論**：就算 RTT 監測技術上可行（TCP 握手繞過 ICMP、差分對照可行），也因為無法確認目標在島上而有「真斷纜時目標其實在台北→RTT 不動→誤報平安」的致命風險。遠端不建。若能取得**一個確認在馬祖的 IP**（找島上的人開 `ifconfig.me`，或用本島 RIPE Atlas probe 從台北量到候選 IP 分辨 ~2ms vs ~7ms），差分 RTT 監測即刻可做（`anomaly_detect` 的 `direction="spike"` 現成支援）。
 >
 > **馬祖目前實際的監測涵蓋**：(1) `fetch_cable_status.py` 抓 MODA 的海纜故障公告（台馬海纜中斷會公告）；(2) **AIS 行為偵測已完整涵蓋** —— `cable-geo.json` 內距馬祖 1.7km 就有 `taiwan-matsu-no-4` 與 `taiwan-penghu-kinmen-matsu-no-3-tpkm3`，海纜旁滯留船隻的評分與關聯照常運作。網路層本來就只是**佐證**（後果），而**先行指標**（船隻行為）並沒有缺口。
 >
