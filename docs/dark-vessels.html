@@ -615,10 +615,12 @@
                 // Flag list
                 renderFlagList(regions);
 
-                // Update status
+                // Update status — 全零代表上游那次擷取沒回傳，別讓頁面看起來像壞掉
                 const range = dv.data_range || {};
                 document.getElementById('dataStatus').textContent =
-                    `✅ ${range.start || ''} ~ ${range.end || ''}`;
+                    (overall.total_detections > 0)
+                        ? `✅ ${range.start || ''} ~ ${range.end || ''}`
+                        : i18n.t('dv.empty_fetch');
                 document.getElementById('updateInfo').textContent =
                     i18n.t('common.updated') + ' ' + new Date(dv.updated_at).toLocaleString();
 

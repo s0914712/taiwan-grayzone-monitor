@@ -44,6 +44,9 @@ jobs:
       - name: Run animation pages smoke test
         run: node tests/animation-smoke.js
 
+      - name: Run mobile navigation smoke test
+        run: node tests/mobile-nav-smoke.js
+
       - name: Compile all pipeline scripts
         run: python -m py_compile src/*.py
 

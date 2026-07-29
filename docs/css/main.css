@@ -1125,36 +1125,6 @@ body {
     }
     .mobile-bottom-nav .nav-icon { font-size: 22px; }
 
-    /* ===== Animation Popover (submenu) ===== */
-    .nav-popover {
-        position: fixed;
-        bottom: calc(56px + env(safe-area-inset-bottom, 0));
-        left: 0;
-        right: 0;
-        background: rgba(20, 30, 50, 0.98);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border-top: 1px solid var(--border-glow);
-        z-index: 1499;
-        transform: translateY(100%);
-        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        padding: 8px 0;
-    }
-    .nav-popover.open { transform: translateY(0); }
-    .nav-popover a {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 20px;
-        color: var(--text-secondary);
-        text-decoration: none;
-        font-size: 14px;
-        transition: background 0.15s;
-    }
-    .nav-popover a:active { background: rgba(0, 245, 255, 0.08); }
-    .nav-popover a.active { color: var(--accent-cyan); }
-    .nav-popover .pop-icon { font-size: 20px; width: 28px; text-align: center; }
-
     /* ===== Bottom Sheet (tools panel) ===== */
     .bottom-sheet {
         position: fixed;
@@ -1206,6 +1176,32 @@ body {
         height: 20px;
         accent-color: var(--accent-cyan);
     }
+    /* Page navigation tiles inside the tools sheet */
+    .bs-nav-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    .bs-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 10px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 13px;
+        line-height: 1.2;
+    }
+    .bs-nav-item:active { background: rgba(0, 245, 255, 0.10); }
+    .bs-nav-item.active {
+        color: var(--accent-cyan);
+        border-color: var(--accent-cyan);
+    }
+    .bs-nav-icon { font-size: 18px; }
+
     .bs-stats-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -1358,7 +1354,6 @@ body {
 @media (min-width: 901px) {
     .mobile-menu-btn { display: none; }
     .mobile-bottom-nav { display: none; }
-    .nav-popover { display: none; }
     .bottom-sheet { display: none; }
     .bottom-sheet-overlay { display: none; }
     .sidebar-overlay { display: none; }

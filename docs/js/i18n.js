@@ -35,6 +35,9 @@ const i18n = (function () {
         'nav.mob_transfers':     { zh: '旁靠', en: 'STS' },
         'nav.research':          { zh: '研究報告', en: 'Research' },
         'nav.blog':              { zh: '深度文章', en: 'Articles' },
+        'nav.network':           { zh: '網路流量', en: 'Network Traffic' },
+        'nav.sar_match':         { zh: 'SAR×AIS 比對', en: 'SAR×AIS Match' },
+        'nav.about':             { zh: '關於本站', en: 'About' },
         'nav.mob_blog':          { zh: '文章', en: 'Blog' },
 
         // ── Bottom Sheet ──
@@ -42,6 +45,7 @@ const i18n = (function () {
         'bs.layers':             { zh: '圖層控制', en: 'Layer Controls' },
         'bs.realtime_stats':     { zh: '即時統計', en: 'Live Stats' },
         'bs.suspicious':         { zh: '可疑船隻', en: 'Suspicious Vessels' },
+        'bs.pages':              { zh: '其他頁面', en: 'More Pages' },
 
         // ── 通用 Common ──
         'common.loading':        { zh: '載入中...', en: 'Loading...' },
@@ -228,6 +232,7 @@ const i18n = (function () {
         'dv.flag_ref_gr':        { zh: '傳統海運大國', en: 'Traditional maritime power' },
         'dv.flag_ref_jp':        { zh: '2024 年表現穩定', en: 'Stable performance in 2024' },
         'dv.no_dark_data':       { zh: '⚠️ 尚無暗船資料', en: '⚠️ No dark vessel data yet' },
+        'dv.empty_fetch':        { zh: '⚠️ 本次 SAR 擷取無偵測資料（來源暫時無回傳），數字待下次更新', en: '⚠️ Latest SAR fetch returned no detections (upstream issue) — figures pending next update' },
         'dv.popup_title':        { zh: '暗船偵測', en: 'Dark Vessel Detection' },
         'dv.popup_region':       { zh: '區域:', en: 'Region:' },
         'dv.popup_date':         { zh: '日期:', en: 'Date:' },

@@ -36,7 +36,7 @@ Every page's header shows the 4 primary links (灰色地帶監測 / 暗船偵測
 | `charts.js` | ~250 | Chart.js: daily/trend/pie charts, overlay cards, zone counts. Exports `ChartsModule`. `displayGfwStats` / `updateAisStats` / `renderSparkline` were dropped when the index GFW + AIS-stats sidebar sections were removed (nothing else called them). |
 | `i18n.js` | ~490 | Translation dict + auto-detect + toggle. Keys: `namespace.key` (e.g., `nav.grayzone`, `ob.t1`). `localStorage('lang')`. Fires `langchange` CustomEvent. |
 | `network-traffic.js` | ~380 | `network-traffic.html` 的全部邏輯：載入 `cf_radar.json`／退回示範資料、序列切換、Chart.js 折線圖 + `anomalyBands` 自訂 plugin（把異常區間畫成底色帶）、異常事件卡與候選船隻表、Cloudflare 中斷標註。**異常與基線都是後端算好的，這裡只負責呈現**——唯一的例外是示範模式的合成序列。語言切換時重繪（示範資料的標籤是中英文字串，會整份重建）。 |
-| `mobile-nav.js` | ~160 | **Single shared mobile shell for ALL pages incl. index**: bottom nav (5 tabs), 6-entry Anim popover, bottom sheet + overlay + drag-to-dismiss. Bails out at `window.innerWidth > 900`. Exposes `window.MobileNav = { sheet, popover, closeAll, addSheetSection(html) }` so a page can inject sheet sections (injected above the always-last update-info section). Must load **before** `app.js` on index. |
+| `mobile-nav.js` | ~160 | **Single shared mobile shell for ALL pages incl. index**: bottom nav (5 tabs = 4 direct links 監測／暗船／統計／動畫 + the 工具 sheet), bottom sheet + overlay + drag-to-dismiss. Every remaining page lives in the sheet's `TOOL_PAGES` nav grid and appears in **exactly one** entry point — the old 動畫 popover both duplicated its own tab (動畫 → 軌跡動畫) and had swallowed the tool pages, so 工具 opened an empty sheet on every page but index. Under `/en/` only `blog`/`intro`/`research-…` are mirrored, so the other hrefs are prefixed `../` (`url()`) instead of 404ing. Bails out at `window.innerWidth > 900`. Exposes `window.MobileNav = { sheet, closeAll, addSheetSection(html) }`; injected sections land **above** the nav grid so a page's own controls stay on top. Must load **before** `app.js` on index. Regression gate: `node tests/mobile-nav-smoke.js` (jsdom). |
 
 ## CSS (`docs/css/main.css`)
 
@@ -70,13 +70,12 @@ The index homepage has a dedicated **公務／科研船追蹤** section (`#govVe
 2000  sidebar (mobile)
 1999  sidebar-overlay
 1500  mobile bottom nav
-1499  nav popover
 1400  bottom sheet
 1000  route search, map overlays
 ```
 
 ### Mobile Design
-- Bottom nav: 5 tabs (Monitor, Dark, Stats, Anim, Tools)
+- Bottom nav: 5 tabs (Monitor, Dark, Stats, Anim, Tools) — the first four are plain links, Tools opens the sheet
 - Bottom sheet: drag-up panel with vessel stats + suspicious list
 - `env(safe-area-inset-bottom)` for notched devices
 

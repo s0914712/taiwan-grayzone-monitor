@@ -1,6 +1,8 @@
 """Tests for fetch_gfw_data.build_dark_detection_records (full-precision
 unmatched-detection persistence for SAR × AIS re-matching)."""
 
+import json
+
 import fetch_gfw_data as g
 
 
@@ -38,3 +40,23 @@ def test_optional_fields_pass_through():
     assert out[0]['timestamp'] == '2026-07-01T09:52:11Z'
     assert out[0]['length_m'] == 88.5
     assert 'timestamp' not in out[1] and 'length_m' not in out[1]
+
+
+# ── 空回應保護（2026-07-29 迴歸） ─────────────────────────────────────────
+# GFW 回 HTTP 200 但 0 筆，把 2,305 筆的 dark_vessels.json 整份洗成 0，
+# 暗船頁全空、統計頁卻還有累積歷史。有既有資料時不得覆寫。
+
+def test_previous_detection_total_reads_existing_file(tmp_path):
+    p = tmp_path / 'dark_vessels.json'
+    p.write_text(json.dumps({'overall': {'total_detections': 2305}}), encoding='utf-8')
+    assert g.previous_detection_total(p) == 2305
+
+
+def test_previous_detection_total_missing_or_broken_file_is_zero(tmp_path):
+    assert g.previous_detection_total(tmp_path / 'nope.json') == 0
+    bad = tmp_path / 'bad.json'
+    bad.write_text('{not json', encoding='utf-8')
+    assert g.previous_detection_total(bad) == 0
+    empty = tmp_path / 'empty.json'
+    empty.write_text(json.dumps({'overall': {'total_detections': 0}}), encoding='utf-8')
+    assert g.previous_detection_total(empty) == 0
