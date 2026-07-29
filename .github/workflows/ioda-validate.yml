@@ -473,9 +473,32 @@ jobs:
               except Exception as e:
                   print(f"  {ip:16} geo 查詢失敗: {e}")
 
+          # 10d：公告這些前綴的 ASN 到底是誰（VPN/代理 vs 真實在地 ISP 的關鍵）
+          # 45.144.227.0/24 以乾淨 /24 公告，origin=AS209854 'Cyberzone S.A.'，
+          # 疑似 VPN/proxy 出口（東引居民很可能透過 VPN 發文）。查 AS 的
+          # holder/country 定性：非台灣、或名字像 hosting/VPN → 不反映海纜狀態。
+          print("\n=== 10d. 公告 ASN 的持有者（VPN/代理 vs 在地 ISP）===")
+          for asn in ["209854", "17421"]:
+              try:
+                  r = requests.get(f"https://stat.ripe.net/data/as-overview/data.json",
+                                   params={"resource": f"AS{asn}"}, timeout=45)
+                  d = (r.json() or {}).get("data") or {}
+                  print(f"  AS{asn}: holder={d.get('holder')}  "
+                        f"announced={d.get('announced')}")
+                  w = requests.get("https://stat.ripe.net/data/whois/data.json",
+                                   params={"resource": f"AS{asn}"}, timeout=45)
+                  recs = ((w.json() or {}).get("data") or {}).get("records") or []
+                  kv = [f"{row['key']}={row['value']}" for block in recs for row in block
+                        if (row.get("key") or "").lower() in ("country", "descr", "org-name", "address")]
+                  print(f"          {' | '.join(kv[:5]) or '(無 whois)'}")
+              except Exception as e:
+                  print(f"  AS{asn}: 查詢失敗 {e}")
+
           print("\n判讀：")
-          print("  10a 若兩段都被 /16~/17 大 aggregate 蓋住 → BGP 無馬祖粒度，這條路也斷。")
-          print("  只有出現 /24 或接近 /24 的獨立公告，才可能靠 BGP 監測馬祖路由撤回。")
+          print("  45.144.227.0/24 是唯一以乾淨 /24 公告的（有 BGP 粒度），但若 10d")
+          print("  顯示 AS209854 是 VPN/代理/境外 hosting → 東引居民是透過 VPN 發文，")
+          print("  這個 IP 反映 VPN 業者而非台馬海纜，不能當馬祖監測目標。")
+          print("  其餘中華電信段全被 /18 aggregate 蓋住，無 BGP 馬祖粒度。")
           PY
         continue-on-error: true
 
