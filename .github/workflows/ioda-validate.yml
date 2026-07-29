@@ -414,8 +414,15 @@ jobs:
         run: |
           python - <<'PY' | tee /tmp/step10.txt
           import requests
-          # 使用者提供的馬祖（連江）中華電信在地端 /24 清單（geo-IP 庫歸類）
+          # ⭐ 45.144.227.0/24 —— 證據等級最高的候選：來自東引居民本人發文的
+          # 來源 IP（45.144.227.57 / .44），發文內容「請繼續加快微波備援」是斷纜
+          # 期間人在東引島上發的，不是 geo-IP 庫的歸類。與中華電信段完全不同網段，
+          # 45.144.x.x 是較新的小型配置，很可能是專門服務東引的獨立 ASN ——
+          # 若是獨立小前綴公告，BGP 監測就活了。優先看它的 10a/10b。
+          #
+          # 其餘為 geo-IP 庫歸類的中華電信段（可靠度較低）。
           BLOCKS = [
+              "45.144.227.0/24",   # ⭐ 東引居民發文來源
               "42.79.169.0/24",
               "223.136.246.0/24",
               "114.136.20.0/24",
@@ -424,6 +431,8 @@ jobs:
               "111.71.111.0/24",
           ]
           SAMPLE = {b: b.replace("0/24", "1") for b in BLOCKS}
+          # 東引兩個實際發文 IP，直接查它們的 geo/whois（不只 .1 樣本）
+          SAMPLE["45.144.227.0/24"] = "45.144.227.57"
 
           print("=== 10a. BGP 實際公告的前綴（RIPEstat network-info）===")
           print("    關鍵：announced prefix 若比 /24 大很多，代表被 aggregate 蓋住，BGP 監測無效\n")
@@ -436,16 +445,20 @@ jobs:
               except Exception as e:
                   print(f"  {cidr:18} network-info 失敗: {e}")
 
-          print("\n=== 10b. 該前綴的 BGP 能見度與 origin（routing-status）===")
+          print("\n=== 10b. 該前綴的 BGP 能見度與 origin（查實際公告前綴）===")
           for cidr in BLOCKS:
               try:
+                  # 先取實際被公告的前綴，routing-status 要查那個才有資料
+                  ni = requests.get("https://stat.ripe.net/data/network-info/data.json",
+                                    params={"resource": cidr}, timeout=45)
+                  announced_pfx = ((ni.json() or {}).get("data") or {}).get("prefix") or cidr
                   r = requests.get("https://stat.ripe.net/data/routing-status/data.json",
-                                   params={"resource": cidr}, timeout=45)
+                                   params={"resource": announced_pfx}, timeout=45)
                   d = (r.json() or {}).get("data") or {}
                   vis = (d.get("visibility") or {}).get("v4") or {}
                   origins = [o.get("origin") for o in (d.get("origins") or [])]
-                  print(f"  {cidr:18} announced={d.get('announced')}  "
-                        f"origins={origins}  能見度={vis.get('ris_peers_seeing')}/{vis.get('total_ris_peers')}")
+                  print(f"  {cidr:18} 公告前綴 {announced_pfx:18} origins={origins}  "
+                        f"能見度={vis.get('ris_peers_seeing')}/{vis.get('total_ris_peers')}")
               except Exception as e:
                   print(f"  {cidr:18} routing-status 失敗: {e}")
 
