@@ -294,8 +294,12 @@ jobs:
           import socket, subprocess
           import requests
 
-          # 馬祖候選 + 對照組（台北的 GSN 與 TANet，用來看路徑差異）
+          # 馬祖候選 + 對照組（台北的 GSN 與 TANet，用來看路徑差異）。
+          # ⭐ 新增兩個 HiNet(AS3462) 候選：這是實際 ISP（不是台北 GSN、也不是
+          # 桃園 TANet），第一次出現「真的可能走海纜到島上」的目標。
           TARGETS = [
+              ("馬祖酒廠 matsuwine ⭐HiNet", "60.250.127.222"),
+              ("馬管處 mtha ⭐HiNet",       "220.130.177.158"),
               ("馬祖縣府 www.matsu.gov.tw", "117.56.181.161"),
               ("馬祖日報",                  "117.56.181.98"),
               ("連江縣教育網 matsu.edu.tw", "163.25.24.25"),
@@ -341,6 +345,65 @@ jobs:
           PY
         continue-on-error: true
 
+      # ── 步驟 9：TCP 握手延遲（runner 上真正可行的量測）────────────────
+      # 關鍵洞察：8c 的 traceroute 全掛，是因為 Azure 擋掉回程的 ICMP
+      # time-exceeded —— 但**一般 TCP 連線是通的**（DNS 都解析成功了）。
+      # 所以量「TCP 三向交握 RTT」就能拿到延遲訊號，不必靠 ICMP。
+      #
+      # 這正是馬祖唯一可行的監測法：海纜斷掉→切微波備援→RTT 明顯上升。
+      # 用差分設計對抗單點量測的不可信：同時量馬祖候選與台北對照，兩邊一起
+      # 跳＝runner／量測問題，只有馬祖跳＝真訊號。這一步先確認 RTT 量得到、
+      # 且量得穩（多次取樣看變異）。
+      - name: 9️⃣ TCP 握手延遲量測（RTT 監測可行性）
+        run: |
+          python - <<'PY' | tee /tmp/step9.txt
+          import socket, statistics, time
+
+          TARGETS = [
+              ("馬祖酒廠 ⭐HiNet",   "60.250.127.222", 443),
+              ("馬管處 ⭐HiNet",     "220.130.177.158", 443),
+              ("馬祖縣府 GSN(台北)", "117.56.181.161", 443),
+              ("對照 中華電信首頁",   "www.hinet.net", 443),
+              ("對照 台大",          "www.ntu.edu.tw", 443),
+          ]
+          SAMPLES = 8
+
+          def tcp_rtt(host, port, timeout=5):
+              try:
+                  ip = socket.gethostbyname(host)
+              except Exception as e:
+                  return None, f"DNS 失敗 {e}"
+              t = time.perf_counter()
+              try:
+                  s = socket.create_connection((ip, port), timeout=timeout)
+                  s.close()
+              except Exception as e:
+                  return None, f"連線失敗 {type(e).__name__}"
+              return (time.perf_counter() - t) * 1000, ip
+
+          print(f"每個目標量 {SAMPLES} 次 TCP:443 握手（中位數 ± 變異）\n")
+          for name, host, port in TARGETS:
+              rtts, ipinfo = [], ""
+              for _ in range(SAMPLES):
+                  rtt, info = tcp_rtt(host, port)
+                  ipinfo = info
+                  if rtt is not None:
+                      rtts.append(rtt)
+                  time.sleep(0.3)
+              if rtts:
+                  med = statistics.median(rtts)
+                  spread = max(rtts) - min(rtts)
+                  print(f"  {name:20} {ipinfo:16} 中位 {med:6.1f} ms  "
+                        f"範圍 {min(rtts):.0f}-{max(rtts):.0f} ms  "
+                        f"（{len(rtts)}/{SAMPLES} 成功）")
+              else:
+                  print(f"  {name:20} {ipinfo}")
+          print("\n判讀：若馬祖 HiNet 候選的 RTT 明顯高於台北對照（多幾 ms 的海纜段），"
+                "\n代表主機確實在島上、且走海纜 —— 那就能靠 RTT 飆升偵測斷纜切備援。"
+                "\n若與台北對照相近，代表主機其實在本島機房，RTT 監測對馬祖無效。")
+          PY
+        continue-on-error: true
+
       # ── 整理成 Summary（不用翻 log）──────────────────────────────────
       - name: 📋 產生結果摘要
         if: always()
@@ -367,6 +430,8 @@ jobs:
             echo '```'; cat /tmp/step7.txt 2>/dev/null || echo "(無)"; echo '```'
             echo "### 8️⃣ 候選主機是否實體位於馬祖"
             echo '```'; cat /tmp/step8.txt 2>/dev/null || echo "(無)"; echo '```'
+            echo "### 9️⃣ TCP 握手延遲（RTT 監測可行性）"
+            echo '```'; cat /tmp/step9.txt 2>/dev/null || echo "(無)"; echo '```'
             if [ "${{ steps.parse.outputs.pass }}" != "true" ]; then
               echo "### ⚠️ 訊號形狀對不上 — 原始回應（把這段貼回對話）"
               echo '```json'; sed -n 's/^BODY  ://p' /tmp/step2.txt 2>/dev/null | head -c 3000; echo '```'
