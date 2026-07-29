@@ -414,8 +414,16 @@ jobs:
         run: |
           python - <<'PY' | tee /tmp/step10.txt
           import requests
-          BLOCKS = ["42.79.169.0/24", "114.136.0.0/24"]
-          SAMPLE = {"42.79.169.0/24": "42.79.169.1", "114.136.0.0/24": "114.136.0.1"}
+          # 使用者提供的馬祖（連江）中華電信在地端 /24 清單（geo-IP 庫歸類）
+          BLOCKS = [
+              "42.79.169.0/24",
+              "223.136.246.0/24",
+              "114.136.20.0/24",
+              "111.71.16.0/24",
+              "111.71.31.0/24",
+              "111.71.111.0/24",
+          ]
+          SAMPLE = {b: b.replace("0/24", "1") for b in BLOCKS}
 
           print("=== 10a. BGP 實際公告的前綴（RIPEstat network-info）===")
           print("    關鍵：announced prefix 若比 /24 大很多，代表被 aggregate 蓋住，BGP 監測無效\n")
