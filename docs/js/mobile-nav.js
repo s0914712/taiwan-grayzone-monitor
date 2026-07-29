@@ -63,6 +63,14 @@
                 <span class="pop-icon">🚢</span>
                 <span data-i18n="nav.transfers">旁靠偵測</span>
             </a>
+            <a href="network-traffic.html" ${currentPage === 'network-traffic.html' ? 'class="active"' : ''}>
+                <span class="pop-icon">📶</span>
+                <span class="lang-zh-only">網路流量</span><span class="lang-en-only">Network Traffic</span>
+            </a>
+            <a href="sar-ais-match.html" ${currentPage === 'sar-ais-match.html' ? 'class="active"' : ''}>
+                <span class="pop-icon">🛰️</span>
+                <span class="lang-zh-only">SAR×AIS 比對</span><span class="lang-en-only">SAR×AIS Match</span>
+            </a>
             <a href="blog.html" ${isBlogPage ? 'class="active"' : ''}>
                 <span class="pop-icon">📖</span>
                 <span data-i18n="nav.blog">深度文章</span>
