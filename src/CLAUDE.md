@@ -37,6 +37,8 @@ fetch_ais_data.py → fetch_gfw_data.py → match_sar_ais.py
 >
 > **馬祖目前實際的監測涵蓋**：(1) `fetch_cable_status.py` 抓 MODA 的海纜故障公告（台馬海纜中斷會公告）；(2) **AIS 行為偵測已完整涵蓋** —— `cable-geo.json` 內距馬祖 1.7km 就有 `taiwan-matsu-no-4` 與 `taiwan-penghu-kinmen-matsu-no-3-tpkm3`，海纜旁滯留船隻的評分與關聯照常運作。網路層本來就只是**佐證**（後果），而**先行指標**（船隻行為）並沒有缺口。
 >
+> **住宅 /24 清單的 BGP 檢查（2026-07 實測，最後一條路也堵死）**：使用者提供六段被 geo-IP 庫標為馬祖的中華電信 /24（42.79.169 / 223.136.246 / 114.136.20 / 111.71.16 / 111.71.31 / 111.71.111）。三重否定：(1) **BGP 無 /24 粒度** —— 六段全被 /18~/19 大 aggregate 蓋住（如 42.79.160.0/19），斷纜的路由撤回看不到；(2) **這些是 AS17421（中華電信行動網 EMOME），不是固網 HiNet(3462)** —— 4G/5G 行動 IP 池不像固網 DSLAM 綁地理位置，同池 IP 台北馬祖都可能拿到，所以「按當地機房分配」的前提不成立；(3) **geo-IP 庫互相矛盾** —— 純真/IPSHU 標馬祖，ip-api.com 標台北市，正好證明 geo 標記不是實體位置的證據。**遠端路徑至此全部走完。**
+>
 > 要補上網路層佐證，唯一可行的是**在馬祖架一台 RIPE Atlas probe**（RIPE NCC 免費提供硬體，需島上有人插電；之後可讀其內建 ping/traceroute 量測）。
 
 | `fetch_weekly_dark_vessels.py` | Extract 90-day SAR dark vessel data grouped by date | GFW API | `weekly_dark_vessels.json` |
