@@ -1,7 +1,12 @@
 /**
  * Taiwan Gray Zone Monitor - Shared Mobile Navigation
- * Creates bottom nav bar, animation popover, and bottom sheet on all pages.
+ * Creates the bottom nav bar and the tools bottom sheet on all pages.
  * Loaded by every HTML page so the navigation persists across page switches.
+ *
+ * Nav model: 4 direct links (監測／暗船／統計／動畫) + 1 sheet (工具).
+ * Every other page lives in the tools sheet and appears in exactly one place —
+ * the old animation popover duplicated its own tab ("動畫" → "軌跡動畫") and had
+ * swallowed the tool pages, leaving the tools tab opening an empty sheet.
  */
 (function() {
     'use strict';
@@ -11,76 +16,57 @@
     function init() {
         if (document.querySelector('.mobile-bottom-nav')) return;
 
-        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-        const animPages = ['ais-animation.html', 'cn-fishing-animation.html', 'identity-history.html', 'ship-transfers.html'];
+        const path = window.location.pathname;
+        const currentPage = path.split('/').pop() || 'index.html';
         const isBlogPage = currentPage === 'blog.html' || currentPage.startsWith('blog-');
-        const isAnimPage = animPages.includes(currentPage);
+
+        // /en/ only mirrors the static content pages (generate_i18n_pages.py
+        // STATIC_PAGES). Everything else has to climb back out of the directory,
+        // otherwise the whole bottom nav 404s on an English article.
+        const inEnDir = /\/en\/[^/]*$/.test(path);
+        const EN_MIRRORED = ['blog.html', 'intro.html', 'research-submarine-cable-legal.html'];
+        const url = href => (inEnDir && EN_MIRRORED.indexOf(href) === -1) ? '../' + href : href;
+
+        // 底部列的「動畫」直接連到軌跡動畫；其餘頁面全部收在「工具」面板，
+        // 一個連結只出現在一個入口（底部列有的就不再列進面板）。
+        const TOOL_PAGES = [
+            { href: 'cn-fishing-animation.html', icon: '🐟', i18n: 'nav.cn_fishing', zh: '大陸漁船' },
+            { href: 'identity-history.html', icon: '🔄', i18n: 'nav.identity', zh: '身分追蹤' },
+            { href: 'ship-transfers.html', icon: '🚢', i18n: 'nav.transfers', zh: '旁靠偵測' },
+            { href: 'network-traffic.html', icon: '📶', i18n: 'nav.network', zh: '網路流量' },
+            { href: 'sar-ais-match.html', icon: '🛰️', i18n: 'nav.sar_match', zh: 'SAR×AIS 比對' },
+            { href: 'blog.html', icon: '📖', i18n: 'nav.blog', zh: '深度文章', match: () => isBlogPage },
+            { href: 'research-submarine-cable-legal.html', icon: '📜', i18n: 'nav.research', zh: '研究報告' },
+            { href: 'intro.html', icon: 'ℹ️', i18n: 'nav.about', zh: '關於本站' }
+        ];
+        const isToolPage = TOOL_PAGES.some(p => p.match ? p.match() : p.href === currentPage);
 
         // --- Bottom Nav (5 tabs) ---
         const bottomNav = document.createElement('nav');
         bottomNav.className = 'mobile-bottom-nav';
         bottomNav.innerHTML = `
-            <a href="index.html" ${currentPage === 'index.html' ? 'class="active"' : ''}>
+            <a href="${url('index.html')}" ${currentPage === 'index.html' ? 'class="active"' : ''}>
                 <span class="nav-icon">🛰️</span>
                 <span data-i18n="nav.mob_monitor">監測</span>
             </a>
-            <a href="dark-vessels.html" ${currentPage === 'dark-vessels.html' ? 'class="active"' : ''}>
+            <a href="${url('dark-vessels.html')}" ${currentPage === 'dark-vessels.html' ? 'class="active"' : ''}>
                 <span class="nav-icon">🔦</span>
                 <span data-i18n="nav.mob_dark">暗船</span>
             </a>
-            <a href="statistics.html" ${currentPage === 'statistics.html' ? 'class="active"' : ''}>
+            <a href="${url('statistics.html')}" ${currentPage === 'statistics.html' ? 'class="active"' : ''}>
                 <span class="nav-icon">📊</span>
                 <span data-i18n="nav.mob_stats">統計</span>
             </a>
-            <button id="navAnimBtn" ${isAnimPage ? 'class="active"' : ''}>
+            <a href="${url('ais-animation.html')}" ${currentPage === 'ais-animation.html' ? 'class="active"' : ''}>
                 <span class="nav-icon">🎬</span>
                 <span data-i18n="nav.mob_anim">動畫</span>
-            </button>
-            <button id="navToolsBtn">
+            </a>
+            <button id="navToolsBtn" ${isToolPage ? 'class="active"' : ''}>
                 <span class="nav-icon">⚙️</span>
                 <span data-i18n="nav.mob_tools">工具</span>
             </button>
         `;
         document.body.appendChild(bottomNav);
-
-        // --- Animation Popover ---
-        const popover = document.createElement('div');
-        popover.className = 'nav-popover';
-        popover.innerHTML = `
-            <a href="ais-animation.html" ${currentPage === 'ais-animation.html' ? 'class="active"' : ''}>
-                <span class="pop-icon">🎬</span>
-                <span data-i18n="nav.animation">軌跡動畫</span>
-            </a>
-            <a href="cn-fishing-animation.html" ${currentPage === 'cn-fishing-animation.html' ? 'class="active"' : ''}>
-                <span class="pop-icon">🐟</span>
-                <span data-i18n="nav.cn_fishing">大陸漁船</span>
-            </a>
-            <a href="identity-history.html" ${currentPage === 'identity-history.html' ? 'class="active"' : ''}>
-                <span class="pop-icon">🔄</span>
-                <span data-i18n="nav.identity">身分追蹤</span>
-            </a>
-            <a href="ship-transfers.html" ${currentPage === 'ship-transfers.html' ? 'class="active"' : ''}>
-                <span class="pop-icon">🚢</span>
-                <span data-i18n="nav.transfers">旁靠偵測</span>
-            </a>
-            <a href="network-traffic.html" ${currentPage === 'network-traffic.html' ? 'class="active"' : ''}>
-                <span class="pop-icon">📶</span>
-                <span class="lang-zh-only">網路流量</span><span class="lang-en-only">Network Traffic</span>
-            </a>
-            <a href="sar-ais-match.html" ${currentPage === 'sar-ais-match.html' ? 'class="active"' : ''}>
-                <span class="pop-icon">🛰️</span>
-                <span class="lang-zh-only">SAR×AIS 比對</span><span class="lang-en-only">SAR×AIS Match</span>
-            </a>
-            <a href="blog.html" ${isBlogPage ? 'class="active"' : ''}>
-                <span class="pop-icon">📖</span>
-                <span data-i18n="nav.blog">深度文章</span>
-            </a>
-            <a href="research-submarine-cable-legal.html" ${currentPage === 'research-submarine-cable-legal.html' ? 'class="active"' : ''}>
-                <span class="pop-icon">📜</span>
-                <span data-i18n="nav.research">研究報告</span>
-            </a>
-        `;
-        document.body.appendChild(popover);
 
         // --- Bottom Sheet Overlay ---
         const sheetOverlay = document.createElement('div');
@@ -94,7 +80,22 @@
 
         let sheetHTML = `<div class="bottom-sheet-handle"></div>`;
 
-        // Page info section
+        // Page navigation — the tools tab must never open an empty sheet. On
+        // index these links sit below the page-specific sections (app.js injects
+        // above this block); on every other page they are the sheet's content.
+        sheetHTML += `
+        <div class="bottom-sheet-section bs-nav-section">
+            <div class="bottom-sheet-title" data-i18n="bs.pages">其他頁面</div>
+            <div class="bs-nav-grid">
+                ${TOOL_PAGES.map(p => `
+                <a href="${url(p.href)}" class="bs-nav-item${(p.match ? p.match() : p.href === currentPage) ? ' active' : ''}">
+                    <span class="bs-nav-icon">${p.icon}</span>
+                    <span data-i18n="${p.i18n}">${p.zh}</span>
+                </a>`).join('')}
+            </div>
+        </div>`;
+
+        // Page info section (always the sheet's last child)
         sheetHTML += `
         <div class="bottom-sheet-section">
             <div style="font-size:12px;color:var(--text-secondary)" id="bsUpdateInfo"></div>
@@ -102,28 +103,18 @@
 
         sheet.innerHTML = sheetHTML;
         document.body.appendChild(sheet);
+        const navSection = sheet.querySelector('.bs-nav-section');
 
         // --- Event Handlers ---
-        let popoverOpen = false;
         let sheetOpen = false;
 
         function closeAll() {
-            popover.classList.remove('open');
             sheet.classList.remove('open');
             sheetOverlay.classList.remove('active');
-            popoverOpen = false;
             sheetOpen = false;
         }
 
-        document.getElementById('navAnimBtn').addEventListener('click', () => {
-            if (sheetOpen) { sheet.classList.remove('open'); sheetOpen = false; }
-            popoverOpen = !popoverOpen;
-            popover.classList.toggle('open', popoverOpen);
-            sheetOverlay.classList.toggle('active', popoverOpen);
-        });
-
         document.getElementById('navToolsBtn').addEventListener('click', () => {
-            if (popoverOpen) { popover.classList.remove('open'); popoverOpen = false; }
             sheetOpen = !sheetOpen;
             sheet.classList.toggle('open', sheetOpen);
             sheetOverlay.classList.toggle('active', sheetOpen);
@@ -145,13 +136,12 @@
 
         // Public hook so a page (index/app.js) can inject page-specific sheet
         // sections without rebuilding the shared shell. New sections land above
-        // the update-info section (always the sheet's last child).
+        // the page-navigation block, so the page's own controls stay on top.
         window.MobileNav = {
             sheet: sheet,
-            popover: popover,
             closeAll: closeAll,
             addSheetSection: function (html) {
-                sheet.lastElementChild.insertAdjacentHTML('beforebegin', html);
+                (navSection || sheet.lastElementChild).insertAdjacentHTML('beforebegin', html);
             }
         };
 

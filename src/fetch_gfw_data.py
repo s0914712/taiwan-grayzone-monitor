@@ -95,6 +95,15 @@ TAIWAN_BBOX = {
 REGION_NAME = "台灣周邊海域"
 
 
+def previous_detection_total(path=OUTPUT_PATH):
+    """讀既有 dark_vessels.json 的 overall.total_detections（讀不到就 0）"""
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return int((json.load(f).get('overall') or {}).get('total_detections', 0))
+    except (OSError, ValueError, TypeError):
+        return 0
+
+
 def bbox_to_geojson(bbox):
     """將 bounding box dict 轉為 GFW API 需要的 GeoJSON Polygon"""
     lat_min, lat_max = bbox['lat_min'], bbox['lat_max']
@@ -353,6 +362,19 @@ def main():
     if records is None:
         print("\n❌ API 請求失敗，保留既有 dark_vessels.json（不覆寫）")
         sys.exit(0)
+
+    # HTTP 200 但一筆都沒有 = 幾乎必然是上游暫時性問題（30 天視窗、整個台灣周邊
+    # 海域不可能零偵測；2026-07-29 就這樣把 2,305 筆整份洗成 0，前端暗船頁全空
+    # 但統計頁還留著累積歷史，看起來像前端壞掉）。既有檔案有資料就不覆寫。
+    if not records:
+        prev_total = previous_detection_total()
+        if prev_total > 0:
+            print(
+                f"\n⚠️ API 回傳 0 筆（上次為 {prev_total} 筆），"
+                "視為上游暫時性異常，保留既有 dark_vessels.json（不覆寫）"
+            )
+            sys.exit(0)
+        print("\n⚠️ API 回傳 0 筆，且無既有資料可保留，照常寫出空結果")
 
     print(f"   取得 {len(records)} 筆 SAR 記錄")
 
