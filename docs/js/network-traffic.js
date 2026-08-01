@@ -15,13 +15,41 @@
         medium: { color: '#ffd700', zh: '中', en: 'Medium' }
     };
 
-    var state = { data: null, islandData: null, isDemo: false, activeId: null, chart: null };
+    var REGION_META = {
+        taiwan: { label_zh: '台灣本島', label_en: 'Taiwan', lat: 23.72, lon: 120.96 },
+        kinmen: { label_zh: '金門', label_en: 'Kinmen', lat: 24.44, lon: 118.32 },
+        lienchiang: { label_zh: '馬祖（連江）', label_en: 'Matsu (Lienchiang)', lat: 26.16, lon: 119.95 },
+        penghu: { label_zh: '澎湖', label_en: 'Penghu', lat: 23.57, lon: 119.62 }
+    };
+    var REGION_COLORS = {
+        normal: '#00ff88',
+        watch: '#ffd700',
+        alert: '#ff3366',
+        unknown: '#8aa4c8'
+    };
+
+    var state = {
+        data: null,
+        islandData: null,
+        isDemo: false,
+        activeId: null,
+        chart: null,
+        map: null,
+        markerLayer: null,
+        regionMarkers: {},
+        sourceErrors: {}
+    };
 
     function zh() {
         return (typeof i18n !== 'undefined' ? i18n.getLang() : 'zh') !== 'en';
     }
     function t(zhText, enText) { return zh() ? zhText : enText; }
     function el(id) { return document.getElementById(id); }
+    function escapeHtml(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char];
+        });
+    }
 
     // ── 示範資料 ────────────────────────────────────────────────────────────
     // 合成一條有日／週週期的流量序列，注入一次 6 小時的大幅下掉（海纜中斷的典型
@@ -139,105 +167,6 @@
         });
     }
 
-    function hoursSince(iso) {
-        var ms = Date.now() - new Date(iso).getTime();
-        return isFinite(ms) ? ms / 3600000 : Infinity;
-    }
-
-    function allEvents() {
-        var events = [];
-        (state.data.series || []).forEach(function (s) {
-            (s.anomalies || []).forEach(function (e) { events.push({ event: e, region: 'taiwan' }); });
-        });
-        ((state.ioda && state.ioda.islands) || []).forEach(function (island) {
-            (island.series || []).forEach(function (s) {
-                (s.anomalies || []).forEach(function (e) {
-                    events.push({ event: e, region: island.id, sources: e.corroborating_sources || 1 });
-                });
-            });
-        });
-        return events;
-    }
-
-    function deriveCurrentStatus() {
-        var generated = state.data && state.data.generated_at;
-        if (!generated || hoursSince(generated) > FRESH_HOURS) {
-            return { level: 'unknown', icon: '⚪', title: t('目前資料不足', 'Current data unavailable'),
-                detail: t('最新主要資料已過期或載入失敗，無法判定目前連線狀態。',
-                    'The primary feed is stale or failed, so current connectivity cannot be determined.'), active: [] };
-        }
-        var cutoff = new Date(new Date(generated).getTime() - 2 * 3600000).toISOString();
-        var active = allEvents().filter(function (x) { return !x.event.end || x.event.end >= cutoff; });
-        if (!active.length) {
-            return { level: 'normal', icon: '🟢', title: t('目前未偵測到持續中的網路異常', 'No ongoing network anomaly detected'),
-                detail: t('最後成功更新：', 'Last successful update: ') + fmtTime(generated), active: [] };
-        }
-        var corroborated = active.some(function (x) { return (x.sources || 1) >= 2; });
-        var critical = active.some(function (x) { return x.event.severity === 'critical'; });
-        var level = corroborated && critical ? 'suspected_outage' : (corroborated ? 'high' : 'watch');
-        var affected = new Set(active.map(function (x) { return x.region; })).size;
-        return { level: level, icon: level === 'suspected_outage' ? '🔴' : (level === 'high' ? '🟠' : '🟡'),
-            title: t('目前偵測到網路異常', 'Ongoing network anomaly detected'),
-            detail: t('受影響區域：', 'Affected regions: ') + affected + ' · ' +
-                (corroborated ? t('已有多來源印證', 'corroborated by multiple sources') : t('尚待其他來源印證', 'awaiting independent corroboration')),
-            active: active };
-    }
-
-    function renderCurrentStatus() {
-        var status = deriveCurrentStatus();
-        var box = el('currentStatus');
-        box.dataset.level = status.level;
-        el('currentStatusTitle').textContent = status.icon + ' ' + status.title;
-        el('currentStatusDetail').textContent = status.detail;
-        return status;
-    }
-
-    function islandStatus(island) {
-        if (!island || island.status === 'unavailable' || !(island.series || []).length ||
-                !state.ioda.generated_at || hoursSince(state.ioda.generated_at) > FRESH_HOURS) {
-            return { level: 'unknown', icon: '⚪', label: t('資料不足', 'No data') };
-        }
-        var events = [];
-        island.series.forEach(function (s) { (s.anomalies || []).forEach(function (e) { events.push(e); }); });
-        var freshCutoff = state.ioda && state.ioda.generated_at ?
-            new Date(new Date(state.ioda.generated_at).getTime() - 2 * 3600000).toISOString() : '';
-        var active = events.filter(function (e) { return !e.end || e.end >= freshCutoff; });
-        if (!active.length) return { level: 'normal', icon: '🟢', label: t('未見持續異常', 'No ongoing anomaly') };
-        var n = Math.max.apply(null, active.map(function (e) { return e.corroborating_sources || 1; }));
-        return n >= 2 ? { level: 'high', icon: '🟠', label: t('多來源異常', 'Multi-source anomaly') } :
-            { level: 'watch', icon: '🟡', label: t('單一訊號異常', 'Single-signal anomaly') };
-    }
-
-    function renderRegions() {
-        var islands = ((state.ioda && state.ioda.islands) || []).slice();
-        ['kinmen', 'lienchiang', 'penghu'].forEach(function (id) {
-            if (!islands.some(function (i) { return i.id === id; })) {
-                var names = { kinmen: ['金門', 'Kinmen'], lienchiang: ['馬祖（連江）', 'Matsu'], penghu: ['澎湖', 'Penghu'] };
-                islands.push({ id: id, label_zh: names[id][0], label_en: names[id][1], status: 'unavailable', series: [] });
-            }
-        });
-        var overall = deriveCurrentStatus();
-        var taiwanActive = overall.active.filter(function (x) { return x.region === 'taiwan'; });
-        var taiwanView = overall.level === 'unknown' ? overall : (taiwanActive.length ?
-            { level: 'watch', icon: '🟡', title: t('偵測到網路異常', 'Network anomaly detected') } :
-            { level: 'normal', icon: '🟢', title: t('未見持續異常', 'No ongoing anomaly') });
-        var cards = [{ id: 'taiwan', label_zh: '台灣本島', label_en: 'Taiwan', statusView: taiwanView,
-            series: (state.data && state.data.series) || [], generated_at: state.data && state.data.generated_at }];
-        islands.forEach(function (i) { i.statusView = islandStatus(i); i.generated_at = state.ioda && state.ioda.generated_at; cards.push(i); });
-        el('islandGrid').innerHTML = cards.map(function (i) {
-            var st = i.statusView;
-            var series = i.series || [];
-            var signalText = series.length ? series.map(function (s) {
-                return (s.label_zh || s.label || s.datasource) + ' ' + ((s.anomalies || []).length ? '●' : '✓');
-            }).join(' · ') : t('無可用訊號', 'No available signals');
-            return '<article class="island-card" data-level="' + st.level + '">' +
-                '<div class="island-name">' + (zh() ? i.label_zh : i.label_en) + '</div>' +
-                '<div class="island-state">' + st.icon + ' ' + (st.label || st.title) + '</div>' +
-                '<div class="signal-list">' + signalText + '</div>' +
-                '<div class="island-meta">' + t('更新：', 'Updated: ') + (i.generated_at ? fmtTime(i.generated_at) : '—') + '</div></article>';
-        }).join('');
-    }
-
     function renderBanner() {
         var banner = el('demoBanner');
         banner.style.display = state.isDemo ? 'flex' : 'none';
@@ -291,6 +220,159 @@
         return result;
     }
 
+    function flattenAnomalies(seriesList) {
+        var events = [];
+        (seriesList || []).forEach(function (series) {
+            (series.anomalies || []).forEach(function (event) { events.push(event); });
+        });
+        return events;
+    }
+
+    function regionViews() {
+        var mainSeries = (state.data && state.data.series) || [];
+        var mainCurrent = currentEvents();
+        var mainAvailable = Boolean(state.data && state.data.generated_at && mainSeries.length);
+        var meta = REGION_META.taiwan;
+        var views = [{
+            id: 'taiwan',
+            label_zh: meta.label_zh,
+            label_en: meta.label_en,
+            lat: meta.lat,
+            lon: meta.lon,
+            level: !mainAvailable ? 'unknown' : (mainCurrent.length ? 'alert' : 'normal'),
+            status_zh: !mainAvailable ? '資料不足' : (mainCurrent.length ? '目前偵測到異常' : '目前未見持續異常'),
+            status_en: !mainAvailable ? 'No data' : (mainCurrent.length ? 'Ongoing anomaly detected' : 'No ongoing anomaly'),
+            anomaly_count: flattenAnomalies(mainSeries).length,
+            current_count: mainCurrent.length,
+            signal_count: mainSeries.length,
+            source_zh: state.isDemo ? '示範資料' : 'Cloudflare Radar',
+            source_en: state.isDemo ? 'Demo data' : 'Cloudflare Radar',
+            updated_at: state.data && state.data.generated_at
+        }];
+
+        var islandById = {};
+        ((state.islandData && state.islandData.islands) || []).forEach(function (island) {
+            islandById[island.id] = island;
+        });
+        ['kinmen', 'lienchiang', 'penghu'].forEach(function (id) {
+            var fallback = REGION_META[id];
+            var island = islandById[id];
+            var series = (island && island.series) || [];
+            var events = flattenAnomalies(series);
+            var available = Boolean(island && island.status !== 'unavailable' && series.length);
+            views.push({
+                id: id,
+                label_zh: (island && island.label_zh) || fallback.label_zh,
+                label_en: (island && island.label_en) || fallback.label_en,
+                lat: island && Number.isFinite(Number(island.lat)) ? Number(island.lat) : fallback.lat,
+                lon: island && Number.isFinite(Number(island.lon)) ? Number(island.lon) : fallback.lon,
+                level: !available ? 'unknown' : (events.length ? 'watch' : 'normal'),
+                status_zh: !available ? '資料不足' : (events.length ? '近 28 天有異常' : '近 28 天未見異常'),
+                status_en: !available ? 'No data' : (events.length ? 'Anomaly in the last 28 days' : 'No anomaly in the last 28 days'),
+                anomaly_count: events.length,
+                current_count: 0,
+                signal_count: series.length,
+                source_zh: 'IODA 網路中斷偵測',
+                source_en: 'IODA outage detection',
+                updated_at: state.islandData && state.islandData.generated_at,
+                error_reason: island && island.error_reason
+            });
+        });
+        return views;
+    }
+
+    function regionName(view) { return zh() ? view.label_zh : view.label_en; }
+    function regionStatus(view) { return zh() ? view.status_zh : view.status_en; }
+    function regionSource(view) { return zh() ? view.source_zh : view.source_en; }
+
+    function regionPopupHtml(view) {
+        var currentRow = view.id === 'taiwan'
+            ? '<div class="region-popup-row">' + t('目前異常訊號：', 'Abnormal signals now: ') +
+                '<strong>' + view.current_count + '</strong></div>'
+            : '';
+        return '<div class="region-popup">' +
+            '<div class="region-popup-title">' + escapeHtml(regionName(view)) + '</div>' +
+            '<div class="region-popup-state" style="color:' + REGION_COLORS[view.level] + '">' +
+                escapeHtml(regionStatus(view)) + '</div>' +
+            currentRow +
+            '<div class="region-popup-row">' + t('近 28 天異常：', 'Anomalies in 28 days: ') +
+                '<strong>' + view.anomaly_count + '</strong></div>' +
+            '<div class="region-popup-row">' + t('可用觀測訊號：', 'Available signals: ') +
+                '<strong>' + view.signal_count + '</strong></div>' +
+            '<div class="region-popup-row">' + t('資料來源：', 'Source: ') +
+                '<strong>' + escapeHtml(regionSource(view)) + '</strong></div>' +
+            '<div class="region-popup-row">' + t('更新：', 'Updated: ') +
+                '<strong>' + (view.updated_at ? escapeHtml(fmtTime(view.updated_at)) : '—') + '</strong></div>' +
+            (view.level === 'unknown' ? '<div class="region-popup-row">' +
+                t('資料不足不代表已確認斷網。', 'Insufficient data does not confirm an outage.') + '</div>' : '') +
+            '</div>';
+    }
+
+    function renderConnectivityMap(views) {
+        var container = el('connectivityMap');
+        if (!container) return;
+        if (typeof L === 'undefined') {
+            container.innerHTML = '<div class="empty-state">' +
+                t('互動地圖暫時無法載入', 'Interactive map unavailable') + '</div>';
+            return;
+        }
+
+        var firstRender = !state.map;
+        if (firstRender) {
+            state.map = L.map(container, {
+                zoomControl: true,
+                attributionControl: true,
+                scrollWheelZoom: false
+            }).setView([24.25, 120.05], 6);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 18,
+                opacity: 0.9,
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+            }).addTo(state.map);
+            state.markerLayer = L.layerGroup().addTo(state.map);
+        } else {
+            state.markerLayer.clearLayers();
+        }
+
+        state.regionMarkers = {};
+        var points = [];
+        views.forEach(function (view) {
+            var latlng = [view.lat, view.lon];
+            var marker = L.circleMarker(latlng, {
+                radius: view.id === 'taiwan' ? 13 : 11,
+                color: '#0a0f1c',
+                weight: 2,
+                fillColor: REGION_COLORS[view.level],
+                fillOpacity: 0.95
+            });
+            marker.bindTooltip(escapeHtml(regionName(view)), {
+                permanent: true,
+                direction: 'top',
+                offset: [0, -9],
+                className: 'region-map-label'
+            });
+            marker.bindPopup(regionPopupHtml(view), { maxWidth: 310 });
+            marker.addTo(state.markerLayer);
+            state.regionMarkers[view.id] = marker;
+            points.push(latlng);
+        });
+
+        if (firstRender && points.length) {
+            state.map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 7 });
+        }
+        setTimeout(function () {
+            if (state.map) state.map.invalidateSize();
+        }, 0);
+    }
+
+    function focusRegion(regionId) {
+        var view = regionViews().find(function (item) { return item.id === regionId; });
+        var marker = state.regionMarkers[regionId];
+        if (!view || !marker || !state.map) return;
+        state.map.flyTo([view.lat, view.lon], Math.max(state.map.getZoom(), 8), { duration: 0.6 });
+        marker.openPopup();
+    }
+
     function renderCurrentStatus() {
         var current = currentEvents();
         var hero = el('currentStatus');
@@ -304,21 +386,19 @@
 
     function renderIslands() {
         var wrap = el('islandStatus');
-        var islands = (state.islandData && state.islandData.islands) || [];
-        if (!islands.length) {
-            wrap.innerHTML = '<div class="empty-state">' + t('離島資料暫時無法取得', 'Outer-island data unavailable') + '</div>';
-            return;
-        }
-        wrap.innerHTML = islands.map(function (island) {
-            var active = [];
-            (island.series || []).forEach(function (series) {
-                (series.anomalies || []).forEach(function (event) { active.push(event); });
-            });
-            var name = zh() ? (island.label_zh || island.name || island.id) : (island.label_en || island.name || island.id);
-            return '<article class="island-status' + (active.length ? ' is-alert' : '') + '"><strong>' + name +
-                '</strong><span class="state">' + (active.length ? t('有近期異常', 'Recent anomaly') : t('未見異常', 'No anomaly')) +
-                '</span><div class="status-meta">' + t(active.length + ' 個／最近 28 天', active.length + ' / last 28 days') + '</div></article>';
+        var islands = regionViews().filter(function (view) { return view.id !== 'taiwan'; });
+        wrap.innerHTML = islands.map(function (view) {
+            return '<button type="button" class="island-status is-' + view.level + '" data-region-id="' + view.id +
+                '" aria-label="' + escapeHtml(regionName(view) + '：' + regionStatus(view)) + '"><strong>' +
+                escapeHtml(regionName(view)) + '</strong><span class="state">' + escapeHtml(regionStatus(view)) +
+                '</span><div class="status-meta">' + t('異常 ', 'Anomalies ') + view.anomaly_count +
+                t(' 個／最近 28 天 · ', ' / last 28 days · ') + t('訊號 ', 'signals ') + view.signal_count +
+                '</div><div class="status-meta">' + t('更新：', 'Updated: ') +
+                (view.updated_at ? escapeHtml(fmtTime(view.updated_at)) : '—') + '</div></button>';
         }).join('');
+        wrap.querySelectorAll('[data-region-id]').forEach(function (button) {
+            button.addEventListener('click', function () { focusRegion(button.dataset.regionId); });
+        });
     }
 
     function renderCandidates() {
@@ -582,10 +662,9 @@
         if (!state.data) return;
         renderBanner();
         renderCurrentStatus();
+        renderConnectivityMap(regionViews());
         renderIslands();
         renderStats();
-        renderCurrentStatus();
-        renderRegions();
         renderTabs();
         if (el('trendPanel').open) renderChart();
         renderAnomalies();
@@ -612,12 +691,16 @@
             console.warn('cf_radar.json unavailable, showing demo data:', err);
             state.data = recomputeSummary(buildDemo());
             state.isDemo = true;
+            state.sourceErrors.cloudflare = true;
         }
         try {
             var islandRes = await fetch('ioda.json?' + Date.now());
-            if (islandRes.ok) state.islandData = await islandRes.json();
+            if (!islandRes.ok) throw new Error('HTTP ' + islandRes.status);
+            state.islandData = await islandRes.json();
         } catch (islandErr) {
             console.warn('ioda.json unavailable:', islandErr);
+            state.islandData = { islands: [], generated_at: null };
+            state.sourceErrors.ioda = true;
         }
         state.activeId = state.data.series[0].id;
         renderAll();
