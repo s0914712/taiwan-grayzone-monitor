@@ -51,6 +51,10 @@
     <noscript><link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"></noscript>
 
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="css/leaflet.css">
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <!-- Chart.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
@@ -217,31 +221,6 @@
         .table-scroll { overflow-x: auto; }
         table.region-table td, table.region-table th { white-space: nowrap; }
 
-        .current-status {
-            margin: 12px;
-            padding: 16px;
-            border: 1px solid rgba(0, 255, 136, 0.35);
-            border-left: 5px solid var(--accent-green);
-            border-radius: 6px;
-            background: var(--bg-card);
-        }
-        .current-status[data-level="watch"] { border-left-color: var(--accent-yellow); }
-        .current-status[data-level="high"] { border-left-color: var(--accent-orange); }
-        .current-status[data-level="suspected_outage"] { border-left-color: var(--accent-red); }
-        .current-status[data-level="unknown"] { border-left-color: var(--text-secondary); }
-        .current-status-title { font-size: clamp(20px, 3vw, 30px); font-weight: 700; }
-        .current-status-detail { margin-top: 6px; color: var(--text-secondary); line-height: 1.6; }
-        .status-caveat { margin-top: 8px; font-size: var(--fs-caption); color: var(--text-secondary); }
-        .island-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 10px;
-            margin: 0 12px 12px;
-        }
-        .island-card { padding: 12px; border: 1px solid rgba(0,245,255,.14); border-radius: 6px; background: var(--bg-card); }
-        .island-name { font-weight: 700; margin-bottom: 6px; }
-        .island-state { font-size: var(--fs-title); font-weight: 700; }
-        .island-meta, .signal-list { margin-top: 6px; color: var(--text-secondary); font-size: var(--fs-caption); line-height: 1.55; }
         details.secondary-panel > summary { cursor: pointer; list-style: none; }
         details.secondary-panel > summary::-webkit-details-marker { display: none; }
         details.secondary-panel > summary::after { content: ' ▸'; color: var(--accent-cyan); }
@@ -282,11 +261,50 @@
         .status-eyebrow, .history-label { color: var(--text-secondary); font-size: var(--fs-caption); }
         .status-conclusion { margin: 4px 0; font-size: clamp(28px, 4vw, 46px); line-height: 1.2; }
         .status-meta { color: var(--text-secondary); font-size: var(--fs-body); }
+        .connectivity-map { height: clamp(330px, 48vw, 520px); min-height: 330px; background: #0a0f1c; }
+        .connectivity-map-legend {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 16px;
+            padding: 10px 12px 12px;
+            color: var(--text-secondary);
+            font-size: var(--fs-caption);
+        }
+        .connectivity-map-legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .map-legend-dot {
+            width: 10px;
+            height: 10px;
+            border: 1px solid rgba(255,255,255,.68);
+            border-radius: 50%;
+            box-shadow: 0 0 7px currentColor;
+        }
+        .map-legend-note { flex: 1 1 260px; justify-content: flex-end; text-align: right; }
+        .region-map-label {
+            background: rgba(10, 15, 28, .92);
+            border: 1px solid rgba(0, 245, 255, .38);
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.45);
+            color: var(--text-primary);
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: var(--fs-caption);
+            font-weight: 700;
+            padding: 2px 6px;
+        }
+        .region-map-label::before { border-top-color: rgba(0, 245, 255, .38); }
+        .region-popup { min-width: 210px; }
+        .region-popup-title { color: var(--accent-cyan); font-size: var(--fs-title); font-weight: 700; margin-bottom: 6px; }
+        .region-popup-state { font-weight: 700; margin-bottom: 7px; }
+        .region-popup-row { color: var(--text-secondary); margin-top: 4px; }
+        .region-popup-row strong { color: var(--text-primary); font-size: inherit; }
         .island-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 12px; }
-        .island-status { border: 1px solid rgba(0,245,255,.14); padding: 12px; border-radius: 5px; }
+        .island-status { border: 1px solid rgba(0,245,255,.14); padding: 12px; border-radius: 5px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+        .island-status:hover, .island-status:focus-visible { border-color: var(--accent-cyan); outline: none; background: rgba(0,245,255,.06); }
         .island-status strong { display: block; font-size: var(--fs-title); margin-bottom: 4px; }
         .island-status .state { color: var(--accent-green); font-weight: 700; }
         .island-status.is-alert .state { color: var(--accent-red); }
+        .island-status.is-watch .state { color: var(--accent-yellow); }
+        .island-status.is-unknown .state { color: var(--text-secondary); }
         .primary-stats { margin: 0; }
         .history-stats { opacity: .78; margin-top: 8px; }
         .history-label { padding: 0 12px 6px; }
@@ -309,6 +327,9 @@
             .main-content { padding: 0 8px 72px; }
             .status-hero { padding: 14px; }
             .status-conclusion { font-size: 28px; }
+            .connectivity-map { height: 360px; min-height: 360px; }
+            .connectivity-map-legend { gap: 7px 12px; }
+            .map-legend-note { flex-basis: 100%; justify-content: flex-start; text-align: left; }
             .island-grid { grid-template-columns: 1fr; }
             .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .panel, details.tech-details, .status-hero { min-width: 0; max-width: 100%; }
@@ -369,6 +390,18 @@
             <div class="status-meta" id="statusMeta">--</div>
         </section>
 
+        <section class="panel" aria-labelledby="connectivityMapTitle">
+            <div class="panel-title" id="connectivityMapTitle"><span class="lang-zh-only">🗺️ 區域連線互動地圖</span><span class="lang-en-only">🗺️ Regional connectivity map</span></div>
+            <div id="connectivityMap" class="connectivity-map" role="region" aria-label="台灣、金門、馬祖與澎湖網路觀測狀態互動地圖"></div>
+            <div class="connectivity-map-legend" aria-label="地圖圖例 Map legend">
+                <span><i class="map-legend-dot" style="color:#00ff88;background:#00ff88"></i><span class="lang-zh-only">未見異常</span><span class="lang-en-only">No anomaly</span></span>
+                <span><i class="map-legend-dot" style="color:#ffd700;background:#ffd700"></i><span class="lang-zh-only">近期異常</span><span class="lang-en-only">Recent anomaly</span></span>
+                <span><i class="map-legend-dot" style="color:#ff3366;background:#ff3366"></i><span class="lang-zh-only">目前異常</span><span class="lang-en-only">Ongoing anomaly</span></span>
+                <span><i class="map-legend-dot" style="color:#8aa4c8;background:#8aa4c8"></i><span class="lang-zh-only">資料不足</span><span class="lang-en-only">No data</span></span>
+                <span class="map-legend-note"><span class="lang-zh-only">灰色代表資料不足，不代表斷網。</span><span class="lang-en-only">Gray means insufficient data, not a confirmed outage.</span></span>
+            </div>
+        </section>
+
         <section class="panel" aria-labelledby="islandTitle">
             <div class="panel-title" id="islandTitle"><span class="lang-zh-only">🏝️ 離島狀態</span><span class="lang-en-only">🏝️ Outer-island status</span></div>
             <div class="island-grid" id="islandStatus"><div class="empty-state">載入中…</div></div>
@@ -405,7 +438,7 @@
             <div class="candidate-list" id="candidateList"></div>
         </div>
 
-        <details class="tech-details">
+        <details class="tech-details" id="trendPanel">
             <summary><span class="lang-zh-only">📈 查看趨勢圖與技術指標</span><span class="lang-en-only">📈 View trends and technical indicators</span></summary>
         <div class="panel">
             <div class="panel-title"><span class="lang-zh-only">📈 流量／延遲時間序列 — 觀測值 vs 季節基線</span><span class="lang-en-only">📈 Traffic / latency time series — observed vs seasonal baseline</span></div>
