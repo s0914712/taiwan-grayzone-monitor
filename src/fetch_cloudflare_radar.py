@@ -288,6 +288,7 @@ def build_cable_index(segments, cell=CABLE_CELL_DEG):
     """
     index = defaultdict(list)
     for seg in segments:
+        cable_name = seg.get("name") or seg.get("id") or "未命名海纜"
         pts = seg.get("points") or []
         for i in range(len(pts) - 1):
             (la0, lo0), (la1, lo1) = pts[i], pts[i + 1]
@@ -297,14 +298,15 @@ def build_cable_index(segments, cell=CABLE_CELL_DEG):
                 f = s / steps
                 la = la0 + (la1 - la0) * f
                 lo = lo0 + (lo1 - lo0) * f
-                index[(int(la / cell), int(lo / cell))].append((la0, lo0, la1, lo1))
+                index[(int(la / cell), int(lo / cell))].append(
+                    (la0, lo0, la1, lo1, cable_name))
     return index
 
 
-def _near_cable_km(lat, lon, index, cell=CABLE_CELL_DEG, max_km=CORRELATE_CABLE_KM):
-    """點到最近海纜的距離（km）；不在海纜格子附近回 None。"""
+def _nearest_cable(lat, lon, index, cell=CABLE_CELL_DEG, max_km=CORRELATE_CABLE_KM):
+    """回傳 ``(距離, 海纜名)``；不在海纜格子附近回 ``(None, None)``。"""
     ci, cj = int(lat / cell), int(lon / cell)
-    best = None
+    best, best_name = None, None
     seen = set()
     for di in (-1, 0, 1):
         for dj in (-1, 0, 1):
@@ -312,12 +314,19 @@ def _near_cable_km(lat, lon, index, cell=CABLE_CELL_DEG, max_km=CORRELATE_CABLE_
                 if seg in seen:
                     continue
                 seen.add(seg)
-                d = point_to_segment_distance_km(lat, lon, *seg)
+                coords = seg[:4]
+                name = seg[4] if len(seg) > 4 else "未命名海纜"
+                d = point_to_segment_distance_km(lat, lon, *coords)
                 if best is None or d < best:
-                    best = d
+                    best, best_name = d, name
     if best is None or best > max_km:
-        return None
-    return best
+        return None, None
+    return best, best_name
+
+
+def _near_cable_km(lat, lon, index, cell=CABLE_CELL_DEG, max_km=CORRELATE_CABLE_KM):
+    """相容舊呼叫端：只回傳最近距離。"""
+    return _nearest_cable(lat, lon, index, cell, max_km)[0]
 
 
 def _is_excluded(mmsi, name):
@@ -347,7 +356,9 @@ def correlate_with_vessels(events, track_entries, cable_index,
                            window_hours=CORRELATE_WINDOW_HOURS,
                            max_speed_kn=CORRELATE_MAX_SPEED_KN,
                            max_vessels=CORRELATE_MAX_VESSELS,
-                           exclude=_is_excluded, port_lookup=None):
+                           exclude=_is_excluded, port_lookup=None,
+                           affected_region="__unspecified__", region_confidence="high",
+                           corroborating_sources=None, candidate_cables=None):
     """為每個流量異常找出「異常開始前 window_hours 內在海纜旁低速滯留」的船。
 
     候選依「船型威脅權重 → 距海纜距離 → 出現次數」排序：貨輪／油輪／公務船
@@ -371,14 +382,31 @@ def correlate_with_vessels(events, track_entries, cable_index,
 
     out = []
     for event in events:
+        base = {
+            **event,
+            "affected_region": ("未指定" if affected_region == "__unspecified__"
+                                else affected_region or "無法定位纜線"),
+            "region_confidence": region_confidence,
+            "candidate_cables": list(candidate_cables or []),
+            "corroborating_sources": (event.get("corroborating_sources", [])
+                                      if corroborating_sources is None
+                                      else list(corroborating_sources)),
+        }
+        # 國家／全台粒度不能合理縮到登陸站；不可把全海域船舶湊成可疑名單。
+        if affected_region != "__unspecified__" and (
+                not affected_region or region_confidence == "low"):
+            out.append({**base, "correlated_vessels": [],
+                        "candidate_summary": candidate_summary([]),
+                        "correlation_coverage": "unlocalized"})
+            continue
         onset = _parse_ts(event.get("onset"))
         if onset is None:
-            out.append({**event, "correlated_vessels": [],
+            out.append({**base, "correlated_vessels": [],
                         "correlation_coverage": "unknown"})
             continue
         window_start = onset - timedelta(hours=window_hours)
         if earliest_track is None or onset < earliest_track:
-            out.append({**event, "correlated_vessels": [],
+            out.append({**base, "correlated_vessels": [],
                         "candidate_summary": candidate_summary([]),
                         "correlation_coverage": "outside_ais_window"})
             continue
@@ -395,7 +423,7 @@ def correlate_with_vessels(events, track_entries, cable_index,
                 lat, lon = v.get("lat"), v.get("lon")
                 if lat is None or lon is None:
                     continue
-                dist = _near_cable_km(lat, lon, cable_index)
+                dist, cable_name = _nearest_cable(lat, lon, cable_index)
                 if dist is None:
                     continue
                 if port_lookup and port_lookup(lat, lon):
@@ -413,27 +441,57 @@ def correlate_with_vessels(events, track_entries, cable_index,
                         "lon": lon,
                         "speed": speed,
                         "nearest_cable_km": round(dist, 2),
+                        "nearest_cable_name": cable_name,
                         "timestamp": entry.get("timestamp"),
                         "points": 1,
+                        "_times": [t],
                     }
                     continue
                 rec["points"] += 1
+                rec["_times"].append(t)
                 # 保留「最靠近海纜」的那一筆位置作為代表
                 if dist < rec["nearest_cable_km"]:
                     rec.update({
                         "name": (v.get("name") or "").strip() or rec["name"],
                         "lat": lat, "lon": lon, "speed": speed,
                         "nearest_cable_km": round(dist, 2),
+                        "nearest_cable_name": cable_name,
                         "timestamp": entry.get("timestamp"),
                     })
 
+        for rec in candidates.values():
+            times = sorted(set(rec.pop("_times")))
+            duration = ((times[-1] - times[0]).total_seconds() / 60
+                        if len(times) >= 2 else 0)
+            rec["ais_points"] = rec["points"]
+            rec["minutes_before_onset"] = round(
+                (onset - max(times)).total_seconds() / 60)
+            rec["loiter_duration_minutes"] = round(duration)
+            sustained = len(times) >= 2 and duration >= 60
+            rec["reasons"] = [
+                f"距 {rec['nearest_cable_name']} {rec['nearest_cable_km']} km",
+                f"異常前 {rec['minutes_before_onset']} 分鐘",
+                (f"持續低速 {rec['loiter_duration_minutes']} 分鐘"
+                 if sustained else "單一或短時 AIS 點（非持續滯留）"),
+            ]
+            # 高優先必須同時具備區域、時間及持續行為三條件。
+            type_penalty = {1: 5, 2: 20}.get(
+                CORRELATE_TYPE_PRIORITY.get(rec.get("type"), CORRELATE_DEFAULT_PRIORITY), 0)
+            rec["risk_score"] = min(100, 30 + 25 + (25 if sustained else 0)
+                                    + (20 if rec["nearest_cable_km"] <= 1 else 10)
+                                    - type_penalty)
+            rec["high_priority"] = sustained and rec.get("type") != "fishing"
+
         ranked = sorted(candidates.values(), key=lambda c: (
+            -c["risk_score"],
             CORRELATE_TYPE_PRIORITY.get(c.get("type"), CORRELATE_DEFAULT_PRIORITY),
             c["nearest_cable_km"],
-            -c["points"],
         ))
         out.append({
-            **event,
+            **base,
+            "candidate_cables": sorted({c.get("nearest_cable_name") for c in ranked
+                                         if c.get("nearest_cable_name")}
+                                        | set(candidate_cables or [])),
             "correlated_vessels": ranked[:max_vessels],
             "candidate_summary": candidate_summary(ranked),
             "correlation_coverage": "ok",
@@ -552,6 +610,17 @@ def main():
     outages = fetch_outage_annotations(token, days=args.days, session=session)
     print(f"   ↳ {len(outages)} 筆")
 
+    # Radar 僅有全台／ASN 粒度，不能推定特定登陸站。即使停用 AIS 關聯，輸出事件
+    # 仍明確攜帶定位與佐證欄位，避免下游誤把「沒有候選」解讀成已排除船隻線索。
+    for series in analyzed:
+        for event in series["anomalies"]:
+            event.update({
+                "affected_region": "無法定位纜線",
+                "region_confidence": "low",
+                "candidate_cables": [],
+                "corroborating_sources": ["Cloudflare Radar"],
+            })
+
     if not args.no_correlate and any(s["anomalies"] for s in analyzed):
         print("🚢 比對海纜旁低速滯留船隻 …")
         try:
@@ -561,7 +630,9 @@ def main():
             print(f"   ↳ 海纜格網 {len(cable_index)} 格｜軌跡快照 {len(entries)} 筆")
             for s in analyzed:
                 s["anomalies"] = correlate_with_vessels(
-                    s["anomalies"], entries, cable_index)
+                    s["anomalies"], entries, cable_index,
+                    affected_region=None, region_confidence="low",
+                    corroborating_sources=["Cloudflare Radar"])
             hits = sum(len(e.get("correlated_vessels", []))
                        for s in analyzed for e in s["anomalies"])
             print(f"   ↳ 候選船隻共 {hits} 艘次")

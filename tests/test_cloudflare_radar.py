@@ -528,3 +528,40 @@ def test_correlation_preserves_original_event_fields():
     out = correlate_with_vessels([event], [], build_cable_index(_CABLE))
     assert out[0]["severity"] == "critical" and out[0]["peak_z"] == -8.1
     assert "correlated_vessels" in out[0]
+
+
+def test_unlocalized_national_event_never_merges_all_vessels():
+    onset = datetime(2026, 7, 20, 12, tzinfo=UTC)
+    entries = [_entry(onset - timedelta(hours=2), [_vessel()])]
+    out = correlate_with_vessels(
+        [{"onset": onset.isoformat().replace("+00:00", "Z")}], entries,
+        build_cable_index(_CABLE), affected_region=None, region_confidence="low",
+        corroborating_sources=["Cloudflare Radar"])[0]
+    assert out["affected_region"] == "無法定位纜線"
+    assert out["candidate_cables"] == []
+    assert out["correlated_vessels"] == []
+    assert out["correlation_coverage"] == "unlocalized"
+
+
+def test_candidate_distinguishes_single_point_from_sustained_loitering():
+    onset = datetime(2026, 7, 20, 12, tzinfo=UTC)
+    entries = [
+        _entry(onset - timedelta(hours=3), [_vessel()]),
+        _entry(onset - timedelta(hours=1), [_vessel()]),
+        _entry(onset - timedelta(minutes=30), [
+            _vessel(mmsi="412000002", name="PASSER")]),
+    ]
+    out = correlate_with_vessels(
+        [{"onset": onset.isoformat().replace("+00:00", "Z")}], entries,
+        build_cable_index([{"name": "TEST CABLE", "points": _CABLE[0]["points"]}]),
+        affected_region="測試區", region_confidence="high",
+        port_lookup=lambda la, lo: None)[0]
+    sustained, single = out["correlated_vessels"]
+    assert sustained["nearest_cable_name"] == "TEST CABLE"
+    assert sustained["ais_points"] == 2
+    assert sustained["loiter_duration_minutes"] == 120
+    assert sustained["minutes_before_onset"] == 60
+    assert sustained["high_priority"] is True
+    assert single["loiter_duration_minutes"] == 0
+    assert single["high_priority"] is False
+    assert "非持續滯留" in single["reasons"][-1]

@@ -249,6 +249,14 @@ def correlate_island_vessels(island, events, track_entries, cable_index):
         return events
 
     lat, lon = island["lat"], island["lon"]
+    regional_cables = set()
+    # 格網中的 cell 是沿線段取樣而來；用 cell 中心判斷可涵蓋端點都在半徑外、
+    # 但線路本身穿過島嶼周邊的長海纜。
+    for (ci, cj), segments in cable_index.items():
+        if haversine_km(lat, lon, (ci + .5) * .1, (cj + .5) * .1) > ISLAND_RADIUS_KM:
+            continue
+        for segment in segments:
+            regional_cables.add(segment[4] if len(segment) > 4 else "未命名海纜")
     nearby = []
     for entry in track_entries:
         vessels = [v for v in (entry.get("vessels") or [])
@@ -257,7 +265,10 @@ def correlate_island_vessels(island, events, track_entries, cable_index):
         if vessels:
             nearby.append({**entry, "vessels": vessels})
     return correlate_with_vessels(events, nearby, cable_index,
-                                  window_hours=CORRELATE_WINDOW_HOURS)
+                                  window_hours=CORRELATE_WINDOW_HOURS,
+                                  affected_region=island["label_zh"],
+                                  region_confidence="high",
+                                  candidate_cables=sorted(regional_cables))
 
 
 def build_summary(islands):
@@ -326,6 +337,13 @@ def main():
             print(f"   ⚠️ {spec['label_zh']} 沒有任何可用訊號，略過")
             continue
         annotate_corroboration(series)
+        for signal in series:
+            for event in signal.get("anomalies", []):
+                event.update({
+                    "affected_region": spec["label_zh"],
+                    "region_confidence": "high",
+                    "candidate_cables": [],
+                })
         islands.append({**spec, "region_code": code, "series": series})
 
     if not islands:

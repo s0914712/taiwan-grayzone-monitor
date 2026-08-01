@@ -69,6 +69,8 @@
                     max_deviation_pct: Math.round(worst * 10) / 10,
                     mean_deviation_pct: Math.round(worst * 10) / 10,
                     severity: 'critical',
+                    affected_region: '馬祖（連江）', region_confidence: 'high',
+                    candidate_cables: ['台馬二號'], corroborating_sources: 2,
                     baseline_at_onset: baseline[cutIdx],
                     value_at_onset: values[cutIdx],
                     candidate_summary: { commercial: 1, gov: 0, other: 4, total: 5 },
@@ -76,13 +78,19 @@
                         {
                             mmsi: '414000000', name: 'DEMO BULKER', type: 'cargo',
                             lat: 26.14, lon: 119.98, speed: 0.4,
-                            nearest_cable_km: 0.31, points: 5,
+                            nearest_cable_km: 0.31, nearest_cable_name: '台馬二號',
+                            minutes_before_onset: 45, loiter_duration_minutes: 240,
+                            ais_points: 5, points: 5, risk_score: 100, high_priority: true,
+                            reasons: ['距台馬二號 0.31 km', '異常前 45 分鐘', '持續低速 240 分鐘'],
                             timestamp: timestamps[Math.max(0, cutIdx - 6)]
                         },
                         {
                             mmsi: '412000000', name: 'DEMO FISHER', type: 'fishing',
                             lat: 26.09, lon: 120.03, speed: 1.8,
-                            nearest_cable_km: 1.24, points: 2,
+                            nearest_cable_km: 1.24, nearest_cable_name: '台馬二號',
+                            minutes_before_onset: 180, loiter_duration_minutes: 0,
+                            ais_points: 1, points: 1, risk_score: 65, high_priority: false,
+                            reasons: ['單一 AIS 點（非持續滯留）'],
                             timestamp: timestamps[Math.max(0, cutIdx - 3)]
                         }
                     ]
@@ -319,17 +327,42 @@
             typeLabel(v.type) + '</td>' +
             '<td>' + (v.name || '—') + '</td>' +
             '<td class="mono">' + v.mmsi + '</td>' +
-            '<td class="mono">' + v.speed + ' kn</td>' +
-            '<td class="mono">' + v.nearest_cable_km + ' km</td>' +
-            '<td class="mono">' + v.lat.toFixed(2) + ', ' + v.lon.toFixed(2) + '</td>' +
+            '<td>' + (v.nearest_cable_name || '—') + '<br><span class="mono">' +
+                v.nearest_cable_km + ' km</span></td>' +
+            '<td class="mono">' + (v.minutes_before_onset == null ? '—' : v.minutes_before_onset + ' min') + '</td>' +
+            '<td class="mono">' + ((v.loiter_duration_minutes || 0) > 0
+                ? v.loiter_duration_minutes + ' min' : t('非持續滯留', 'Not sustained')) + '</td>' +
+            '<td class="mono">' + (v.risk_score == null ? '—' : v.risk_score) + '</td>' +
+            '<td>' + ((v.reasons || []).join('；') || '—') + '</td>' +
             '</tr>';
+    }
+
+    function vesselTable(vessels) {
+        if (!vessels.length) return '';
+        return '<div class="table-scroll"><table class="region-table"><thead><tr>' +
+            '<th>' + t('船型', 'Type') + '</th><th>' + t('船名', 'Name') + '</th><th>MMSI</th>' +
+            '<th>' + t('靠近海纜', 'Nearest cable') + '</th>' +
+            '<th>' + t('異常前', 'Before onset') + '</th>' +
+            '<th>' + t('滯留時間', 'Loiter duration') + '</th>' +
+            '<th>' + t('風險', 'Risk') + '</th><th>' + t('入選原因', 'Reasons') + '</th>' +
+            '</tr></thead><tbody>' + vessels.map(vesselRow).join('') + '</tbody></table></div>';
     }
 
     function anomalyCard(e, seriesLabel) {
         var sev = SEVERITY[e.severity] || SEVERITY.medium;
         var cs = e.candidate_summary || {};
         var leads = (cs.commercial || 0) + (cs.gov || 0);
-        var vessels = e.correlated_vessels || [];
+        var vessels = (e.correlated_vessels || []).slice().sort(function (a, b) {
+            return (b.risk_score || 0) - (a.risk_score || 0);
+        });
+        var priority = vessels.filter(function (v) {
+            return v.high_priority && v.type !== 'fishing';
+        });
+        var background = vessels.filter(function (v) { return priority.indexOf(v) < 0; });
+        var sources = e.corroborating_sources;
+        var sourceCount = Array.isArray(sources) ? sources.length : (sources || 0);
+        var located = e.affected_region && e.affected_region !== '無法定位纜線' &&
+            e.region_confidence !== 'low';
 
         var leadNote;
         if (e.correlation_coverage === 'outside_ais_window') {
@@ -338,10 +371,13 @@
                 t('此事件早於 AIS 軌跡保留範圍（14 天），無法比對船隻',
                   'Predates the 14-day AIS track retention — vessel correlation not possible') +
                 '</span>';
-        } else if (leads) {
+        } else if (!located || sourceCount < 2) {
+            leadNote = '<span style="color:var(--text-secondary)">' +
+                t('附近船隻線索不足', 'Insufficient nearby-vessel leads') + '</span>';
+        } else if (priority.length) {
             leadNote = '<span style="color:var(--accent-orange)">⚑ ' +
-                t(leads + ' 艘商船／公務船在異常前於海纜旁滯留',
-                  leads + ' commercial/gov vessel(s) loitering near a cable beforehand') + '</span>';
+                t(priority.length + ' 艘高優先調查候選',
+                  priority.length + ' high-priority investigation candidate(s)') + '</span>';
         } else {
             leadNote = '<span style="color:var(--text-secondary)">' +
                 t('無商船／公務船候選（' + (cs.other || 0) + ' 艘漁船等，屬常態背景）',
@@ -367,17 +403,17 @@
                     '<span class="m-value mono">' + e.peak_z + '</span></div>' +
             '</div>' +
             '<div class="anomaly-lead">' + leadNote + '</div>' +
-            (vessels.length
-                ? '<div class="table-scroll"><table class="region-table"><thead><tr>' +
-                    '<th>' + t('船型', 'Type') + '</th>' +
-                    '<th>' + t('船名', 'Name') + '</th>' +
-                    '<th>MMSI</th>' +
-                    '<th>' + t('航速', 'Speed') + '</th>' +
-                    '<th>' + t('距海纜', 'To cable') + '</th>' +
-                    '<th>' + t('位置', 'Position') + '</th>' +
-                    '</tr></thead><tbody>' + vessels.map(vesselRow).join('') +
-                    '</tbody></table></div>'
-                : '') +
+            '<div style="color:var(--text-secondary);font-size:.82rem">' +
+                t('影響區域：', 'Affected region: ') + (e.affected_region || '—') +
+                ' · ' + t('區域可信度：', 'Regional confidence: ') + (e.region_confidence || '—') + '</div>' +
+            vesselTable(priority) +
+            (background.length ? '<details class="background-vessels"><summary>' +
+                t('顯示其他背景船（' + background.length + '）',
+                  'Show other background vessels (' + background.length + ')') +
+                '</summary>' + vesselTable(background) + '</details>' : '') +
+            '<div style="margin-top:.6rem;color:var(--text-secondary);font-size:.78rem">⚠️ ' +
+                t('關聯不代表因果；候選僅供後續查證。',
+                  'Correlation does not imply causation; candidates require verification.') + '</div>' +
             '</div>';
     }
 

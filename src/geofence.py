@@ -76,6 +76,8 @@ def load_cable_segments():
         return _cable_segments
     la0, la1, lo0, lo1 = _CABLE_BBOX
     for feat in data.get("features", []):
+        properties = feat.get("properties") or {}
+        cable_name = properties.get("name") or properties.get("slug") or "未命名海纜"
         for segment in feat.get("geometry", {}).get("coordinates", []):
             pts = [(lat, lon) for lon, lat in segment
                    if la0 <= lat <= la1 and lo0 <= lon <= lo1]
@@ -83,6 +85,7 @@ def load_cable_segments():
                 lats = [p[0] for p in pts]
                 lons = [p[1] for p in pts]
                 _cable_segments.append({
+                    "name": cable_name,
                     "points": pts,
                     "bbox": (min(lats), min(lons), max(lats), max(lons)),
                 })
