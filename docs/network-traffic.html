@@ -218,6 +218,31 @@
             margin-bottom: 8px;
         }
         .mono { font-family: 'JetBrains Mono', monospace; }
+        .anomaly-timeline { --timeline-label-width: 250px; overflow-x: auto; padding: 10px 12px 14px; }
+        .timeline-header, .timeline-event { display: grid; grid-template-columns: var(--timeline-label-width) minmax(560px, 1fr); }
+        .timeline-header { min-width: calc(var(--timeline-label-width) + 560px); color: var(--text-secondary); font-size: var(--fs-label); }
+        .timeline-label-heading { padding: 0 10px 8px 0; }
+        .timeline-axis { position: relative; height: 34px; border-bottom: 1px solid rgba(138,164,200,.35); }
+        .timeline-tick { position: absolute; bottom: 7px; transform: translateX(-50%); white-space: nowrap; }
+        .timeline-tick:first-child { transform: none; }
+        .timeline-tick:last-child { transform: translateX(-100%); }
+        .timeline-tick::after { content: ''; position: absolute; left: 50%; top: 22px; height: 7px; border-left: 1px solid rgba(138,164,200,.35); }
+        .timeline-scroll { max-height: 520px; overflow-y: auto; overflow-x: hidden; }
+        .timeline-event { position: relative; min-width: calc(var(--timeline-label-width) + 560px); border-bottom: 1px solid rgba(138,164,200,.1); }
+        .timeline-event:focus { outline: 2px solid var(--accent-cyan); outline-offset: -2px; }
+        .timeline-event-label { position: sticky; left: 0; z-index: 2; display: flex; align-items: center; flex-wrap: wrap; gap: 5px; min-height: 54px; padding: 8px 10px 8px 0; background: var(--bg-card); }
+        .timeline-event-label strong { flex: 1 1 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); }
+        .timeline-track { position: relative; min-height: 54px; background-image: linear-gradient(to right, rgba(138,164,200,.12) 1px, transparent 1px); background-size: 20% 100%; }
+        .timeline-bar { position: absolute; top: 15px; min-width: 5px; height: 24px; border-radius: 4px; box-shadow: 0 0 9px rgba(0,0,0,.55); }
+        .timeline-bar > span { display: block; overflow: hidden; padding: 3px 6px; color: #07101a; font: 700 var(--fs-label) 'JetBrains Mono', monospace; white-space: nowrap; }
+        .ongoing-badge { color: var(--accent-cyan); font-size: var(--fs-label); font-weight: 700; }
+        .timeline-tooltip { display: none; position: absolute; z-index: 5; left: min(35%, 360px); top: calc(100% - 5px); width: min(430px, calc(100vw - 48px)); padding: 10px 12px; border: 1px solid var(--accent-cyan); border-radius: 5px; background: #101a2c; box-shadow: 0 8px 20px rgba(0,0,0,.55); color: var(--text-primary); }
+        .timeline-event:hover .timeline-tooltip, .timeline-event:focus .timeline-tooltip, .timeline-event:focus-within .timeline-tooltip { display: block; }
+        .timeline-tooltip dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 12px; margin: 7px 0; }
+        .timeline-tooltip dl div { min-width: 0; }
+        .timeline-tooltip dt { color: var(--text-secondary); font-size: var(--fs-label); }
+        .timeline-tooltip dd { margin: 0; font-family: 'JetBrains Mono', monospace; overflow-wrap: anywhere; }
+        .timeline-tooltip p { margin: 6px 0 0; color: var(--text-secondary); font-size: var(--fs-caption); }
         .table-scroll { overflow-x: auto; }
         table.region-table td, table.region-table th { white-space: nowrap; }
 
@@ -336,6 +361,14 @@
             .update-info { overflow-wrap: anywhere; padding-left: 10px; padding-right: 10px; }
             .stat-card { padding: 8px 6px; }
             .stat-card .value { font-size: 18px; }
+            .anomaly-timeline { --timeline-label-width: 100%; padding: 8px; }
+            .timeline-header { display: none; }
+            .timeline-scroll { max-height: 520px; overflow-x: visible; }
+            .timeline-event { display: block; min-width: 0; margin: 8px 0; padding: 9px; border: 1px solid rgba(0,245,255,.15); border-radius: 5px; background: var(--bg-secondary); }
+            .timeline-event-label { position: static; min-height: 0; padding: 0 0 8px; background: transparent; }
+            .timeline-track { min-height: 34px; border: 1px solid rgba(138,164,200,.18); border-radius: 3px; }
+            .timeline-bar { top: 5px; }
+            .timeline-tooltip { position: static; width: auto; margin-top: 8px; }
             /* 窄螢幕藏掉 MMSI 與座標欄：留下船型／船名／航速／距海纜這幾個能判讀的，
                整張表仍在 .table-scroll 內，需要時可橫向捲動 */
             .anomaly-card table.region-table th:nth-child(3),
@@ -429,7 +462,7 @@
 
         <div class="panel">
             <div class="panel-title"><span class="lang-zh-only">🚨 進行中／最近事件</span><span class="lang-en-only">🚨 Ongoing / recent events</span></div>
-            <div id="anomalyList"><div class="empty-state" data-i18n="common.loading">載入中...</div></div>
+            <div id="anomalyList" aria-live="polite"><div class="empty-state" data-i18n="common.loading">載入中...</div></div>
         </div>
 
         <div class="panel">
