@@ -821,7 +821,24 @@
         renderAll();
     }
 
-    document.addEventListener('DOMContentLoaded', load);
+    function setupMapSizeToggle() {
+        var button = el('mapSizeToggle');
+        if (!button) return;
+        button.addEventListener('click', function () {
+            var panel = button.closest('.dashboard-map');
+            var expanded = panel.classList.toggle('is-expanded');
+            button.setAttribute('aria-expanded', String(expanded));
+            button.innerHTML = expanded
+                ? '<span class="lang-zh-only">收合地圖</span><span class="lang-en-only">Collapse map</span>'
+                : '<span class="lang-zh-only">展開地圖</span><span class="lang-en-only">Expand map</span>';
+            setTimeout(function () { if (state.map) state.map.invalidateSize(); }, 220);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        setupMapSizeToggle();
+        load();
+    });
     document.addEventListener('toggle', function (event) {
         if (event.target.matches('details.tech-details') && event.target.open && event.target.querySelector('#trafficChart')) renderChart();
     }, true);
