@@ -167,6 +167,15 @@
         });
     }
 
+    function fmtAccessibleTime(iso) {
+        var d = new Date(iso);
+        if (isNaN(d)) return iso || '--';
+        return d.toLocaleString(zh() ? 'zh-TW' : 'en-US', {
+            year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
+            hour: '2-digit', minute: '2-digit', timeZoneName: 'short', hour12: false
+        });
+    }
+
     function renderBanner() {
         var banner = el('demoBanner');
         banner.style.display = state.isDemo ? 'flex' : 'none';
@@ -626,13 +635,51 @@
             '</div>';
     }
 
+    function anomalyTimelineData(seriesList) {
+        var events = [];
+        (seriesList || []).forEach(function (series, seriesIndex) {
+            (series.anomalies || []).forEach(function (event, eventIndex) {
+                events.push({
+                    id: 'anomaly-' + seriesIndex + '-' + eventIndex,
+                    label: series.label || series.id || t('未命名序列', 'Unnamed series'),
+                    onset: event.onset,
+                    end: event.end,
+                    duration_hours: event.duration_hours,
+                    severity: event.severity || 'medium',
+                    max_deviation_pct: event.max_deviation_pct,
+                    peak_z: event.peak_z,
+                    candidate_summary: event.candidate_summary || {},
+                    correlation_coverage: event.correlation_coverage,
+                    correlated_vessels: event.correlated_vessels || []
+                });
+            });
+        });
+        return events;
+    }
+
+    function timelineVesselSummary(event) {
+        var cs = event.candidate_summary || {};
+        if (event.correlation_coverage === 'outside_ais_window') {
+            return t('早於 AIS 14 天保留範圍，無法比對船隻',
+                'Outside the 14-day AIS retention window; vessel correlation unavailable');
+        }
+        var leads = Number(cs.commercial || 0) + Number(cs.gov || 0);
+        var total = Number(cs.total || 0);
+        var named = (event.correlated_vessels || []).slice(0, 3).map(function (v) {
+            return v.name || v.mmsi || typeLabel(v.type);
+        });
+        var summary = leads
+            ? t(leads + ' 艘商船／公務船候選', leads + ' commercial/government candidate(s)')
+            : t('無商船／公務船候選', 'No commercial/government candidates');
+        summary += t('；共 ' + total + ' 艘關聯船隻', '; ' + total + ' correlated vessel(s)');
+        if (named.length) summary += ' — ' + named.join(', ');
+        return summary;
+    }
+
     function renderAnomalies() {
         var wrap = el('anomalyList');
-        var all = [];
-        state.data.series.forEach(function (s) {
-            (s.anomalies || []).forEach(function (e) { all.push({ e: e, label: s.label }); });
-        });
-        all.sort(function (a, b) { return (b.e.onset || '').localeCompare(a.e.onset || ''); });
+        var all = anomalyTimelineData(state.data.series);
+        all.sort(function (a, b) { return (b.onset || '').localeCompare(a.onset || ''); });
 
         if (!all.length) {
             wrap.innerHTML = '<div class="empty-state">' +
@@ -640,7 +687,75 @@
                   'No traffic anomalies detected in the window — that is good news.') + '</div>';
             return;
         }
-        wrap.innerHTML = all.map(function (a) { return anomalyCard(a.e, a.label); }).join('');
+
+        var onsetTimes = all.map(function (event) { return new Date(event.onset).getTime(); })
+            .filter(function (time) { return isFinite(time); });
+        var endTimes = all.map(function (event) { return new Date(event.end || event.onset).getTime(); })
+            .filter(function (time) { return isFinite(time); });
+        var generatedTime = new Date(state.data.generated_at).getTime();
+        var rangeStart = Math.min.apply(null, onsetTimes);
+        var lastEventEnd = Math.max.apply(null, endTimes);
+        var rangeEnd = isFinite(generatedTime) ? generatedTime : lastEventEnd;
+        rangeEnd = Math.max(rangeStart, rangeEnd);
+        if (rangeEnd === rangeStart) rangeEnd += 3600 * 1000;
+        var range = rangeEnd - rangeStart;
+        var recentCutoff = rangeEnd - 2 * 3600 * 1000;
+        var tickCount = 6;
+        var ticks = [];
+        for (var i = 0; i < tickCount; i++) {
+            var tickTime = rangeStart + range * i / (tickCount - 1);
+            ticks.push('<span class="timeline-tick" style="left:' + (i / (tickCount - 1) * 100) + '%">' +
+                escapeHtml(fmtTime(new Date(tickTime).toISOString())) + '</span>');
+        }
+
+        var rows = all.map(function (event) {
+            var onset = new Date(event.onset).getTime();
+            var suppliedEnd = event.end ? new Date(event.end).getTime() : NaN;
+            var effectiveEnd = isFinite(suppliedEnd) ? suppliedEnd : rangeEnd;
+            var ongoing = !event.end || effectiveEnd >= recentCutoff;
+            var left = Math.max(0, Math.min(100, (onset - rangeStart) / range * 100));
+            var width = Math.max(0.8, Math.min(100 - left, (effectiveEnd - onset) / range * 100));
+            var sev = SEVERITY[event.severity] || SEVERITY.medium;
+            var duration = event.duration_hours != null ? event.duration_hours :
+                Math.max(0, Math.round((effectiveEnd - onset) / 360000) / 10);
+            var endText = event.end ? fmtTime(event.end) : t('尚未結束', 'Not ended');
+            var deviation = event.max_deviation_pct == null ? '--' :
+                (event.max_deviation_pct > 0 ? '+' : '') + event.max_deviation_pct + '%';
+            var zScore = event.peak_z == null ? '--' : event.peak_z;
+            var vesselSummary = timelineVesselSummary(event);
+            var fullDescription = t('事件：', 'Event: ') + event.label + '。' +
+                t('嚴重度：', 'Severity: ') + t(sev.zh, sev.en) + '。' +
+                t('開始：', 'Onset: ') + fmtAccessibleTime(event.onset) + '。' +
+                t('結束：', 'End: ') + (event.end ? fmtAccessibleTime(event.end) : endText) + '。' +
+                t('持續：', 'Duration: ') + duration + t(' 小時。', ' hours. ') +
+                t('相對基線：', 'Versus baseline: ') + deviation + '。' +
+                t('穩健 z：', 'Robust z: ') + zScore + '。' + vesselSummary;
+
+            return '<div class="timeline-event" id="' + event.id + '" tabindex="0" role="listitem" aria-label="' +
+                escapeHtml(fullDescription) + '" aria-describedby="' + event.id + '-details">' +
+                '<div class="timeline-event-label"><strong>' + escapeHtml(event.label) + '</strong>' +
+                    '<span class="sev-badge" style="background:' + sev.color + '">' +
+                    escapeHtml(t(sev.zh, sev.en)) + '</span>' +
+                    (ongoing ? '<span class="ongoing-badge">● ' + escapeHtml(t('進行中', 'Ongoing')) + '</span>' : '') +
+                '</div>' +
+                '<div class="timeline-track" aria-hidden="true"><span class="timeline-bar" style="left:' +
+                    left + '%;width:' + width + '%;background:' + sev.color + '">' +
+                    '<span>' + escapeHtml(duration + ' h') + '</span></span></div>' +
+                '<div class="timeline-tooltip" id="' + event.id + '-details" role="tooltip"><strong>' + escapeHtml(event.label) + '</strong>' +
+                    '<dl><div><dt>' + escapeHtml(t('開始', 'Onset')) + '</dt><dd>' + escapeHtml(fmtTime(event.onset)) + '</dd></div>' +
+                    '<div><dt>' + escapeHtml(t('結束', 'End')) + '</dt><dd>' + escapeHtml(endText) + '</dd></div>' +
+                    '<div><dt>' + escapeHtml(t('持續時間', 'Duration')) + '</dt><dd>' + escapeHtml(duration + ' h') + '</dd></div>' +
+                    '<div><dt>' + escapeHtml(t('相對基線', 'vs baseline')) + '</dt><dd>' + escapeHtml(deviation) + '</dd></div>' +
+                    '<div><dt>' + escapeHtml(t('穩健 z', 'Robust z')) + '</dt><dd>' + escapeHtml(zScore) + '</dd></div></dl>' +
+                    '<p>⚑ ' + escapeHtml(vesselSummary) + '</p></div></div>';
+        }).join('');
+
+        wrap.innerHTML = '<div class="anomaly-timeline" role="region" aria-label="' +
+            escapeHtml(t('網路異常事件時間軸', 'Network anomaly event timeline')) + '">' +
+            '<div class="timeline-header"><div class="timeline-label-heading">' +
+                escapeHtml(t('事件／嚴重度', 'Event / severity')) + '</div><div class="timeline-axis">' +
+                ticks.join('') + '</div></div><div class="timeline-scroll" role="list">' + rows +
+            '</div></div>';
     }
 
     function renderOutages() {
