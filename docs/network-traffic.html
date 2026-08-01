@@ -343,7 +343,7 @@
             <div class="island-grid" id="islandStatus"><div class="empty-state">載入中…</div></div>
         </section>
 
-    <div class="stats-row primary-stats">
+        <div class="stats-row primary-stats">
         <div class="stat-card">
             <div class="value" id="statRegions">--</div>
             <div class="label"><span class="lang-zh-only">目前異常地區</span><span class="lang-en-only">Regions abnormal now</span></div>
@@ -409,11 +409,6 @@
                     <p class="lang-en-only">Traffic has strong daily/weekly cycles — 3 a.m. is naturally half of mid-afternoon, so thresholding raw values is meaningless. The baseline is the median of the same weekday-and-hour slot in other weeks, computed leave-one-out so an anomaly cannot drag down its own baseline.</p>
                 </div>
                 <div class="method-step">
-                    <h4><span class="lang-zh-only">5. 解讀限制</span><span class="lang-en-only">5. Interpretation limits</span></h4>
-                    <p class="lang-zh-only">流量變化可能來自維護、路由調整、量測缺口或一般故障；AIS 也可能缺漏、關閉或遭偽造。船隻在時間與空間上接近海纜只構成調查線索，不足以判定故障，更不能證明肇因或行為者。</p>
-                    <p class="lang-en-only">Traffic changes can reflect maintenance, routing, measurement gaps, or ordinary failures; AIS can be missing, disabled, or spoofed. Proximity in time and space is an investigative lead only, not proof of an outage, cause, or actor.</p>
-                </div>
-                <div class="method-step">
                     <h4><span class="lang-zh-only">2. 穩健 z 分數</span><span class="lang-en-only">2. Robust z-score</span></h4>
                     <p class="lang-zh-only">殘差除以 MAD×1.4826，不用標準差 —— 一次大掉點就會把 σ 撐大到之後什麼都偵測不到。另設尺度下限（基線的 0.5%）：序列極平穩時 MAD 會是 0，沒有下限就會放棄偵測；反之 MAD 過小時，1% 的抖動也會被算成異常。</p>
                     <p class="lang-en-only">Residuals are divided by MAD×1.4826 rather than the standard deviation — one large drop would inflate σ enough to mask everything after it. A floor (0.5% of baseline) is applied: on a very flat series MAD is 0 and detection would give up entirely, while a tiny MAD would turn 1% jitter into an "anomaly".</p>
@@ -428,11 +423,16 @@
                     <p class="lang-zh-only">取異常前 12 小時內、距海纜 5 公里內、航速 ≤5 節的船。海纜旁最密集的低速目標其實是漁網信標，因此沿用威脅評分引擎的排除規則；港內位置也一併排除 —— 海纜登陸點就在港邊，合法靠泊必然「0 節、離海纜很近」。候選依船型威脅權重排序，商船與公務船優先於漁船。</p>
                     <p class="lang-en-only">Vessels within 12 h before onset, 5 km of a cable and ≤5 kn. The densest slow targets near cables are actually fishing-net beacons, so the threat engine's exclusion rules are reused; in-port positions are dropped too — cable landings sit next to ports, so a lawfully berthed ship is always "0 kn, very close to a cable". Candidates are ranked by vessel-type threat weight, commercial and government vessels above fishing boats.</p>
                 </div>
+                <div class="method-step">
+                    <h4><span class="lang-zh-only">5. 解讀限制</span><span class="lang-en-only">5. Interpretation limits</span></h4>
+                    <p class="lang-zh-only">流量變化可能來自維護、路由調整、量測缺口或一般故障；AIS 也可能缺漏、關閉或遭偽造。船隻在時間與空間上接近海纜只構成調查線索，不足以判定故障，更不能證明肇因或行為者。</p>
+                    <p class="lang-en-only">Traffic changes can reflect maintenance, routing, measurement gaps, or ordinary failures; AIS can be missing, disabled, or spoofed. Proximity in time and space is an investigative lead only, not proof of an outage, cause, or actor.</p>
+                </div>
             </div>
         </div></details>
 
-    <!-- Concise visible context; complete methodology remains available below. -->
-    <section class="ai-summary" aria-label="頁面摘要 Page summary">
+        <!-- Concise visible context; complete methodology remains available below. -->
+        <section class="ai-summary" aria-label="頁面摘要 Page summary">
         <h2 class="lang-zh-only">本頁重點</h2>
         <h2 class="lang-en-only">What this page shows</h2>
         <p class="lang-zh-only">

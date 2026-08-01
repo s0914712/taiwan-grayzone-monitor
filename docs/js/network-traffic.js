@@ -197,7 +197,7 @@
         var hero = el('currentStatus');
         hero.classList.toggle('is-alert', current.length > 0);
         el('statusConclusion').textContent = current.length
-            ? t(current.length + ' 個地區訊號仍異常', current.length + ' regional signal(s) remain abnormal')
+            ? t(current.length + ' 個監測訊號仍異常', current.length + ' monitored signal(s) remain abnormal')
             : t('目前未見持續性異常', 'No sustained anomaly detected now');
         el('statusMeta').textContent = t('依最新可用資料判定 · 更新 ', 'Based on latest available data · updated ') +
             (state.data.generated_at ? new Date(state.data.generated_at).toLocaleString() : '--');
