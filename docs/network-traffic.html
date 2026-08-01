@@ -217,6 +217,36 @@
         .table-scroll { overflow-x: auto; }
         table.region-table td, table.region-table th { white-space: nowrap; }
 
+        .current-status {
+            margin: 12px;
+            padding: 16px;
+            border: 1px solid rgba(0, 255, 136, 0.35);
+            border-left: 5px solid var(--accent-green);
+            border-radius: 6px;
+            background: var(--bg-card);
+        }
+        .current-status[data-level="watch"] { border-left-color: var(--accent-yellow); }
+        .current-status[data-level="high"] { border-left-color: var(--accent-orange); }
+        .current-status[data-level="suspected_outage"] { border-left-color: var(--accent-red); }
+        .current-status[data-level="unknown"] { border-left-color: var(--text-secondary); }
+        .current-status-title { font-size: clamp(20px, 3vw, 30px); font-weight: 700; }
+        .current-status-detail { margin-top: 6px; color: var(--text-secondary); line-height: 1.6; }
+        .status-caveat { margin-top: 8px; font-size: var(--fs-caption); color: var(--text-secondary); }
+        .island-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin: 0 12px 12px;
+        }
+        .island-card { padding: 12px; border: 1px solid rgba(0,245,255,.14); border-radius: 6px; background: var(--bg-card); }
+        .island-name { font-weight: 700; margin-bottom: 6px; }
+        .island-state { font-size: var(--fs-title); font-weight: 700; }
+        .island-meta, .signal-list { margin-top: 6px; color: var(--text-secondary); font-size: var(--fs-caption); line-height: 1.55; }
+        details.secondary-panel > summary { cursor: pointer; list-style: none; }
+        details.secondary-panel > summary::-webkit-details-marker { display: none; }
+        details.secondary-panel > summary::after { content: ' ▸'; color: var(--accent-cyan); }
+        details.secondary-panel[open] > summary::after { content: ' ▾'; }
+
         .method-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -267,6 +297,7 @@
         .ai-summary { margin-bottom: 10px; }
 
         @media (max-width: 900px) {
+            .island-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .chart-wrap { height: 250px; }
             .anomaly-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .main-content { padding-bottom: 72px; }

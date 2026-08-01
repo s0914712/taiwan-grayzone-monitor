@@ -273,7 +273,13 @@ def build_summary(islands):
                 if (e.get("candidate_summary") or {}).get("commercial")
                 or (e.get("candidate_summary") or {}).get("gov"))
     return {
-        "islands_monitored": len(islands),
+        "islands_configured": len(islands),
+        "islands_monitored": sum(1 for i in islands
+                                 if i.get("status", "available" if i.get("series") else
+                                          "unavailable") == "available"),
+        "islands_unavailable": sum(1 for i in islands
+                                   if i.get("status", "available" if i.get("series") else
+                                            "unavailable") != "available"),
         "series_analyzed": sum(len(i["series"]) for i in islands),
         "anomaly_count": len(events),
         "by_severity": by_sev,
@@ -301,6 +307,8 @@ def main():
     for spec in ISLANDS:
         code = resolve_region_code(spec["search"], session, dump=args.dump_raw)
         if not code:
+            islands.append({**spec, "region_code": None, "status": "unavailable",
+                            "error_reason": "region_not_found", "series": []})
             continue
         print(f"🏝️  {spec['label_zh']}（region {code}）")
         series = []
@@ -323,12 +331,15 @@ def main():
                   f"{out['baseline_coverage']:.0%}｜異常 {n} 件"
                   + (f" {[e['severity'] for e in out['anomalies']]}" if n else ""))
         if not series:
-            print(f"   ⚠️ {spec['label_zh']} 沒有任何可用訊號，略過")
-            continue
-        annotate_corroboration(series)
-        islands.append({**spec, "region_code": code, "series": series})
+            print(f"   ⚠️ {spec['label_zh']} 沒有任何可用訊號")
+            islands.append({**spec, "region_code": code, "status": "unavailable",
+                            "error_reason": "signals_unavailable", "series": []})
+        else:
+            annotate_corroboration(series)
+            islands.append({**spec, "region_code": code, "status": "available",
+                            "error_reason": None, "series": series})
 
-    if not islands:
+    if not any(i["series"] for i in islands):
         print("❌ 沒有任何離島訊號抓取成功")
         sys.exit(1)
 

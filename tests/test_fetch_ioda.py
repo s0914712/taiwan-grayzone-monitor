@@ -186,6 +186,18 @@ def test_summary_counts_by_island_and_corroboration():
     assert s["latest_anomaly_onset"] == win[0]
 
 
+def test_summary_distinguishes_configured_and_available_islands():
+    islands = [
+        {"id": "kinmen", "status": "available", "series": [_series("bgp", [])]},
+        {"id": "lienchiang", "status": "unavailable", "series": []},
+        {"id": "penghu", "status": "unavailable", "series": []},
+    ]
+    s = M.build_summary(islands)
+    assert s["islands_configured"] == 3
+    assert s["islands_monitored"] == 1
+    assert s["islands_unavailable"] == 2
+
+
 # ── 與 Cloudflare Radar 共用同一套判讀 ──────────────────────────────────────
 
 def test_island_signal_uses_the_same_detection_as_radar():
