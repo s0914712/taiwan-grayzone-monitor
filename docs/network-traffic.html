@@ -217,6 +217,58 @@
             line-height: 1.6;
             margin-bottom: 8px;
         }
+        .event-timeline { padding: 14px 16px 18px; overflow-x: auto; }
+        .timeline-inner { min-width: 760px; }
+        .timeline-axis, .timeline-row {
+            display: grid;
+            grid-template-columns: minmax(190px, 28%) minmax(520px, 1fr);
+            column-gap: 16px;
+        }
+        .timeline-axis { align-items: end; margin-bottom: 8px; }
+        .timeline-axis-title {
+            color: var(--text-secondary);
+            font-size: var(--fs-label);
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+        .timeline-ticks { position: relative; height: 28px; border-bottom: 1px solid rgba(138,164,200,.3); }
+        .timeline-tick { position: absolute; bottom: 5px; transform: translateX(-50%); color: var(--text-secondary); font-size: 10px; white-space: nowrap; }
+        .timeline-tick:first-child { transform: none; }
+        .timeline-tick:last-child { transform: translateX(-100%); }
+        .timeline-row { min-height: 68px; border-top: 1px solid rgba(138,164,200,.09); }
+        .timeline-row:first-of-type { border-top: 0; }
+        .timeline-event-label { align-self: center; min-width: 0; padding: 10px 0; }
+        .timeline-event-name { display: block; overflow: hidden; color: var(--text-primary); font-size: var(--fs-body); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+        .timeline-event-meta { display: flex; align-items: center; gap: 7px; margin-top: 4px; color: var(--text-secondary); font-size: var(--fs-label); }
+        .timeline-track {
+            position: relative;
+            align-self: stretch;
+            background-image: linear-gradient(to right, rgba(138,164,200,.1) 1px, transparent 1px);
+            background-size: 25% 100%;
+        }
+        .timeline-bar {
+            position: absolute;
+            top: 50%;
+            min-width: 8px;
+            height: 22px;
+            transform: translateY(-50%);
+            border: 0;
+            border-radius: 3px;
+            box-shadow: 0 0 0 1px rgba(255,255,255,.14) inset;
+            cursor: help;
+        }
+        .timeline-bar:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
+        .timeline-bar.is-ongoing::after {
+            position: absolute;
+            top: 50%; right: -5px;
+            width: 8px; height: 8px;
+            transform: translateY(-50%);
+            border: 2px solid var(--bg-card);
+            border-radius: 50%;
+            background: currentColor;
+            content: '';
+        }
+        .timeline-now { position: absolute; top: 0; right: 0; bottom: 0; border-right: 1px dashed rgba(0,245,255,.55); pointer-events: none; }
         .mono { font-family: 'JetBrains Mono', monospace; }
         .table-scroll { overflow-x: auto; }
         table.region-table td, table.region-table th { white-space: nowrap; }
@@ -251,6 +303,10 @@
         }
 
         .main-content { display: flex; flex-direction: column; gap: 12px; }
+        .dashboard-overview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 12px; align-items: start; }
+        .dashboard-sidebar { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+        .dashboard-sidebar .island-grid { grid-template-columns: 1fr; }
+        .dashboard-sidebar .primary-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .status-hero {
             border: 1px solid rgba(0, 245, 255, 0.32);
             border-left: 6px solid var(--accent-green);
@@ -315,6 +371,8 @@
         .ai-summary { margin-bottom: 10px; }
 
         @media (max-width: 900px) {
+            .dashboard-overview { display: contents; }
+            .dashboard-sidebar { display: contents; }
             .island-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .chart-wrap { height: 250px; }
             .anomaly-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -331,6 +389,7 @@
             .connectivity-map-legend { gap: 7px 12px; }
             .map-legend-note { flex-basis: 100%; justify-content: flex-start; text-align: left; }
             .island-grid { grid-template-columns: 1fr; }
+            .event-timeline { padding: 10px 8px 14px; }
             .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .panel, details.tech-details, .status-hero { min-width: 0; max-width: 100%; }
             .update-info { overflow-wrap: anywhere; padding-left: 10px; padding-right: 10px; }
@@ -390,6 +449,7 @@
             <div class="status-meta" id="statusMeta">--</div>
         </section>
 
+        <div class="dashboard-overview">
         <section class="panel" aria-labelledby="connectivityMapTitle">
             <div class="panel-title" id="connectivityMapTitle"><span class="lang-zh-only">🗺️ 區域連線互動地圖</span><span class="lang-en-only">🗺️ Regional connectivity map</span></div>
             <div id="connectivityMap" class="connectivity-map" role="region" aria-label="台灣、金門、馬祖與澎湖網路觀測狀態互動地圖"></div>
@@ -402,6 +462,7 @@
             </div>
         </section>
 
+        <aside class="dashboard-sidebar" aria-label="區域狀態摘要 Regional status summary">
         <section class="panel" aria-labelledby="islandTitle">
             <div class="panel-title" id="islandTitle"><span class="lang-zh-only">🏝️ 離島狀態</span><span class="lang-en-only">🏝️ Outer-island status</span></div>
             <div class="island-grid" id="islandStatus"><div class="empty-state">載入中…</div></div>
@@ -425,11 +486,13 @@
             <div class="label"><span class="lang-zh-only">高優先候選船</span><span class="lang-en-only">High-priority vessels</span></div>
         </div>
     </div>
+        </aside>
+        </div>
 
 
         <div class="panel">
             <div class="panel-title"><span class="lang-zh-only">🚨 進行中／最近事件</span><span class="lang-en-only">🚨 Ongoing / recent events</span></div>
-            <div id="anomalyList"><div class="empty-state" data-i18n="common.loading">載入中...</div></div>
+            <div id="anomalyList" aria-live="polite"><div class="empty-state" data-i18n="common.loading">載入中...</div></div>
         </div>
 
         <div class="panel">

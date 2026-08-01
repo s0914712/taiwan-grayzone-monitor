@@ -640,7 +640,52 @@
                   'No traffic anomalies detected in the window — that is good news.') + '</div>';
             return;
         }
-        wrap.innerHTML = all.map(function (a) { return anomalyCard(a.e, a.label); }).join('');
+        var generatedAt = new Date(state.data.generated_at || Date.now()).getTime();
+        var starts = all.map(function (item) { return new Date(item.e.onset).getTime(); }).filter(Number.isFinite);
+        var ends = all.map(function (item) { return new Date(item.e.end || item.e.onset).getTime(); }).filter(Number.isFinite);
+        var rangeStart = Math.min.apply(null, starts);
+        var rangeEnd = Math.max.apply(null, ends.concat([generatedAt]));
+        if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd)) {
+            wrap.innerHTML = all.map(function (a) { return anomalyCard(a.e, escapeHtml(a.label)); }).join('');
+            return;
+        }
+        if (rangeEnd <= rangeStart) rangeEnd = rangeStart + 3600000;
+        var span = rangeEnd - rangeStart;
+        var tickCount = 5;
+        var ticks = [];
+        for (var i = 0; i < tickCount; i++) {
+            var ratio = i / (tickCount - 1);
+            ticks.push('<span class="timeline-tick" style="left:' + (ratio * 100) + '%">' +
+                escapeHtml(fmtTime(new Date(rangeStart + span * ratio).toISOString())) + '</span>');
+        }
+        var rows = all.map(function (item) {
+            var event = item.e;
+            var sev = SEVERITY[event.severity] || SEVERITY.medium;
+            var start = new Date(event.onset).getTime();
+            var end = new Date(event.end || event.onset).getTime();
+            var left = Math.max(0, Math.min(100, (start - rangeStart) / span * 100));
+            var width = Math.max(.8, Math.min(100 - left, (Math.max(start, end) - start) / span * 100));
+            var ongoing = end >= generatedAt - 2 * 3600000;
+            var status = ongoing ? t('進行中', 'Ongoing') : t('已結束', 'Ended');
+            var description = item.label + '；' + status + '；' + t('開始 ', 'Onset ') + fmtTime(event.onset) +
+                '；' + t('結束 ', 'End ') + fmtTime(event.end || event.onset) + '；' +
+                t('持續 ', 'Duration ') + event.duration_hours + ' h；' +
+                t('相對基線 ', 'vs baseline ') + event.max_deviation_pct + '%；' +
+                t('穩健 z ', 'Robust z ') + event.peak_z;
+            return '<div class="timeline-row">' +
+                '<div class="timeline-event-label"><span class="timeline-event-name" title="' + escapeHtml(item.label) + '">' +
+                    escapeHtml(item.label) + '</span><span class="timeline-event-meta"><span class="sev-badge" style="background:' + sev.color + '">' +
+                    escapeHtml(t(sev.zh, sev.en)) + '</span><span>' + escapeHtml(status) + ' · ' + event.duration_hours + ' h</span></span></div>' +
+                '<div class="timeline-track"><button type="button" class="timeline-bar' + (ongoing ? ' is-ongoing' : '') +
+                    '" style="left:' + left.toFixed(2) + '%;width:' + width.toFixed(2) + '%;background:' + sev.color + ';color:' + sev.color +
+                    '" aria-label="' + escapeHtml(description) + '" title="' + escapeHtml(description) + '"></button>' +
+                    '<span class="timeline-now" aria-hidden="true"></span></div></div>';
+        }).join('');
+        wrap.innerHTML = '<div class="event-timeline" role="region" aria-label="' +
+            escapeHtml(t('事件時間軸，橫軸為時間，縱軸為事件', 'Event timeline; time on the horizontal axis and events on the vertical axis')) +
+            '"><div class="timeline-inner"><div class="timeline-axis"><span class="timeline-axis-title">' +
+            t('事件', 'Events') + '</span><div class="timeline-ticks">' + ticks.join('') +
+            '</div></div>' + rows + '</div></div>';
     }
 
     function renderOutages() {
