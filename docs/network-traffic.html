@@ -306,6 +306,7 @@
         .island-status.is-watch .state { color: var(--accent-yellow); }
         .island-status.is-unknown .state { color: var(--text-secondary); }
         .primary-stats { margin: 0; }
+        .dashboard-layout, .dashboard-primary, .dashboard-sidebar { display: contents; }
         .history-stats { opacity: .78; margin-top: 8px; }
         .history-label { padding: 0 12px 6px; }
         details.tech-details { background: var(--bg-card); border: 1px solid rgba(0,245,255,.12); border-radius: 5px; }
@@ -313,6 +314,45 @@
         details.tech-details[open] > summary { border-bottom: 1px solid rgba(0,245,255,.12); color: var(--accent-cyan); }
         .candidate-list { padding: 2px 12px 12px; }
         .ai-summary { margin-bottom: 10px; }
+
+        @media (min-width: 901px) {
+            .dashboard-layout {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+                align-items: start;
+                gap: 12px;
+            }
+            .dashboard-map { grid-column: 1; }
+            .dashboard-primary {
+                display: flex;
+                min-width: 0;
+                flex-direction: column;
+                gap: 12px;
+                grid-column: 1;
+            }
+            .dashboard-sidebar {
+                display: flex;
+                min-width: 0;
+                max-height: calc(100vh - 76px);
+                flex-direction: column;
+                gap: 12px;
+                grid-column: 2;
+                grid-row: 1 / span 2;
+                position: sticky;
+                top: 64px;
+                overflow-y: auto;
+                scrollbar-gutter: stable;
+            }
+            .dashboard-sidebar .island-grid { grid-template-columns: 1fr; }
+            .dashboard-sidebar .primary-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                padding: 0;
+            }
+            .dashboard-sidebar .stat-card { min-width: 0; padding: 10px 8px; }
+            .dashboard-sidebar .stat-card .value { font-size: 20px; }
+            .dashboard-sidebar .stat-card .label { overflow-wrap: anywhere; }
+        }
 
         @media (max-width: 900px) {
             .island-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -390,7 +430,8 @@
             <div class="status-meta" id="statusMeta">--</div>
         </section>
 
-        <section class="panel" aria-labelledby="connectivityMapTitle">
+        <div class="dashboard-layout">
+        <section class="panel dashboard-map" aria-labelledby="connectivityMapTitle">
             <div class="panel-title" id="connectivityMapTitle"><span class="lang-zh-only">🗺️ 區域連線互動地圖</span><span class="lang-en-only">🗺️ Regional connectivity map</span></div>
             <div id="connectivityMap" class="connectivity-map" role="region" aria-label="台灣、金門、馬祖與澎湖網路觀測狀態互動地圖"></div>
             <div class="connectivity-map-legend" aria-label="地圖圖例 Map legend">
@@ -402,6 +443,7 @@
             </div>
         </section>
 
+        <aside class="dashboard-sidebar" aria-label="連線狀態摘要 Connectivity status summary">
         <section class="panel" aria-labelledby="islandTitle">
             <div class="panel-title" id="islandTitle"><span class="lang-zh-only">🏝️ 離島狀態</span><span class="lang-en-only">🏝️ Outer-island status</span></div>
             <div class="island-grid" id="islandStatus"><div class="empty-state">載入中…</div></div>
@@ -424,9 +466,10 @@
             <div class="value alert" id="statLeads">--</div>
             <div class="label"><span class="lang-zh-only">高優先候選船</span><span class="lang-en-only">High-priority vessels</span></div>
         </div>
-    </div>
+        </div>
+        </aside>
 
-
+        <section class="dashboard-primary" aria-label="網路異常事件與分析 Network anomaly events and analysis">
         <div class="panel">
             <div class="panel-title"><span class="lang-zh-only">🚨 進行中／最近事件</span><span class="lang-en-only">🚨 Ongoing / recent events</span></div>
             <div id="anomalyList"><div class="empty-state" data-i18n="common.loading">載入中...</div></div>
@@ -516,6 +559,8 @@
                 <div class="stat-card"><div class="value" id="historyWorst">--</div><div class="label"><span class="lang-zh-only">最高嚴重度</span><span class="lang-en-only">Worst severity</span></div></div>
             </div>
         </section>
+        </section>
+        </div>
     </div>
 
     <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>
