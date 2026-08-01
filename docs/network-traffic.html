@@ -217,6 +217,41 @@
         .table-scroll { overflow-x: auto; }
         table.region-table td, table.region-table th { white-space: nowrap; }
 
+        .current-status {
+            margin: 12px;
+            padding: 16px;
+            border: 1px solid rgba(0, 255, 136, 0.35);
+            border-left: 5px solid var(--accent-green);
+            border-radius: 6px;
+            background: var(--bg-card);
+        }
+        .current-status[data-level="watch"] { border-left-color: var(--accent-yellow); }
+        .current-status[data-level="high"] { border-left-color: var(--accent-orange); }
+        .current-status[data-level="suspected_outage"] { border-left-color: var(--accent-red); }
+        .current-status[data-level="unknown"] { border-left-color: var(--text-secondary); }
+        .current-status-title { font-size: clamp(20px, 3vw, 30px); font-weight: 700; }
+        .current-status-detail { margin-top: 6px; color: var(--text-secondary); line-height: 1.6; }
+        .status-caveat { margin-top: 8px; font-size: var(--fs-caption); color: var(--text-secondary); }
+        .island-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin: 0 12px 12px;
+        }
+        .island-card { padding: 12px; border: 1px solid rgba(0,245,255,.14); border-radius: 6px; background: var(--bg-card); }
+        .island-name { font-weight: 700; margin-bottom: 6px; }
+        .island-state { font-size: var(--fs-title); font-weight: 700; }
+        .island-meta, .signal-list { margin-top: 6px; color: var(--text-secondary); font-size: var(--fs-caption); line-height: 1.55; }
+        .signal-details { margin-top: 6px; color: var(--text-secondary); font-size: var(--fs-caption); }
+        .signal-details summary { cursor: pointer; }
+        .history-stats { margin: 0; padding: 8px 12px 12px; }
+        .decision-panel .panel-title { display: flex; justify-content: space-between; gap: 12px; }
+        .history-list .anomaly-card { opacity: .88; }
+        details.secondary-panel > summary { cursor: pointer; list-style: none; }
+        details.secondary-panel > summary::-webkit-details-marker { display: none; }
+        details.secondary-panel > summary::after { content: ' ▸'; color: var(--accent-cyan); }
+        details.secondary-panel[open] > summary::after { content: ' ▾'; }
+
         .method-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -242,6 +277,7 @@
         }
 
         @media (max-width: 900px) {
+            .island-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .chart-wrap { height: 250px; }
             .anomaly-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .main-content { padding-bottom: 72px; }
@@ -250,6 +286,7 @@
             .stat-card .label { font-size: 10px; }
         }
         @media (max-width: 600px) {
+            .island-grid { grid-template-columns: 1fr; }
             .stat-card { padding: 8px 6px; }
             .stat-card .value { font-size: 18px; }
             /* 窄螢幕藏掉 MMSI 與座標欄：留下船型／船名／航速／距海纜這幾個能判讀的，
@@ -299,62 +336,35 @@
         <span class="lang-en-only">Showing <strong>demo data</strong> — a synthetic series with one injected simulated cable cut, to illustrate what this page renders. Once the pipeline produces <code>cf_radar.json</code>, this banner disappears and real observations take over.</span>
     </div>
 
-    <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
-    <section class="ai-summary" aria-label="頁面摘要 Page summary">
-        <h2 class="lang-zh-only">本頁重點</h2>
-        <h2 class="lang-en-only">What this page shows</h2>
-        <p class="lang-zh-only">
-            海纜被破壞的「後果」會出現在網路層：流量掉下去、延遲跳上去。本頁以 Cloudflare Radar 監測台灣整體流量、
-            中華電信 HiNet（馬祖與金門的對外連線都掛在這個 ASN）與連線延遲，先扣掉日／週作息週期算出季節基線，
-            再用穩健 z 分數與「連續時數 × 相對幅度」雙門檻挑出持續性異常。
-            每一個異常事件都會回頭比對<strong>異常發生前 12 小時內在海纜旁低速滯留的船隻</strong> ——
-            這是關聯而非因果，真正的破壞者可能關閉 AIS，那要靠暗船偵測那條線索。
-        </p>
-        <p class="lang-en-only">
-            When a submarine cable is damaged, the consequence shows up at the network layer: traffic drops,
-            latency spikes. This page monitors Taiwan-wide traffic, Chunghwa Telecom HiNet (the ASN carrying
-            Matsu and Kinmen connectivity) and connection latency via Cloudflare Radar. Daily and weekly
-            rhythms are removed to form a seasonal baseline, then a robust z-score plus a duration ×
-            relative-magnitude threshold isolates sustained anomalies. Each anomaly is cross-referenced with
-            <strong>vessels loitering near a cable in the 12 hours before onset</strong> — correlation, not
-            causation: a deliberate actor may have switched AIS off, which is what dark-vessel detection is for.
-        </p>
+    <section class="current-status" id="currentStatus" data-level="unknown" aria-live="polite">
+        <div class="current-status-title" id="currentStatusTitle">⚪ 判讀中…</div>
+        <div class="current-status-detail" id="currentStatusDetail">正在載入最新觀測資料</div>
+        <div class="status-caveat"><span class="lang-zh-only">未偵測到異常不代表已確認所有海纜正常。</span><span class="lang-en-only">No detected anomaly does not prove every cable is operational.</span></div>
     </section>
-
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="value" id="statSeries">--</div>
-            <div class="label"><span class="lang-zh-only">監測序列</span><span class="lang-en-only">Series monitored</span></div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statAnomalies">--</div>
-            <div class="label"><span class="lang-zh-only">異常事件</span><span class="lang-en-only">Anomalies</span></div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statWorst">--</div>
-            <div class="label"><span class="lang-zh-only">最高嚴重度</span><span class="lang-en-only">Worst severity</span></div>
-        </div>
-        <div class="stat-card">
-            <div class="value alert" id="statLeads">--</div>
-            <div class="label"><span class="lang-zh-only">有商船／公務船線索</span><span class="lang-en-only">With vessel leads</span></div>
-        </div>
-    </div>
+    <section class="island-grid" id="islandGrid" aria-label="區域連線狀態"></section>
 
     <div class="main-content">
-        <div class="panel">
-            <div class="panel-title"><span class="lang-zh-only">📈 流量／延遲時間序列 — 觀測值 vs 季節基線</span><span class="lang-en-only">📈 Traffic / latency time series — observed vs seasonal baseline</span></div>
-            <div class="series-tabs" id="seriesTabs"></div>
-            <div class="chart-wrap"><canvas id="trafficChart"></canvas></div>
-            <div id="chartCaption"></div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title"><span class="lang-zh-only">🚨 異常事件 × 海纜旁滯留船隻</span><span class="lang-en-only">🚨 Anomaly events × cable-adjacent loitering vessels</span></div>
+        <div class="panel decision-panel">
+            <div class="panel-title" id="focusEventTitle">最近一次異常</div>
             <div id="anomalyList"><div class="empty-state" data-i18n="common.loading">載入中...</div></div>
         </div>
 
-        <div class="panel" id="outagePanel" style="display:none">
-            <div class="panel-title"><span class="lang-zh-only">📋 Cloudflare 已知中斷標註</span><span class="lang-en-only">📋 Cloudflare known outage annotations</span></div>
+        <details class="panel secondary-panel" id="historyPanel">
+            <summary class="panel-title"><span class="lang-zh-only">查看近 28 天歷史與趨勢</span><span class="lang-en-only">View 28-day history and trends</span></summary>
+            <div class="stats-row history-stats">
+                <div class="stat-card"><div class="value" id="statSeries">--</div><div class="label"><span class="lang-zh-only">目前異常區域</span><span class="lang-en-only">Affected now</span></div></div>
+                <div class="stat-card"><div class="value" id="statAnomalies">--</div><div class="label"><span class="lang-zh-only">歷史異常</span><span class="lang-en-only">Past anomalies</span></div></div>
+                <div class="stat-card"><div class="value" id="statWorst">--</div><div class="label"><span class="lang-zh-only">最高等級</span><span class="lang-en-only">Worst level</span></div></div>
+                <div class="stat-card"><div class="value alert" id="statLeads">--</div><div class="label"><span class="lang-zh-only">船隻線索</span><span class="lang-en-only">Vessel leads</span></div></div>
+            </div>
+            <div class="series-tabs" id="seriesTabs"></div>
+            <div class="chart-wrap"><canvas id="trafficChart"></canvas></div>
+            <div id="chartCaption"></div>
+            <div class="history-list" id="historyAnomalyList"></div>
+        </details>
+
+        <details class="panel secondary-panel" id="outagePanel" style="display:none">
+            <summary class="panel-title"><span class="lang-zh-only">查看 Cloudflare 已知中斷標註</span><span class="lang-en-only">View Cloudflare known outage annotations</span></summary>
             <div class="panel-body table-scroll">
                 <table class="region-table">
                     <thead>
@@ -368,10 +378,10 @@
                     <tbody id="outageBody"></tbody>
                 </table>
             </div>
-        </div>
+        </details>
 
-        <div class="panel">
-            <div class="panel-title"><span class="lang-zh-only">🔬 偵測方法</span><span class="lang-en-only">🔬 Detection method</span></div>
+        <details class="panel secondary-panel">
+            <summary class="panel-title"><span class="lang-zh-only">🔬 展開偵測方法</span><span class="lang-en-only">🔬 Show detection method</span></summary>
             <div class="method-grid">
                 <div class="method-step">
                     <h4><span class="lang-zh-only">1. 同時段季節基線</span><span class="lang-en-only">1. Hour-of-week baseline</span></h4>
@@ -394,7 +404,7 @@
                     <p class="lang-en-only">Vessels within 12 h before onset, 5 km of a cable and ≤5 kn. The densest slow targets near cables are actually fishing-net beacons, so the threat engine's exclusion rules are reused; in-port positions are dropped too — cable landings sit next to ports, so a lawfully berthed ship is always "0 kn, very close to a cable". Candidates are ranked by vessel-type threat weight, commercial and government vessels above fishing boats.</p>
                 </div>
             </div>
-        </div>
+        </details>
     </div>
 
     <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>

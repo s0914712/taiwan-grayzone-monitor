@@ -15,7 +15,8 @@
         medium: { color: '#ffd700', zh: '中', en: 'Medium' }
     };
 
-    var state = { data: null, isDemo: false, activeId: null, chart: null };
+    var state = { data: null, ioda: null, sourceErrors: {}, isDemo: false, activeId: null, chart: null };
+    var FRESH_HOURS = 6;
 
     function zh() {
         return (typeof i18n !== 'undefined' ? i18n.getLang() : 'zh') !== 'en';
@@ -139,6 +140,110 @@
         });
     }
 
+    function hoursSince(iso) {
+        var ms = Date.now() - new Date(iso).getTime();
+        return isFinite(ms) ? ms / 3600000 : Infinity;
+    }
+
+    function allEvents() {
+        var events = [];
+        (state.data.series || []).forEach(function (s) {
+            (s.anomalies || []).forEach(function (e) { events.push({ event: e, region: 'taiwan' }); });
+        });
+        ((state.ioda && state.ioda.islands) || []).forEach(function (island) {
+            (island.series || []).forEach(function (s) {
+                (s.anomalies || []).forEach(function (e) {
+                    events.push({ event: e, region: island.id, sources: e.corroborating_sources || 1 });
+                });
+            });
+        });
+        return events;
+    }
+
+    function deriveCurrentStatus() {
+        var generated = state.data && state.data.generated_at;
+        if (!generated || hoursSince(generated) > FRESH_HOURS) {
+            return { level: 'unknown', icon: '⚪', title: t('目前資料不足', 'Current data unavailable'),
+                detail: t('最新主要資料已過期或載入失敗，無法判定目前連線狀態。',
+                    'The primary feed is stale or failed, so current connectivity cannot be determined.'), active: [] };
+        }
+        var cutoff = new Date(new Date(generated).getTime() - 2 * 3600000).toISOString();
+        var active = allEvents().filter(function (x) { return !x.event.end || x.event.end >= cutoff; });
+        if (!active.length) {
+            return { level: 'normal', icon: '🟢', title: t('目前未偵測到持續中的網路異常', 'No ongoing network anomaly detected'),
+                detail: t('最後成功更新：', 'Last successful update: ') + fmtTime(generated), active: [] };
+        }
+        var corroborated = active.some(function (x) { return (x.sources || 1) >= 2; });
+        var critical = active.some(function (x) { return x.event.severity === 'critical'; });
+        var level = corroborated && critical ? 'suspected_outage' : (corroborated ? 'high' : 'watch');
+        var affected = new Set(active.map(function (x) { return x.region; })).size;
+        return { level: level, icon: level === 'suspected_outage' ? '🔴' : (level === 'high' ? '🟠' : '🟡'),
+            title: t('目前偵測到網路異常', 'Ongoing network anomaly detected'),
+            detail: t('受影響區域：', 'Affected regions: ') + affected + ' · ' +
+                (corroborated ? t('已有多來源印證', 'corroborated by multiple sources') : t('尚待其他來源印證', 'awaiting independent corroboration')),
+            active: active };
+    }
+
+    function renderCurrentStatus() {
+        var status = deriveCurrentStatus();
+        var box = el('currentStatus');
+        box.dataset.level = status.level;
+        el('currentStatusTitle').textContent = status.icon + ' ' + status.title;
+        el('currentStatusDetail').textContent = status.detail;
+        return status;
+    }
+
+    function islandStatus(island) {
+        if (!island || island.status === 'unavailable' || !(island.series || []).length ||
+                !state.ioda.generated_at || hoursSince(state.ioda.generated_at) > FRESH_HOURS) {
+            return { level: 'unknown', icon: '⚪', label: t('資料不足', 'No data') };
+        }
+        var events = [];
+        island.series.forEach(function (s) { (s.anomalies || []).forEach(function (e) { events.push(e); }); });
+        var freshCutoff = state.ioda && state.ioda.generated_at ?
+            new Date(new Date(state.ioda.generated_at).getTime() - 2 * 3600000).toISOString() : '';
+        var active = events.filter(function (e) { return !e.end || e.end >= freshCutoff; });
+        if (!active.length) return { level: 'normal', icon: '🟢', label: t('未見持續異常', 'No ongoing anomaly') };
+        var n = Math.max.apply(null, active.map(function (e) { return e.corroborating_sources || 1; }));
+        return n >= 2 ? { level: 'high', icon: '🟠', label: t('多來源異常', 'Multi-source anomaly') } :
+            { level: 'watch', icon: '🟡', label: t('單一訊號異常', 'Single-signal anomaly') };
+    }
+
+    function renderRegions() {
+        var islands = ((state.ioda && state.ioda.islands) || []).slice();
+        ['kinmen', 'lienchiang', 'penghu'].forEach(function (id) {
+            if (!islands.some(function (i) { return i.id === id; })) {
+                var names = { kinmen: ['金門', 'Kinmen'], lienchiang: ['馬祖（連江）', 'Matsu'], penghu: ['澎湖', 'Penghu'] };
+                islands.push({ id: id, label_zh: names[id][0], label_en: names[id][1], status: 'unavailable', series: [] });
+            }
+        });
+        var overall = deriveCurrentStatus();
+        var taiwanActive = overall.active.filter(function (x) { return x.region === 'taiwan'; });
+        var taiwanView = overall.level === 'unknown' ? overall : (taiwanActive.length ?
+            { level: 'watch', icon: '🟡', title: t('偵測到網路異常', 'Network anomaly detected') } :
+            { level: 'normal', icon: '🟢', title: t('未見持續異常', 'No ongoing anomaly') });
+        var cards = [{ id: 'taiwan', label_zh: '台灣本島', label_en: 'Taiwan', statusView: taiwanView,
+            series: (state.data && state.data.series) || [], generated_at: state.data && state.data.generated_at }];
+        islands.forEach(function (i) { i.statusView = islandStatus(i); i.generated_at = state.ioda && state.ioda.generated_at; cards.push(i); });
+        el('islandGrid').innerHTML = cards.map(function (i) {
+            var st = i.statusView;
+            var series = i.series || [];
+            var signalText = series.length ? series.map(function (s) {
+                var count = (s.anomalies || []).length;
+                return (s.label_zh || s.label || s.datasource) + (count ?
+                    t('（期間內 ' + count + ' 次）', ' (' + count + ' in period)') : t('（期間內無異常）', ' (none in period)'));
+            }).join(' · ') : t('無可用訊號', 'No available signals');
+            var signalSummary = series.length ? t(series.length + ' 個監測訊號', series.length + ' monitoring signals') :
+                t('查看缺少原因', 'See why data is missing');
+            return '<article class="island-card" data-level="' + st.level + '">' +
+                '<div class="island-name">' + (zh() ? i.label_zh : i.label_en) + '</div>' +
+                '<div class="island-state">' + st.icon + ' ' + (st.label || st.title) + '</div>' +
+                '<div class="island-meta">' + t('更新：', 'Updated: ') + (i.generated_at ? fmtTime(i.generated_at) : '—') + '</div>' +
+                '<details class="signal-details"><summary>' + signalSummary + '</summary>' +
+                '<div class="signal-list">' + signalText + '</div></details></article>';
+        }).join('');
+    }
+
     function renderBanner() {
         var banner = el('demoBanner');
         banner.style.display = state.isDemo ? 'flex' : 'none';
@@ -147,7 +252,9 @@
     function renderStats() {
         var s = state.data.summary || {};
         var sev = s.by_severity || {};
-        el('statSeries').textContent = s.series_analyzed || 0;
+        el('statSeries').textContent = new Set(deriveCurrentStatus().active.map(function (x) {
+            return x.region;
+        })).size;
         el('statAnomalies').textContent = s.anomaly_count || 0;
         var worst = sev.critical ? 'critical' : (sev.high ? 'high' : (sev.medium ? 'medium' : null));
         var worstEl = el('statWorst');
@@ -325,11 +432,16 @@
             '</tr>';
     }
 
-    function anomalyCard(e, seriesLabel) {
+    function anomalyCard(e, seriesLabel, compact) {
         var sev = SEVERITY[e.severity] || SEVERITY.medium;
         var cs = e.candidate_summary || {};
         var leads = (cs.commercial || 0) + (cs.gov || 0);
         var vessels = e.correlated_vessels || [];
+        var priorityVessels = vessels.filter(function (v) {
+            return v.type === 'cargo' || v.type === 'tanker' || v.type === 'lng' ||
+                v.type === 'coastguard' || v.type === 'msa' || v.type === 'research';
+        });
+        var backgroundVessels = vessels.filter(function (v) { return priorityVessels.indexOf(v) < 0; });
 
         var leadNote;
         if (e.correlation_coverage === 'outside_ais_window') {
@@ -363,11 +475,11 @@
                 '<div><span class="m-label">' + t('相對基線', 'vs baseline') + '</span>' +
                     '<span class="m-value mono" style="color:' + sev.color + '">' +
                     (e.max_deviation_pct > 0 ? '+' : '') + e.max_deviation_pct + '%</span></div>' +
-                '<div><span class="m-label">' + t('穩健 z', 'Robust z') + '</span>' +
-                    '<span class="m-value mono">' + e.peak_z + '</span></div>' +
+                (compact ? '' : '<div><span class="m-label">' + t('穩健 z', 'Robust z') + '</span>' +
+                    '<span class="m-value mono">' + e.peak_z + '</span></div>') +
             '</div>' +
             '<div class="anomaly-lead">' + leadNote + '</div>' +
-            (vessels.length
+            (priorityVessels.length
                 ? '<div class="table-scroll"><table class="region-table"><thead><tr>' +
                     '<th>' + t('船型', 'Type') + '</th>' +
                     '<th>' + t('船名', 'Name') + '</th>' +
@@ -375,27 +487,42 @@
                     '<th>' + t('航速', 'Speed') + '</th>' +
                     '<th>' + t('距海纜', 'To cable') + '</th>' +
                     '<th>' + t('位置', 'Position') + '</th>' +
-                    '</tr></thead><tbody>' + vessels.map(vesselRow).join('') +
+                    '</tr></thead><tbody>' + priorityVessels.map(vesselRow).join('') +
                     '</tbody></table></div>'
                 : '') +
+            (backgroundVessels.length && !compact ? '<details class="signal-details"><summary>' +
+                t('查看 ' + backgroundVessels.length + ' 艘背景船流', 'View ' + backgroundVessels.length + ' background vessels') +
+                '</summary><div class="table-scroll"><table class="region-table"><tbody>' +
+                backgroundVessels.map(vesselRow).join('') + '</tbody></table></div></details>' : '') +
             '</div>';
     }
 
     function renderAnomalies() {
         var wrap = el('anomalyList');
+        var title = el('focusEventTitle');
         var all = [];
         state.data.series.forEach(function (s) {
             (s.anomalies || []).forEach(function (e) { all.push({ e: e, label: s.label }); });
         });
         all.sort(function (a, b) { return (b.e.onset || '').localeCompare(a.e.onset || ''); });
 
+        var history = el('historyAnomalyList');
         if (!all.length) {
+            title.textContent = t('目前無需處理', 'No action needed now');
             wrap.innerHTML = '<div class="empty-state">' +
                 t('監測期間未偵測到流量異常 — 這是好消息。',
                   'No traffic anomalies detected in the window — that is good news.') + '</div>';
+            if (history) history.innerHTML = '';
             return;
         }
-        wrap.innerHTML = all.map(function (a) { return anomalyCard(a.e, a.label); }).join('');
+        var latest = all[0];
+        var current = deriveCurrentStatus().active.some(function (x) { return x.event === latest.e; });
+        title.textContent = current ? t('目前需要注意', 'Needs attention now') : t('最近一次異常（已結束）', 'Latest anomaly (ended)');
+        wrap.innerHTML = anomalyCard(latest.e, latest.label, true) +
+            (all.length > 1 ? '<div class="status-caveat">' +
+                t('其餘 ' + (all.length - 1) + ' 筆已收進「近 28 天歷史」。',
+                  (all.length - 1) + ' older event(s) are available in 28-day history.') + '</div>' : '');
+        if (history) history.innerHTML = all.slice(1).map(function (a) { return anomalyCard(a.e, a.label, false); }).join('');
     }
 
     function renderOutages() {
@@ -417,16 +544,20 @@
         if (!state.data) return;
         renderBanner();
         renderStats();
+        renderCurrentStatus();
+        renderRegions();
         renderTabs();
-        renderChart();
+        if (el('historyPanel').open) renderChart();
         renderAnomalies();
         renderOutages();
         el('updateInfo').textContent = t('資料更新時間: ', 'Updated: ') +
             (state.data.generated_at ? new Date(state.data.generated_at).toLocaleString() : '--');
-        el('dataStatus').textContent = state.isDemo ? t('示範資料', 'Demo data') : '✅';
+        el('dataStatus').textContent = state.isDemo ? t('示範資料', 'Demo data') :
+            (Object.keys(state.sourceErrors).length ? '⚠' : '✅');
     }
 
     async function load() {
+        state.sourceErrors = {};
         try {
             var res = await fetch('cf_radar.json?' + Date.now());
             if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -441,11 +572,24 @@
             state.data = recomputeSummary(buildDemo());
             state.isDemo = true;
         }
+        try {
+            var iodaRes = await fetch('ioda.json?' + Date.now());
+            if (!iodaRes.ok) throw new Error('HTTP ' + iodaRes.status);
+            state.ioda = await iodaRes.json();
+        } catch (iodaErr) {
+            console.warn('ioda.json unavailable:', iodaErr);
+            state.ioda = { islands: [], generated_at: null };
+            state.sourceErrors.ioda = true;
+        }
         state.activeId = state.data.series[0].id;
         renderAll();
     }
 
     document.addEventListener('DOMContentLoaded', load);
+    document.addEventListener('DOMContentLoaded', function () {
+        var panel = el('historyPanel');
+        if (panel) panel.addEventListener('toggle', function () { if (panel.open) renderChart(); });
+    });
     window.addEventListener('langchange', function () {
         // 示範資料的標籤是中英文字串，語言切換時要重建
         if (state.isDemo) {
