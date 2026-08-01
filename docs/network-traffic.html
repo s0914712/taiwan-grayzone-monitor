@@ -104,31 +104,6 @@
     <style>
         body { overflow-y: auto; }
 
-        .demo-banner {
-            display: none;
-            align-items: center;
-            gap: 10px;
-            margin: 10px 12px 0;
-            padding: 9px 12px;
-            border: 1px solid var(--accent-orange);
-            border-left-width: 4px;
-            border-radius: 5px;
-            background: rgba(255, 107, 53, 0.09);
-            color: var(--text-primary);
-            font-size: var(--fs-body);
-            line-height: 1.55;
-        }
-        .demo-banner .demo-tag {
-            flex: 0 0 auto;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 600;
-            font-size: var(--fs-caption);
-            color: var(--accent-orange);
-            border: 1px solid var(--accent-orange);
-            border-radius: 3px;
-            padding: 2px 6px;
-        }
-
         .chart-wrap { height: 320px; padding: 10px 12px 4px; }
         #chartCaption {
             padding: 0 12px 10px;
@@ -330,16 +305,10 @@
         </div>
     </header>
 
-    <div class="demo-banner" id="demoBanner">
-        <span class="demo-tag">DEMO</span>
-        <span class="lang-zh-only">目前顯示的是<strong>示範資料</strong>（合成序列，含一次注入的模擬海纜中斷），用來展示這頁的呈現方式。資料管線首次執行並產生 <code>cf_radar.json</code> 後，此橫幅會消失並改為真實觀測。</span>
-        <span class="lang-en-only">Showing <strong>demo data</strong> — a synthetic series with one injected simulated cable cut, to illustrate what this page renders. Once the pipeline produces <code>cf_radar.json</code>, this banner disappears and real observations take over.</span>
-    </div>
-
     <section class="current-status" id="currentStatus" data-level="unknown" aria-live="polite">
         <div class="current-status-title" id="currentStatusTitle">⚪ 判讀中…</div>
         <div class="current-status-detail" id="currentStatusDetail">正在載入最新觀測資料</div>
-        <div class="status-caveat"><span class="lang-zh-only">未偵測到異常不代表已確認所有海纜正常。</span><span class="lang-en-only">No detected anomaly does not prove every cable is operational.</span></div>
+        <div class="status-caveat"><span class="lang-zh-only">僅顯示排程蒐集的 Cloudflare Radar 與 IODA 真實觀測；來源失敗時顯示資料不足，不以合成內容替補。未偵測到異常不代表已確認所有海纜正常。</span><span class="lang-en-only">Only scheduled Cloudflare Radar and IODA observations are shown. A failed source is marked unavailable and is never replaced with synthetic content. No detected anomaly does not prove every cable is operational.</span></div>
     </section>
     <section class="island-grid" id="islandGrid" aria-label="區域連線狀態"></section>
 

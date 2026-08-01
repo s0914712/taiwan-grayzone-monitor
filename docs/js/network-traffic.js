@@ -1,10 +1,9 @@
 /**
  * 網路流量監控頁 — Taiwan Gray Zone Monitor
  *
- * 資料來源 cf_radar.json（src/fetch_cloudflare_radar.py 產生）。異常事件與
- * 基線都是後端算好的，本檔只負責呈現；**唯一的例外是示範模式**：資料管線還沒
- * 跑過（或 token 未設定）時，用內建的合成資料展示這頁長什麼樣，並在畫面上以
- * 明顯的橫幅標示「示範資料」，避免被誤認為真實觀測。
+ * 資料來源 cf_radar.json（src/fetch_cloudflare_radar.py 產生）與 ioda.json
+ * （src/fetch_ioda.py 產生）。異常事件與基線都由排程資料管線計算；本檔只呈現
+ * 真實觀測。來源失敗時顯示「資料不足」，不生成或替換任何合成資料。
  */
 (function () {
     'use strict';
@@ -15,7 +14,7 @@
         medium: { color: '#ffd700', zh: '中', en: 'Medium' }
     };
 
-    var state = { data: null, ioda: null, sourceErrors: {}, isDemo: false, activeId: null, chart: null };
+    var state = { data: null, ioda: null, sourceErrors: {}, activeId: null, chart: null };
     var FRESH_HOURS = 6;
 
     function zh() {
@@ -23,112 +22,6 @@
     }
     function t(zhText, enText) { return zh() ? zhText : enText; }
     function el(id) { return document.getElementById(id); }
-
-    // ── 示範資料 ────────────────────────────────────────────────────────────
-    // 合成一條有日／週週期的流量序列，注入一次 6 小時的大幅下掉（海纜中斷的典型
-    // 特徵：持續性位階下移，而非瞬間尖刺）。基線＝未注入前的乾淨曲線，因此這裡
-    // 不需要（也不該）在前端重做一次偵測——真實數字一律由 Python 端算。
-    function buildDemo() {
-        var hours = 14 * 24;
-        var now = new Date();
-        now.setMinutes(0, 0, 0);
-        var start = new Date(now.getTime() - hours * 3600 * 1000);
-
-        function mkSeries(id, label, direction, amp, base, cutIdx, cutHours, cutPct) {
-            var timestamps = [], values = [], baseline = [];
-            for (var h = 0; h < hours; h++) {
-                var d = new Date(start.getTime() + h * 3600 * 1000);
-                var daily = amp * Math.sin((d.getHours() - 3) / 24 * 2 * Math.PI);
-                var weekly = (d.getDay() === 0 || d.getDay() === 6) ? -amp * 0.25 : 0;
-                var clean = base + daily + weekly;
-                // 用固定種子的偽隨機，重新整理不會跳動
-                var noise = (Math.sin(h * 12.9898) * 43758.5453) % 1;
-                var obs = clean * (1 + noise * 0.05);
-                if (h >= cutIdx && h < cutIdx + cutHours) {
-                    obs = obs * (1 - cutPct / 100);
-                }
-                timestamps.push(d.toISOString());
-                values.push(Math.round(obs * 100) / 100);
-                baseline.push(Math.round(clean * 100) / 100);
-            }
-            var devs = [];
-            for (var i = cutIdx; i < cutIdx + cutHours; i++) {
-                devs.push((values[i] - baseline[i]) / baseline[i] * 100);
-            }
-            var worst = direction === 'drop' ? Math.min.apply(null, devs) : Math.max.apply(null, devs);
-            return {
-                id: id, label: label, direction: direction,
-                points: hours, baseline_coverage: 1,
-                timestamps: timestamps, values: values, baseline: baseline,
-                anomalies: [{
-                    onset: timestamps[cutIdx],
-                    end: timestamps[cutIdx + cutHours - 1],
-                    duration_hours: cutHours,
-                    points: cutHours,
-                    direction: direction,
-                    peak_z: direction === 'drop' ? -11.4 : 9.8,
-                    max_deviation_pct: Math.round(worst * 10) / 10,
-                    mean_deviation_pct: Math.round(worst * 10) / 10,
-                    severity: 'critical',
-                    baseline_at_onset: baseline[cutIdx],
-                    value_at_onset: values[cutIdx],
-                    candidate_summary: { commercial: 1, gov: 0, other: 4, total: 5 },
-                    correlated_vessels: [
-                        {
-                            mmsi: '414000000', name: 'DEMO BULKER', type: 'cargo',
-                            lat: 26.14, lon: 119.98, speed: 0.4,
-                            nearest_cable_km: 0.31, points: 5,
-                            timestamp: timestamps[Math.max(0, cutIdx - 6)]
-                        },
-                        {
-                            mmsi: '412000000', name: 'DEMO FISHER', type: 'fishing',
-                            lat: 26.09, lon: 120.03, speed: 1.8,
-                            nearest_cable_km: 1.24, points: 2,
-                            timestamp: timestamps[Math.max(0, cutIdx - 3)]
-                        }
-                    ]
-                }]
-            };
-        }
-
-        var cut = hours - 54;   // 大約兩天前
-        return {
-            generated_at: now.toISOString(),
-            window_days: 14,
-            agg_interval: '1h',
-            series: [
-                mkSeries('demo_netflows', t('台灣整體網路流量 (netflows)', 'Taiwan netflows'),
-                    'drop', 30, 100, cut, 6, 45),
-                mkSeries('demo_as3462', t('中華電信 HiNet (AS3462) 流量', 'HiNet AS3462 traffic'),
-                    'drop', 26, 90, cut, 6, 52),
-                mkSeries('demo_latency', t('台灣連線延遲 (IQI p50)', 'Taiwan latency (IQI p50)'),
-                    'spike', 8, 42, cut, 6, -70)
-            ],
-            outage_annotations: [],
-            summary: {}
-        };
-    }
-
-    function recomputeSummary(data) {
-        var events = [];
-        data.series.forEach(function (s) {
-            (s.anomalies || []).forEach(function (e) { events.push(e); });
-        });
-        var bySev = {};
-        var actionable = 0;
-        events.forEach(function (e) {
-            bySev[e.severity] = (bySev[e.severity] || 0) + 1;
-            var cs = e.candidate_summary || {};
-            if (cs.commercial || cs.gov) actionable++;
-        });
-        data.summary = {
-            series_analyzed: data.series.length,
-            anomaly_count: events.length,
-            by_severity: bySev,
-            anomalies_with_commercial_or_gov_candidates: actionable
-        };
-        return data;
-    }
 
     // ── 渲染 ────────────────────────────────────────────────────────────────
 
@@ -242,11 +135,6 @@
                 '<details class="signal-details"><summary>' + signalSummary + '</summary>' +
                 '<div class="signal-list">' + signalText + '</div></details></article>';
         }).join('');
-    }
-
-    function renderBanner() {
-        var banner = el('demoBanner');
-        banner.style.display = state.isDemo ? 'flex' : 'none';
     }
 
     function renderStats() {
@@ -542,7 +430,6 @@
 
     function renderAll() {
         if (!state.data) return;
-        renderBanner();
         renderStats();
         renderCurrentStatus();
         renderRegions();
@@ -552,8 +439,8 @@
         renderOutages();
         el('updateInfo').textContent = t('資料更新時間: ', 'Updated: ') +
             (state.data.generated_at ? new Date(state.data.generated_at).toLocaleString() : '--');
-        el('dataStatus').textContent = state.isDemo ? t('示範資料', 'Demo data') :
-            (Object.keys(state.sourceErrors).length ? '⚠' : '✅');
+        el('dataStatus').textContent = Object.keys(state.sourceErrors).length ?
+            t('⚠ 資料不足', '⚠ Data unavailable') : '✅';
     }
 
     async function load() {
@@ -566,11 +453,10 @@
             // data.json 內嵌版本會剝掉原始陣列；這裡拿到的應是完整檔
             if (!data.series[0].timestamps) throw new Error('series without timestamps');
             state.data = data;
-            state.isDemo = false;
         } catch (err) {
-            console.warn('cf_radar.json unavailable, showing demo data:', err);
-            state.data = recomputeSummary(buildDemo());
-            state.isDemo = true;
+            console.warn('cf_radar.json unavailable:', err);
+            state.data = { generated_at: null, series: [], outage_annotations: [], summary: {} };
+            state.sourceErrors.cloudflare = true;
         }
         try {
             var iodaRes = await fetch('ioda.json?' + Date.now());
@@ -581,7 +467,7 @@
             state.ioda = { islands: [], generated_at: null };
             state.sourceErrors.ioda = true;
         }
-        state.activeId = state.data.series[0].id;
+        state.activeId = state.data.series.length ? state.data.series[0].id : null;
         renderAll();
     }
 
@@ -590,12 +476,5 @@
         var panel = el('historyPanel');
         if (panel) panel.addEventListener('toggle', function () { if (panel.open) renderChart(); });
     });
-    window.addEventListener('langchange', function () {
-        // 示範資料的標籤是中英文字串，語言切換時要重建
-        if (state.isDemo) {
-            state.data = recomputeSummary(buildDemo());
-            state.activeId = state.data.series[0].id;
-        }
-        renderAll();
-    });
+    window.addEventListener('langchange', renderAll);
 })();
