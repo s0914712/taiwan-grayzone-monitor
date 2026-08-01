@@ -15,8 +15,7 @@
         medium: { color: '#ffd700', zh: '中', en: 'Medium' }
     };
 
-    var state = { data: null, ioda: null, sourceErrors: {}, isDemo: false, activeId: null, chart: null };
-    var FRESH_HOURS = 6;
+    var state = { data: null, islandData: null, isDemo: false, activeId: null, chart: null };
 
     function zh() {
         return (typeof i18n !== 'undefined' ? i18n.getLang() : 'zh') !== 'en';
@@ -247,12 +246,28 @@
     function renderStats() {
         var s = state.data.summary || {};
         var sev = s.by_severity || {};
-        el('statSeries').textContent = new Set(deriveCurrentStatus().active.map(function (x) {
-            return x.region;
-        })).size;
-        el('statAnomalies').textContent = s.anomaly_count || 0;
+        var current = currentEvents();
+        var regions = {};
+        var sources = {};
+        var maxDuration = 0;
+        var leads = 0;
+        current.forEach(function (item) {
+            regions[t('台灣本島', 'Taiwan')] = true;
+            sources[item.source] = true;
+            maxDuration = Math.max(maxDuration, item.event.duration_hours || 0);
+            var cs = item.event.candidate_summary || {};
+            leads += (cs.commercial || 0) + (cs.gov || 0);
+        });
+        el('statRegions').textContent = Object.keys(regions).length;
+        el('statDuration').textContent = maxDuration ? maxDuration + ' h' : '0 h';
+        el('statSources').textContent = Object.keys(sources).length;
+        el('statLeads').textContent = leads;
+        el('historySeries').textContent = s.series_analyzed || 0;
+        el('historyAnomalies').textContent = s.anomaly_count || 0;
+        el('historyWindow').textContent = state.data.window_days || 28;
+        el('historyWindowEn').textContent = state.data.window_days || 28;
         var worst = sev.critical ? 'critical' : (sev.high ? 'high' : (sev.medium ? 'medium' : null));
-        var worstEl = el('statWorst');
+        var worstEl = el('historyWorst');
         if (worst) {
             worstEl.textContent = t(SEVERITY[worst].zh, SEVERITY[worst].en);
             worstEl.style.color = SEVERITY[worst].color;
@@ -260,7 +275,66 @@
             worstEl.textContent = t('無', 'None');
             worstEl.style.color = 'var(--accent-green)';
         }
-        el('statLeads').textContent = s.anomalies_with_commercial_or_gov_candidates || 0;
+    }
+
+    function currentEvents() {
+        var end = new Date(state.data.generated_at || Date.now()).getTime();
+        var cutoff = end - 2 * 3600 * 1000;
+        var result = [];
+        (state.data.series || []).forEach(function (series) {
+            (series.anomalies || []).forEach(function (event) {
+                if (new Date(event.end || event.onset).getTime() >= cutoff) {
+                    result.push({ event: event, label: series.label, source: series.datasource || series.id });
+                }
+            });
+        });
+        return result;
+    }
+
+    function renderCurrentStatus() {
+        var current = currentEvents();
+        var hero = el('currentStatus');
+        hero.classList.toggle('is-alert', current.length > 0);
+        el('statusConclusion').textContent = current.length
+            ? t(current.length + ' 個監測訊號仍異常', current.length + ' monitored signal(s) remain abnormal')
+            : t('目前未見持續性異常', 'No sustained anomaly detected now');
+        el('statusMeta').textContent = t('依最新可用資料判定 · 更新 ', 'Based on latest available data · updated ') +
+            (state.data.generated_at ? new Date(state.data.generated_at).toLocaleString() : '--');
+    }
+
+    function renderIslands() {
+        var wrap = el('islandStatus');
+        var islands = (state.islandData && state.islandData.islands) || [];
+        if (!islands.length) {
+            wrap.innerHTML = '<div class="empty-state">' + t('離島資料暫時無法取得', 'Outer-island data unavailable') + '</div>';
+            return;
+        }
+        wrap.innerHTML = islands.map(function (island) {
+            var active = [];
+            (island.series || []).forEach(function (series) {
+                (series.anomalies || []).forEach(function (event) { active.push(event); });
+            });
+            var name = zh() ? (island.label_zh || island.name || island.id) : (island.label_en || island.name || island.id);
+            return '<article class="island-status' + (active.length ? ' is-alert' : '') + '"><strong>' + name +
+                '</strong><span class="state">' + (active.length ? t('有近期異常', 'Recent anomaly') : t('未見異常', 'No anomaly')) +
+                '</span><div class="status-meta">' + t(active.length + ' 個／最近 28 天', active.length + ' / last 28 days') + '</div></article>';
+        }).join('');
+    }
+
+    function renderCandidates() {
+        var rows = [];
+        (state.data.series || []).forEach(function (series) {
+            (series.anomalies || []).forEach(function (event) {
+                (event.correlated_vessels || []).forEach(function (vessel) {
+                    if (vessel.type !== 'fishing') rows.push(vessel);
+                });
+            });
+        });
+        el('candidateList').innerHTML = rows.length
+            ? '<div class="table-scroll"><table class="region-table"><thead><tr><th>' + t('船型', 'Type') + '</th><th>' +
+              t('船名', 'Name') + '</th><th>MMSI</th><th>' + t('航速', 'Speed') + '</th><th>' + t('距海纜', 'To cable') +
+              '</th></tr></thead><tbody>' + rows.map(function (v) { return '<tr><td>' + (v.type || '—') + '</td><td>' + (v.name || '—') + '</td><td class="mono">' + v.mmsi + '</td><td class="mono">' + v.speed + ' kn</td><td class="mono">' + v.nearest_cable_km + ' km</td></tr>'; }).join('') + '</tbody></table></div>'
+            : '<div class="empty-state">' + t('目前沒有商船／公務船候選', 'No commercial/government candidate at present') + '</div>';
     }
 
     function renderTabs() {
@@ -469,17 +543,6 @@
                     '<span class="m-value mono">' + e.peak_z + '</span></div>' +
             '</div>' +
             '<div class="anomaly-lead">' + leadNote + '</div>' +
-            (vessels.length
-                ? '<div class="table-scroll"><table class="region-table"><thead><tr>' +
-                    '<th>' + t('船型', 'Type') + '</th>' +
-                    '<th>' + t('船名', 'Name') + '</th>' +
-                    '<th>MMSI</th>' +
-                    '<th>' + t('航速', 'Speed') + '</th>' +
-                    '<th>' + t('距海纜', 'To cable') + '</th>' +
-                    '<th>' + t('位置', 'Position') + '</th>' +
-                    '</tr></thead><tbody>' + vessels.map(vesselRow).join('') +
-                    '</tbody></table></div>'
-                : '') +
             '</div>';
     }
 
@@ -518,12 +581,15 @@
     function renderAll() {
         if (!state.data) return;
         renderBanner();
+        renderCurrentStatus();
+        renderIslands();
         renderStats();
         renderCurrentStatus();
         renderRegions();
         renderTabs();
         if (el('trendPanel').open) renderChart();
         renderAnomalies();
+        renderCandidates();
         renderOutages();
         el('updateInfo').textContent = t('資料更新時間: ', 'Updated: ') +
             (state.data.generated_at ? new Date(state.data.generated_at).toLocaleString() : '--');
@@ -548,23 +614,19 @@
             state.isDemo = true;
         }
         try {
-            var iodaRes = await fetch('ioda.json?' + Date.now());
-            if (!iodaRes.ok) throw new Error('HTTP ' + iodaRes.status);
-            state.ioda = await iodaRes.json();
-        } catch (iodaErr) {
-            console.warn('ioda.json unavailable:', iodaErr);
-            state.ioda = { islands: [], generated_at: null };
-            state.sourceErrors.ioda = true;
+            var islandRes = await fetch('ioda.json?' + Date.now());
+            if (islandRes.ok) state.islandData = await islandRes.json();
+        } catch (islandErr) {
+            console.warn('ioda.json unavailable:', islandErr);
         }
         state.activeId = state.data.series[0].id;
         renderAll();
     }
 
     document.addEventListener('DOMContentLoaded', load);
-    document.addEventListener('DOMContentLoaded', function () {
-        var panel = el('trendPanel');
-        if (panel) panel.addEventListener('toggle', function () { if (panel.open) renderChart(); });
-    });
+    document.addEventListener('toggle', function (event) {
+        if (event.target.matches('details.tech-details') && event.target.open && event.target.querySelector('#trafficChart')) renderChart();
+    }, true);
     window.addEventListener('langchange', function () {
         // 示範資料的標籤是中英文字串，語言切換時要重建
         if (state.isDemo) {
