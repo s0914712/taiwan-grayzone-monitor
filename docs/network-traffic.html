@@ -280,13 +280,21 @@
             border: 1px solid rgba(0, 245, 255, 0.32);
             border-left: 6px solid var(--accent-green);
             background: linear-gradient(110deg, rgba(0,245,255,.1), var(--bg-card) 55%);
-            padding: 20px 22px;
+            display: grid;
+            grid-template-columns: minmax(280px, 1fr) minmax(520px, 1.25fr);
+            align-items: center;
+            gap: 18px;
+            padding: 12px 16px;
         }
         .status-hero.is-alert { border-left-color: var(--accent-red); }
         .status-eyebrow, .history-label { color: var(--text-secondary); font-size: var(--fs-caption); }
-        .status-conclusion { margin: 4px 0; font-size: clamp(28px, 4vw, 46px); line-height: 1.2; }
+        .status-conclusion { margin: 3px 0; font-size: clamp(28px, 2.2vw, 36px); line-height: 1.2; }
         .status-meta { color: var(--text-secondary); font-size: var(--fs-body); }
-        .connectivity-map { height: clamp(330px, 48vw, 520px); min-height: 330px; background: #0a0f1c; }
+        .connectivity-map { height: clamp(280px, 34vh, 360px); min-height: 280px; background: #0a0f1c; transition: height .2s ease; }
+        .dashboard-map.is-expanded .connectivity-map { height: min(70vh, 720px); }
+        .map-panel-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .map-size-toggle { border: 1px solid rgba(0,245,255,.3); border-radius: 4px; background: transparent; color: var(--accent-cyan); cursor: pointer; font: inherit; padding: 3px 8px; }
+        .map-size-toggle:hover, .map-size-toggle:focus-visible { border-color: var(--accent-cyan); background: rgba(0,245,255,.08); outline: none; }
         .connectivity-map-legend {
             display: flex;
             flex-wrap: wrap;
@@ -330,7 +338,7 @@
         .island-status.is-alert .state { color: var(--accent-red); }
         .island-status.is-watch .state { color: var(--accent-yellow); }
         .island-status.is-unknown .state { color: var(--text-secondary); }
-        .primary-stats { margin: 0; }
+        .primary-stats { margin: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0; }
         .dashboard-layout, .dashboard-primary, .dashboard-sidebar { display: contents; }
         .history-stats { opacity: .78; margin-top: 8px; }
         .history-label { padding: 0 12px 6px; }
@@ -348,12 +356,15 @@
                 gap: 12px;
             }
             .dashboard-map { grid-column: 1; }
+            .dashboard-events { grid-column: 1; grid-row: 1; }
+            .dashboard-map { grid-row: 2; }
             .dashboard-primary {
                 display: flex;
                 min-width: 0;
                 flex-direction: column;
                 gap: 12px;
                 grid-column: 1;
+                grid-row: 3;
             }
             .dashboard-sidebar {
                 display: flex;
@@ -362,24 +373,21 @@
                 flex-direction: column;
                 gap: 12px;
                 grid-column: 2;
-                grid-row: 1 / span 2;
+                grid-row: 1 / span 3;
                 position: sticky;
                 top: 64px;
                 overflow-y: auto;
                 scrollbar-gutter: stable;
             }
             .dashboard-sidebar .island-grid { grid-template-columns: 1fr; }
-            .dashboard-sidebar .primary-stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 8px;
-                padding: 0;
-            }
-            .dashboard-sidebar .stat-card { min-width: 0; padding: 10px 8px; }
-            .dashboard-sidebar .stat-card .value { font-size: 20px; }
-            .dashboard-sidebar .stat-card .label { overflow-wrap: anywhere; }
+            .status-hero .stat-card { min-width: 0; padding: 10px 8px; }
+            .status-hero .stat-card .value { font-size: 20px; }
+            .status-hero .stat-card .label { overflow-wrap: anywhere; }
         }
 
         @media (max-width: 900px) {
+            .status-hero { display: block; }
+            .primary-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 12px; }
             .island-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .chart-wrap { height: 250px; }
             .anomaly-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -392,7 +400,7 @@
             .main-content { padding: 0 8px 72px; }
             .status-hero { padding: 14px; }
             .status-conclusion { font-size: 28px; }
-            .connectivity-map { height: 360px; min-height: 360px; }
+            .connectivity-map { height: 310px; min-height: 300px; }
             .connectivity-map-legend { gap: 7px 12px; }
             .map-legend-note { flex-basis: 100%; justify-content: flex-start; text-align: left; }
             .island-grid { grid-template-columns: 1fr; }
@@ -458,14 +466,26 @@
 
     <div class="main-content">
         <section class="status-hero" id="currentStatus" aria-live="polite">
+            <div class="status-copy">
             <div class="status-eyebrow"><span class="lang-zh-only">目前狀態</span><span class="lang-en-only">CURRENT STATUS</span></div>
             <h2 class="status-conclusion" id="statusConclusion">載入中…</h2>
             <div class="status-meta" id="statusMeta">--</div>
+            </div>
+            <div class="stats-row primary-stats">
+                <div class="stat-card"><div class="value" id="statRegions">--</div><div class="label"><span class="lang-zh-only">目前異常地區</span><span class="lang-en-only">Regions abnormal now</span></div></div>
+                <div class="stat-card"><div class="value" id="statDuration">--</div><div class="label"><span class="lang-zh-only">持續時間</span><span class="lang-en-only">Duration</span></div></div>
+                <div class="stat-card"><div class="value" id="statSources">--</div><div class="label"><span class="lang-zh-only">印證來源</span><span class="lang-en-only">Corroborating sources</span></div></div>
+                <div class="stat-card"><div class="value alert" id="statLeads">--</div><div class="label"><span class="lang-zh-only">高優先候選船</span><span class="lang-en-only">High-priority vessels</span></div></div>
+            </div>
         </section>
 
         <div class="dashboard-layout">
+        <section class="panel dashboard-events">
+            <div class="panel-title"><span class="lang-zh-only">🚨 進行中／最近事件</span><span class="lang-en-only">🚨 Ongoing / recent events</span></div>
+            <div id="anomalyList" aria-live="polite"><div class="empty-state" data-i18n="common.loading">載入中...</div></div>
+        </section>
         <section class="panel dashboard-map" aria-labelledby="connectivityMapTitle">
-            <div class="panel-title" id="connectivityMapTitle"><span class="lang-zh-only">🗺️ 區域連線互動地圖</span><span class="lang-en-only">🗺️ Regional connectivity map</span></div>
+            <div class="panel-title map-panel-title" id="connectivityMapTitle"><span><span class="lang-zh-only">🗺️ 區域連線互動地圖</span><span class="lang-en-only">🗺️ Regional connectivity map</span></span><button type="button" class="map-size-toggle" id="mapSizeToggle" aria-expanded="false"><span class="lang-zh-only">展開地圖</span><span class="lang-en-only">Expand map</span></button></div>
             <div id="connectivityMap" class="connectivity-map" role="region" aria-label="台灣、金門、馬祖與澎湖網路觀測狀態互動地圖"></div>
             <div class="connectivity-map-legend" aria-label="地圖圖例 Map legend">
                 <span><i class="map-legend-dot" style="color:#00ff88;background:#00ff88"></i><span class="lang-zh-only">未見異常</span><span class="lang-en-only">No anomaly</span></span>
@@ -482,32 +502,9 @@
             <div class="island-grid" id="islandStatus"><div class="empty-state">載入中…</div></div>
         </section>
 
-        <div class="stats-row primary-stats">
-        <div class="stat-card">
-            <div class="value" id="statRegions">--</div>
-            <div class="label"><span class="lang-zh-only">目前異常地區</span><span class="lang-en-only">Regions abnormal now</span></div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statDuration">--</div>
-            <div class="label"><span class="lang-zh-only">持續時間</span><span class="lang-en-only">Duration</span></div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statSources">--</div>
-            <div class="label"><span class="lang-zh-only">印證來源</span><span class="lang-en-only">Corroborating sources</span></div>
-        </div>
-        <div class="stat-card">
-            <div class="value alert" id="statLeads">--</div>
-            <div class="label"><span class="lang-zh-only">高優先候選船</span><span class="lang-en-only">High-priority vessels</span></div>
-        </div>
-        </div>
         </aside>
 
         <section class="dashboard-primary" aria-label="網路異常事件與分析 Network anomaly events and analysis">
-        <div class="panel">
-            <div class="panel-title"><span class="lang-zh-only">🚨 進行中／最近事件</span><span class="lang-en-only">🚨 Ongoing / recent events</span></div>
-            <div id="anomalyList" aria-live="polite"><div class="empty-state" data-i18n="common.loading">載入中...</div></div>
-        </div>
-
         <div class="panel">
             <div class="panel-title"><span class="lang-zh-only">🚢 高優先候選船</span><span class="lang-en-only">🚢 High-priority candidate vessels</span></div>
             <div class="history-label"><span class="lang-zh-only">最近 28 天事件中的商船／公務船線索</span><span class="lang-en-only">Commercial/government leads from events in the last 28 days</span></div>
