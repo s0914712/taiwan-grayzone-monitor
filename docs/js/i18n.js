@@ -83,6 +83,16 @@ const i18n = (function () {
         'metric.dark_sub':       { zh: '殘餘暗船 {0} · 本地 AIS 排除 {1}%', en: '{0} residual · {1}% cleared by local AIS' },
         'metric.dark_sub_alt':   { zh: '偵測 {0} 筆 · 暗船比例 {1}%', en: '{0} detections · {1}% dark' },
 
+        // ── 指標卡滑出面板 Metric detail panels（首頁電腦版） ──
+        'panel.dark_title':      { zh: '🛰️ SAR×AIS 比對結果', en: '🛰️ SAR×AIS Match Result' },
+        'dark.funnel_total':     { zh: 'SAR 總偵測', en: 'SAR detections' },
+        'dark.funnel_dark':      { zh: 'GFW 判定暗船', en: 'Dark per GFW' },
+        'dark.funnel_infra':     { zh: '固定設施排除', en: 'Fixed infrastructure removed' },
+        'dark.funnel_cleared':   { zh: '本地 AIS 排除比例', en: 'Cleared by local AIS' },
+        'dark.funnel_residual':  { zh: '殘餘暗船', en: 'Residual dark' },
+        'dark.funnel_nocover':   { zh: '超出 AIS 涵蓋範圍', en: 'Outside AIS coverage' },
+        'dark.view_page':        { zh: '查看暗船偵測頁 →', en: 'Open dark-vessel page →' },
+
         // ── 地圖面板 Map pane（首頁電腦版） ──
         'pane.map_title':        { zh: '即時地圖', en: 'Live Map' },
         'pane.map_sub':          { zh: 'AIS 船位、SAR 暗船與海底電纜路由', en: 'AIS positions, SAR dark vessels and cable routes' },
