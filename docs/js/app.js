@@ -11,6 +11,8 @@ const App = (function () {
     let rawVesselList = []; // raw AIS vessel array for re-rendering on filter change
     let suspiciousData = null;
     let sidebarOpen = false;
+    let latestData = null;  // last data.json payload (feeds the brief + metric tiles)
+    let cableCounts = null; // { faults, repaired } from cable_status.json
 
     /**
      * Initialize the application
@@ -108,6 +110,17 @@ const App = (function () {
                 if (type) MapModule.locateVesselType(type);
             });
         });
+
+        // Map pane "圖層" button collapses the on-map layer panel (desktop)
+        const layerBtn = document.getElementById('layerPanelToggle');
+        const layerPanel = document.getElementById('layerToggles');
+        if (layerBtn && layerPanel) {
+            layerBtn.addEventListener('click', () => {
+                const expanded = layerBtn.getAttribute('aria-expanded') === 'true';
+                layerBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                layerPanel.classList.toggle('is-hidden', expanded);
+            });
+        }
 
         // FOC commercial vessel filter
         const focCheckbox = document.getElementById('filterFocVessels');
@@ -333,6 +346,9 @@ const App = (function () {
                 ? govVessels.slice(0, 10).map(rowHtml).join('')
                 : emptyMsg;
         }
+
+        // Gov count feeds a metric tile; the FOC filter can change it
+        updateBriefAndMetrics();
     }
 
     /**
@@ -383,10 +399,102 @@ const App = (function () {
         }).join('');
     }
 
+    /**
+     * 今日態勢 + 今日關鍵指標（首頁電腦版的上半部）
+     *
+     * Everything here is read straight off the loaded datasets — no derived
+     * "vs. 7-day average" style claims, because the homepage payload doesn't
+     * carry a comparable historical baseline for these four numbers.
+     *
+     * Situation level (documented on the badge's title attribute):
+     *   警戒 alert     — ≥2 unrepaired MODA cable faults
+     *   注意 attention — exactly 1 fault, or no fault but suspicious vessels present
+     *   一般 normal    — no faults and no suspicious vessels
+     */
+    function updateBriefAndMetrics() {
+        const badge = document.getElementById('briefBadge');
+        if (!badge || !latestData) return; // not the desktop homepage / no data yet
+
+        const t = (typeof i18n !== 'undefined') ? i18n.t.bind(i18n) : (k) => k;
+        const num = (n) => (n || 0).toLocaleString();
+        const setText = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        };
+
+        const summary = (latestData.suspicious_analysis && latestData.suspicious_analysis.summary) || {};
+        const risk = summary.risk_distribution || {};
+        const suspCount = summary.suspicious_count || 0;
+        const dark = (latestData.dark_vessels && latestData.dark_vessels.overall) || {};
+        const sar = (latestData.sar_ais_matching && latestData.sar_ais_matching.summary) || null;
+        const faults = cableCounts ? cableCounts.faults : 0;
+
+        // ── Tile 1: cable status (waits for cable_status.json) ──
+        if (cableCounts) {
+            const cableEl = document.getElementById('metricCable');
+            if (cableEl) cableEl.className = 'metric-value ' + (faults > 0 ? 'alert' : 'ok');
+            setText('metricCable', t('metric.cable_value', faults));
+            setText('metricCableSub', t('metric.cable_sub', cableCounts.repaired));
+        }
+
+        // ── Tile 2: suspicious vessels (score ≥8) ──
+        setText('metricSuspicious', num(suspCount));
+        setText('metricSuspiciousSub', t('metric.suspicious_sub', num(risk.critical), num(risk.high)));
+
+        // ── Tile 3: China gov / research vessels in the current AIS snapshot ──
+        const govCounts = {};
+        (rawVesselList || []).forEach((v) => {
+            const cat = MapModule.getGovType(v);
+            if (cat) govCounts[cat] = (govCounts[cat] || 0) + 1;
+        });
+        const govTotal = Object.values(govCounts).reduce((a, b) => a + b, 0);
+        setText('metricGov', num(govTotal));
+        setText('metricGovSub', govTotal
+            ? (MapModule.GOV_TYPES || Object.keys(govCounts))
+                .filter((c) => govCounts[c])
+                .map((c) => MapModule.govLabel(c) + ' ' + govCounts[c])
+                .join(' · ')
+            : t('metric.gov_none'));
+
+        // ── Tile 4: SAR dark vessels ──
+        setText('metricDark', num(dark.dark_vessels));
+        setText('metricDarkSub', sar
+            ? t('metric.dark_sub', num(sar.residual_dark), sar.false_dark_removed_pct)
+            : t('metric.dark_sub_alt', num(dark.total_detections), dark.dark_ratio));
+
+        // ── Situation badge + one-line summary ──
+        let level = 'normal';
+        if (faults >= 2) level = 'alert';
+        else if (faults === 1 || suspCount > 0) level = 'attention';
+
+        badge.className = 'brief-badge level-' + level;
+        badge.textContent = t('brief.level_' + level);
+        badge.title = t('brief.level_rule');
+
+        setText('briefSummary', t(
+            faults > 0 ? 'brief.summary' : 'brief.summary_nofault',
+            faults, num(suspCount), num(risk.critical), num(dark.dark_vessels)
+        ));
+
+        const fresh = lastUpdatedAt ? formatFreshness(lastUpdatedAt) : null;
+        setText('briefUpdated', fresh && fresh.label ? t('brief.updated', fresh.label) : '');
+    }
+
     // 資料新鮮度：data.json 的 updated_at（loadData 時記錄，每分鐘重繪）
     let lastUpdatedAt = null;
     let freshnessTimer = null;
     const STALE_THRESHOLD_HOURS = 4;
+
+    /**
+     * Parse a pipeline timestamp. Older payloads carry '…+00:00Z' (offset AND
+     * Z — Date() rejects it); the trailing Z is dropped when an explicit
+     * offset is present so those files still render a time.
+     */
+    function parseTs(isoStr) {
+        if (!isoStr) return new Date(NaN);
+        const s = String(isoStr).replace(/([+-]\d{2}:\d{2})Z$/, '$1');
+        return new Date(s);
+    }
 
     /**
      * Format data freshness relative label, e.g. "(12 分鐘前)"
@@ -394,7 +502,7 @@ const App = (function () {
      */
     function formatFreshness(isoStr) {
         try {
-            const diffMin = Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
+            const diffMin = Math.floor((Date.now() - parseTs(isoStr).getTime()) / 60000);
             if (isNaN(diffMin)) return { label: '', isStale: false };
             const t = (k, v) => typeof i18n !== 'undefined'
                 ? i18n.t(k).replace('{0}', v)
@@ -413,7 +521,7 @@ const App = (function () {
      */
     function refreshFreshness() {
         if (!lastUpdatedAt) return;
-        const updateTime = new Date(lastUpdatedAt).toLocaleString();
+        const updateTime = parseTs(lastUpdatedAt).toLocaleString();
         const fresh = formatFreshness(lastUpdatedAt);
         const updateLabel = (typeof i18n !== 'undefined' ? i18n.t('common.updated') : '更新:')
             + ' ' + updateTime + (fresh.label ? ' (' + fresh.label + ')' : '');
@@ -426,7 +534,7 @@ const App = (function () {
         if (statusEl) {
             statusEl.classList.toggle('stale', fresh.isStale);
             if (fresh.isStale) {
-                const hours = Math.floor((Date.now() - new Date(lastUpdatedAt).getTime()) / 3600000);
+                const hours = Math.floor((Date.now() - parseTs(lastUpdatedAt).getTime()) / 3600000);
                 statusEl.textContent = typeof i18n !== 'undefined'
                     ? i18n.t('common.stale_warning').replace('{0}', hours)
                     : '⚠️ 資料逾 ' + hours + ' 小時未更新';
@@ -444,7 +552,7 @@ const App = (function () {
      */
     function sourceStatus(updatedAt, intervalHours) {
         if (!updatedAt) return { key: 'unknown', ageH: null };
-        const ts = new Date(updatedAt).getTime();
+        const ts = parseTs(updatedAt).getTime();
         if (isNaN(ts)) return { key: 'unknown', ageH: null };
         const ageH = (Date.now() - ts) / 3600000;
         const iv = intervalHours || 24;
@@ -509,6 +617,7 @@ const App = (function () {
             const res = await fetch(dataUrl);
             const data = await res.json();
 
+            latestData = data;
             lastUpdatedAt = data.updated_at;
             dataSources = data.data_sources || null;
             refreshFreshness();
@@ -517,10 +626,12 @@ const App = (function () {
                 freshnessTimer = setInterval(function () {
                     refreshFreshness();
                     renderDataSources();
+                    updateBriefAndMetrics();
                 }, 60000);
                 window.addEventListener('langchange', function () {
                     refreshFreshness();
                     renderDataSources();
+                    updateBriefAndMetrics();
                 });
             }
 
@@ -573,6 +684,9 @@ const App = (function () {
                 MapModule.displaySuspiciousVessels(suspiciousData);
             }
 
+            // 今日態勢 + 關鍵指標（海纜那格會在 loadCableStatus 回來後再補上）
+            updateBriefAndMetrics();
+
             // Load cable fault status
             loadCableStatus();
 
@@ -596,6 +710,9 @@ const App = (function () {
             const data = await res.json();
             const faults = (data.faults || []).filter(f => f.status === 'fault');
             const repaired = (data.faults || []).filter(f => f.status === 'repaired');
+
+            cableCounts = { faults: faults.length, repaired: repaired.length };
+            updateBriefAndMetrics();
 
             section.style.display = 'block';
 

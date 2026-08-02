@@ -345,7 +345,9 @@ def main():
 
     # 合併所有資料
     dashboard = {
-        'updated_at': datetime.now(timezone.utc).isoformat() + 'Z',
+        # tz-aware isoformat() already ends in +00:00 — appending 'Z' produced
+        # '…+00:00Z', which Date() rejects (front-end showed "Invalid Date")
+        'updated_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         'vessel_monitoring': vessel_data,
         'suspicious_analysis': suspicious_data,
         'dark_vessels': dark_vessels_data,

@@ -208,19 +208,16 @@
     <div class="app-container">
         <header class="header">
             <h1 data-i18n="title.index">🛰️ 台灣灰色地帶與海底電纜監測</h1>
-            <div class="header-info">
-                <a href="index.html"
-                    style="font-size:13px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--accent-cyan);border-radius:4px;background:rgba(0,245,255,0.1)" data-i18n="nav.grayzone">灰色地帶</a>
-                <a href="dark-vessels.html"
-                    style="font-size:13px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.dark_vessels">暗船偵測</a>
-                <a href="statistics.html"
-                    style="font-size:13px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.statistics">統計分析</a>
-                <a href="ais-animation.html"
-                    style="font-size:13px;color:var(--text-secondary);text-decoration:none;padding:3px 8px;border:1px solid var(--border-glow);border-radius:4px" data-i18n="nav.animation">軌跡動畫</a>
+            <nav class="header-nav" aria-label="主要導覽 Primary">
+                <a href="index.html" class="active" data-i18n="nav.grayzone">灰色地帶監測</a>
+                <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
+                <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
+                <a href="ais-animation.html" data-i18n="nav.animation">軌跡動畫</a>
                 <details class="nav-more">
                     <summary><span class="lang-zh-only">更多</span><span class="lang-en-only">More</span> ▾</summary>
                     <div class="nav-more-menu">
                         <a href="network-traffic.html"><span class="lang-zh-only">網路流量</span><span class="lang-en-only">Network Traffic</span></a>
+                        <a href="sar-ais-match.html"><span class="lang-zh-only">SAR×AIS 比對</span><span class="lang-en-only">SAR×AIS Match</span></a>
                         <a href="cn-fishing-animation.html" data-i18n="nav.cn_fishing">大陸漁船</a>
                         <a href="ship-transfers.html" data-i18n="nav.transfers">旁靠偵測</a>
                         <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
@@ -229,10 +226,58 @@
                         <a href="intro.html"><span class="lang-zh-only">關於本站</span><span class="lang-en-only">About</span></a>
                     </div>
                 </details>
+            </nav>
+            <div class="header-info">
                 <button id="langToggle" onclick="i18n.toggle()" aria-label="切換語言 / Switch language" style="font-size:13px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
                 <div class="data-status" id="dataStatus" data-i18n="common.loading">⏳ 載入中...</div>
             </div>
         </header>
+
+        <!-- 今日態勢 — one-line situation brief (desktop). Populated by app.js -->
+        <section class="today-brief" aria-labelledby="briefTitle">
+            <div class="brief-main">
+                <div class="brief-heading">
+                    <h2 id="briefTitle" data-i18n="brief.title">今日態勢</h2>
+                    <span class="brief-badge" id="briefBadge" data-i18n="brief.level_loading">● 判定中</span>
+                </div>
+                <p class="brief-summary" id="briefSummary" data-i18n="brief.loading">彙整海纜狀態與可疑船舶資料中…</p>
+            </div>
+            <span class="brief-updated" id="briefUpdated"></span>
+        </section>
+
+        <!-- 今日關鍵指標 — 4 tiles. Populated by app.js -->
+        <section class="metrics-row" aria-label="今日關鍵指標 Key metrics">
+            <div class="metric-card">
+                <span class="metric-label" data-i18n="metric.cable">海纜狀況</span>
+                <span class="metric-value" id="metricCable">--</span>
+                <span class="metric-sub" id="metricCableSub"></span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label" data-i18n="metric.suspicious">可疑船舶</span>
+                <span class="metric-value alert" id="metricSuspicious">--</span>
+                <span class="metric-sub" id="metricSuspiciousSub"></span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label" data-i18n="metric.gov">中國公務／科研船</span>
+                <span class="metric-value" id="metricGov">--</span>
+                <span class="metric-sub" id="metricGovSub"></span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label" data-i18n="metric.dark">SAR 暗船</span>
+                <span class="metric-value" id="metricDark">--</span>
+                <span class="metric-sub" id="metricDarkSub"></span>
+            </div>
+        </section>
+
+        <div class="main-grid">
+        <section class="map-pane" aria-labelledby="mapPaneTitle">
+            <div class="pane-heading">
+                <div>
+                    <h3 id="mapPaneTitle" data-i18n="pane.map_title">即時地圖</h3>
+                    <span class="pane-sub" data-i18n="pane.map_sub">AIS 船位、SAR 暗船與海底電纜路由</span>
+                </div>
+                <button type="button" class="pane-btn" id="layerPanelToggle" aria-expanded="true" aria-controls="layerToggles">🗂️ <span data-i18n="pane.layers">圖層</span></button>
+            </div>
 
         <div class="map-section">
             <div id="map"></div>
@@ -242,7 +287,7 @@
                 <button onclick="MapModule.searchVesselRoute()" aria-label="查詢航跡 / Search route">查詢</button>
             </div>
 
-            <div class="layer-toggles">
+            <div class="layer-toggles" id="layerToggles">
                 <label class="layer-toggle"><input type="checkbox" id="showFishingHotspots" checked> <span data-i18n="idx.layer_fishing">漁撈熱點</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="showVessels" checked> <span data-i18n="idx.layer_vessels">AIS 船隻</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="showDarkVessels" checked> <span data-i18n="idx.layer_dark">暗船 (SAR)</span></label>
@@ -252,8 +297,9 @@
                 <label class="layer-toggle"><input type="checkbox" id="showBathymetry"> <span data-i18n="idx.layer_bathymetry">海床水深 (Seascape)</span></label>
                 <label class="layer-toggle"><input type="checkbox" id="filterFocVessels"> <span data-i18n="idx.filter_foc">過濾權宜船</span></label>
             </div>
+        </div>
 
-            <div class="map-legend">
+            <div class="map-legend legend-bar">
                 <div class="legend-section">
                     <div class="legend-title" data-i18n="idx.legend_type">船隻類型</div>
                     <div class="legend-item legend-clickable" data-vessel-type="fishing">
@@ -298,9 +344,19 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
         <aside class="sidebar">
+            <!-- 海纜狀況 first: cable faults are the concrete gray-zone harm -->
+            <div class="sidebar-section" id="cableStatusSection" style="display:none">
+                <div class="section-title" data-i18n="cable.status_title">🔌 海纜狀態</div>
+                <div class="cable-status-summary" id="cableStatusSummary"></div>
+                <div class="cable-fault-list" id="cableFaultList" style="max-height:200px;overflow-y:auto;font-size:12px;line-height:1.6"></div>
+                <div style="margin-top:6px;font-size:11px;opacity:0.6">
+                    <a href="https://moda.gov.tw/major-policies/subseacable/fault/1749" target="_blank" rel="noopener" style="color:#00f5ff" data-i18n="cable.source_link">資料來源：數位發展部</a>
+                </div>
+            </div>
+
             <div class="sidebar-section">
                 <div class="section-title"><span data-i18n="idx.suspicious_title">🔍 可疑船隻（海纜威脅偵測）</span><span class="section-count" id="suspiciousCount">0</span></div>
                 <div class="suspicious-list" id="suspiciousList">
@@ -313,19 +369,11 @@
                 <div class="suspicious-list" id="govVesselList"></div>
             </div>
 
-            <div class="sidebar-section" id="cableStatusSection" style="display:none">
-                <div class="section-title" data-i18n="cable.status_title">🔌 海纜狀態</div>
-                <div class="cable-status-summary" id="cableStatusSummary"></div>
-                <div class="cable-fault-list" id="cableFaultList" style="max-height:200px;overflow-y:auto;font-size:12px;line-height:1.6"></div>
-                <div style="margin-top:6px;font-size:11px;opacity:0.6">
-                    <a href="https://moda.gov.tw/major-policies/subseacable/fault/1749" target="_blank" rel="noopener" style="color:#00f5ff" data-i18n="cable.source_link">資料來源：數位發展部</a>
-                </div>
-            </div>
-
             <div class="update-info" id="updateInfo" data-i18n="common.update_time">
                 資料更新時間: --
             </div>
         </aside>
+        </div>
     </div>
 
     <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
@@ -377,6 +425,10 @@
 
     <footer class="site-footer">
         <p><a href="reports/"><span class="lang-zh-only">📑 每日海域報告</span><span class="lang-en-only">📑 Daily Reports</span></a></p>
+        <p class="footer-disclaimer">
+            <span class="lang-zh-only">可疑標記是風險排序，並非違法認定。</span>
+            <span class="lang-en-only">Suspicious flags are a risk ranking, not a legal determination.</span>
+        </p>
         <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
     </footer>
 

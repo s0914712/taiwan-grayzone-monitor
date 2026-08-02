@@ -411,7 +411,9 @@ def main():
     trawling_count = sum(1 for t in all_events if t["classification"] == "pair_trawling")
 
     output = {
-        "updated_at": datetime.now(timezone.utc).isoformat() + "Z",
+        # tz-aware isoformat() already carries +00:00; appending 'Z' makes it
+        # unparseable by JS Date()
+        "updated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "active_transfers": active_transfers,
         "history": history_transfers,
         "summary": {
