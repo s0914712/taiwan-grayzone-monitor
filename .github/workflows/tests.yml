@@ -47,6 +47,9 @@ jobs:
       - name: Run mobile navigation smoke test
         run: node tests/mobile-nav-smoke.js
 
+      - name: Run service worker caching smoke test
+        run: node tests/sw-smoke.js
+
       - name: Compile all pipeline scripts
         run: python -m py_compile src/*.py
 

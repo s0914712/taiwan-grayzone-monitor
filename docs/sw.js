@@ -1,9 +1,21 @@
 /**
  * Taiwan Gray Zone Monitor - Service Worker
- * Provides offline support and caching
+ * Offline support + caching.
+ *
+ * Strategy note: app code (HTML/CSS/JS) and data (JSON) are **network-first**,
+ * with the cache only as an offline fallback. The previous version was
+ * cache-first for every static asset with a hardcoded CACHE_NAME, so a returning
+ * visitor kept the CSS/JS from whenever they first loaded the site — after a
+ * deploy the browser mixed new HTML with old CSS (panels rendered permanently
+ * expanded, tiles unstyled) and there was no way to invalidate it short of
+ * unregistering the worker. These files are a few hundred KB total; serving them
+ * from the network first costs little and keeps the dashboard honest.
  */
 
-const CACHE_NAME = 'taiwan-grayzone-v3';
+const CACHE_NAME = 'taiwan-grayzone-v4';
+
+// Precached so the first offline visit still works. Anything else the page
+// requests gets cached opportunistically on first fetch.
 const STATIC_ASSETS = [
     '/',
     '/index.html',
@@ -16,79 +28,69 @@ const STATIC_ASSETS = [
     '/js/map-vessels.js',
     '/js/map-routes.js',
     '/js/map-cables.js',
+    '/js/map-bathymetry.js',
     '/js/map.js',
     '/js/charts.js',
+    '/js/mobile-nav.js',
     '/js/app.js'
 ];
 
-// Install event - cache static assets
+// Extensions served network-first (app code + data). Everything else — images,
+// fonts, tiles — stays cache-first, where staleness is harmless.
+const NETWORK_FIRST = /\.(html|css|js|json)$/;
+
+// Install: warm the cache, then take over immediately
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('Caching static assets');
-                return cache.addAll(STATIC_ASSETS);
-            })
+            // addAll rejects the whole install if any single URL 404s
+            .then(cache => Promise.all(
+                STATIC_ASSETS.map(url => cache.add(url).catch(() => null))
+            ))
             .then(() => self.skipWaiting())
     );
 });
 
-// Activate event - clean up old caches
+// Activate: drop every cache from a previous CACHE_NAME
 self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames
-                    .filter(name => name !== CACHE_NAME)
-                    .map(name => caches.delete(name))
-            );
-        }).then(() => self.clients.claim())
+        caches.keys().then(cacheNames => Promise.all(
+            cacheNames
+                .filter(name => name !== CACHE_NAME)
+                .map(name => caches.delete(name))
+        )).then(() => self.clients.claim())
     );
 });
 
-// Fetch event - network first for data, cache first for static
-self.addEventListener('fetch', event => {
-    const url = new URL(event.request.url);
+function cacheResponse(request, response) {
+    if (!response || response.status !== 200 || response.type !== 'basic') return response;
+    const clone = response.clone();
+    caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+    return response;
+}
 
-    // Network first for data.json to get fresh data
-    if (url.pathname.endsWith('data.json')) {
+self.addEventListener('fetch', event => {
+    const { request } = event;
+    if (request.method !== 'GET') return;
+
+    const url = new URL(request.url);
+    const sameOrigin = url.origin === self.location.origin;
+
+    // Navigations + app code + data: network first, cache as offline fallback
+    if (request.mode === 'navigate' || (sameOrigin && NETWORK_FIRST.test(url.pathname))) {
         event.respondWith(
-            fetch(event.request)
-                .then(response => {
-                    // Clone and cache the response
-                    const responseClone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, responseClone);
-                    });
-                    return response;
-                })
-                .catch(() => {
-                    // Fall back to cache if network fails
-                    return caches.match(event.request);
-                })
+            fetch(request)
+                .then(response => cacheResponse(request, response))
+                .catch(() => caches.match(request).then(
+                    cached => cached || caches.match('/index.html')
+                ))
         );
         return;
     }
 
-    // Cache first for static assets
+    // Everything else (images, fonts, map tiles): cache first
     event.respondWith(
-        caches.match(event.request)
-            .then(cachedResponse => {
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
-                return fetch(event.request)
-                    .then(response => {
-                        // Don't cache non-success responses or external resources
-                        if (!response || response.status !== 200 || response.type !== 'basic') {
-                            return response;
-                        }
-                        const responseClone = response.clone();
-                        caches.open(CACHE_NAME).then(cache => {
-                            cache.put(event.request, responseClone);
-                        });
-                        return response;
-                    });
-            })
+        caches.match(request).then(cached => cached
+            || fetch(request).then(response => cacheResponse(request, response)))
     );
 });
