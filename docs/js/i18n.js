@@ -59,6 +59,35 @@ const i18n = (function () {
         'common.ago_h':          { zh: '{0} 小時前', en: '{0} h ago' },
         'common.stale_warning':  { zh: '⚠️ 資料逾 {0} 小時未更新', en: '⚠️ Data stale: >{0}h old' },
 
+        // ── 今日態勢 Today's brief（首頁電腦版） ──
+        'brief.title':           { zh: '今日態勢', en: "Today's Picture" },
+        'brief.loading':         { zh: '彙整海纜狀態與可疑船舶資料中…', en: 'Compiling cable status and suspicious-vessel data…' },
+        'brief.level_loading':   { zh: '● 判定中', en: '● Assessing' },
+        'brief.level_normal':    { zh: '● 一般', en: '● Normal' },
+        'brief.level_attention': { zh: '● 注意', en: '● Attention' },
+        'brief.level_alert':     { zh: '▲ 警戒', en: '▲ Alert' },
+        'brief.level_rule':      { zh: '判定依據：未修復海纜障礙 ≥2 件為警戒、1 件為注意；無障礙但有可疑船舶為注意。', en: 'Rule: ≥2 unrepaired cable faults = Alert, 1 = Attention; no faults but suspicious vessels present = Attention.' },
+        'brief.summary':         { zh: '{0} 件海纜障礙尚未修復；可疑船舶 {1} 艘（critical {2} 艘），SAR 暗船 {3} 艘。', en: '{0} unrepaired submarine-cable faults; {1} suspicious vessels ({2} critical); {3} SAR dark vessels.' },
+        'brief.summary_nofault': { zh: '監測海纜目前無未修復障礙；可疑船舶 {1} 艘（critical {2} 艘），SAR 暗船 {3} 艘。', en: 'No unrepaired cable faults; {1} suspicious vessels ({2} critical); {3} SAR dark vessels.' },
+        'brief.updated':         { zh: '最後更新：{0}', en: 'Last update: {0}' },
+
+        // ── 今日關鍵指標 Key metrics（首頁電腦版） ──
+        'metric.cable':          { zh: '海纜狀況', en: 'Cable Status' },
+        'metric.cable_value':    { zh: '{0} 件障礙', en: '{0} faults' },
+        'metric.cable_sub':      { zh: '已修復 {0} 件 · 來源：數位發展部', en: '{0} repaired · Source: MODA' },
+        'metric.suspicious':     { zh: '可疑船舶', en: 'Suspicious Vessels' },
+        'metric.suspicious_sub': { zh: 'critical {0} · high {1}（評分 ≥8）', en: '{0} critical · {1} high (score ≥8)' },
+        'metric.gov':            { zh: '中國公務／科研船', en: 'China Gov / Research' },
+        'metric.gov_none':       { zh: '本次快照未偵測到', en: 'None in this snapshot' },
+        'metric.dark':           { zh: 'SAR 暗船', en: 'SAR Dark Vessels' },
+        'metric.dark_sub':       { zh: '殘餘暗船 {0} · 本地 AIS 排除 {1}%', en: '{0} residual · {1}% cleared by local AIS' },
+        'metric.dark_sub_alt':   { zh: '偵測 {0} 筆 · 暗船比例 {1}%', en: '{0} detections · {1}% dark' },
+
+        // ── 地圖面板 Map pane（首頁電腦版） ──
+        'pane.map_title':        { zh: '即時地圖', en: 'Live Map' },
+        'pane.map_sub':          { zh: 'AIS 船位、SAR 暗船與海底電纜路由', en: 'AIS positions, SAR dark vessels and cable routes' },
+        'pane.layers':           { zh: '圖層', en: 'Layers' },
+
         // ── 資料健康 Data freshness ──
         'freshness.title':       { zh: '🩺 資料健康', en: '🩺 Data Health' },
         'freshness.source':      { zh: '資料源', en: 'Source' },

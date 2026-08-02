@@ -58,11 +58,182 @@ body {
    Layout
    ============================================================================= */
 
+/* Homepage shell (index.html only). Desktop reading order, top to bottom:
+   header → 今日態勢 brief → 4 key-metric tiles → map | sidebar → page sections.
+   Vertical flow (not a 100vh grid) so the brief and metrics sit above the fold
+   and the page scrolls into the AI-summary / data-health blocks below. */
 .app-container {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ---- 今日態勢 brief ---- */
+.today-brief {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: var(--spacing-md);
+    padding: 14px var(--spacing-md) 10px;
+}
+
+.brief-main { min-width: 0; }
+
+.brief-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brief-heading h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.brief-badge {
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--text-secondary);
+    color: var(--text-secondary);
+    font-size: var(--fs-caption);
+    white-space: nowrap;
+}
+
+.brief-badge.level-normal {
+    color: var(--accent-green);
+    border-color: rgba(0, 255, 136, 0.5);
+    background: rgba(0, 255, 136, 0.08);
+}
+
+.brief-badge.level-attention {
+    color: var(--accent-yellow);
+    border-color: rgba(255, 215, 0, 0.5);
+    background: rgba(255, 215, 0, 0.08);
+}
+
+.brief-badge.level-alert {
+    color: var(--accent-red);
+    border-color: rgba(255, 51, 102, 0.6);
+    background: rgba(255, 51, 102, 0.1);
+}
+
+.brief-summary {
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+
+.brief-updated {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: var(--fs-caption);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* ---- Key metric tiles ---- */
+.metrics-row {
     display: grid;
-    grid-template-columns: 1fr 320px;
-    grid-template-rows: auto 1fr;
-    height: 100vh;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    padding: 0 var(--spacing-md) 14px;
+}
+
+.metric-card {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glow);
+    border-radius: 8px;
+}
+
+.metric-label {
+    font-size: var(--fs-caption);
+    color: var(--text-secondary);
+}
+
+.metric-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--accent-cyan);
+}
+
+.metric-value.alert { color: var(--accent-red); }
+.metric-value.warn { color: var(--accent-yellow); }
+.metric-value.ok { color: var(--accent-green); }
+
+.metric-sub {
+    font-size: var(--fs-caption);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* ---- Map + sidebar split ---- */
+.main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 14px;
+    align-items: start;
+    padding: 14px var(--spacing-md) var(--spacing-md);
+    border-top: 1px solid rgba(0, 245, 255, 0.12);
+}
+
+.map-pane {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.pane-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.pane-heading h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pane-sub {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-caption);
+    color: var(--text-secondary);
+}
+
+.pane-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--border-glow);
+    border-radius: 6px;
+    background: rgba(0, 245, 255, 0.1);
+    color: var(--accent-cyan);
+    font-family: inherit;
+    font-size: var(--fs-body);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+}
+
+.pane-btn:hover { border-color: var(--accent-cyan); }
+
+.pane-btn[aria-expanded="false"] {
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+/* Narrow desktop / landscape tablet: 2×2 tiles, tighter sidebar column */
+@media (min-width: 901px) and (max-width: 1180px) {
+    .metrics-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .main-grid { grid-template-columns: minmax(0, 1fr) 300px; }
 }
 
 /* =============================================================================
@@ -189,7 +360,15 @@ body {
    Map Section
    ============================================================================= */
 
-.map-section { position: relative; }
+/* Map viewport inside .map-pane. Height is bounded so the brief + metric tiles
+   stay visible above it and the page keeps scrolling to the sections below. */
+.map-section {
+    position: relative;
+    height: clamp(420px, calc(100vh - 360px), 760px);
+    overflow: hidden;
+    border: 1px solid var(--border-glow);
+    border-radius: 8px;
+}
 #map { width: 100%; height: 100%; background: #0a1628; }
 
 /* Route search box */
@@ -565,20 +744,55 @@ body {
 .layer-toggle input {
     width: 14px;
     height: 14px;
-    accent-color: var(--accent-cyan); 
+    accent-color: var(--accent-cyan);
 }
+
+/* Collapsed by the pane heading's 圖層 button (index only) */
+.layer-toggles.is-hidden { display: none; }
+
+/* =============================================================================
+   Legend bar — index homepage renders the map legend as a horizontal strip
+   below the map instead of the floating overlay other map pages use.
+   Must stay after the .map-legend block (same specificity, later wins).
+   ============================================================================= */
+
+.legend-bar {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 18px;
+    margin-top: 8px;
+    padding: 8px 12px;
+}
+
+.legend-bar .legend-section {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    margin-bottom: 0;
+}
+
+.legend-bar .legend-title { margin-bottom: 0; }
+.legend-bar .legend-item { margin: 0; }
 
 /* =============================================================================
    Sidebar
    ============================================================================= */
 
+/* Desktop: a panel in the .main-grid right column (mobile turns it back into a
+   full-height slide-in drawer — see the ≤900px block). */
 .sidebar {
     background: var(--bg-secondary);
-    border-left: 1px solid var(--border-glow);
+    border: 1px solid var(--border-glow);
+    border-radius: 8px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
+
+.sidebar .sidebar-section:last-of-type { border-bottom: none; }
 
 .sidebar-section { 
     padding: 10px; 
@@ -1005,8 +1219,17 @@ body {
 @media (max-width: 900px) {
     /* Layout */
     body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0)); }
-    .app-container { grid-template-columns: 1fr; }
     .main-content { grid-template-columns: 1fr; padding-bottom: calc(72px + env(safe-area-inset-bottom, 0)); }
+
+    /* Homepage: the desktop brief / metric tiles / pane chrome are desktop-only.
+       Mobile keeps the map-first shell + bottom sheet it already had. */
+    .today-brief,
+    .metrics-row,
+    .pane-heading { display: none; }
+    .main-grid { display: block; padding: 0; border-top: none; }
+    .map-pane { display: block; }
+    .map-section { height: auto; border: none; border-radius: 0; overflow: visible; }
+    .sidebar { border: none; border-left: 1px solid var(--border-glow); border-radius: 0; }
 
     /* Header - minimal: title + lang toggle + status */
     .header {
@@ -1491,6 +1714,12 @@ body {
 
 .site-footer a:hover {
     text-decoration: underline;
+}
+
+.footer-disclaimer {
+    margin-top: 4px;
+    font-size: var(--fs-caption);
+    opacity: 0.75;
 }
 
 /* Topic-cluster footer on evergreen articles — internal-linking block */
