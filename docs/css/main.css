@@ -59,12 +59,27 @@ body {
    ============================================================================= */
 
 /* Homepage shell (index.html only). Desktop reading order, top to bottom:
-   header → 今日態勢 brief → 4 key-metric tiles → map | sidebar → page sections.
+   header → 今日態勢 brief → 4 key-metric tiles (+ slide-out detail panels)
+   → full-width map → page sections.
    Vertical flow (not a 100vh grid) so the brief and metrics sit above the fold
    and the page scrolls into the AI-summary / data-health blocks below. */
 .app-container {
     display: flex;
     flex-direction: column;
+}
+
+/* Homepage top half runs at 2× the dashboard typography floor — these blocks
+   are read at a glance from a distance, unlike the map chrome (legend, layer
+   panel, Leaflet popups) which keeps the compact --fs-* defaults so it doesn't
+   swallow the map. Overriding the tokens cascades into every descendant that
+   already references them (.metric-label, .suspicious-item, .section-title…). */
+.today-brief,
+.metrics-row,
+.metric-panels {
+    --fs-label: 20px;
+    --fs-caption: 22px;
+    --fs-body: 24px;
+    --fs-title: 26px;
 }
 
 /* ---- 今日態勢 brief ---- */
@@ -85,7 +100,7 @@ body {
 }
 
 .brief-heading h2 {
-    font-size: 16px;
+    font-size: 32px;
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -119,8 +134,8 @@ body {
 
 .brief-summary {
     margin-top: 6px;
-    font-size: 14px;
-    line-height: 1.6;
+    font-size: 28px;
+    line-height: 1.5;
     color: var(--text-primary);
 }
 
@@ -136,18 +151,68 @@ body {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
-    padding: 0 var(--spacing-md) 14px;
+    padding: 0 var(--spacing-md) 12px;
 }
 
+/* Each tile is a button: hover slides its panel out, click pins it open. */
 .metric-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 3px;
     min-width: 0;
-    padding: 12px 14px;
+    margin: 0;
+    padding: 14px 16px 16px;
     background: var(--bg-card);
     border: 1px solid var(--border-glow);
     border-radius: 8px;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    appearance: none;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.metric-card:hover:not(:disabled),
+.metric-card[aria-expanded="true"] {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 245, 255, 0.06);
+}
+
+.metric-card:focus-visible {
+    outline: 2px solid var(--accent-cyan);
+    outline-offset: 2px;
+}
+
+.metric-card:disabled {
+    cursor: default;
+    opacity: 0.75;
+}
+
+.metric-card:disabled .metric-chevron { display: none; }
+
+/* Chevron affordance — points down, flips up while the panel is open */
+.metric-chevron {
+    position: absolute;
+    right: 14px;
+    bottom: 10px;
+    width: 0.5em;
+    height: 0.5em;
+    border-right: 2px solid var(--text-secondary);
+    border-bottom: 2px solid var(--text-secondary);
+    font-size: var(--fs-title);
+    transform: rotate(45deg);
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.metric-card:hover:not(:disabled) .metric-chevron,
+.metric-card[aria-expanded="true"] .metric-chevron {
+    border-color: var(--accent-cyan);
+}
+
+.metric-card[aria-expanded="true"] .metric-chevron {
+    transform: rotate(-135deg);
 }
 
 .metric-label {
@@ -157,7 +222,7 @@ body {
 
 .metric-value {
     font-family: 'Orbitron', sans-serif;
-    font-size: 26px;
+    font-size: 52px;
     font-weight: 700;
     line-height: 1.15;
     color: var(--accent-cyan);
@@ -171,14 +236,126 @@ body {
     font-size: var(--fs-caption);
     color: var(--text-secondary);
     line-height: 1.5;
+    padding-right: 1.2em; /* clear the chevron */
 }
 
-/* ---- Map + sidebar split ---- */
+/* ---- Slide-out detail panels (the former right sidebar) ----
+   0fr → 1fr on grid-template-rows animates height without measuring it. */
+.metric-panels { padding: 0 var(--spacing-md); }
+
+.metric-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+        grid-template-rows var(--transition-normal) ease,
+        opacity var(--transition-fast) ease;
+}
+
+.metric-panel > .metric-panel-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.metric-panel.is-open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+.metric-panel-body {
+    padding: 14px 16px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent-cyan);
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.panel-empty {
+    padding: 6px 4px;
+    color: var(--text-secondary);
+    font-size: var(--fs-body);
+}
+
+.panel-source {
+    margin-top: 8px;
+    font-size: var(--fs-caption);
+    opacity: 0.7;
+}
+
+.panel-source a { color: var(--accent-cyan); text-decoration: none; }
+.panel-source a:hover { text-decoration: underline; }
+
+/* Cable status block (markup built in app.js loadCableStatus) */
+.cable-stat-row { display: flex; gap: 12px; margin-bottom: 10px; }
+
+.cable-stat {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.cable-stat.is-fault { background: rgba(255, 0, 0, 0.15); }
+.cable-stat.is-repaired { background: rgba(0, 255, 136, 0.1); }
+
+.cable-stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: calc(var(--fs-title) * 1.6);
+    font-weight: 700;
+}
+
+.cable-stat.is-fault .cable-stat-value { color: #ff3b3b; }
+.cable-stat.is-repaired .cable-stat-value { color: var(--accent-green); }
+.cable-stat-label { font-size: var(--fs-caption); opacity: 0.75; }
+
+.cable-fault-list {
+    max-height: min(40vh, 360px);
+    overflow-y: auto;
+    font-size: var(--fs-body);
+    line-height: 1.6;
+}
+
+.cable-fault-row {
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cable-fault-row:last-child { border-bottom: 0; }
+.cable-fault-name { color: #ff3b3b; font-weight: 600; }
+.cable-fault-meta { font-size: var(--fs-caption); opacity: 0.6; }
+.cable-fault-repair { font-size: var(--fs-caption); color: var(--accent-yellow); }
+.cable-fault-alt { font-size: var(--fs-caption); opacity: 0.45; }
+.cable-all-normal { padding: 8px 0; color: var(--accent-green); }
+
+/* SAR×AIS funnel (panel-dark), built in app.js */
+.dark-funnel { display: flex; flex-direction: column; gap: 6px; }
+
+.dark-funnel-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: var(--fs-body);
+}
+
+.dark-funnel-row:last-child { border-bottom: 0; }
+.dark-funnel-label { color: var(--text-secondary); }
+
+.dark-funnel-value {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    color: var(--accent-cyan);
+}
+
+.dark-funnel-row.is-residual .dark-funnel-value { color: var(--accent-red); }
+.dark-funnel-row.is-cleared .dark-funnel-value { color: var(--accent-green); }
+
+/* ---- Map pane (full width — the old right sidebar now lives in the tiles) ---- */
 .main-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    gap: 14px;
-    align-items: start;
+    grid-template-columns: minmax(0, 1fr);
     padding: 14px var(--spacing-md) var(--spacing-md);
     border-top: 1px solid rgba(0, 245, 255, 0.12);
 }
@@ -197,8 +374,10 @@ body {
     margin-bottom: 8px;
 }
 
+/* Sits right under the 2× tiles — scaled up so it doesn't look orphaned, but
+   below the brief heading so it stays a section label, not a title. */
 .pane-heading h3 {
-    font-size: 15px;
+    font-size: 24px;
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -206,8 +385,16 @@ body {
 .pane-sub {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-caption);
+    font-size: 18px;
     color: var(--text-secondary);
+}
+
+/* Absolute timestamp under the map (the brief carries the relative one) */
+.map-pane .update-info {
+    font-size: 16px;
+    background: transparent;
+    text-align: right;
+    padding: 8px 2px 0;
 }
 
 .pane-btn {
@@ -217,7 +404,7 @@ body {
     background: rgba(0, 245, 255, 0.1);
     color: var(--accent-cyan);
     font-family: inherit;
-    font-size: var(--fs-body);
+    font-size: 18px;
     cursor: pointer;
     white-space: nowrap;
     transition: all var(--transition-fast);
@@ -230,10 +417,13 @@ body {
     background: transparent;
 }
 
-/* Narrow desktop / landscape tablet: 2×2 tiles, tighter sidebar column */
-@media (min-width: 901px) and (max-width: 1180px) {
+/* Narrow desktop / landscape tablet: 2×2 tiles (2× type needs the width) */
+@media (min-width: 901px) and (max-width: 1400px) {
     .metrics-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .main-grid { grid-template-columns: minmax(0, 1fr) 300px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .metric-panel { transition: none; }
 }
 
 /* =============================================================================
@@ -778,26 +968,9 @@ body {
 .legend-bar .legend-item { margin: 0; }
 
 /* =============================================================================
-   Sidebar
+   Section headings (inside the metric detail panels — the sidebar this used to
+   style was merged into the metric tiles)
    ============================================================================= */
-
-/* Desktop: a panel in the .main-grid right column (mobile turns it back into a
-   full-height slide-in drawer — see the ≤900px block). */
-.sidebar {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-glow);
-    border-radius: 8px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-}
-
-.sidebar .sidebar-section:last-of-type { border-bottom: none; }
-
-.sidebar-section { 
-    padding: 10px; 
-    border-bottom: 1px solid rgba(0, 245, 255, 0.1); 
-}
 
 .section-title {
     font-size: var(--fs-title);
@@ -875,13 +1048,13 @@ body {
    Suspicious Vessels List
    ============================================================================= */
 
-.suspicious-list { max-height: 180px; overflow-y: auto; }
+.suspicious-list { max-height: min(46vh, 420px); overflow-y: auto; }
 
 .suspicious-item {
     display: flex;
     align-items: center;
-    gap: 5px;
-    padding: var(--spacing-xs) 5px;
+    gap: 8px;
+    padding: 8px 10px;
     margin: 2px 0;
     background: rgba(255, 51, 102, 0.1);
     border-radius: 3px;
@@ -894,8 +1067,8 @@ body {
 .suspicious-item:hover { background: rgba(255, 51, 102, 0.25); }
 
 .suspicious-item .risk-badge {
-    font-size: 9px;
-    padding: 2px 6px;
+    font-size: 18px;
+    padding: 2px 8px;
     border-radius: 3px;
     font-weight: 700;
     text-transform: uppercase;
@@ -1225,11 +1398,11 @@ body {
        Mobile keeps the map-first shell + bottom sheet it already had. */
     .today-brief,
     .metrics-row,
+    .metric-panels,
     .pane-heading { display: none; }
     .main-grid { display: block; padding: 0; border-top: none; }
     .map-pane { display: block; }
     .map-section { height: auto; border: none; border-radius: 0; overflow: visible; }
-    .sidebar { border: none; border-left: 1px solid var(--border-glow); border-radius: 0; }
 
     /* Header - minimal: title + lang toggle + status */
     .header {
@@ -1267,33 +1440,6 @@ body {
         overflow: hidden;
         text-overflow: ellipsis;
     }
-
-    /* Sidebar - slide-in drawer */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: min(280px, 85vw);
-        height: 100vh;
-        transform: translateX(100%);
-        transition: transform var(--transition-normal) ease;
-        z-index: 2000;
-    }
-    .sidebar.open { transform: translateX(0); }
-
-    .sidebar-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1999;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity var(--transition-normal);
-    }
-    .sidebar-overlay.active { opacity: 1; visibility: visible; }
 
     /* Mobile menu button - hidden, replaced by bottom sheet */
     .mobile-menu-btn { display: none; }
@@ -1579,7 +1725,6 @@ body {
     .mobile-bottom-nav { display: none; }
     .bottom-sheet { display: none; }
     .bottom-sheet-overlay { display: none; }
-    .sidebar-overlay { display: none; }
 }
 
 /* =============================================================================

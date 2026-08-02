@@ -10,7 +10,6 @@ const App = (function () {
     let vessels = new Map();
     let rawVesselList = []; // raw AIS vessel array for re-rendering on filter change
     let suspiciousData = null;
-    let sidebarOpen = false;
     let latestData = null;  // last data.json payload (feeds the brief + metric tiles)
     let cableCounts = null; // { faults, repaired } from cable_status.json
 
@@ -122,6 +121,8 @@ const App = (function () {
             });
         }
 
+        setupMetricPanels();
+
         // FOC commercial vessel filter
         const focCheckbox = document.getElementById('filterFocVessels');
         if (focCheckbox) {
@@ -134,6 +135,95 @@ const App = (function () {
                 }
             });
         }
+    }
+
+    /**
+     * Metric tiles ↔ slide-out detail panels (desktop homepage).
+     *
+     * The old right-hand sidebar lives in these panels now. Hover opens the
+     * matching one (short delays so sweeping across the row doesn't flicker),
+     * click pins it so it survives mouse-out, Escape / outside-click closes.
+     * Touch pointers skip hover entirely — a tap is the toggle. Keyboard users
+     * get the same behaviour for free: the tiles are real <button>s.
+     */
+    function setupMetricPanels() {
+        const row = document.querySelector('.metrics-row');
+        const panels = document.getElementById('metricPanels');
+        if (!row || !panels) return; // mobile shell / other pages
+
+        const cards = Array.from(row.querySelectorAll('.metric-card[data-panel]'));
+        const OPEN_DELAY = 120;
+        const CLOSE_DELAY = 250;
+        let openKey = null;
+        let pinnedKey = null;
+        let timer = null;
+
+        const panelOf = (key) => document.getElementById('panel-' + key);
+        const cardOf = (key) => row.querySelector('.metric-card[data-panel="' + key + '"]');
+        const clearTimer = () => { if (timer) { clearTimeout(timer); timer = null; } };
+
+        function apply(key) {
+            if (openKey === key) return;
+            openKey = key;
+            cards.forEach((card) => {
+                const k = card.getAttribute('data-panel');
+                const isOpen = k === key;
+                const panel = panelOf(k);
+                card.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                if (panel) {
+                    panel.classList.toggle('is-open', isOpen);
+                    panel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+                }
+            });
+        }
+
+        function open(key, immediate) {
+            const card = cardOf(key);
+            if (!card || card.disabled) return;
+            clearTimer();
+            if (immediate || openKey !== null) { apply(key); return; }
+            timer = setTimeout(() => { timer = null; apply(key); }, OPEN_DELAY);
+        }
+
+        function close(immediate) {
+            clearTimer();
+            if (immediate) { pinnedKey = null; apply(null); return; }
+            timer = setTimeout(() => { timer = null; if (!pinnedKey) apply(null); }, CLOSE_DELAY);
+        }
+
+        cards.forEach((card) => {
+            const key = card.getAttribute('data-panel');
+            const panel = panelOf(key);
+
+            card.addEventListener('mouseenter', (e) => {
+                if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+                if (pinnedKey) return; // a pinned panel stays put until unpinned
+                open(key);
+            });
+            card.addEventListener('mouseleave', () => { if (!pinnedKey) close(); });
+
+            // Click (and Enter/Space, which buttons turn into click) pins/unpins
+            card.addEventListener('click', () => {
+                if (pinnedKey === key) { pinnedKey = null; close(true); return; }
+                pinnedKey = key;
+                open(key, true);
+            });
+
+            if (panel) {
+                panel.addEventListener('mouseenter', clearTimer);
+                panel.addEventListener('mouseleave', () => { if (!pinnedKey) close(); });
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && openKey) close(true);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!openKey) return;
+            if (row.contains(e.target) || panels.contains(e.target)) return;
+            close(true);
+        });
     }
 
     /**
@@ -296,7 +386,7 @@ const App = (function () {
     }
 
     /**
-     * Update China gov / research vessel tracking list (sidebar + bottom sheet).
+     * Update China gov / research vessel tracking list (metric panel + bottom sheet).
      * Scans the full AIS snapshot (rawVesselList) so vessels are listed even
      * when the map is zoomed out into cluster mode.
      */
@@ -331,8 +421,7 @@ const App = (function () {
             '</div>';
         };
 
-        const emptyMsg = '<div style="font-size:12px;color:var(--text-secondary);padding:8px">' +
-            t('idx.gov_none') + '</div>';
+        const emptyMsg = '<div class="panel-empty">' + t('idx.gov_none') + '</div>';
 
         const sideList = document.getElementById('govVesselList');
         if (sideList) {
@@ -352,23 +441,7 @@ const App = (function () {
     }
 
     /**
-     * Toggle sidebar visibility (mobile)
-     */
-    function toggleSidebar() {
-        sidebarOpen = !sidebarOpen;
-        const sidebar = document.querySelector('.sidebar');
-        const overlay = document.querySelector('.sidebar-overlay');
-
-        if (sidebar) {
-            sidebar.classList.toggle('open', sidebarOpen);
-        }
-        if (overlay) {
-            overlay.classList.toggle('active', sidebarOpen);
-        }
-    }
-
-    /**
-     * Update suspicious vessels list in sidebar
+     * Update the suspicious vessel list (inside the 可疑船舶 detail panel)
      */
     function updateSuspiciousList() {
         const list = document.getElementById('suspiciousList');
@@ -380,7 +453,7 @@ const App = (function () {
                 const msg = typeof i18n !== 'undefined'
                     ? i18n.t('app.analyzed', summary.total_analyzed)
                     : `已分析 ${summary.total_analyzed} 艘，暫無達到門檻的可疑船隻`;
-                list.innerHTML = `<div style="font-size:12px;color:var(--text-secondary);padding:8px">${msg}</div>`;
+                list.innerHTML = `<div class="panel-empty">${msg}</div>`;
             }
             return;
         }
@@ -397,6 +470,54 @@ const App = (function () {
                     <span class="risk-badge ${riskClass}">${sv.risk_level}</span>
                 </div>`;
         }).join('');
+    }
+
+    /**
+     * Enable/disable a metric tile (a tile with an empty panel isn't expandable)
+     */
+    function setCardEnabled(key, enabled) {
+        const card = document.querySelector('.metric-card[data-panel="' + key + '"]');
+        if (!card) return;
+        card.disabled = !enabled;
+        if (!enabled) {
+            card.setAttribute('aria-expanded', 'false');
+            const panel = document.getElementById('panel-' + key);
+            if (panel) {
+                panel.classList.remove('is-open');
+                panel.setAttribute('aria-hidden', 'true');
+            }
+        }
+    }
+
+    /**
+     * SAR×AIS funnel inside the SAR 暗船 panel: how many raw detections survive
+     * infrastructure filtering and local-AIS re-matching to stay "dark".
+     */
+    function renderDarkFunnel(dark, sar) {
+        const el = document.getElementById('darkFunnel');
+        if (!el) return;
+        const t = (typeof i18n !== 'undefined') ? i18n.t.bind(i18n) : (k) => k;
+        const num = (n) => (n || 0).toLocaleString();
+
+        const rows = [
+            ['', t('dark.funnel_total'), num(dark.total_detections || (sar && sar.dark_total))],
+            ['', t('dark.funnel_dark'), num(dark.dark_vessels || (sar && sar.dark_total))],
+        ];
+        if (sar) {
+            rows.push(['', t('dark.funnel_infra'), num(sar.infrastructure_filtered)]);
+            rows.push(['is-cleared', t('dark.funnel_cleared'), (sar.false_dark_removed_pct || 0) + '%']);
+            rows.push(['is-residual', t('dark.funnel_residual'), num(sar.residual_dark)]);
+            if (sar.no_ais_coverage) {
+                rows.push(['', t('dark.funnel_nocover'), num(sar.no_ais_coverage)]);
+            }
+        }
+
+        el.innerHTML = rows.map(([cls, label, value]) =>
+            '<div class="dark-funnel-row ' + cls + '">' +
+            '<span class="dark-funnel-label">' + label + '</span>' +
+            '<span class="dark-funnel-value">' + value + '</span>' +
+            '</div>'
+        ).join('');
     }
 
     /**
@@ -461,6 +582,11 @@ const App = (function () {
         setText('metricDarkSub', sar
             ? t('metric.dark_sub', num(sar.residual_dark), sar.false_dark_removed_pct)
             : t('metric.dark_sub_alt', num(dark.total_detections), dark.dark_ratio));
+        renderDarkFunnel(dark, sar);
+
+        // Panels with nothing to show are not expandable
+        setCardEnabled('gov', govTotal > 0);
+        setCardEnabled('dark', !!(dark.dark_vessels || sar));
 
         // ── Situation badge + one-line summary ──
         let level = 'normal';
@@ -720,13 +846,13 @@ const App = (function () {
             const summaryEl = document.getElementById('cableStatusSummary');
             if (summaryEl) {
                 summaryEl.innerHTML =
-                    '<div style="display:flex;gap:12px;margin-bottom:8px">' +
-                    '<div style="text-align:center;flex:1;padding:6px;background:rgba(255,0,0,0.15);border-radius:6px">' +
-                    '<div style="font-size:20px;font-weight:700;color:#ff0000">' + faults.length + '</div>' +
-                    '<div style="font-size:11px;opacity:0.7" data-i18n="cable.fault">' + t('cable.fault') + '</div></div>' +
-                    '<div style="text-align:center;flex:1;padding:6px;background:rgba(0,255,136,0.1);border-radius:6px">' +
-                    '<div style="font-size:20px;font-weight:700;color:#00ff88">' + repaired.length + '</div>' +
-                    '<div style="font-size:11px;opacity:0.7" data-i18n="cable.repaired">' + t('cable.repaired') + '</div></div>' +
+                    '<div class="cable-stat-row">' +
+                    '<div class="cable-stat is-fault">' +
+                    '<div class="cable-stat-value">' + faults.length + '</div>' +
+                    '<div class="cable-stat-label">' + t('cable.fault') + '</div></div>' +
+                    '<div class="cable-stat is-repaired">' +
+                    '<div class="cable-stat-value">' + repaired.length + '</div>' +
+                    '<div class="cable-stat-label">' + t('cable.repaired') + '</div></div>' +
                     '</div>';
             }
 
@@ -734,20 +860,20 @@ const App = (function () {
             if (listEl && faults.length > 0) {
                 listEl.innerHTML = faults.map(f => {
                     const repairInfo = f.estimated_repair
-                        ? '<br><span style="font-size:10px;color:#ffd700">⏱ ' + t('cable.est_repair') + ' ' + f.estimated_repair + '</span>'
+                        ? '<br><span class="cable-fault-repair">⏱ ' + t('cable.est_repair') + ' ' + f.estimated_repair + '</span>'
                         : '';
                     const altInfo = f.alt_route
-                        ? '<br><span style="font-size:10px;opacity:0.4">↔ ' + f.alt_route + '</span>'
+                        ? '<br><span class="cable-fault-alt">↔ ' + f.alt_route + '</span>'
                         : '';
-                    return '<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
-                        '<span style="color:#ff0000;font-weight:600">⚠ ' + f.segment + '</span> ' +
+                    return '<div class="cable-fault-row">' +
+                        '<span class="cable-fault-name">⚠ ' + f.segment + '</span> ' +
                         '<span style="opacity:0.7">' + (f.name_zh || '') + '</span><br>' +
-                        '<span style="font-size:11px;opacity:0.5">' + f.fault_date + ' | ' + (f.location_zh || '') + '</span>' +
+                        '<span class="cable-fault-meta">' + f.fault_date + ' | ' + (f.location_zh || '') + '</span>' +
                         repairInfo + altInfo +
                         '</div>';
                 }).join('');
             } else if (listEl) {
-                listEl.innerHTML = '<div style="color:#00ff88;padding:8px 0" data-i18n="cable.all_normal">所有海纜正常運作</div>';
+                listEl.innerHTML = '<div class="cable-all-normal">' + t('cable.all_normal') + '</div>';
             }
         } catch (e) {
             // Cable status not available, hide section
@@ -896,7 +1022,6 @@ const App = (function () {
     // Public API
     return {
         init,
-        toggleSidebar,
         toggleLayer,
         focusVessel,
         focusSuspicious,
