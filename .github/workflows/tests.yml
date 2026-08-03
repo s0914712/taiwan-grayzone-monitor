@@ -6,12 +6,16 @@ on:
       - 'src/**'
       - 'tests/**'
       - 'docs/js/**'
+      - 'worker/**'
+      - 'data/attendance_roster.json'
       - '.github/workflows/tests.yml'
   pull_request:
     paths:
       - 'src/**'
       - 'tests/**'
       - 'docs/js/**'
+      - 'worker/**'
+      - 'data/attendance_roster.json'
       - '.github/workflows/tests.yml'
   workflow_dispatch:
 
@@ -46,6 +50,11 @@ jobs:
 
       - name: Run mobile navigation smoke test
         run: node tests/mobile-nav-smoke.js
+
+      # LINE 到工統計 Worker 的純函式測試（node 內建 test runner，零依賴）
+      - name: Run LINE attendance worker tests
+        working-directory: worker
+        run: node --test
 
       - name: Compile all pipeline scripts
         run: python -m py_compile src/*.py

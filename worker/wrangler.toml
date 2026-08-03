@@ -1,0 +1,28 @@
+name = "line-attendance-bot"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# KV：即時狀態（群組清單、當日回報、名冊快取）
+# 部署前先建立並把 id 填進來：
+#   npx wrangler kv namespace create ATTENDANCE
+[[kv_namespaces]]
+binding = "ATTENDANCE"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# Cron 一律 UTC。台灣 = UTC+8，只在週一至週五執行。
+#   0 8  * * 1-5 → 16:00 TW 發問（問隔一個上班日的上午）
+#   0 12 * * 1-5 → 20:00 TW 統整並公布
+[triggers]
+crons = ["0 8 * * 1-5", "0 12 * * 1-5"]
+
+[vars]
+GITHUB_REPO = "s0914712/taiwan-grayzone-monitor"
+GITHUB_BRANCH = "main"
+# 名冊直接讀 main 上的檔案 —— 改名冊只要 commit，不用重新部署 Worker
+ROSTER_URL = "https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/data/attendance_roster.json"
+
+# Secrets（不寫在這個檔，用 npx wrangler secret put <NAME> 設定）：
+#   LINE_CHANNEL_ACCESS_TOKEN  與現有 GitHub secret 同一把
+#   LINE_CHANNEL_SECRET        webhook 驗簽用（LINE Console → Basic settings）
+#   GITHUB_TOKEN               fine-grained PAT，只給本 repo contents: write
+#   ADMIN_KEY                  /admin/* 端點的共用密鑰

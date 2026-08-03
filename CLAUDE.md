@@ -12,6 +12,7 @@ Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates A
 - `src/` — Python data pipeline scripts (fetch, analyze, generate)
 - `data/` — Working/intermediate data (not in the Pages artifact). `data/vessel_routes/{mmsi}.json` is gitignored on main and lives on the single-commit **`vessel-data` branch** (CI regenerates + force-pushes it each run); the frontend fetches routes via raw.githubusercontent.com/.../vessel-data/ — 27k route files in main history bloated the repo to 200MB+ and made Pages deployments time out
 - `.github/workflows/` — 6 CI workflows (AIS hourly daytime / 2h overnight, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, **網路異常掃描 every 2h（Cloudflare Radar 國家級 + IODA 離島縣市級）**, darkship SAR forensics daily 22:00 UTC, Threads weekly, LINE daily push 00:00 UTC = 08:00 TW). All data workflows share the `data-pipeline` concurrency group — they commit to main and would otherwise race on rebase
+- `worker/` — **LINE 到工統計助手**（Cloudflare Worker，與資料管線無關）。唯一需要 24h 在線的元件：GitHub Actions 是 cron，收不到 LINE webhook，而讀取群組回覆非要 webhook 不可。詳見 `worker/README.md` 與下方章節
 - `chips/` + `reports/` — darkship SAR forensics outputs (chip PNGs, `chips/results.json` cumulative log, daily Markdown reports), committed by `darkship-cron.yml`; **not** in the Pages artifact but public in the repo — a deliberate trade-off chosen when the cron was set up. The public daily report page (`docs/reports/<date>.html`, `generate_report.py`) surfaces this work: SAR×AIS 比對成效 funnel + the latest run's chip images (520px thumbnails in `docs/reports/chips/`, 14-day mtime rotation, `<img onerror>` falls back to the raw.githubusercontent original) with verdict badges
 
 ## Tech Stack
@@ -301,6 +302,54 @@ python3 src/gov_daily_activity.py -o out.png   # 昨日海警／公務船動態�
 - `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID` — LINE Bot daily push (`LINEBot.yml` / `SendMessage.py`; optional). Images need the workflow's `GITHUB_TOKEN` (uploaded to `data/charts/` via the Contents API to get public raw URLs)
 - `GEMINI_API_KEY` — Google Gemini LLM captions for Threads + LINE daily report (optional; both fall back to fixed templates)
 - `CLAUDEFARETOKEN` / `CLAUDEFLAREACCOUNTID` — Cloudflare Radar API（optional，`fetch_cloudflare_radar.py`）。Token 需具備 **Radar Read** 權限；Radar 端點不需要 account ID（只作記錄）。未設定時 `update-data.yml` 的偵測步驟自動跳過。程式亦接受標準名稱 `CLOUDFLARE_API_TOKEN`（注意 secret 名稱是 Cloud**flare**，目前的 `CLAUDEFARE`/`CLAUDEFLARE` 拼法已在別名清單中支援）
+
+> `worker/` 的 secrets **不在 GitHub**，而是用 `wrangler secret put` 設在 Cloudflare 上（見下）。
+
+---
+
+## worker/ — LINE 到工統計助手
+
+與 AIS/SAR 管線完全無關的獨立子系統，只是共用同一個 LINE channel。每個上班日 16:00（TW）在
+群組 @全員 詢問**隔一個上班日上午**的到工狀況，20:00 依名冊順序統整後公布，並把當日紀錄存回
+`data/attendance/<YYYY-MM>.json`。完整操作手冊在 `worker/README.md`。
+
+**為什麼不是 GitHub Actions**：既有的 `src/SendMessage.py` 是單向推播（只呼叫
+`/v2/bot/message/push`）。要**讀取**群組回覆必須有 24h 在線的 HTTPS endpoint 接 LINE webhook，
+GitHub Actions 是 cron，收不到。附帶好處是 Cloudflare Cron Triggers 準時，而 GitHub Actions
+排程常延遲 5–30 分鐘 —— 對「16:00 打卡提醒」是實質傷害。**不影響** `LINEBot.yml` 的每日海警推播。
+
+**群組 ID 不需人工設定**：bot 被邀進群組時 LINE 送出 `join` 事件，`source.groupId` 直接寫進 KV；
+`leave` 時移除。可同時服務多個群組。
+
+**兩個踩過的 LINE API 限制**（改動訊息格式前務必記得）：
+- **Quick Reply 在群組不可用** —— 官方文件明載「群組內任何人（含 bot）送出新訊息時 quick reply
+  就會消失」，14 人的群組只有第一個人點得到。因此用 **Flex Message + postback 按鈕**：按鈕在訊息
+  氣泡內、永久留在對話記錄，每人各自點，postback 直接帶 `source.userId`，零文字解析誤判。
+- **@全員** 只能用 `textV2` 的 `substitution` + `{"type":"mention","mentionee":{"type":"all"}}`，且
+  **僅限群組／多人聊天室**。`broadcastAsk()` 在收到非 2xx 時自動改用不含 mention 的純文字重送。
+- **取得群組成員 userId 清單** 需認證／付費帳號，本案刻意不依賴 —— 改用 `data/attendance_roster.json`
+  人工名冊（`/我是`、`/名冊` 兩個群組指令協助建檔）。
+
+**檔案分工**：`src/attendance.js` 是**純函式**核心（日期、狀態解析、名冊配對、清冊格式化），
+不 import 任何 Worker/KV/LINE 的東西，所以 `node --test` 能零依賴直接測（CI 有跑）；
+`src/line.js` API client + 驗簽 + 訊息建構；`src/storage.js` KV；`src/github.js` Contents API
+存檔（沿用 `src/publish_threads.py:_upload_single_file_to_github` 的 GET-sha → PUT-base64 流程）。
+
+**資料**：KV 是即時狀態（`groups` / `openDate` / `day:<iso>` / `members:<gid>` / `roster:cache`），
+repo 內的 JSON 是永久存檔。名冊從 raw.githubusercontent 讀 `main`，KV 快取 24h ——
+**改名冊只要 commit，不用重新部署**。名冊 schema 由 `tests/test_attendance_roster.py` 在既有的
+pytest CI 把關（打錯的 userId 不會有錯誤訊息，那個人只會每天被列成「未回報」）。
+
+**Cloudflare secrets**（`wrangler secret put`，**不是** GitHub secrets）：
+`LINE_CHANNEL_ACCESS_TOKEN`（可與現有那把共用）、`LINE_CHANNEL_SECRET`（webhook 驗簽，新的）、
+`GITHUB_TOKEN`（fine-grained PAT，只給本 repo `contents: write`）、`ADMIN_KEY`（`/admin/*` 端點）。
+既有的 `CLAUDEFARETOKEN` 是 Radar Read 權限，**不能**用來部署 Worker。
+
+**已知限制**：只跳過週六日，國定假日不處理（連假前一天仍會發問）。當日紀錄是單一 KV 鍵的
+read-modify-write，KV 無 CAS，同一秒內的兩筆回報理論上可能覆蓋彼此（14 人分散 4 小時，實務上
+碰不到；要根治得改成一人一鍵或 Durable Object）。
+
+---
 
 ## Architecture Notes
 - No build step. Frontend is plain static files.
