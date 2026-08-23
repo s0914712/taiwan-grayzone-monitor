@@ -23,6 +23,11 @@ on:
       - 'src/generate_ccg_timeline_video.py'
       - 'tests/test_generate_ccg_timeline_video.py'
       - '.github/workflows/ccg-timeline-video.yml'
+  pull_request:
+    paths:
+      - 'src/generate_ccg_timeline_video.py'
+      - 'tests/test_generate_ccg_timeline_video.py'
+      - '.github/workflows/ccg-timeline-video.yml'
 
 jobs:
   build-video:
@@ -59,7 +64,7 @@ jobs:
             echo "duration=${{ inputs.duration }}" >> "$GITHUB_OUTPUT"
             echo "fps=${{ inputs.fps }}" >> "$GITHUB_OUTPUT"
           else
-            # Fast CI smoke render for pushes. Manual runs create the full social clip.
+            # Fast CI smoke render for pushes / PRs. Manual runs create the full social clip.
             echo "days=2" >> "$GITHUB_OUTPUT"
             echo "duration=4" >> "$GITHUB_OUTPUT"
             echo "fps=8" >> "$GITHUB_OUTPUT"
