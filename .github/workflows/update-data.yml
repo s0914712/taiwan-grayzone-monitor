@@ -93,6 +93,9 @@ jobs:
       # 產生逐船航跡檔（plot_gov_vessel_tracks 需要；main 不再 tracked，須現場產生）
       - name: Extract all vessel routes
         run: python src/extract_all_routes.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         continue-on-error: true
 
       - name: Exercise prediction analysis
@@ -183,12 +186,20 @@ jobs:
           }
           git push
 
-      # 航跡檔不進 main — 單一 commit force push 到 vessel-data 分支（同 update-ais.yml）
-      - name: Push vessel routes to vessel-data branch
+      # 航跡檔不進 main（27k 檔的歷史讓 repo 膨脹到 200MB+）。航跡的正式存放
+      # 位置已改為 Supabase vessel_routes（見 src/supabase_store.py）；本步驟是
+      # 尚未設定 SUPABASE_SERVICE_KEY 時的後備路徑：以單一 commit force push 到
+      # vessel-data 分支，前端經 raw.githubusercontent.com/.../vessel-data/ 讀取。
+      - name: Push vessel routes to vessel-data branch (fallback)
         env:
           GH_TOKEN: ${{ github.token }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           set -e
+          if [ -n "$SUPABASE_SERVICE_KEY" ]; then
+            echo "航跡已上傳 Supabase，跳過 vessel-data 分支 force push"
+            exit 0
+          fi
           if [ ! -d data/vessel_routes ] || [ -z "$(ls -A data/vessel_routes 2>/dev/null)" ]; then
             echo "data/vessel_routes 不存在或為空，跳過"
             exit 0

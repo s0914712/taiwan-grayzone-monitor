@@ -27,6 +27,7 @@ from pathlib import Path
 
 import requests
 
+import supabase_store
 from geo_utils import haversine_km as _haversine_km
 from map_basemap import TAIWAN_COASTLINE, draw_land  # noqa: F401 (常數保留供相容)
 
@@ -125,18 +126,20 @@ def select_top_suspicious_vessels(n=2):
         return v.get("cable_details", {}).get("loiter_slow_hours", 0)
 
     def _with_track(v):
+        route = None
         route_file = DATA_DIR / "vessel_routes" / f"{v['mmsi']}.json"
-        if not route_file.exists():
+        if route_file.exists():
+            try:
+                with open(route_file, encoding="utf-8") as rf:
+                    route = json.load(rf)
+            except (json.JSONDecodeError, IOError):
+                route = None
+        if route is None:
+            route = supabase_store.fetch_route(v['mmsi'])
+        if route is None:
             return None
-        try:
-            with open(route_file, encoding="utf-8") as rf:
-                route = json.load(rf)
-            track = route.get("track", [])
-            if len(track) < MIN_TRACK_POINTS:
-                return None
-            return track
-        except (json.JSONDecodeError, IOError):
-            return None
+        track = route.get("track", [])
+        return track if len(track) >= MIN_TRACK_POINTS else None
 
     # Prefer cargo/tanker/lng vessels with cable loitering, sorted by loiter hours
     cargo_loiterers = []

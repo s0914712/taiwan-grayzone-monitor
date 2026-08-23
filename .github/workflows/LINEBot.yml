@@ -50,4 +50,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           # 上傳航跡圖到 repo 以取得公開圖片 URL
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 航跡改存 Supabase：vessel-data 分支缺檔時由此點查（見 supabase_store.py）
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: python src/SendMessage.py

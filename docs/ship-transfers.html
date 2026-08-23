@@ -412,6 +412,7 @@
     <script defer src="js/map-data.js"></script>
     <script defer src="js/map-baseline.js"></script>
     <script defer src="js/map-vessels.js"></script>
+    <script defer src="js/vessel-routes-source.js"></script>
     <script defer src="js/map-routes.js"></script>
     <script defer src="js/map-cables.js"></script>
     <script defer src="js/map.js"></script>
@@ -423,12 +424,8 @@
         let trackLayer;
         let cachedTrackHistory = null;
         let transferIndex = {};   // eventId -> { marker, t }
-        // Route files live on the single-commit vessel-data branch (not in main,
-        // so 27k files don't bloat history); on GitHub Pages fetch them via
-        // raw.githubusercontent.com. Local dev/CI reads the extracted files.
-        const ROUTE_FILE_BASE = /\.github\.io$/.test(location.hostname)
-            ? 'https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/vessel-data/data/vessel_routes/'
-            : '../data/vessel_routes/';
+        // Per-vessel routes come from Supabase (see js/vessel-routes-source.js,
+        // which falls back to the legacy vessel-data branch).
 
         /**
          * Deterministic, shareable event id from first_seen + the MMSI pair,
@@ -732,11 +729,9 @@
             try {
                 let data = null;
 
-                // Try pre-generated route file
-                const res = await fetch(ROUTE_FILE_BASE + mmsi + '.json?' + Date.now());
-                if (res.ok) {
-                    data = await res.json();
-                    if (!data.track || data.track.length === 0) data = null;
+                // Try the pre-generated per-vessel route
+                if (typeof VesselRouteSource !== 'undefined') {
+                    data = await VesselRouteSource.load(mmsi);
                 }
 
                 // Fallback: extract from ais_track_history.json

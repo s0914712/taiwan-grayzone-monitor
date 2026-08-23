@@ -42,6 +42,7 @@ DOCS_DIR = BASE_DIR / "docs"
 DATA_DIR = BASE_DIR / "data"
 sys.path.insert(0, str(SRC_DIR))
 
+import supabase_store  # noqa: E402
 from generate_summary import load_data, compute_daily_summary  # noqa: E402
 from publish_threads import (  # noqa: E402
     generate_track_map,
@@ -110,14 +111,18 @@ def select_top_commercial_vessel(data):
 
 
 def load_vessel_track(mmsi):
-    """讀取某艘船的航跡（data/vessel_routes/{mmsi}.json）。點數不足回 None。"""
+    """讀取某艘船的航跡。本地檔優先，缺檔時改點查 Supabase。點數不足回 None。"""
+    route = None
     route_file = DATA_DIR / "vessel_routes" / f"{mmsi}.json"
-    if not route_file.exists():
-        return None
-    try:
-        with open(route_file, encoding="utf-8") as f:
-            route = json.load(f)
-    except (json.JSONDecodeError, IOError):
+    if route_file.exists():
+        try:
+            with open(route_file, encoding="utf-8") as f:
+                route = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            route = None
+    if route is None:
+        route = supabase_store.fetch_route(mmsi)
+    if route is None:
         return None
     track = route.get("track", [])
     return track if len(track) >= MIN_TRACK_POINTS else None

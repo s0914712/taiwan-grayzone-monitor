@@ -54,6 +54,9 @@ jobs:
 
       - name: Extract all vessel routes
         run: python src/extract_all_routes.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         continue-on-error: true
 
       - name: Detect ship-to-ship transfers
@@ -120,14 +123,20 @@ jobs:
           git -C "$TMP" commit -qm "archive snapshot $(date -u +'%Y-%m-%d %H:%M') UTC" || { echo "無變更"; exit 0; }
           git -C "$TMP" push origin ais-archive
 
-      # 航跡檔不進 main（27k 檔的歷史讓 repo 膨脹到 200MB+），
-      # 每輪以單一 commit force push 到 vessel-data 分支（歷史永遠只有一版）。
-      # 前端在 GitHub Pages 上經 raw.githubusercontent.com/.../vessel-data/ 讀取。
-      - name: Push vessel routes to vessel-data branch
+      # 航跡檔不進 main（27k 檔的歷史讓 repo 膨脹到 200MB+）。航跡的正式存放
+      # 位置已改為 Supabase vessel_routes（見 src/supabase_store.py）；本步驟是
+      # 尚未設定 SUPABASE_SERVICE_KEY 時的後備路徑：以單一 commit force push 到
+      # vessel-data 分支，前端經 raw.githubusercontent.com/.../vessel-data/ 讀取。
+      - name: Push vessel routes to vessel-data branch (fallback)
         env:
           GH_TOKEN: ${{ github.token }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           set -e
+          if [ -n "$SUPABASE_SERVICE_KEY" ]; then
+            echo "航跡已上傳 Supabase，跳過 vessel-data 分支 force push"
+            exit 0
+          fi
           if [ ! -d data/vessel_routes ] || [ -z "$(ls -A data/vessel_routes 2>/dev/null)" ]; then
             echo "data/vessel_routes 不存在或為空，跳過"
             exit 0
