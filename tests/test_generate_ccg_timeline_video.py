@@ -2,9 +2,13 @@ import json
 from datetime import datetime
 
 from src.generate_ccg_timeline_video import (
+    MAP_BOUNDS,
+    camera_bounds_for_frame,
     choose_frame_indices,
+    choose_story_frame_indices,
     is_coast_guard,
     load_frames,
+    nearest_story_zone,
     parse_timestamp,
 )
 
@@ -29,6 +33,42 @@ def test_choose_frame_indices_has_exact_video_length():
     assert len(indices) == 10
     assert indices[0] == 0
     assert indices[-1] == 9
+
+
+def test_story_indices_keep_exact_length_and_endpoints():
+    frames = [
+        {"timestamp": datetime(2026, 8, 20), "vessels": []},
+        {
+            "timestamp": datetime(2026, 8, 21),
+            "vessels": [{"mmsi": "1", "lat": 24.45, "lon": 118.35, "name": "CCG 1"}],
+        },
+        {"timestamp": datetime(2026, 8, 22), "vessels": []},
+    ]
+    indices = choose_story_frame_indices(frames, duration=2, fps=5)
+    assert len(indices) == 10
+    assert indices[0] == 0
+    assert indices[-1] == 2
+    # The Kinmen story moment gets repeated, creating a visual hold.
+    assert indices.count(1) >= indices.count(0)
+
+
+def test_nearest_story_zone_and_camera_closeup():
+    frame = {
+        "timestamp": datetime(2026, 8, 23),
+        "vessels": [{"mmsi": "1", "lat": 24.45, "lon": 118.35, "name": "CCG 1"}],
+    }
+    zone, distance = nearest_story_zone(frame)
+    assert zone == "KINMEN"
+    assert distance == 0
+    bounds = camera_bounds_for_frame(frame)
+    assert bounds != MAP_BOUNDS
+    assert bounds[0] <= 24.45 <= bounds[1]
+    assert bounds[2] <= 118.35 <= bounds[3]
+
+
+def test_camera_stays_overview_for_empty_frame():
+    frame = {"timestamp": datetime(2026, 8, 23), "vessels": []}
+    assert camera_bounds_for_frame(frame) == MAP_BOUNDS
 
 
 def test_load_frames_keeps_only_ccg_and_recent_days(tmp_path):
