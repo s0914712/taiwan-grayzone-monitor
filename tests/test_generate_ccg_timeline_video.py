@@ -48,7 +48,6 @@ def test_story_indices_keep_exact_length_and_endpoints():
     assert len(indices) == 10
     assert indices[0] == 0
     assert indices[-1] == 2
-    # The Kinmen story moment gets repeated, creating a visual hold.
     assert indices.count(1) >= indices.count(0)
 
 
@@ -64,6 +63,21 @@ def test_nearest_story_zone_and_camera_closeup():
     assert bounds != MAP_BOUNDS
     assert bounds[0] <= 24.45 <= bounds[1]
     assert bounds[2] <= 118.35 <= bounds[3]
+
+
+def test_story_camera_contains_all_separated_active_vessels():
+    frame = {
+        "timestamp": datetime(2026, 8, 23),
+        "vessels": [
+            {"mmsi": "1", "lat": 23.3, "lon": 118.5, "name": "CCG 1"},
+            {"mmsi": "2", "lat": 26.8, "lon": 122.9, "name": "CCG 2"},
+            {"mmsi": "3", "lat": 24.2, "lon": 120.0, "name": "CCG 3"},
+        ],
+    }
+    bounds = camera_bounds_for_frame(frame)
+    for vessel in frame["vessels"]:
+        assert bounds[0] <= vessel["lat"] <= bounds[1]
+        assert bounds[2] <= vessel["lon"] <= bounds[3]
 
 
 def test_camera_stays_overview_for_empty_frame():
