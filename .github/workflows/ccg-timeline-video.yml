@@ -53,7 +53,7 @@ jobs:
         run: pip install matplotlib pytest
 
       - name: Run focused tests
-        run: pytest -q tests/test_generate_ccg_timeline_video.py
+        run: python -m pytest -q tests/test_generate_ccg_timeline_video.py
 
       - name: Resolve render settings
         id: settings
