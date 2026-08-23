@@ -27,6 +27,11 @@ docs/ais_track_commercial.json
 data/vessel_routes/
 
 # Node test dependencies (jsdom/leaflet for tests/map-integration.js)
+# 只忽略 repo 根目錄那份（無前綴的 package.json 會連 worker/package.json 一起吃掉）
 node_modules/
-package.json
-package-lock.json
+/package.json
+/package-lock.json
+
+# Cloudflare Worker 本機產物（worker/package.json 必須進版控）
+worker/.wrangler/
+worker/.dev.vars
