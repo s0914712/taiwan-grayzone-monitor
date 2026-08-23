@@ -59,16 +59,9 @@ jobs:
         id: settings
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "days=${{ inputs.days }}" >> "$GITHUB_OUTPUT"
-            echo "duration=${{ inputs.duration }}" >> "$GITHUB_OUTPUT"
-            echo "fps=${{ inputs.fps }}" >> "$GITHUB_OUTPUT"
-          else
-            # Fast CI smoke render for pushes / PRs. Manual runs create the full social clip.
-            echo "days=2" >> "$GITHUB_OUTPUT"
-            echo "duration=4" >> "$GITHUB_OUTPUT"
-            echo "fps=8" >> "$GITHUB_OUTPUT"
-          fi
+          echo "days=14" >> "$GITHUB_OUTPUT"
+          echo "duration=20" >> "$GITHUB_OUTPUT"
+          echo "fps=30" >> "$GITHUB_OUTPUT"
 
       - name: Render vertical CCG timeline
         run: |
