@@ -26,6 +26,7 @@ GitHub Actions → src/fetch_ais_data.py (AIS via SOCKS5 proxy)
               → src/fetch_gfw_data.py (SAR dark vessels)
               → src/match_sar_ais.py (re-match GFW dark detections vs local AIS)
               → src/detect_ship_transfers.py (STS rendezvous detection)
+              → src/detect_gov_formation.py (公務船編隊／護航科考偵測)
               → src/analyze_suspicious.py (threat scoring)
               → src/exercise_prediction.py (PLA sortie correlation)
               → src/extract_all_routes.py (per-vessel route JSONs)
@@ -50,7 +51,12 @@ Summary carries `stale_skipped` + `active_window_days`; the dashboard stat tile 
 `suspicious_count` (score ≥8) instead of the quota-based `top_10pct_count`.
 
 **Data sources loaded:**
-1. `vessel_profiles.json` — AIS-observed vessel metadata (names, types, timestamps)
+1. `vessel_profiles.json` — AIS-observed vessel metadata (names, types, timestamps).
+   **Actions-cache backed, so it can be empty on a cold start** — `load_track_history()`
+   therefore also carries `type_name`/`gov`/`name` on every track point and
+   `classify_vessel()` falls back to them. Without that fallback every vessel scores as
+   `unknown` and the name-based fishing exclusion silently disappears (measured: survey
+   false positives 13 → 1702, starburst 13 → 145).
 2. `ais_track_history.json` (tier-1) — CN fishing + suspicious vessel tracks (14 days)
 3. `ais_track_commercial.json` (tier-2) — cargo/tanker/LNG + identity-changed vessel tracks
 4. `cable-geo.json` — Submarine cable route GeoJSON
@@ -59,6 +65,7 @@ Summary carries `stale_skipped` + `active_window_days`; the dashboard stat tile 
 6b. `sanctions_blacklist.json` — multi-agency shadow-fleet tanker blacklist (1400+ vessels: OFAC/UK-FCDO/UANI/EU/SECO/MFAT…), built from `sanctions_blacklist.csv` by `build_sanctions_blacklist.py`. **IMO-match only** (name matching disabled — 1400+ common names collide); merged into the sanction IMO set by `load_sanctions_list()`. On an IMO hit whose AIS-broadcast name ≠ the sanctions-registered name, an identity-concealment flag is raised (`sanction_identity_concealment`)
 7. `itu_mars_cache.json` — ITU MARS ship station registry cache (30-day expiry)
 8. `ship_transfers.json` — STS rendezvous detection results
+9. `gov_formations.json` — 公務船編隊事件（`detect_gov_formation.py`；`vessel_index` 供計分查表）
 
 ### Two-Tier Track Storage
 - **Tier-1** (`ais_track_history.json`): CN fishing vessels + suspicious → used for animation + analysis
@@ -101,6 +108,23 @@ not escape detection. Both ids appear in the output's `exclusion_rules` list and
 | 8 | ITU MARS Mismatch | Ship name, IMO, or call sign differs from ITU registry | +3 |
 | 9 | STS Transfer | Involved in ship-to-ship rendezvous (suspicious: +5, any: +2) | +2/+5 |
 | 10 | Offshore Loitering | Commercial vessel (tanker/cargo/lng) milling offshore ≥5 days (`check_offshore_loitering`: >50% points <3kn, median radius from centre ≤20km, low-speed run spans ≥5 days, in-port excluded) — **cable-independent** shadow-fleet standby pattern. Scored **only when also non-top-10 flag** (FoC); plain loitering may be legitimate berth-waiting. | +4 |
+| 11 | Survey Pattern (割草式測線) | Parallel + reversing + low-speed legs in one survey box: `grid` (≥3 distinct equidistant lines, spacing CV ≤0.6) or `repeat_transect` (same line re-run, offset MAD ≤5km, mean leg ≥10km). ≥60% of leg **mileage** must be on-axis (count-based would approach 0.5 — a real grid has N-1 short cross legs). Signal gaps >6h split legs; in-port points excluded. | +3 |
+| 12 | Gov Vessel Formation | `gov_formations.json` hit: escorted research (研究船 + 海警/海巡) +6, plain gov formation +4 | +4/+6 |
+
+**Survey-pattern false positives** — AIS ship-type codes are unreliable for CN vessels:
+Fujian trawlers (MINDONGYU63179 etc.) broadcast as `other`/`unknown`/`cargo`/`tanker`, and
+their 2-4kn trawling is geometrically near-identical to a survey line. Excluding by AIS type
+alone gave a **3.08% fleet-wide hit rate with the top 25 all fishing boats**; adding
+`is_cn_fishing_vessel()` name matching (shared with `fetch_ais_data.py`) plus the on-axis
+mileage test brought it to **0.10%**. Gov/research classification takes priority over the
+name rule — `is_cn_fishing_vessel()`'s `^XIANG` (湘) prefix matches 向陽紅.
+
+**Gov intent multiplier floor** (`GOV_INTENT_MULTIPLIER_FLOOR = 1.0`): a gov/research vessel
+in a confirmed formation — or a gov vessel running survey lines — stops taking the ×0.5
+"routine public-service voyage" discount on its *behavioral* score. Deliberately **not**
+applied to fishing vessels: the survey detector still has residual false positives on
+numeric-named low-speed trawlers, and lifting ×0.2 → ×1.0 would push a single false hit
+past the suspicious threshold.
 
 **In-port suppression:** cable landings sit next to ports, so a ship legally moored in
 Kaohsiung would otherwise score ~9 (proximity + loiter + combos + buffers) and cross the
@@ -283,6 +307,7 @@ python3 src/fetch_gfw_data.py          # Fetch GFW SAR data
 python3 src/fetch_cloudflare_radar.py  # 網路流量異常偵測 + 海纜旁滯留船隻關聯
 python3 src/match_sar_ais.py           # Re-match GFW dark detections vs local AIS
 python3 src/detect_ship_transfers.py   # Detect STS rendezvous events
+python3 src/detect_gov_formation.py    # 公務船編隊偵測（≥2 艘公務/科研船 ≤10km 持續 ≥6h）
 python3 src/analyze_suspicious.py      # Run threat scoring engine
 python3 src/generate_dashboard.py      # Consolidate → docs/data.json
 python3 src/extract_all_routes.py      # Batch extract vessel routes (tier-1 + tier-2)

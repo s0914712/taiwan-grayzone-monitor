@@ -507,3 +507,195 @@ def test_track_only_vessel_is_active():
     """有航跡但無 profile 時間戳（track-only）→ 活躍（航跡檔本身就是 14 天滾動）。"""
     assert asus.is_recently_active({}, has_track=True) is True
     assert asus.is_recently_active({}, has_track=False) is False
+
+
+# =========================================================================
+# 割草式測線（Criterion 11）
+# =========================================================================
+# 既有的 Z 字型只數「大幅轉向次數」，抓不到規律測線 —— 規律測線的轉向都
+# 集中在兩端，中段是筆直長邊。以下用兩種真實樣態驗證，並覆蓋誤報抑制。
+
+def _lawnmower(lines=4, leg_deg=0.5, spacing_deg=0.05, step_hours=2.0,
+               speed=6.0, base_lat=23.60, base_lon=122.30):
+    """階梯式網格：東西向長邊、每趟往北挪 spacing_deg。"""
+    positions = []
+    for i in range(lines):
+        lat = base_lat + i * spacing_deg
+        lons = ([base_lon, base_lon + leg_deg] if i % 2 == 0
+                else [base_lon + leg_deg, base_lon])
+        # 每條測線切成 3 點，模擬 2h 取樣
+        positions.append((lat, lons[0]))
+        positions.append((lat, (lons[0] + lons[1]) / 2))
+        positions.append((lat, lons[1]))
+    return make_track(positions, step_hours=step_hours, speed=speed)
+
+
+def _repeat_transect(passes=4, leg_deg=0.5, jitter_deg=0.008,
+                     step_hours=2.0, speed=5.5,
+                     base_lat=23.60, base_lon=122.30):
+    """重複測線：同一條東西向線來回，僅有些微側向偏移。"""
+    positions = []
+    for i in range(passes):
+        lat = base_lat + (i % 2) * jitter_deg
+        lons = ([base_lon, base_lon + leg_deg] if i % 2 == 0
+                else [base_lon + leg_deg, base_lon])
+        positions.append((lat, lons[0]))
+        positions.append((lat, (lons[0] + lons[1]) / 2))
+        positions.append((lat, lons[1]))
+    return make_track(positions, step_hours=step_hours, speed=speed)
+
+
+def test_lawnmower_grid_detected():
+    ok, det = asus.check_survey_pattern(_lawnmower(), 'research')
+    assert ok
+    assert det['survey_type'] == 'grid'
+    assert det['line_count'] >= asus.SURVEY_MIN_LINES
+    assert det['reversals'] >= asus.SURVEY_MIN_REVERSALS
+    assert det['spacing_cv'] <= asus.SURVEY_SPACING_CV_MAX
+
+
+def test_repeat_transect_detected():
+    """實測樣態：向陽紅03 在花蓮外海反覆重走同一條測線。"""
+    ok, det = asus.check_survey_pattern(_repeat_transect(), 'research')
+    assert ok
+    assert det['survey_type'] == 'repeat_transect'
+    assert det['offset_mad_km'] <= asus.SURVEY_TRANSECT_SPREAD_KM
+
+
+def test_straight_transit_is_not_a_survey():
+    """單向直線過境 —— 沒有反向，不是測線。"""
+    positions = [(23.60 + i * 0.05, 122.30 + i * 0.10) for i in range(10)]
+    ok, _ = asus.check_survey_pattern(
+        make_track(positions, speed=10.0), 'research')
+    assert not ok
+
+
+def test_fishing_type_excluded():
+    ok, _ = asus.check_survey_pattern(_lawnmower(), 'fishing')
+    assert not ok
+
+
+def test_cn_fishing_name_excluded_even_when_type_is_wrong():
+    """AIS 船種碼不可信：閩東漁廣播成 other/cargo，拖網幾何與測線幾乎相同。
+    實測全船隊掃描時，不看船名的話 3.08% 命中、前 25 名全是漁船。"""
+    track = _lawnmower()
+    ok, _ = asus.check_survey_pattern(track, 'other', ['MINDONGYU63179'])
+    assert not ok
+    ok, _ = asus.check_survey_pattern(track, 'cargo', ['ZHEPINGYU82055'])
+    assert not ok
+
+
+def test_gov_type_beats_province_name_rule():
+    """is_cn_fishing_vessel 的 `^XIANG`（湘）會誤中 XIANG YANG HONG —
+    公務/科研分類必須優先，否則向陽紅永遠被當漁船排除。"""
+    assert asus.is_cn_fishing_vessel('XIANG YANG HONG 03') is True
+    ok, _ = asus.check_survey_pattern(
+        _repeat_transect(), 'research', ['XIANG YANG HONG 03'])
+    assert ok
+
+
+def test_passenger_ferry_excluded():
+    """渡輪定期航線就是反覆重走同一條線 —— 本業，不是測繪。"""
+    ok, _ = asus.check_survey_pattern(_repeat_transect(), 'passenger')
+    assert not ok
+
+
+def test_high_speed_transit_not_survey():
+    """>12kn 不是測線作業速度（拖曳儀器跑不了那麼快）。"""
+    ok, _ = asus.check_survey_pattern(
+        _lawnmower(speed=18.0), 'research')
+    assert not ok
+
+
+def test_signal_gap_does_not_fabricate_a_leg():
+    """訊號空白兩端不可連成一條假測線 —— 實測向陽紅03 有 54h 無訊號，
+    不切斷的話會併成 66km 的假長邊，把真正的測線樣態蓋掉。"""
+    pts = _repeat_transect()
+    # 在中段插入 60 小時的空白
+    for p in pts[6:]:
+        day = int(p['t'][8:10]) + 3
+        p['t'] = p['t'][:8] + f'{day:02d}' + p['t'][10:]
+    legs = asus._split_into_legs(pts)
+    for lg in legs:
+        assert asus._gap_hours(lg['start'], lg['end']) is not None
+        # 沒有任何一條測線跨越那段空白
+        assert lg['length_km'] < 200
+
+
+def test_in_port_points_excluded_from_survey():
+    """港區操船會產生短的平行來回 —— 港內點不納入測線判定。"""
+    track = _lawnmower(base_lat=22.6153, base_lon=120.2664,
+                       leg_deg=0.01, spacing_deg=0.002)
+    asus.annotate_port_points(track)
+    ok, _ = asus.check_survey_pattern(track, 'research')
+    assert not ok
+
+
+def test_survey_scores_without_type_multiplier():
+    """測線分屬高威脅指標，不吃船型乘數。"""
+    profile = {'mmsi': '413701510', 'names_seen': ['XIANG YANG HONG 03'],
+               'types_seen': ['research'], 'total_snapshots': 20}
+    result = asus.classify_vessel(profile, _repeat_transect())
+    assert result['survey_pattern'] is True
+    assert result['risk_score'] >= asus.SURVEY_SCORE
+
+
+# =========================================================================
+# 公務船編隊（Criterion 12）
+# =========================================================================
+
+def _gov_profile(mmsi='413701510', vtype='research'):
+    return {'mmsi': mmsi, 'names_seen': ['XIANG YANG HONG 03'],
+            'types_seen': [vtype], 'total_snapshots': 20}
+
+
+def test_escorted_formation_scores_and_lifts_multiplier():
+    """護航科考 +6，且科研船的 ×0.5 行為分折扣被取消。"""
+    track = make_track([(23.60, 122.30 + i * 0.05) for i in range(8)],
+                       speed=4.0)
+    rec = {'count': 3, 'max_duration_hours': 12.6,
+           'escorted_research': True, 'severity': 'high'}
+    plain = asus.classify_vessel(_gov_profile(), track)
+    escorted = asus.classify_vessel(_gov_profile(), track,
+                                    formation_record=rec)
+    assert plain['gov_formation'] is False
+    assert escorted['gov_formation'] is True
+    assert escorted['type_multiplier'] == asus.GOV_INTENT_MULTIPLIER_FLOOR
+    assert escorted.get('intent_multiplier_floor') is True
+    assert escorted['risk_score'] >= (
+        plain['risk_score'] + asus.GOV_FORMATION_ESCORT_SCORE)
+
+
+def test_plain_formation_scores_less_than_escorted():
+    track = make_track([(23.60, 122.30 + i * 0.05) for i in range(8)],
+                       speed=4.0)
+    plain_rec = {'count': 1, 'max_duration_hours': 8.0,
+                 'escorted_research': False, 'severity': 'low'}
+    escort_rec = dict(plain_rec, escorted_research=True)
+    a = asus.classify_vessel(_gov_profile('413225040', 'msa'), track,
+                             formation_record=plain_rec)
+    b = asus.classify_vessel(_gov_profile('413225040', 'msa'), track,
+                             formation_record=escort_rec)
+    assert b['risk_score'] - a['risk_score'] == (
+        asus.GOV_FORMATION_ESCORT_SCORE - asus.GOV_FORMATION_SCORE)
+
+
+def test_fishing_vessel_never_gets_multiplier_floor():
+    """測線偵測對純數字船名的低速拖網船仍有殘餘誤報 —— 絕不可讓漁船的
+    ×0.2 被抬升到 ×1.0（那會讓一次誤報直接推過可疑門檻）。"""
+    profile = {'mmsi': '412446279', 'names_seen': ['64143'],
+               'types_seen': ['fishing'], 'total_snapshots': 20}
+    result = asus.classify_vessel(profile, _lawnmower(speed=3.0))
+    assert result['type_multiplier'] == asus.VESSEL_TYPE_MULTIPLIER['fishing']
+    assert result.get('intent_multiplier_floor') is not True
+
+
+def test_vessel_type_falls_back_to_track_when_profile_empty():
+    """vessel_profiles.json 是 Actions 快取；冷啟動時船型/船名全空，
+    沒有 fallback 的話漁船排除整個失效（實測誤報 13 → 1702）。"""
+    track = _lawnmower(speed=3.0)
+    for p in track:
+        p['type_name'] = 'other'
+        p['name'] = 'MINDONGYU63179'
+    result = asus.classify_vessel({'mmsi': '412446718'}, track)
+    assert result['survey_pattern'] is False

@@ -30,6 +30,8 @@ from pathlib import Path
 from geo_utils import haversine_km, calc_bearing
 from io_utils import atomic_write_json
 import geofence
+# 大陸漁船船名判定 — 與 fetch_ais_data 共用同一份規則（勿另抄一份）
+from fetch_ais_data import is_cn_fishing_vessel
 
 DATA_DIR = Path("data")
 DOCS_DIR = Path("docs")
@@ -45,6 +47,7 @@ SANCTIONS_BLACKLIST_FILE = DATA_DIR / "sanctions_blacklist.json"  # 多機構影
 OUTPUT_FILE = DATA_DIR / "suspicious_vessels.json"
 ITU_MARS_CACHE = DATA_DIR / "itu_mars_cache.json"
 SHIP_TRANSFERS_FILE = DATA_DIR / "ship_transfers.json"
+GOV_FORMATIONS_FILE = DATA_DIR / "gov_formations.json"  # detect_gov_formation.py 產出
 
 # ── 門檻設定 ────────────────────────────────────────────
 CABLE_PROXIMITY_KM = 5.0          # 海纜 5 公里內視為鄰近
@@ -99,6 +102,63 @@ STARBURST_MIN_RADIUS_KM = 0.5        # 平均半徑下限
 STARBURST_MAX_RADIUS_KM = 30.0       # 平均半徑上限
 STARBURST_MIN_SPOKES = 5             # 至少 5 個方向有遠端點（30° 分箱）
 STARBURST_HUB_FRACTION = 0.3         # ≥30% 的點集中於 hub (r < 0.3 × max_r)
+
+# ── 割草式測線（Lawnmower / Survey Grid）──────────────────────
+# 海洋測繪/物探的標準作業：一組平行、等間距的來回測線。既有的 Z 字型偵測
+# 只數「大幅轉向次數」，抓不到這種規律樣態 —— 規律測線的轉向都集中在兩端，
+# 中段是筆直長邊，轉向次數常低於門檻。實測 2026-08 向陽紅03 在花蓮外海
+# 23.5-23.7°N / 122.2-122.8°E 的東西向來回即屬此類。
+# 與 Z 字型的差異：測線要求「平行 + 反向 + 等間距」，不只是頻繁轉向。
+SURVEY_MIN_LEG_KM = 2.0              # 單一測線長度下限（短段視為轉彎過程）
+SURVEY_LEG_BEARING_TOLERANCE_DEG = 35.0   # 同一測線內的航向容差
+SURVEY_AXIS_TOLERANCE_DEG = 30.0     # 各測線相對主軸（mod 180°）的容差
+SURVEY_REVERSAL_TOLERANCE_DEG = 45.0 # 反向判定：相鄰測線航向差 180°±45°
+SURVEY_MIN_LEGS = 3                  # 至少 3 條合格測線
+SURVEY_MIN_REVERSALS = 2             # 至少 2 次反向（→ ← → 的來回）
+SURVEY_MIN_LINES = 3                 # 至少 3 條「不同」的平行線（去重後）
+SURVEY_MIN_PARALLEL_FRACTION = 0.6   # 測區內「同軸航程佔總航程」的下限。
+                                     # 以**里程**而非條數計：真網格必然夾雜
+                                     # N-1 條短的橫向換線段，用條數算會逼近
+                                     # 0.5 而誤殺。實測里程佔比：向陽紅03
+                                     # 0.96、合成網格 0.93，低速隨機漂移 0.37
+SURVEY_GRID_MIN_MEAN_LEG_KM = 5.0    # 網格樣態的平均測線長下限（漂移產生的
+                                     # 假測線多在 2-5km）
+SURVEY_MIN_SPACING_KM = 0.5          # 線距下限 — 反覆走同一條線（渡輪、
+                                     # 定期航線）線距趨近 0，不是測線
+SURVEY_MAX_SPACING_KM = 25.0         # 線距上限（超過即非同一測區）
+SURVEY_SPACING_CV_MAX = 0.6          # 線距變異係數 — 等間距才算規律測線
+SURVEY_MAX_MEDIAN_KNOTS = 12.0       # 測線作業速度（拖曳儀器，通常 4-10kn）
+SURVEY_MIN_SPAN_HOURS = 6.0          # 整段測線作業時間跨度下限
+SURVEY_MAX_GAP_HOURS = 6.0           # 相鄰航跡點間隔上限 — 超過即斷開測線。
+                                     # 不設此限的話，訊號空白（實測向陽紅03
+                                     # 有 54 小時無訊號）兩端會被連成一條假的
+                                     # 長直測線，把真正的測線樣態蓋掉
+SURVEY_BOX_LINK_KM = 30.0            # 測區分群半徑 — 測線要先依「測區」分群
+                                     # 再判定；整段 14 天航跡混了往返母港的
+                                     # 長程轉場，直接整條算會把測區樣態蓋掉
+# 兩種測繪樣態（皆須平行 + 反向 + 低速 + 時間跨度）：
+#   grid            階梯式網格 — ≥3 條不同平行線、線距等間距（經典 lawnmower）
+#   repeat_transect 重複測線 — 反覆重走同一條線（實測向陽紅03 在花蓮外海即此類，
+#                   單線來回 5 次；磁力/地震測線與海纜路由勘測常見）
+SURVEY_TRANSECT_SPREAD_KM = 5.0      # 重複測線：各測線垂距對中位數的
+                                     # **中位絕對偏差** ≤此值（用中位數而非
+                                     # 全距，才不會被一條進場轉場航段破壞）
+SURVEY_TRANSECT_MIN_LEG_KM = 10.0    # 重複測線：平均測線長下限（排除港區短程來回）
+# 例行來回作業的船型不納入：漁船拖網、客輪/渡輪定期航線、高速客船
+SURVEY_EXCLUDE_TYPES = ('fishing', 'passenger', 'high_speed')
+# 公務/科研類別（船名判定漁船時的保護名單，見 _is_routine_sweeper）
+GOV_TYPE_NAMES = ('coastguard', 'msa', 'rescue', 'research')
+SURVEY_SCORE = 3                     # 高威脅指標（測繪意圖，不受船型乘數影響）
+
+# ── 公務船編隊（detect_gov_formation.py 的輸出）─────────────────
+# 科研船 ×0.5 的乘數會把「編隊」這種本質上就是刻意協同的訊號抹平，
+# 因此編隊分屬高威脅指標、不乘船型係數。
+GOV_FORMATION_SCORE = 4              # 一般公務船編隊（≥2 艘、≥6h）
+GOV_FORMATION_ESCORT_SCORE = 6       # 護航科考（科研 + 海警/海巡同框）
+# 編隊或測線成立 → 行為分的船型乘數提升至 1.0：這艘船此刻不是在做
+# 「例行公務航行」，把科研/公務的 ×0.5 折扣套在它的海纜/等深線行為上
+# 會系統性低估。上調至 1.0（不放大、只是不再打折）。
+GOV_INTENT_MULTIPLIER_FLOOR = 1.0
 
 # ── 船型威脅乘數 ──────────────────────────────────────────
 # 商船（cargo/tanker/lng）錨鍊長、噸位大，對海纜威脅高 → ×1.0
@@ -638,6 +698,299 @@ def check_starburst_pattern(track_points, vessel_type='unknown'):
     }
 
 
+def _local_xy(points, ref_lat, ref_lon):
+    """經緯度 → 以 (ref_lat, ref_lon) 為原點的平面公里座標 (east, north)。
+    測區跨度僅數十公里，平面近似誤差遠小於 AIS 取樣造成的不確定性。"""
+    coslat = math.cos(math.radians(ref_lat))
+    return [((p['lon'] - ref_lon) * 111.320 * coslat,
+             (p['lat'] - ref_lat) * 110.574) for p in points]
+
+
+def _gap_hours(p1, p2):
+    """兩航跡點的時間間隔（小時）；時戳缺漏或無法解析回傳 None。"""
+    try:
+        t1 = datetime.fromisoformat(p1['t'].replace('Z', '+00:00'))
+        t2 = datetime.fromisoformat(p2['t'].replace('Z', '+00:00'))
+    except (ValueError, KeyError, AttributeError, TypeError):
+        return None
+    return abs((t2 - t1).total_seconds()) / 3600
+
+
+def _split_into_legs(pts):
+    """把航跡切成「測線段」：連續、航向大致一致的移動段。
+
+    回傳: [{'bearing','length_km','start','end','mid_lat','mid_lon',
+            'speeds':[...]}, ...]
+    """
+    segs = []
+    for i in range(1, len(pts)):
+        p1, p2 = pts[i - 1], pts[i]
+        dist = haversine_km(p1['lat'], p1['lon'], p2['lat'], p2['lon'])
+        if dist < 0.1:  # 移動不足 100m — 靠港操船/漂流，不構成航段
+            continue
+        gap = _gap_hours(p1, p2)
+        segs.append({
+            'bearing': calc_bearing(p1['lat'], p1['lon'], p2['lat'], p2['lon']),
+            'dist': dist,
+            'p1': p1,
+            'p2': p2,
+            # 訊號空白：兩端連成的直線是內插產物，不是實際航跡
+            'gapped': gap is None or gap > SURVEY_MAX_GAP_HOURS,
+        })
+    segs = [sg for sg in segs if not sg['gapped']]
+    if not segs:
+        return []
+
+    legs = []
+    cur = [segs[0]]
+    for seg in segs[1:]:
+        # 與當前測線「起始航向」比較，而非逐段比較：逐段比較會讓緩慢的
+        # 弧形轉彎被一路接受，最後併成一條假的長直線。
+        # 航跡點不連續（中間被 gap 剔掉）時也要斷開。
+        contiguous = seg['p1'] is cur[-1]['p2']
+        if contiguous and angular_diff(
+                seg['bearing'],
+                cur[0]['bearing']) <= SURVEY_LEG_BEARING_TOLERANCE_DEG:
+            cur.append(seg)
+        else:
+            legs.append(cur)
+            cur = [seg]
+    legs.append(cur)
+
+    out = []
+    for group in legs:
+        start, end = group[0]['p1'], group[-1]['p2']
+        span_km = haversine_km(start['lat'], start['lon'],
+                               end['lat'], end['lon'])
+        speeds = [g['p1'].get('speed') or 0 for g in group]
+        speeds.append(group[-1]['p2'].get('speed') or 0)
+        out.append({
+            'bearing': calc_bearing(start['lat'], start['lon'],
+                                    end['lat'], end['lon']),
+            'length_km': span_km,
+            'start': start,
+            'end': end,
+            'mid_lat': (start['lat'] + end['lat']) / 2,
+            'mid_lon': (start['lon'] + end['lon']) / 2,
+            'speeds': speeds,
+        })
+    return out
+
+
+def _axis_mean_deg(bearings):
+    """一組航向的「軸向」平均（mod 180°，反向視為同軸）。
+    以倍角法做圓形平均，避免 350° 與 10° 平均成 180° 的繞回錯誤。"""
+    sx = sum(math.sin(math.radians(b * 2)) for b in bearings)
+    sy = sum(math.cos(math.radians(b * 2)) for b in bearings)
+    if sx == 0 and sy == 0:
+        return None
+    return (math.degrees(math.atan2(sx, sy)) / 2) % 180
+
+
+def _axis_diff(bearing, axis_deg):
+    """航向與軸向的夾角（0-90°，反向視為同軸）。"""
+    d = abs((bearing % 180) - axis_deg) % 180
+    return min(d, 180 - d)
+
+
+def _is_routine_sweeper(vessel_type, names):
+    """判斷是否為「來回平行掃是本業」的船 —— 測線判定應排除。
+
+    只看 AIS 船種碼不夠：實測大量福建漁船（MINDONGYU63179 等）廣播成
+    other/unknown/cargo/tanker，其 2-4kn 的拖網作業與測線幾乎無法從幾何上
+    區分（全船隊掃描時 3% 命中，前 25 名全是漁船）。因此加上船名判定。
+
+    注意 is_cn_fishing_vessel() 的省份前綴含 `^XIANG`（湘），會誤中
+    XIANG YANG HONG（向陽紅）——公務/科研分類優先，不受船名規則影響。
+    """
+    if vessel_type in GOV_TYPE_NAMES:
+        return False
+    if vessel_type in SURVEY_EXCLUDE_TYPES:
+        return True
+    return any(is_cn_fishing_vessel(n) for n in (names or []) if n)
+
+
+def check_survey_pattern(track_points, vessel_type='unknown', names=None):
+    """偵測割草式測線（lawnmower / survey grid）—— 平行、等間距、來回的測繪樣態。
+
+    判定條件（皆須成立）：
+      1. 非「來回掃是本業」的船（漁船／客輪／高速客船；漁船另以船名判定，
+         見 _is_routine_sweeper）
+      2. ≥SURVEY_MIN_LEGS 條長度 ≥SURVEY_MIN_LEG_KM 的測線
+      3. 各測線平行：相對主軸夾角 ≤SURVEY_AXIS_TOLERANCE_DEG，且同軸測線
+         佔測區全部測線的 ≥SURVEY_MIN_PARALLEL_FRACTION
+      4. ≥SURVEY_MIN_REVERSALS 次反向（相鄰測線航向差 180°±容差）
+      5. 去重後 ≥SURVEY_MIN_LINES 條不同平行線，線距落在
+         [SURVEY_MIN_SPACING_KM, SURVEY_MAX_SPACING_KM] 且變異係數
+         ≤SURVEY_SPACING_CV_MAX（等間距）
+      6. 測線速度中位數 ≤SURVEY_MAX_MEDIAN_KNOTS
+      7. 時間跨度 ≥SURVEY_MIN_SPAN_HOURS
+    港內點排除（港區操船會產生短的平行來回）。
+    回傳: (is_survey, details)
+    """
+    if _is_routine_sweeper(vessel_type, names):
+        return False, {}
+
+    pts = [p for p in track_points
+           if p.get('lat') is not None and p.get('lon') is not None
+           and not p.get('in_port')]
+    if len(pts) < 4:
+        return False, {}
+
+    legs = [lg for lg in _split_into_legs(pts)
+            if lg['length_km'] >= SURVEY_MIN_LEG_KM]
+    if len(legs) < SURVEY_MIN_LEGS:
+        return False, {}
+
+    # 依測區分群後逐區判定，取樣態最完整（測線數最多）的一區
+    best, best_details = False, {}
+    for box in _cluster_legs_by_box(legs):
+        if len(box) < SURVEY_MIN_LEGS:
+            continue
+        ok, details = _evaluate_survey_legs(box)
+        if ok and details['leg_count'] > best_details.get('leg_count', 0):
+            best, best_details = True, details
+    return best, best_details
+
+
+def _cluster_legs_by_box(legs, link_km=SURVEY_BOX_LINK_KM):
+    """依測線中點做單一鏈結分群 → 各「測區」的測線清單（維持時間順序）。"""
+    n = len(legs)
+    parent = list(range(n))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if find(i) == find(j):
+                continue
+            if haversine_km(legs[i]['mid_lat'], legs[i]['mid_lon'],
+                            legs[j]['mid_lat'], legs[j]['mid_lon']) <= link_km:
+                parent[find(j)] = find(i)
+
+    boxes = {}
+    for i in range(n):
+        boxes.setdefault(find(i), []).append(legs[i])
+    return list(boxes.values())
+
+
+def _evaluate_survey_legs(legs):
+    """對單一測區的測線清單做平行 / 反向 / 等間距判定。"""
+    # ── 主軸：以測線長度加權（長測線才是測區主方向）──
+    weighted = []
+    for lg in legs:
+        weighted.extend([lg['bearing']] * max(1, int(lg['length_km'])))
+    axis = _axis_mean_deg(weighted)
+    if axis is None:
+        return False, {}
+
+    parallel = [lg for lg in legs
+                if _axis_diff(lg['bearing'], axis) <= SURVEY_AXIS_TOLERANCE_DEG]
+    if len(parallel) < SURVEY_MIN_LEGS:
+        return False, {}
+    # 同軸里程佔比：測線作業是有計畫的來回，絕大部分航程都在主軸上；
+    # 四處亂走的低速漂移雖也湊得出幾條等間距平行線，同軸里程卻只佔少數
+    total_km = sum(lg['length_km'] for lg in legs)
+    parallel_km = sum(lg['length_km'] for lg in parallel)
+    parallel_fraction = parallel_km / total_km if total_km else 0
+    if parallel_fraction < SURVEY_MIN_PARALLEL_FRACTION:
+        return False, {}
+
+    # ── 反向次數：相鄰測線是否 180° 掉頭 ──
+    reversals = 0
+    for i in range(1, len(parallel)):
+        delta = angular_diff(parallel[i]['bearing'], parallel[i - 1]['bearing'])
+        if delta >= 180 - SURVEY_REVERSAL_TOLERANCE_DEG:
+            reversals += 1
+    if reversals < SURVEY_MIN_REVERSALS:
+        return False, {}
+
+    # ── 線距：測線中點對主軸的垂距，去重後看間距是否規律 ──
+    ref_lat = sum(lg['mid_lat'] for lg in parallel) / len(parallel)
+    ref_lon = sum(lg['mid_lon'] for lg in parallel) / len(parallel)
+    mids = [{'lat': lg['mid_lat'], 'lon': lg['mid_lon']} for lg in parallel]
+    xy = _local_xy(mids, ref_lat, ref_lon)
+    th = math.radians(axis)
+    # 主軸單位向量 (sinθ, cosθ)；垂直分量 = x·cosθ − y·sinθ
+    offsets = sorted(x * math.cos(th) - y * math.sin(th) for x, y in xy)
+
+    mean_leg_km = sum(lg['length_km'] for lg in parallel) / len(parallel)
+
+    # ── 樣態 A：階梯式網格（不同平行線 + 等間距）──
+    # 同一條線上的多次通過合併（避免 diff≈0 灌爆變異係數）
+    lines = [offsets[0]]
+    for o in offsets[1:]:
+        if o - lines[-1] >= SURVEY_MIN_SPACING_KM:
+            lines.append(o)
+
+    survey_type = None
+    mean_sp = cv = 0.0
+    if len(lines) >= SURVEY_MIN_LINES:
+        spacings = [lines[i] - lines[i - 1] for i in range(1, len(lines))]
+        mean_sp = sum(spacings) / len(spacings)
+        var = sum((sp - mean_sp) ** 2 for sp in spacings) / len(spacings)
+        cv = math.sqrt(var) / mean_sp if mean_sp else 99
+        if (SURVEY_MIN_SPACING_KM <= mean_sp <= SURVEY_MAX_SPACING_KM
+                and cv <= SURVEY_SPACING_CV_MAX
+                and mean_leg_km >= SURVEY_GRID_MIN_MEAN_LEG_KM):
+            survey_type = 'grid'
+
+    # ── 樣態 B：重複測線（反覆重走同一條線）──
+    # 垂距的中位絕對偏差：一條進出測區的轉場航段不會把整體判定帶偏
+    med_off = offsets[len(offsets) // 2]
+    devs = sorted(abs(o - med_off) for o in offsets)
+    offset_mad = devs[len(devs) // 2]
+    if (survey_type is None
+            and offset_mad <= SURVEY_TRANSECT_SPREAD_KM
+            and mean_leg_km >= SURVEY_TRANSECT_MIN_LEG_KM):
+        survey_type = 'repeat_transect'
+
+    if survey_type is None:
+        return False, {}
+
+    # ── 速度中位數 ──
+    all_speeds = sorted(s for lg in parallel for s in lg['speeds'])
+    median_speed = all_speeds[len(all_speeds) // 2] if all_speeds else 0
+    if median_speed > SURVEY_MAX_MEDIAN_KNOTS:
+        return False, {}
+
+    # ── 時間跨度 ──
+    times = []
+    for lg in parallel:
+        for key in ('start', 'end'):
+            try:
+                times.append(datetime.fromisoformat(
+                    lg[key]['t'].replace('Z', '+00:00')))
+            except (ValueError, KeyError, AttributeError, TypeError):
+                continue
+    if len(times) < 2:
+        return False, {}
+    span_hours = (max(times) - min(times)).total_seconds() / 3600
+    if span_hours < SURVEY_MIN_SPAN_HOURS:
+        return False, {}
+
+    return True, {
+        'survey_type': survey_type,
+        'leg_count': len(parallel),
+        'parallel_fraction': round(parallel_fraction, 2),
+        'line_count': len(lines),
+        'reversals': reversals,
+        'axis_deg': round(axis, 1),
+        'mean_spacing_km': round(mean_sp, 2),
+        'spacing_cv': round(cv, 2),
+        'offset_mad_km': round(offset_mad, 2),
+        'median_speed_kn': round(median_speed, 1),
+        'span_hours': round(span_hours, 1),
+        'mean_leg_km': round(mean_leg_km, 1),
+        'center_lat': round(ref_lat, 4),
+        'center_lon': round(ref_lon, 4),
+    }
+
+
 def check_offshore_loitering(track_points, vessel_type):
     """偵測商船的離岸長期徘徊（影子船隊待命樣態，與海纜無關）。
 
@@ -1090,6 +1443,26 @@ def load_ship_transfers():
     return sts_map
 
 
+def load_gov_formations():
+    """載入 gov_formations.json 的 vessel_index → {mmsi: {...}}。
+
+    由 detect_gov_formation.py 產出（公務船編隊事件）。檔案不存在時回傳空
+    dict，計分自動略過此項（管線任一步失敗不應讓整體分析崩掉）。
+    """
+    if not GOV_FORMATIONS_FILE.exists():
+        print("⚠️ gov_formations.json 不存在，跳過公務船編隊加分")
+        return {}
+    try:
+        with open(GOV_FORMATIONS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return {}
+    idx = data.get('vessel_index', {}) or {}
+    escort = sum(1 for v in idx.values() if v.get('escorted_research'))
+    print(f"🛡️ 公務船編隊: {len(idx)} 艘涉入（{escort} 艘屬護航科考）")
+    return idx
+
+
 def load_itu_mars_cache():
     """
     載入 ITU MARS 快取資料（由 lookup_itu_mars.py 建立）。
@@ -1202,6 +1575,14 @@ def load_track_history():
                             # 船名：偵測 MMSI 共用（瞬移偽訊號誤判排除）
                             'name': v.get('name'),
                         }
+                        # 船型/公務類別：vessel_profiles.json 是 Actions 快取，
+                        # 冷啟動時會是空的；沒有這個 fallback，船型會全變
+                        # unknown，測線判定的漁船排除也就整個失效
+                        # （實測冷快取下誤報從 13 艘暴增到 1702 艘）
+                        if v.get('type_name'):
+                            pt['type_name'] = v['type_name']
+                        if v.get('gov'):
+                            pt['gov'] = v['gov']
                         # 錨泊/繫泊旗標（nav_status 1/5，fetch_ais_data 寫入）
                         if v.get('anc'):
                             pt['anc'] = 1
@@ -1250,11 +1631,12 @@ def annotate_port_points(track_points):
 
 def classify_vessel(profile, track_points, identity_events=None,
                      sanctions_match=None, mars_record=None,
-                     sts_record=None):
+                     sts_record=None, formation_record=None):
     """
     綜合分類單一船隻的可疑程度
     標準：海纜鄰近 + Z字型 + 200m等深線 + AIS變更 + UN制裁
           + AIS偽訊號 + ITU MARS 登記比對 + STS旁靠
+          + 割草式測線 + 公務船編隊
     分數依船型乘數調整：商船 ×1.0、漁船 ×0.2、其他 ×0.5
     """
     mmsi = profile['mmsi']
@@ -1275,6 +1657,8 @@ def classify_vessel(profile, track_points, identity_events=None,
         'spoof_starburst_pattern': False,
         'spoof_starburst_details': {},
         'itu_mars_mismatch': False,
+        'survey_pattern': False,
+        'gov_formation': False,
         'ais_anomalies': [],
         'risk_level': 'normal',
         'flags': [],
@@ -1462,7 +1846,12 @@ def classify_vessel(profile, track_points, identity_events=None,
         classification['itu_mars_details'] = {}
 
     # ── 判定主要船型 ──
-    types_seen = profile.get('types_seen', [])
+    types_seen = list(profile.get('types_seen', []))
+    # profile 缺漏時（Actions 快取冷啟動）改由航跡點補；公務類別優先
+    if track_points:
+        types_seen.extend(
+            p['type_name'] for p in track_points if p.get('type_name'))
+        types_seen.extend(p['gov'] for p in track_points if p.get('gov'))
     # 取最後一個非 unknown/other 的船型；否則 unknown
     vessel_type = 'unknown'
     for t in reversed(types_seen):
@@ -1486,6 +1875,41 @@ def classify_vessel(profile, track_points, identity_events=None,
                 f"{starburst_details['center_lon']:.4f}) "
                 f"半徑{starburst_details['mean_radius_km']}km"
             )
+
+    # ── Criterion 11: 割草式測線（測繪意圖）──
+    classification['survey_pattern'] = False
+    if track_points:
+        # 船名同樣以 profile ∪ 航跡點取聯集（理由同船型 fallback）
+        survey_names = set(all_names)
+        survey_names.update(
+            p['name'] for p in track_points if p.get('name'))
+        survey, survey_details = check_survey_pattern(
+            track_points, vessel_type, survey_names)
+        classification['survey_pattern'] = survey
+        classification['survey_details'] = survey_details
+        if survey:
+            label = ('階梯式網格' if survey_details['survey_type'] == 'grid'
+                     else '重複測線')
+            classification['flags'].append(
+                f"割草式測線（{label}）：{survey_details['leg_count']} 條測線 "
+                f"/ {survey_details['reversals']} 次反向，"
+                f"主軸 {survey_details['axis_deg']}°，"
+                f"平均線長 {survey_details['mean_leg_km']}km，"
+                f"{survey_details['median_speed_kn']}kn"
+            )
+
+    # ── Criterion 12: 公務船編隊（detect_gov_formation.py）──
+    if formation_record:
+        classification['gov_formation'] = True
+        classification['gov_formation_details'] = formation_record
+        hrs = formation_record.get('max_duration_hours', 0)
+        if formation_record.get('escorted_research'):
+            classification['flags'].append(
+                f'🛡️ 護航科考編隊：科研船 + 執法船同框 {hrs}h '
+                f'（{formation_record.get("count", 1)} 次）')
+        else:
+            classification['flags'].append(
+                f'公務船編隊：{formation_record.get("count", 1)} 次，最長 {hrs}h')
 
     # ── 離岸長期徘徊（商船，獨立於海纜）──
     classification['offshore_loitering'] = False
@@ -1556,6 +1980,19 @@ def classify_vessel(profile, track_points, identity_events=None,
     if classification['cable_proximity'] and classification['cable_loitering']:
         raw_score += 2  # 海纜鄰近 + 長時間徘徊
 
+    # ── 船型乘數下限：公務/科研船在編隊或測線作業中不打折 ──
+    # 科研 ×0.5、公務 ×0.5 的折扣是為「例行公務航行」設計的；一艘正在編隊
+    # 護航或跑測線的國家船舶，其海纜鄰近/等深線行為不該再打對折。
+    # 僅適用於公務/科研船（vessel_type ∈ GOV_TYPE_NAMES）或已成案的編隊成員 —
+    # 測線偵測對純數字船名的低速拖網船仍有殘餘誤報，不可讓漁船的 ×0.2 被抬升。
+    if (classification['gov_formation']
+            or (classification['survey_pattern']
+                and vessel_type in GOV_TYPE_NAMES)):
+        if type_mult < GOV_INTENT_MULTIPLIER_FLOOR:
+            type_mult = GOV_INTENT_MULTIPLIER_FLOOR
+            classification['type_multiplier'] = type_mult
+            classification['intent_multiplier_floor'] = True
+
     # ── 套用船型乘數（商船 ×1.0, 漁船 ×0.2, 其他 ×0.5）──
     score = raw_score * type_mult
 
@@ -1608,6 +2045,16 @@ def classify_vessel(profile, track_points, identity_events=None,
             score += STS_ANY_SCORE
             classification['flags'].append(
                 f'旁靠紀錄：{sts_record["count"]} 次')
+
+    # ── 割草式測線（不受船型乘數影響）──
+    if classification['survey_pattern']:
+        score += SURVEY_SCORE
+
+    # ── 公務船編隊（不受船型乘數影響）──
+    if classification['gov_formation']:
+        score += (GOV_FORMATION_ESCORT_SCORE
+                  if formation_record.get('escorted_research')
+                  else GOV_FORMATION_SCORE)
 
     # 四捨五入為整數
     score = round(score)
@@ -1667,6 +2114,9 @@ def main():
     # 載入 STS 旁靠紀錄
     sts_map = load_ship_transfers()
 
+    # 載入公務船編隊事件
+    formation_map = load_gov_formations()
+
     # 載入航跡歷史（用於海纜鄰近、Z字型、等深線分析）
     tracks = load_track_history()
 
@@ -1721,10 +2171,12 @@ def main():
 
         mars_rec = mars_cache.get(mmsi)
         sts_rec = sts_map.get(mmsi)
+        formation_rec = formation_map.get(mmsi)
         result = classify_vessel(profile, track_pts, id_events,
                                  sanctions_match=sanction_hit,
                                  mars_record=mars_rec,
-                                 sts_record=sts_rec)
+                                 sts_record=sts_rec,
+                                 formation_record=formation_rec)
         if result.get('excluded'):
             excluded_vessels.append(result)
         else:
@@ -1766,6 +2218,10 @@ def main():
     mars_mismatch_count = 0
     sts_transfer_count = 0
     offshore_loiter_count = 0
+    survey_pattern_count = 0
+    survey_type_counts = {}
+    gov_formation_count = 0
+    gov_formation_escort_count = 0
     zone_counts = {}
     cable_band_counts = {}
     cable_buffer_1km_count = 0
@@ -1810,6 +2266,14 @@ def main():
             sts_transfer_count += 1
         if c.get('offshore_loitering'):
             offshore_loiter_count += 1
+        if c.get('survey_pattern'):
+            survey_pattern_count += 1
+            st = c.get('survey_details', {}).get('survey_type', 'unknown')
+            survey_type_counts[st] = survey_type_counts.get(st, 0) + 1
+        if c.get('gov_formation'):
+            gov_formation_count += 1
+            if c.get('gov_formation_details', {}).get('escorted_research'):
+                gov_formation_escort_count += 1
 
     output = {
         'updated_at': datetime.now(timezone.utc).isoformat(),
@@ -1844,6 +2308,20 @@ def main():
             'vessel_type_multiplier': VESSEL_TYPE_MULTIPLIER,
             'sts_suspicious_score': STS_SUSPICIOUS_SCORE,
             'sts_any_score': STS_ANY_SCORE,
+            'survey_min_legs': SURVEY_MIN_LEGS,
+            'survey_min_reversals': SURVEY_MIN_REVERSALS,
+            'survey_min_leg_km': SURVEY_MIN_LEG_KM,
+            'survey_spacing_cv_max': SURVEY_SPACING_CV_MAX,
+            'survey_min_parallel_fraction': SURVEY_MIN_PARALLEL_FRACTION,
+            'survey_grid_min_mean_leg_km': SURVEY_GRID_MIN_MEAN_LEG_KM,
+            'survey_transect_spread_km': SURVEY_TRANSECT_SPREAD_KM,
+            'survey_max_median_knots': SURVEY_MAX_MEDIAN_KNOTS,
+            'survey_max_gap_hours': SURVEY_MAX_GAP_HOURS,
+            'survey_score': SURVEY_SCORE,
+            'survey_excludes_fishing_by_name': True,
+            'gov_formation_score': GOV_FORMATION_SCORE,
+            'gov_formation_escort_score': GOV_FORMATION_ESCORT_SCORE,
+            'gov_intent_multiplier_floor': GOV_INTENT_MULTIPLIER_FLOOR,
             'cable_buffer_1km_score': CABLE_BUFFER_1KM_SCORE,
             'cable_buffer_jurisdiction_score': CABLE_BUFFER_JURISDICTION_SCORE,
         },
@@ -1878,6 +2356,10 @@ def main():
             'itu_mars_mismatch': mars_mismatch_count,
             'sts_transfer': sts_transfer_count,
             'offshore_loitering': offshore_loiter_count,
+            'survey_pattern': survey_pattern_count,
+            'survey_pattern_types': survey_type_counts,
+            'gov_formation': gov_formation_count,
+            'gov_formation_escorted_research': gov_formation_escort_count,
             'cable_buffer_1km': cable_buffer_1km_count,
             'cable_buffer_jurisdiction': cable_buffer_jur_count,
             'risk_distribution': risk_counts,
@@ -1912,6 +2394,9 @@ def main():
     print(f"   ITU MARS不符: {mars_mismatch_count}")
     print(f"   STS旁靠涉入: {sts_transfer_count}")
     print(f"   離岸長期徘徊(商船): {offshore_loiter_count}")
+    print(f"   割草式測線: {survey_pattern_count} {survey_type_counts}")
+    print(f"   公務船編隊: {gov_formation_count} "
+          f"(護航科考 {gov_formation_escort_count})")
     print(f"   風險分布: {risk_counts}")
     print(f"\n📁 結果已輸出至: {OUTPUT_FILE}")
 

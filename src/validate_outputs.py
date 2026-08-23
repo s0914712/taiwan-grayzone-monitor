@@ -44,6 +44,11 @@ CHECKS = [
     ('data/dark_vessels.json',
      lambda d: isinstance(d, dict),
      False),
+    # 公務船編隊：僅 update-data.yml 產生，update-ais.yml 執行時不存在
+    ('data/gov_formations.json',
+     lambda d: isinstance(d, dict) and 'summary' in d
+     and isinstance(d.get('vessel_index'), dict),
+     False),
 ]
 
 

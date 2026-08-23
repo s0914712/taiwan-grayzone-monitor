@@ -159,6 +159,82 @@ def refresh_vessel_monitoring_daily(vessel_data, dark_vessels_data):
           f"({daily[0]['date']} ~ {daily[-1]['date']})")
     return vessel_data
 
+GOV_RECENT_WINDOW_HOURS = 48
+GOV_CATEGORY_ORDER = ('coastguard', 'msa', 'rescue', 'research')
+
+
+def build_gov_recent(track_path, window_hours=GOV_RECENT_WINDOW_HOURS,
+                     now=None):
+    """近 window_hours 小時內出現過的中國公務／科研船名冊。
+
+    首頁的公務船磚原本只讀**當前快照**，船一停播就整個消失 —— 實測
+    2026-08-21 23:14 之後向陽紅03 與兩艘護航海警同時停止廣播，隔天早上
+    首頁看不到任何跡象。改以 tier-1 航跡歷史回溯 48 小時，停播的船仍列出
+    並附「最後訊號距今幾小時」。
+    """
+    if not track_path.exists():
+        return None
+    try:
+        with open(track_path, 'r', encoding='utf-8') as f:
+            track_data = json.load(f)
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"⚠️ 讀取 {track_path.name} 失敗: {e}")
+        return None
+
+    if now is None:
+        now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=window_hours)
+
+    latest = {}
+    for entry in track_data or []:
+        ts = _normalize_iso(entry.get('timestamp'))
+        if not ts:
+            continue
+        try:
+            dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+        except ValueError:
+            continue
+        if dt < cutoff:
+            continue
+        for v in entry.get('vessels', []):
+            cat = v.get('gov') or v.get('type_name')
+            if cat not in GOV_CATEGORY_ORDER or not v.get('mmsi'):
+                continue
+            mmsi = str(v['mmsi'])
+            prev = latest.get(mmsi)
+            if prev and prev['_dt'] >= dt:
+                continue
+            latest[mmsi] = {
+                '_dt': dt,
+                'mmsi': mmsi,
+                'name': v.get('name') or '',
+                'gov_type': cat,
+                'lat': v.get('lat'),
+                'lon': v.get('lon'),
+                'speed': v.get('speed', 0),
+                'last_seen': dt.isoformat().replace('+00:00', 'Z'),
+            }
+
+    vessels = []
+    for rec in latest.values():
+        age = (now - rec.pop('_dt')).total_seconds() / 3600
+        rec['age_hours'] = round(max(age, 0), 1)
+        vessels.append(rec)
+    order = {c: i for i, c in enumerate(GOV_CATEGORY_ORDER)}
+    vessels.sort(key=lambda v: (order.get(v['gov_type'], 9), v['age_hours']))
+
+    counts = {}
+    for v in vessels:
+        counts[v['gov_type']] = counts.get(v['gov_type'], 0) + 1
+    return {
+        'window_hours': window_hours,
+        'as_of': now.isoformat().replace('+00:00', 'Z'),
+        'counts': counts,
+        'total': len(vessels),
+        'vessels': vessels,
+    }
+
+
 def main():
     print("📊 生成 Dashboard 資料...")
 
@@ -341,6 +417,37 @@ def main():
     else:
         print("⚠️ 找不到 identity_events.json，跳過")
 
+    # 近 48h 公務／科研船名冊（首頁不再只看當前快照）
+    gov_recent = build_gov_recent(DOCS_DIR / 'ais_track_history.json')
+    if gov_recent:
+        print(f"🛡️ 近 {gov_recent['window_hours']}h 公務／科研船: "
+              f"{gov_recent['total']} 艘 {gov_recent['counts']}")
+    else:
+        print("⚠️ 無法建立近 48h 公務船名冊（缺 ais_track_history.json）")
+
+    # 公務船編隊事件（detect_gov_formation.py）
+    formations_path = DATA_DIR / 'gov_formations.json'
+    gov_formations = None
+    if formations_path.exists():
+        try:
+            with open(formations_path, 'r', encoding='utf-8') as f:
+                fdata = json.load(f)
+            # data.json 只帶進行中的編隊 + 摘要；完整歷史另存 docs/ 供細節頁取用
+            gov_formations = {
+                'updated_at': fdata.get('updated_at', ''),
+                'criteria': fdata.get('criteria', {}),
+                'summary': fdata.get('summary', {}),
+                'active_formations': fdata.get('active_formations', [])[:10],
+            }
+            print(f"🛡️ 公務船編隊: 進行中 "
+                  f"{fdata.get('summary', {}).get('active_formations', 0)} 件"
+                  f"（護航科考 "
+                  f"{fdata.get('summary', {}).get('escorted_research', 0)} 件）")
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"⚠️ 讀取 gov_formations.json 失敗: {e}")
+    else:
+        print("⚠️ 找不到 gov_formations.json，跳過")
+
     output_path = DOCS_DIR / 'data.json'
 
     # 合併所有資料
@@ -356,6 +463,8 @@ def main():
         'exercise_prediction': prediction_data,
         'scfi_correlation': scfi_correlation_data,
         'ais_snapshot': ais_snapshot or {'updated_at': '', 'ais_data': {}, 'vessels': []},
+        'gov_vessels_recent': gov_recent,
+        'gov_formations': gov_formations,
         'identity_events': identity_events_data,
         'data_sources': build_data_sources(),
         'status': 'operational',
@@ -377,6 +486,11 @@ def main():
     }
     atomic_write_json(DOCS_DIR / 'data-manifest.json', manifest)
     print(f"🔖 資料版本 manifest 已儲存: data-manifest.json (v={data_version})")
+
+    # 複製公務船編隊全檔至 docs（含歷史事件與中心軌跡）
+    if formations_path.exists():
+        shutil.copy2(formations_path, DOCS_DIR / 'gov_formations.json')
+        print(f"🛡️ 已複製公務船編隊結果至 docs/gov_formations.json")
 
     # 複製暗船動畫資料至 docs（獨立檔案，避免主 data.json 過大）
     weekly_dark_path = DATA_DIR / 'weekly_dark_vessels.json'
