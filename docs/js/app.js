@@ -10,6 +10,10 @@ const App = (function () {
     let vessels = new Map();
     let rawVesselList = []; // raw AIS vessel array for re-rendering on filter change
     let suspiciousData = null;
+    // 近 48h 公務／科研船名冊 + 編隊事件（data.json 由管線預先算好；
+    // 只看當前快照的話，船一停播首頁就整個沒有跡象）
+    let govRecentData = null;
+    let govFormationsData = null;
     let latestData = null;  // last data.json payload (feeds the brief + metric tiles)
     let cableCounts = null; // { faults, repaired } from cable_status.json
 
@@ -392,52 +396,132 @@ const App = (function () {
      */
     function updateGovVesselList() {
         const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
-        const getGov = MapModule.getGovType;
-        const govLabel = MapModule.govLabel;
         const icon = MapModule.GOV_BADGE_ICON || {};
-
-        const govVessels = (rawVesselList || [])
-            .map(v => ({ v: v, cat: getGov(v) }))
-            .filter(o => o.cat);
-
-        // Order by category (coastguard → msa → rescue → research)
-        const order = MapModule.GOV_TYPES || ['coastguard', 'msa', 'rescue', 'research'];
-        govVessels.sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
+        const roster = buildGovRoster();
 
         const section = document.getElementById('govVesselSection');
-        if (section) section.style.display = govVessels.length ? '' : 'none';
+        if (section) section.style.display = roster.length ? '' : 'none';
 
         const rowHtml = (o) => {
-            const v = o.v;
             const color = MapModule.VESSEL_COLORS[o.cat] || MapModule.VESSEL_COLORS.other;
-            return '<div class="suspicious-item" onclick="App.focusVessel(\'' + v.mmsi + '\')" ' +
-                'title="' + govLabel(o.cat) + '">' +
+            // 停播的船不在地圖圖層上，focusVessel 找不到 marker → 改用座標定位
+            const click = o.live
+                ? 'App.focusVessel(&quot;' + escapeHtml(o.mmsi) + '&quot;)'
+                : 'App.focusSuspicious(' + Number(o.lat) + ', ' + Number(o.lon) + ')';
+            const age = o.live
+                ? ''
+                : '<span class="gov-age">' +
+                      t('idx.gov_last_seen', formatAge(o.ageHours)) +
+                  '</span>';
+            return '<div class="suspicious-item' + (o.live ? '' : ' is-stale') +
+                '" onclick="' + click + '" ' +
+                'title="' + escapeHtml(MapModule.govLabel(o.cat) + ' · ' + o.mmsi) + '">' +
                 '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
-                    (icon[o.cat] || '') + ' ' + (v.name || 'Unknown').substring(0, 16) +
+                    (icon[o.cat] || '') + ' ' +
+                    escapeHtml(String(o.name || 'Unknown').substring(0, 16)) +
+                    age +
                 '</span>' +
                 '<span class="risk-badge" style="background:' + color + ';color:#0a0f1c">' +
-                    govLabel(o.cat) +
+                    MapModule.govLabel(o.cat) +
                 '</span>' +
             '</div>';
         };
 
         const emptyMsg = '<div class="panel-empty">' + t('idx.gov_none') + '</div>';
+        const banner = formationBannerHtml();
 
         const sideList = document.getElementById('govVesselList');
         if (sideList) {
-            sideList.innerHTML = govVessels.length
-                ? govVessels.slice(0, 15).map(rowHtml).join('')
-                : emptyMsg;
+            sideList.innerHTML = roster.length
+                ? banner + roster.slice(0, 15).map(rowHtml).join('')
+                : banner + (banner ? '' : emptyMsg);
         }
         const bsList = document.getElementById('bsGovList');
         if (bsList) {
-            bsList.innerHTML = govVessels.length
-                ? govVessels.slice(0, 10).map(rowHtml).join('')
-                : emptyMsg;
+            bsList.innerHTML = roster.length
+                ? banner + roster.slice(0, 10).map(rowHtml).join('')
+                : banner + (banner ? '' : emptyMsg);
         }
 
         // Gov count feeds a metric tile; the FOC filter can change it
         updateBriefAndMetrics();
+    }
+
+    /**
+     * Merge the live AIS snapshot with the pipeline's 48h gov roster.
+     * A vessel present in the snapshot is `live`; one seen only in the
+     * roster is listed with how long ago its last signal was.
+     */
+    function buildGovRoster() {
+        const getGov = MapModule.getGovType;
+        const byMmsi = new Map();
+
+        (rawVesselList || []).forEach((v) => {
+            const cat = getGov(v);
+            if (!cat) return;
+            byMmsi.set(String(v.mmsi), {
+                mmsi: String(v.mmsi), name: v.name, cat: cat,
+                lat: v.lat, lon: v.lon, live: true, ageHours: 0,
+            });
+        });
+
+        const recent = (govRecentData && govRecentData.vessels) || [];
+        recent.forEach((v) => {
+            const mmsi = String(v.mmsi);
+            if (byMmsi.has(mmsi)) return;   // 快照已有 → 以現況為準
+            byMmsi.set(mmsi, {
+                mmsi: mmsi, name: v.name, cat: v.gov_type,
+                lat: v.lat, lon: v.lon, live: false,
+                ageHours: v.age_hours || 0,
+            });
+        });
+
+        // 類別排序（海警 → 海巡 → 海救 → 科研），同類別以最後訊號由新到舊
+        const order = MapModule.GOV_TYPES || ['coastguard', 'msa', 'rescue', 'research'];
+        return Array.from(byMmsi.values()).sort((a, b) => {
+            const d = order.indexOf(a.cat) - order.indexOf(b.cat);
+            return d !== 0 ? d : a.ageHours - b.ageHours;
+        });
+    }
+
+    /** AIS 船名是未經驗證的廣播字串，進 HTML 前一律轉義 */
+    function escapeHtml(v) {
+        return String(v == null ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    /** 「3.5h」/「2天」— 停播時間的短標籤 */
+    function formatAge(hours) {
+        const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+        if (hours < 1) return Math.round(hours * 60) + 'm';
+        if (hours < 24) return (hours < 10 ? hours.toFixed(1) : Math.round(hours)) + 'h';
+        return Math.round(hours / 24) + (t('unit.day') === 'unit.day' ? 'd' : t('unit.day'));
+    }
+
+    /** 進行中的公務船編隊橫幅（護航科考優先） */
+    function formationBannerHtml() {
+        const t = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
+        const active = (govFormationsData && govFormationsData.active_formations) || [];
+        if (!active.length) return '';
+        return active.slice(0, 3).map((f) => {
+            const label = f.escorted_research
+                ? t('idx.gov_formation_escort')
+                : t('idx.gov_formation');
+            const names = (f.members || []).slice(0, 3)
+                .map(m => escapeHtml(String(m.name || m.mmsi).substring(0, 14)))
+                .join(' + ');
+            return '<div class="gov-formation sev-' +
+                escapeHtml(f.severity || 'low') + '" ' +
+                'onclick="App.focusSuspicious(' + Number(f.last_lat) + ', ' +
+                    Number(f.last_lon) + ')">' +
+                '<span class="gov-formation-title">' + label + '</span>' +
+                '<span class="gov-formation-desc">' + names + ' · ' +
+                    t('idx.gov_formation_desc', f.vessel_count, f.duration_hours) +
+                '</span>' +
+            '</div>';
+        }).join('');
     }
 
     /**
@@ -562,20 +646,23 @@ const App = (function () {
         setText('metricSuspicious', num(suspCount));
         setText('metricSuspiciousSub', t('metric.suspicious_sub', num(risk.critical), num(risk.high)));
 
-        // ── Tile 3: China gov / research vessels in the current AIS snapshot ──
+        // ── Tile 3: China gov / research vessels seen in the past 48h ──
+        // （只算當前快照的話，停播的船會憑空消失 — 實測 2026-08-21 深夜
+        //   向陽紅03 與兩艘護航海警同時停播，隔天首頁完全看不出來）
+        const govRoster = buildGovRoster();
         const govCounts = {};
-        (rawVesselList || []).forEach((v) => {
-            const cat = MapModule.getGovType(v);
-            if (cat) govCounts[cat] = (govCounts[cat] || 0) + 1;
+        let govOffline = 0;
+        govRoster.forEach((o) => {
+            govCounts[o.cat] = (govCounts[o.cat] || 0) + 1;
+            if (!o.live) govOffline += 1;
         });
-        const govTotal = Object.values(govCounts).reduce((a, b) => a + b, 0);
+        const govTotal = govRoster.length;
         setText('metricGov', num(govTotal));
-        setText('metricGovSub', govTotal
-            ? (MapModule.GOV_TYPES || Object.keys(govCounts))
-                .filter((c) => govCounts[c])
-                .map((c) => MapModule.govLabel(c) + ' ' + govCounts[c])
-                .join(' · ')
-            : t('metric.gov_none'));
+        const govParts = (MapModule.GOV_TYPES || Object.keys(govCounts))
+            .filter((c) => govCounts[c])
+            .map((c) => MapModule.govLabel(c) + ' ' + govCounts[c]);
+        if (govOffline) govParts.push(t('idx.gov_offline_n', govOffline));
+        setText('metricGovSub', govTotal ? govParts.join(' · ') : t('metric.gov_none'));
 
         // ── Tile 4: SAR dark vessels ──
         setText('metricDark', num(dark.dark_vessels));
@@ -782,6 +869,10 @@ const App = (function () {
                 }
             }
 
+            // 近 48h 公務／科研船名冊 + 編隊事件（須在 updateGovVesselList 之前設定）
+            govRecentData = data.gov_vessels_recent || null;
+            govFormationsData = data.gov_formations || null;
+
             // Load AIS real-time vessels (zoom-based: clusters when zoomed out, details when zoomed in)
             const hasAis = data.ais_snapshot && data.ais_snapshot.vessels && data.ais_snapshot.vessels.length > 0;
             console.log('[Monitor] AIS check:', hasAis, 'vessels:', data.ais_snapshot?.vessels?.length || 0);
@@ -809,6 +900,9 @@ const App = (function () {
             if (suspiciousData) {
                 MapModule.displaySuspiciousVessels(suspiciousData);
             }
+
+            // 公務船名冊來自 data.json 的 48h 回溯，AIS 快照缺漏時仍要畫
+            if (!hasAis) updateGovVesselList();
 
             // 今日態勢 + 關鍵指標（海纜那格會在 loadCableStatus 回來後再補上）
             updateBriefAndMetrics();

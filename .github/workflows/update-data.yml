@@ -78,6 +78,13 @@ jobs:
           python src/build_chip_worklist.py
         continue-on-error: true
 
+      # 編隊偵測須在評分之前 —— analyze_suspicious 讀 gov_formations.json 計分，
+      # 排在後面的話永遠只吃得到上一輪的結果（STS 目前就是這個情況）
+      - name: Detect China gov vessel formations
+        run: |
+          python src/detect_gov_formation.py
+        continue-on-error: true
+
       - name: Analyze suspicious vessels (CSIS methodology)
         run: |
           python src/analyze_suspicious.py

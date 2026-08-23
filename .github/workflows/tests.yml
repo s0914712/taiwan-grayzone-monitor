@@ -47,6 +47,9 @@ jobs:
       - name: Run mobile navigation smoke test
         run: node tests/mobile-nav-smoke.js
 
+      - name: Run gov vessel roster smoke test (48h window + formations)
+        run: node tests/gov-roster-smoke.js
+
       - name: Compile all pipeline scripts
         run: python -m py_compile src/*.py
 
