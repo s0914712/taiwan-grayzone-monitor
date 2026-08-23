@@ -1,0 +1,93 @@
+name: Build CCG Timeline Video
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Trailing days of AIS history'
+        required: true
+        default: '14'
+      duration:
+        description: 'Video duration (seconds)'
+        required: true
+        default: '20'
+      fps:
+        description: 'Frames per second'
+        required: true
+        default: '30'
+  push:
+    branches:
+      - main
+      - feature/ccg-timeline-video
+    paths:
+      - 'src/generate_ccg_timeline_video.py'
+      - 'tests/test_generate_ccg_timeline_video.py'
+      - '.github/workflows/ccg-timeline-video.yml'
+
+jobs:
+  build-video:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ffmpeg and CJK fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-cjk
+
+      - name: Install Python dependencies
+        run: pip install matplotlib pytest
+
+      - name: Run focused tests
+        run: pytest -q tests/test_generate_ccg_timeline_video.py
+
+      - name: Resolve render settings
+        id: settings
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "days=${{ inputs.days }}" >> "$GITHUB_OUTPUT"
+            echo "duration=${{ inputs.duration }}" >> "$GITHUB_OUTPUT"
+            echo "fps=${{ inputs.fps }}" >> "$GITHUB_OUTPUT"
+          else
+            # Fast CI smoke render for pushes. Manual runs create the full social clip.
+            echo "days=2" >> "$GITHUB_OUTPUT"
+            echo "duration=4" >> "$GITHUB_OUTPUT"
+            echo "fps=8" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Render vertical CCG timeline
+        run: |
+          mkdir -p artifacts
+          python src/generate_ccg_timeline_video.py \
+            --days "${{ steps.settings.outputs.days }}" \
+            --duration "${{ steps.settings.outputs.duration }}" \
+            --fps "${{ steps.settings.outputs.fps }}" \
+            --output artifacts/ccg-timeline.mp4 \
+            --preview artifacts/ccg-timeline-preview.png
+
+      - name: Inspect output
+        run: |
+          test -s artifacts/ccg-timeline.mp4
+          test -s artifacts/ccg-timeline-preview.png
+          ffprobe -v error -show_entries stream=width,height,codec_name,pix_fmt \
+            -show_entries format=duration -of default=noprint_wrappers=1 artifacts/ccg-timeline.mp4
+
+      - name: Upload timeline video
+        uses: actions/upload-artifact@v4
+        with:
+          name: ccg-timeline-video
+          path: |
+            artifacts/ccg-timeline.mp4
+            artifacts/ccg-timeline-preview.png
+          if-no-files-found: error
+          retention-days: 14
