@@ -1,13 +1,18 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from src.generate_ccg_timeline_video import (
     MAP_BOUNDS,
+    build_story_sequence,
+    calendar_intro_labels,
     camera_bounds_for_frame,
     choose_frame_indices,
     choose_story_frame_indices,
+    detect_story_events,
+    fading_trail_segments,
     is_coast_guard,
     load_frames,
+    near_taiwan,
     nearest_story_zone,
     parse_timestamp,
 )
@@ -51,6 +56,73 @@ def test_story_indices_keep_exact_length_and_endpoints():
     assert indices.count(1) >= indices.count(0)
 
 
+def test_calendar_intro_flips_from_january_to_august():
+    labels = calendar_intro_labels(2026, 8, 8)
+    assert labels == [
+        "2026 JAN", "2026 FEB", "2026 MAR", "2026 APR",
+        "2026 MAY", "2026 JUN", "2026 JUL", "2026 AUG",
+    ]
+
+
+def test_detect_story_events_for_kinmen_taiwan_and_multi_vessel_activity():
+    tz = timezone(timedelta(hours=8))
+    frames = [
+        {"timestamp": datetime(2026, 8, 20, 8, tzinfo=tz), "vessels": []},
+        {
+            "timestamp": datetime(2026, 8, 21, 8, tzinfo=tz),
+            "vessels": [{"mmsi": "1", "lat": 24.45, "lon": 118.35, "name": "CCG 1"}],
+        },
+        {
+            "timestamp": datetime(2026, 8, 22, 8, tzinfo=tz),
+            "vessels": [
+                {"mmsi": "1", "lat": 24.2, "lon": 120.4, "name": "CCG 1"},
+                {"mmsi": "2", "lat": 24.4, "lon": 120.7, "name": "CCG 2"},
+                {"mmsi": "3", "lat": 24.6, "lon": 121.0, "name": "CCG 3"},
+            ],
+        },
+    ]
+    events = detect_story_events(frames)
+    assert "ENTERING KINMEN WATERS" in events[1]["label"]
+    assert "APPROACHING TAIWAN" in events[2]["label"]
+    assert "3 CCG VESSELS ACTIVE" in events[2]["label"]
+    assert 1.0 <= events[1]["hold_seconds"] <= 2.0
+    assert 1.0 <= events[2]["hold_seconds"] <= 2.0
+
+
+def test_story_sequence_keeps_total_duration_and_repeats_event_frames():
+    tz = timezone(timedelta(hours=8))
+    frames = [
+        {"timestamp": datetime(2026, 8, 20, 8, tzinfo=tz), "vessels": []},
+        {
+            "timestamp": datetime(2026, 8, 21, 8, tzinfo=tz),
+            "vessels": [{"mmsi": "1", "lat": 24.45, "lon": 118.35, "name": "CCG 1"}],
+        },
+        {"timestamp": datetime(2026, 8, 22, 8, tzinfo=tz), "vessels": []},
+    ]
+    sequence, events, intro = build_story_sequence(frames, duration=10, fps=10)
+    assert len(sequence) + intro == 100
+    assert 1 in events
+    assert sequence.count(1) >= 10
+
+
+def test_fading_trail_segments_get_brighter_toward_current_time():
+    tz = timezone.utc
+    now = datetime(2026, 8, 23, 12, tzinfo=tz)
+    points = [
+        (now - timedelta(hours=48), 24.0, 120.0),
+        (now - timedelta(hours=24), 24.1, 120.1),
+        (now - timedelta(hours=2), 24.2, 120.2),
+        (now, 24.3, 120.3),
+    ]
+    segments = fading_trail_segments(points, now, trail_hours=72)
+    assert len(segments) == 3
+    alphas = [segment[2] for segment in segments]
+    widths = [segment[3] for segment in segments]
+    assert alphas == sorted(alphas)
+    assert widths == sorted(widths)
+    assert alphas[-1] > alphas[0]
+
+
 def test_nearest_story_zone_and_camera_closeup():
     frame = {
         "timestamp": datetime(2026, 8, 23),
@@ -63,6 +135,15 @@ def test_nearest_story_zone_and_camera_closeup():
     assert bounds != MAP_BOUNDS
     assert bounds[0] <= 24.45 <= bounds[1]
     assert bounds[2] <= 118.35 <= bounds[3]
+
+
+def test_near_taiwan_single_vessel_also_triggers_closeup():
+    frame = {
+        "timestamp": datetime(2026, 8, 23),
+        "vessels": [{"mmsi": "1", "lat": 24.1, "lon": 121.1, "name": "CCG 1"}],
+    }
+    assert near_taiwan(frame)
+    assert camera_bounds_for_frame(frame) != MAP_BOUNDS
 
 
 def test_story_camera_contains_all_separated_active_vessels():
