@@ -6,12 +6,19 @@ Produces one JSON file per vessel in data/vessel_routes/.
 Only vessels with ≥2 distinct positions get a file.
 Cleans up stale files for vessels no longer in history.
 
-Usage: python extract_all_routes.py
+When SUPABASE_URL + SUPABASE_SERVICE_KEY are set the same routes are also
+upserted into the Supabase `vessel_routes` table, which is what the frontend
+reads (the local files remain for offline tooling and as the fallback).
+
+Usage: python extract_all_routes.py [--no-supabase]
 """
+import argparse
 import json
 import os
 import glob
+from datetime import datetime, timezone
 
+import supabase_store
 from io_utils import atomic_write_json
 
 
@@ -55,6 +62,15 @@ def load_track_file(path, all_vessels):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--no-supabase', action='store_true',
+                        help='只寫本地檔案，跳過 Supabase 上傳')
+    args = parser.parse_args()
+
+    # 先取時間戳：本輪之後所有被 upsert 的列 updated_at 都會 >= 這個值，
+    # 早於它的就是已離開保留窗口的船（見 supabase_store._delete_stale）。
+    run_started_at = datetime.now(timezone.utc).isoformat()
+
     base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     # Tier-1 (docs/): frontend fetches it. Tier-2 (data/): pipeline-only, Actions cache.
@@ -92,6 +108,7 @@ def main():
     out_dir = os.path.join(base, 'data', 'vessel_routes')
     os.makedirs(out_dir, exist_ok=True)
     written_mmsis = set()
+    rows = []
 
     for mmsi, info in all_vessels.items():
         track = info['track']
@@ -124,6 +141,8 @@ def main():
         out_path = os.path.join(out_dir, f'{mmsi}.json')
         atomic_write_json(out_path, output, compact=True)
         written_mmsis.add(mmsi)
+        rows.append(supabase_store.route_row(
+            mmsi, info['name'], '', '', info['type'], deduped))
 
     # Clean stale files
     removed = 0
@@ -134,6 +153,29 @@ def main():
             removed += 1
 
     print(f'Wrote {len(written_mmsis)} route files, removed {removed} stale files')
+
+    push_to_supabase(rows, run_started_at, skip=args.no_supabase)
+
+
+def push_to_supabase(rows, run_started_at, skip=False):
+    """把航跡列 upsert 到 Supabase；未設定或失敗時只警告，不中斷 pipeline。
+
+    上傳失敗不該讓整條 AIS pipeline 失敗——本地檔案與 vessel-data 分支仍是
+    可用的後備來源，前端也會自動退回它們。
+    """
+    if skip:
+        print('  ⏭️  --no-supabase：跳過上傳')
+        return
+    if not supabase_store.is_configured(write=True):
+        print('  ⏭️  SUPABASE_URL / SUPABASE_SERVICE_KEY 未設定，跳過上傳')
+        return
+    try:
+        upserted, deleted = supabase_store.upsert_routes(
+            rows, run_started_at=run_started_at)
+        print(f'  ☁️  Supabase vessel_routes: upsert {upserted} 列, '
+              f'清除過期 {deleted} 列')
+    except Exception as e:
+        print(f'  ⚠️ Supabase 上傳失敗（保留本地檔案作為後備）: {e}')
 
 
 if __name__ == '__main__':

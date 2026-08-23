@@ -26,6 +26,7 @@ SRC_DIR = BASE_DIR / "src"
 ROUTES_DIR = DATA_DIR / "vessel_routes"
 
 sys.path.insert(0, str(SRC_DIR))
+import supabase_store  # noqa: E402
 from fetch_ais_data import classify_gov_vessel  # noqa: E402
 from map_basemap import TAIWAN_COASTLINE, draw_cables, draw_land  # noqa: E402,F401
 
@@ -75,17 +76,45 @@ def _short_name(name):
     return s or '?'
 
 
-def find_gov_routes():
-    """掃描所有逐船航跡檔，回傳公務/關注船航跡清單（含 category）。"""
-    vessels = []
+def _iter_local_routes():
+    """逐一 yield 本地航跡檔內容；回傳 (dict, unreadable_count)。"""
     unreadable = 0
     for path in glob.glob(str(ROUTES_DIR / "*.json")):
         try:
             with open(path, 'r', encoding='utf-8') as f:
-                d = json.load(f)
+                yield json.load(f)
         except Exception:
             unreadable += 1
-            continue
+    if unreadable:
+        print(f"⚠️ {unreadable} 個航跡檔無法解析，已略過")
+
+
+def _iter_supabase_routes():
+    """從 Supabase 取公務/科研船航跡。
+
+    fetch_ais_data 已把公務船的 type_name 覆寫為子類別，所以用 type 過濾即可
+    把下載量從「3 萬艘全撈」壓到數十艘。名稱分類仍在下方照跑一次，涵蓋
+    type 未被覆寫的舊資料。
+    """
+    rows = supabase_store.fetch_routes_by_type(CATEGORY_ORDER)
+    print(f"  ☁️  Supabase 取得 {len(rows)} 艘公務/科研船航跡")
+    return rows
+
+
+def _route_source():
+    """優先用本地航跡檔；本地沒有（CI 未取 vessel-data）才走 Supabase。"""
+    if ROUTES_DIR.is_dir() and any(ROUTES_DIR.glob("*.json")):
+        return _iter_local_routes()
+    if supabase_store.is_configured():
+        return _iter_supabase_routes()
+    print("⚠️ 找不到本地航跡檔，且 Supabase 未設定")
+    return []
+
+
+def find_gov_routes():
+    """回傳公務/關注船航跡清單（含 category），來源為本地檔或 Supabase。"""
+    vessels = []
+    for d in _route_source():
         category = classify_gov_vessel(d.get('name', ''))
         if not category:
             continue
@@ -98,8 +127,6 @@ def find_gov_routes():
             'category': category,
             'track': track,
         })
-    if unreadable:
-        print(f"⚠️ {unreadable} 個航跡檔無法解析，已略過")
     # 依類別、再依航跡點數排序
     order = {c: i for i, c in enumerate(CATEGORY_ORDER)}
     vessels.sort(key=lambda v: (order.get(v['category'], 9), -len(v['track'])))

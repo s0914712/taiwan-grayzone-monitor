@@ -63,7 +63,12 @@ const TILEJSON_FIXTURE = {
 const fetchLog = [];
 window.fetch = (url) => {
     fetchLog.push(String(url));
-    if (String(url).includes('data/vessel_routes/412345678.json')) {
+    // Primary route source: Supabase PostgREST returns an array of rows.
+    if (String(url).includes('/rest/v1/vessel_routes') && String(url).includes('mmsi=eq.412345678')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([JSON.parse(JSON.stringify(ROUTE_FIXTURE))]) });
+    }
+    // Legacy vessel-data branch fallback (kept until Supabase is populated).
+    if (String(url).includes('data/vessel_routes/412999999.json')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(JSON.stringify(ROUTE_FIXTURE))) });
     }
     if (String(url).includes('seascape/raster.json')) {
@@ -82,9 +87,14 @@ function loadScript(file, captureVar) {
     if (window.__cap !== undefined) window[captureVar] = window.__cap;
 }
 
+// map-routes.js delegates route loading here; it must be evaluated first.
+loadScript('vessel-routes-source.js', 'VesselRouteSource');
+assert(window.VesselRouteSource, 'VesselRouteSource defined');
+
 // Load every map-related module in the same order as the HTML pages.
 // (Extra files appear automatically once the HTML references them.)
 const indexHtml = fs.readFileSync(path.join(__dirname, '..', 'docs', 'index.html'), 'utf8');
+assert(indexHtml.includes('js/vessel-routes-source.js'), 'index.html loads vessel-routes-source.js');
 const scriptOrder = [...indexHtml.matchAll(/<script[^>]+src="js\/(map[^"]*\.js)"/g)].map(m => m[1]);
 assert(scriptOrder.includes('map.js'), 'index.html loads map.js');
 for (const f of scriptOrder) {
@@ -214,9 +224,20 @@ MM.focusVessel('412345678', result.vessels);
 // ── 8. route loading via stubbed fetch ───────────────────────────────────
 (async () => {
     await MM.loadVesselRoute('412345678');
-    assert(fetchLog.some(u => u.includes('data/vessel_routes/412345678.json')), 'route file fetched');
+    assert(fetchLog.some(u => u.includes('/rest/v1/vessel_routes') && u.includes('mmsi=eq.412345678')),
+        'route fetched from Supabase');
+    // A Supabase hit must not also pull the 30k-file legacy branch.
+    assert(!fetchLog.some(u => u.includes('data/vessel_routes/412345678.json')),
+        'legacy branch not touched when Supabase answers');
     const polylines = countLayers(l => l instanceof window.L.Polyline && !(l instanceof window.L.Polygon));
     assert(polylines >= 1, 'route polyline drawn, got ' + polylines);
+
+    // Supabase miss → legacy vessel-data branch still serves the route.
+    await MM.loadVesselRoute('412999999');
+    assert(fetchLog.some(u => u.includes('data/vessel_routes/412999999.json')),
+        'falls back to the legacy vessel-data branch');
+    assert(countLayers(l => l instanceof window.L.Polyline && !(l instanceof window.L.Polygon)) >= 1,
+        'fallback route polyline drawn');
 
     MM.clearVesselRoute();
     const polylinesAfterClear = countLayers(l => l instanceof window.L.Polyline && !(l instanceof window.L.Polygon));

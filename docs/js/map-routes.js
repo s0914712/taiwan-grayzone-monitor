@@ -9,14 +9,9 @@
 var MapRoutesFactory = function(map, layers) {
     'use strict';
 
-    // Per-vessel route files live on the single-commit vessel-data branch
-    // (outside the Pages artifact — 27k files made deployments time out — and
-    // outside main history so they don't bloat the repo), so on GitHub Pages
-    // they are fetched via raw.githubusercontent.com. Elsewhere (local dev
-    // server at the repo root, tests) use the relative repo path.
-    var ROUTE_FILE_BASE = /\.github\.io$/.test(location.hostname)
-        ? 'https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/vessel-data/data/vessel_routes/'
-        : '../data/vessel_routes/';
+    // Per-vessel routes are far too many (~30k) for the Pages artifact, so
+    // they are served from Supabase — see js/vessel-routes-source.js, which
+    // also keeps the legacy vessel-data branch as a fallback.
 
     /**
      * Show/hide route loading spinner
@@ -262,11 +257,10 @@ var MapRoutesFactory = function(map, layers) {
             var data = null;
             var source = 'pre';
 
-            // Try pre-generated route file first
-            var res = await fetch(ROUTE_FILE_BASE + mmsi + '.json?' + Date.now());
-            if (res.ok) {
-                data = await res.json();
-                if (!data.track || data.track.length === 0) data = null;
+            // Try the pre-generated per-vessel route (Supabase, then the
+            // legacy vessel-data branch)
+            if (typeof VesselRouteSource !== 'undefined') {
+                data = await VesselRouteSource.load(mmsi);
             }
 
             // Fallback: extract from ais_track_history.json
