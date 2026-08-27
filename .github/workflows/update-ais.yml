@@ -96,32 +96,61 @@ jobs:
           git push
 
       # 永久歸檔：主檔 append-and-trim（14/28 天）會丟棄舊 snapshot。此步把 fetch 腳本
-      # 寫出的本輪 delta（單行 JSONL）append 進 ais-archive 分支的月度檔，累積全部歷史，
-      # 供離線（本機）航跡預測模型訓練。與 vessel-data 不同：這裡是一般 push（累積），
-      # 不可 force。ais-archive 不進 Pages artifact；月度檔下載完可自行從分支刪除。
+      # 寫出的本輪 delta（單行 JSONL）存進 ais-archive 分支，累積全部歷史，供離線
+      # （本機）航跡預測模型訓練。與 vessel-data 不同：這裡是一般 push（累積），不可
+      # force。ais-archive 不進 Pages artifact。
+      #
+      # 佈局：archive/<YYYY-MM>/<DD>/ais_{track,commercial}_<YYYYMMDDTHHMMSSZ>.jsonl.gz
+      # ——每輪一個新檔，不再 append 進月度單一大檔。舊做法在 2026-08 撞牆：
+      # ais_commercial_2026-08.jsonl 已累積到 99.95 MiB，下一次 append 就超過 GitHub
+      # 的 100 MiB 單檔硬上限，push 被 GH001 擋掉，且之後每一輪都會再撞一次（整個月
+      # 的歸檔從此全滅）。每輪一檔後單檔只有幾十 KB，永遠碰不到上限；clone 也改成
+      # blob:none + sparse（只取當日目錄），不必再下載既有歸檔（舊做法每輪拉 ~180MB）。
+      #
+      # 本機重組（檔名即時序，glob 展開就是正確順序）：
+      #   cat archive/2026-08/*/ais_track_*.jsonl.gz | gunzip > ais_track_2026-08.jsonl
+      # 既有的 archive/ais_*_2026-0{7,8}.jsonl 月度檔保持原樣不動，照舊可直接下載。
       - name: Append snapshot to ais-archive branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          [ -f data/track_delta.jsonl ] || { echo "無 delta，跳過"; exit 0; }
-          MONTH=$(date -u +%Y-%m)
+          if [ ! -s data/track_delta.jsonl ] && [ ! -s data/track_commercial_delta.jsonl ]; then
+            echo "無 delta，跳過"; exit 0
+          fi
+          DAY_DIR="archive/$(date -u +%Y-%m)/$(date -u +%d)"
+          STAMP=$(date -u +%Y%m%dT%H%M%SZ)
           TMP=$(mktemp -d)
           URL="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
-          # 淺 clone 既有分支；不存在則初始化一個新的 orphan 分支
-          if ! git clone --depth 1 --branch ais-archive "$URL" "$TMP" 2>/dev/null; then
+          # 淺 clone 既有分支（不取 blob、只 checkout 當日目錄）；不存在則初始化 orphan 分支
+          if git clone --depth 1 --filter=blob:none --sparse --branch ais-archive "$URL" "$TMP" 2>/dev/null; then
+            # --no-cone：cone 模式連祖先目錄的檔案一起 checkout，也就是 archive/ 根
+            # 目錄那幾個舊月度大檔；非 cone 的路徑樣式才能只取當日目錄
+            git -C "$TMP" sparse-checkout set --no-cone "/$DAY_DIR/"
+          else
             git init -q -b ais-archive "$TMP"
             git -C "$TMP" remote add origin "$URL"
           fi
-          mkdir -p "$TMP/archive"
-          cat data/track_delta.jsonl >> "$TMP/archive/ais_track_${MONTH}.jsonl"
-          [ -f data/track_commercial_delta.jsonl ] && \
-            cat data/track_commercial_delta.jsonl >> "$TMP/archive/ais_commercial_${MONTH}.jsonl" || true
+          mkdir -p "$TMP/$DAY_DIR"
+          if [ -s data/track_delta.jsonl ]; then
+            gzip -c data/track_delta.jsonl > "$TMP/$DAY_DIR/ais_track_${STAMP}.jsonl.gz"
+          fi
+          if [ -s data/track_commercial_delta.jsonl ]; then
+            gzip -c data/track_commercial_delta.jsonl > "$TMP/$DAY_DIR/ais_commercial_${STAMP}.jsonl.gz"
+          fi
           git -C "$TMP" config user.email "action@github.com"
           git -C "$TMP" config user.name "GitHub Action"
-          git -C "$TMP" add archive/
+          git -C "$TMP" add "$DAY_DIR"
           git -C "$TMP" commit -qm "archive snapshot $(date -u +'%Y-%m-%d %H:%M') UTC" || { echo "無變更"; exit 0; }
-          git -C "$TMP" push origin ais-archive
+          # 併發組已排除同 repo 互撞，但仍留重試：被搶先時 rebase 後再推
+          for i in 1 2 3; do
+            if git -C "$TMP" push origin ais-archive; then exit 0; fi
+            echo "push 失敗（第 $i 次），rebase 後重試"
+            git -C "$TMP" pull --rebase origin ais-archive || true
+            sleep $((i * 5))
+          done
+          echo "::error::ais-archive push 連續 3 次失敗"
+          exit 1
 
       # 航跡檔不進 main（27k 檔的歷史讓 repo 膨脹到 200MB+）。航跡的正式存放
       # 位置已改為 Supabase vessel_routes（見 src/supabase_store.py）；本步驟是
