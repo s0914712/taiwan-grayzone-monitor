@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-28T10:55:22.208062+00:00",
+  "updated_at": "2026-08-28T21:39:37.165842+00:00",
   "methodology": "Gov Vessel Formation Detection",
   "criteria": {
     "formation_radius_km": 10.0,
@@ -19,17 +19,77 @@
     ]
   },
   "summary": {
-    "total_formations": 4,
-    "active_formations": 0,
+    "total_formations": 5,
+    "active_formations": 1,
     "escorted_research": 2,
     "vessels_involved": 7,
     "severity_distribution": {
       "high": 1,
       "medium": 1,
-      "low": 2
+      "low": 3
     }
   },
-  "active_formations": [],
+  "active_formations": [
+    {
+      "id": "GF-20260828T0501-413875037-413875044",
+      "first_seen": "2026-08-28T05:01:48.482487+00:00",
+      "last_seen": "2026-08-28T11:34:06.990542+00:00",
+      "duration_hours": 6.5,
+      "observations": 3,
+      "vessel_count": 2,
+      "max_vessels": 2,
+      "members": [
+        {
+          "mmsi": "413875037",
+          "name": "CHINACOASTGUARD2305",
+          "category": "coastguard",
+          "observations": 3,
+          "last_lat": 25.7577,
+          "last_lon": 120.36907
+        },
+        {
+          "mmsi": "413875044",
+          "name": "CHINACOASTGUARD2308",
+          "category": "coastguard",
+          "observations": 3,
+          "last_lat": 25.72657,
+          "last_lon": 120.35212
+        }
+      ],
+      "categories": {
+        "coastguard": 2
+      },
+      "escorted_research": false,
+      "mean_radius_km": 5.28,
+      "max_radius_km": 7.67,
+      "centroid_displacement_km": 81.51,
+      "median_speed_kn": 6.4,
+      "centroid_track": [
+        {
+          "t": "2026-08-28T05:01:48.482487+00:00",
+          "lat": 25.15635,
+          "lon": 119.87246,
+          "n": 2
+        },
+        {
+          "t": "2026-08-28T10:54:45.526448+00:00",
+          "lat": 25.68085,
+          "lon": 120.31547,
+          "n": 2
+        },
+        {
+          "t": "2026-08-28T11:34:06.990542+00:00",
+          "lat": 25.74213,
+          "lon": 120.36059,
+          "n": 2
+        }
+      ],
+      "last_lat": 25.74213,
+      "last_lon": 120.36059,
+      "severity": "low",
+      "active": true
+    }
+  ],
   "history": [
     {
       "id": "GF-20260826T0206-413875037-413875044",
@@ -420,20 +480,22 @@
   ],
   "vessel_index": {
     "413875037": {
-      "count": 1,
+      "count": 2,
       "max_duration_hours": 16.7,
       "escorted_research": false,
       "severity": "low",
       "formation_ids": [
+        "GF-20260828T0501-413875037-413875044",
         "GF-20260826T0206-413875037-413875044"
       ]
     },
     "413875044": {
-      "count": 1,
+      "count": 2,
       "max_duration_hours": 16.7,
       "escorted_research": false,
       "severity": "low",
       "formation_ids": [
+        "GF-20260828T0501-413875037-413875044",
         "GF-20260826T0206-413875037-413875044"
       ]
     },
