@@ -22,9 +22,15 @@ ping 過去可信得多（單點量測分不出「島斷了」還是「runner �
 
 Region 代碼由 `/entities/query` 動態解析（金門 4209、連江 4210、澎湖 …），不寫死。
 
+**全台 22 縣市**（`COUNTIES`）同樣有 region 級訊號，因此除了三座離島的完整序列，
+本檔另外輸出一份精簡的 `counties`，給前端的縣市色塊地圖用。Cloudflare Radar 的
+縣市級指標（`fetch_radar_counties.py`）要 token 且不保證每個縣市都有樣本；IODA
+不需要憑證，是縣市粒度的保底來源。三座離島不重抓——直接沿用上面已經算好的序列。
+
 用法:
   python3 src/fetch_ioda.py                  # 抓 28 天、偵測、寫檔
   python3 src/fetch_ioda.py --days 14
+  python3 src/fetch_ioda.py --no-counties    # 只做三離島（舊行為）
   python3 src/fetch_ioda.py --dump-raw       # 印出原始回應（除錯用）
 
 輸出: data/ioda.json（由 workflow 複製到 docs/）
@@ -32,6 +38,7 @@ Region 代碼由 `/entities/query` 動態解析（金門 4209、連江 4210、�
 import argparse
 import json
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -45,9 +52,11 @@ sys.path.insert(0, str(SRC_DIR))
 
 from anomaly_detect import (  # noqa: E402
     SERIES_RETAIN_DAYS,
+    _parse_ts,
     analyze_values,
     trim_series_for_output,
 )
+from io_utils import atomic_write_json, load_json  # noqa: E402
 
 IODA_API = "https://api.ioda.inetintel.cc.gatech.edu/v2"
 REQUEST_TIMEOUT = 45
@@ -56,12 +65,13 @@ DEFAULT_DAYS = 28
 # 監測的離島。code 留 None 表示啟動時以 search 動態解析（已知：金門 4209、
 # 連江 4210），這樣 IODA 若調整代碼也不會整支壞掉。
 ISLANDS = [
-    {"id": "kinmen", "search": "Kinmen", "label_zh": "金門", "label_en": "Kinmen",
-     "lat": 24.44, "lon": 118.32},
-    {"id": "lienchiang", "search": "Lienchiang", "label_zh": "馬祖（連江）",
-     "label_en": "Matsu (Lienchiang)", "lat": 26.16, "lon": 119.95},
-    {"id": "penghu", "search": "Penghu", "label_zh": "澎湖", "label_en": "Penghu",
-     "lat": 23.57, "lon": 119.62},
+    {"id": "kinmen", "iso": "TW-KIN", "search": "Kinmen", "label_zh": "金門",
+     "label_en": "Kinmen", "lat": 24.44, "lon": 118.32},
+    {"id": "lienchiang", "iso": "TW-LIE", "search": "Lienchiang",
+     "label_zh": "馬祖（連江）", "label_en": "Matsu (Lienchiang)",
+     "lat": 26.16, "lon": 119.95},
+    {"id": "penghu", "iso": "TW-PEN", "search": "Penghu", "label_zh": "澎湖",
+     "label_en": "Penghu", "lat": 23.57, "lon": 119.62},
 ]
 
 # 三種獨立訊號。全部是「越低越糟」，所以 direction 一律 drop。
@@ -79,6 +89,54 @@ DATASOURCES = [
      "label_en": "Darknet background traffic", "min_level": 20},
 ]
 
+# ── 全台 22 縣市 ───────────────────────────────────────────────────────────
+# IODA 的 region entity 用英文名查，而同一個縣市可能有好幾種寫法（"Taipei" /
+# "Taipei City"、"New Taipei" / "Taipei County"），因此每個縣市給一串候選名，
+# 依序試到查得到為止。`iso` 是對到 docs/tw_counties.geojson 的鍵（同一份 ISO
+# 3166-2 代碼），前端才能把訊號畫到正確的色塊上。
+# lat/lon 取自縣市界圖最大島的形心，只作地圖聚焦與離島船隻關聯用。
+COUNTIES = [
+    {"iso": "TW-CHA", "search": ["Changhua", "Changhua County"], "label_zh": "彰化縣", "label_en": "Changhua", "lat": 23.9634, "lon": 120.5193},
+    {"iso": "TW-CYI", "search": ["Chiayi City"], "label_zh": "嘉義市", "label_en": "Chiayi City", "lat": 23.4825, "lon": 120.4442},
+    {"iso": "TW-CYQ", "search": ["Chiayi County", "Chiayi"], "label_zh": "嘉義縣", "label_en": "Chiayi County", "lat": 23.4452, "lon": 120.4981},
+    {"iso": "TW-HSQ", "search": ["Hsinchu County", "Hsinchu"], "label_zh": "新竹縣", "label_en": "Hsinchu County", "lat": 24.6936, "lon": 121.1299},
+    {"iso": "TW-HSZ", "search": ["Hsinchu City"], "label_zh": "新竹市", "label_en": "Hsinchu City", "lat": 24.7794, "lon": 120.9583},
+    {"iso": "TW-HUA", "search": ["Hualien", "Hualien County"], "label_zh": "花蓮縣", "label_en": "Hualien", "lat": 23.8006, "lon": 121.3766},
+    {"iso": "TW-ILA", "search": ["Yilan", "Ilan", "Yilan County"], "label_zh": "宜蘭縣", "label_en": "Yilan", "lat": 24.5995, "lon": 121.6504},
+    {"iso": "TW-KEE", "search": ["Keelung", "Keelung City", "Chilung"], "label_zh": "基隆市", "label_en": "Keelung", "lat": 25.1248, "lon": 121.7334},
+    {"iso": "TW-KHH", "search": ["Kaohsiung", "Kaohsiung City"], "label_zh": "高雄市", "label_en": "Kaohsiung", "lat": 22.9612, "lon": 120.587},
+    {"iso": "TW-KIN", "search": ["Kinmen", "Quemoy"], "label_zh": "金門縣", "label_en": "Kinmen", "lat": 24.4501, "lon": 118.3874},
+    {"iso": "TW-LIE", "search": ["Lienchiang", "Lienkiang", "Matsu"], "label_zh": "連江縣（馬祖）", "label_en": "Lienchiang (Matsu)", "lat": 26.1567, "lon": 119.934},
+    {"iso": "TW-MIA", "search": ["Miaoli", "Miaoli County"], "label_zh": "苗栗縣", "label_en": "Miaoli", "lat": 24.4992, "lon": 120.9904},
+    {"iso": "TW-NAN", "search": ["Nantou", "Nantou County"], "label_zh": "南投縣", "label_en": "Nantou", "lat": 23.8565, "lon": 120.9472},
+    {"iso": "TW-NWT", "search": ["New Taipei", "New Taipei City", "Taipei County"], "label_zh": "新北市", "label_en": "New Taipei", "lat": 25.0213, "lon": 121.5742},
+    {"iso": "TW-PEN", "search": ["Penghu", "Pescadores"], "label_zh": "澎湖縣", "label_en": "Penghu", "lat": 23.5583, "lon": 119.5999},
+    {"iso": "TW-PIF", "search": ["Pingtung", "Pingtung County"], "label_zh": "屏東縣", "label_en": "Pingtung", "lat": 22.3942, "lon": 120.7226},
+    {"iso": "TW-TAO", "search": ["Taoyuan", "Taoyuan City", "Taoyuan County"], "label_zh": "桃園市", "label_en": "Taoyuan", "lat": 24.8935, "lon": 121.2951},
+    {"iso": "TW-TNN", "search": ["Tainan", "Tainan City"], "label_zh": "臺南市", "label_en": "Tainan", "lat": 23.1696, "lon": 120.3092},
+    {"iso": "TW-TPE", "search": ["Taipei City", "Taipei"], "label_zh": "臺北市", "label_en": "Taipei", "lat": 25.0727, "lon": 121.5612},
+    {"iso": "TW-TTT", "search": ["Taitung", "Taitung County"], "label_zh": "臺東縣", "label_en": "Taitung", "lat": 22.907, "lon": 121.0713},
+    {"iso": "TW-TXG", "search": ["Taichung", "Taichung City"], "label_zh": "臺中市", "label_en": "Taichung", "lat": 24.2541, "lon": 120.9511},
+    {"iso": "TW-YUN", "search": ["Yunlin", "Yunlin County"], "label_zh": "雲林縣", "label_en": "Yunlin", "lat": 23.6517, "lon": 120.4211},
+]
+
+# region 代碼查詢一次就快取起來：22 縣市 × 每 2 小時重查是白打的請求，
+# 而 IODA 的 region 代碼幾乎不會變。
+REGION_CODE_CACHE = DATA_DIR / "ioda_region_codes.json"
+REGION_CACHE_DAYS = 30
+
+# 縣市地圖只需要縮圖，不需要逐點：3 小時一格 × 7 天 ≈ 56 點／縣市。
+# （這個檔每 2 小時 commit 一次，22 縣市 × 3 訊號的完整序列會把 repo 撐大。）
+COUNTY_BUCKET_HOURS = 3
+COUNTY_RETAIN_DAYS = 7
+# 色階用的主訊號優先序：主動探測最貼近「使用者連得上嗎」
+COUNTY_PRIMARY_ORDER = ["ping-slash24", "bgp", "merit-nt"]
+# 「目前仍異常」的認定：最後一筆異常結束於這麼多小時內
+ONGOING_WINDOW_HOURS = 6
+# 併發抓取的執行緒數。22 縣市 × 3 訊號 = 66 次請求，循序跑會讓這個 job 拖很久；
+# IODA 是公共服務，開太多併發不禮貌也容易被限速。
+FETCH_WORKERS = 4
+
 # 離島異常 × 船隻關聯：只看該島周邊這個半徑內的海纜旁滯留船隻。
 # 全台範圍找出來的船跟馬祖斷線八竿子打不著，收窄才有判讀價值。
 ISLAND_RADIUS_KM = 120.0
@@ -90,12 +148,15 @@ def _ts(dt):
         else int(dt.timestamp())
 
 
-def resolve_region_code(search, session=None, dump=False):
+def resolve_region_code(search, session=None, dump=False, prefer=None):
     """以名稱查 IODA 的 region 代碼。找不到回 None。
 
     回應形狀（實測）：
         {"data": [{"code": "4209", "name": "Kinmen", "type": "region",
                    "attrs": {"country_code": "TW", ...}}]}
+
+    `prefer` 給名稱完全相符時的優先權：搜尋「Chiayi」會同時撈到嘉義市與嘉義縣，
+    只取第一筆會把兩個縣市畫成同一個。有 prefer 時先找完全相符的名稱。
     """
     session = session or requests
     try:
@@ -115,6 +176,7 @@ def resolve_region_code(search, session=None, dump=False):
     if dump:
         print(json.dumps(payload, ensure_ascii=False)[:800])
 
+    candidates = []
     for item in payload.get("data") or []:
         attrs = item.get("attrs") or {}
         # 同名地區可能出現在別的國家，必須確認是台灣的
@@ -122,9 +184,16 @@ def resolve_region_code(search, session=None, dump=False):
             continue
         code = item.get("code")
         if code:
-            return str(code)
-    print(f"⚠️ [{search}] IODA 沒有對應的 region entity")
-    return None
+            candidates.append((str(item.get("name") or ""), str(code)))
+    if not candidates:
+        print(f"⚠️ [{search}] IODA 沒有對應的 region entity")
+        return None
+    if prefer:
+        wanted = {p.strip().lower() for p in prefer}
+        for name, code in candidates:
+            if name.strip().lower() in wanted:
+                return code
+    return candidates[0][1]
 
 
 def parse_signal_payload(payload):
@@ -260,6 +329,190 @@ def correlate_island_vessels(island, events, track_entries, cable_index):
                                   window_hours=CORRELATE_WINDOW_HOURS)
 
 
+# ── 縣市級（22 縣市精簡輸出）────────────────────────────────────────────────
+
+def resolve_county_codes(session=None, refresh=False,
+                         cache_path=REGION_CODE_CACHE, counties=None, dump=False):
+    """ISO → IODA region code。優先讀快取（30 天），過期才重查。
+
+    查不到的縣市不會覆蓋掉快取裡已知的值——IODA 的搜尋偶爾會抽風，
+    寧可用上一次查到的代碼，也不要讓整個縣市在地圖上憑空消失。
+    """
+    counties = counties or COUNTIES
+    cache = load_json(cache_path, {}, label="IODA region 代碼快取",
+                      expect_type=dict)
+    known = dict(cache.get("codes") or {})
+    resolved_at = _parse_ts(cache.get("resolved_at"))
+    fresh = resolved_at and (datetime.now(timezone.utc) - resolved_at
+                             < timedelta(days=REGION_CACHE_DAYS))
+    if known and fresh and not refresh:
+        print(f"🗂️  region 代碼快取命中（{len(known)} 縣市）")
+        return known
+
+    for county in counties:
+        for name in county["search"]:
+            code = resolve_region_code(name, session, dump=dump,
+                                       prefer=county["search"])
+            if code:
+                known[county["iso"]] = code
+                break
+    atomic_write_json(cache_path, {
+        "resolved_at": datetime.now(timezone.utc).isoformat(),
+        "codes": known,
+    })
+    print(f"🗂️  解析出 {len(known)}/{len(counties)} 個縣市的 region 代碼")
+    return known
+
+
+def downsample_county_series(timestamps, values,
+                             bucket_hours=COUNTY_BUCKET_HOURS,
+                             retain_days=COUNTY_RETAIN_DAYS):
+    """逐時序列 → 每 bucket_hours 一格的中位數（只留最近 retain_days）。
+
+    偵測仍吃完整序列，壓的只是寫進 JSON 給前端畫縮圖的那份。中位數而非平均：
+    一個量測缺口造成的 0 不該把整格拉低。
+    """
+    keep = int(retain_days * 24)
+    timestamps = list(timestamps)[-keep:]
+    values = list(values)[-keep:]
+    out_ts, out_vals = [], []
+    for i in range(0, len(timestamps), bucket_hours):
+        chunk = [v for v in values[i:i + bucket_hours] if v is not None]
+        out_ts.append(timestamps[i])
+        out_vals.append(round(sorted(chunk)[len(chunk) // 2], 2) if chunk else None)
+    return out_ts, out_vals
+
+
+def classify_county_level(series_list, now=None):
+    """縣市色階：unknown（無訊號）／alert（仍在進行）／watch（近期有）／normal。"""
+    if not series_list:
+        return "unknown"
+    now = now or datetime.now(timezone.utc)
+    events = [e for s in series_list for e in (s.get("anomalies") or [])]
+    if not events:
+        return "normal"
+    for event in events:
+        end = _parse_ts(event.get("end") or event.get("onset"))
+        if end and (now - end) <= timedelta(hours=ONGOING_WINDOW_HOURS):
+            return "alert"
+    return "watch"
+
+
+def _latest_value(series):
+    for v in reversed(series.get("values") or []):
+        if v is not None:
+            return v
+    return None
+
+
+def compact_county_record(county, code, series_list, now=None):
+    """縣市的精簡輸出（純函式）。完整序列只給三離島，其餘只留縮圖與事件摘要。"""
+    events = [e for s in series_list for e in (s.get("anomalies") or [])]
+    events.sort(key=lambda e: e.get("onset") or "", reverse=True)
+    primary = None
+    for wanted in COUNTY_PRIMARY_ORDER:
+        primary = next((s for s in series_list if s.get("datasource") == wanted),
+                       None)
+        if primary:
+            break
+    if primary is None and series_list:
+        primary = series_list[0]
+
+    record = {
+        "iso": county["iso"],
+        "label_zh": county["label_zh"],
+        "label_en": county["label_en"],
+        "lat": county["lat"],
+        "lon": county["lon"],
+        "region_code": code,
+        "status": "available" if series_list else "unavailable",
+        "level": classify_county_level(series_list, now=now),
+        "anomaly_count": len(events),
+        "max_corroborating_sources": max(
+            (e.get("corroborating_sources") or 1 for e in events), default=0),
+        "signals": [{
+            "datasource": s.get("datasource"),
+            "label_zh": s.get("label_zh"),
+            "label_en": s.get("label_en"),
+            "points": s.get("points"),
+            "baseline_coverage": s.get("baseline_coverage"),
+            "anomaly_count": len(s.get("anomalies") or []),
+            "latest": _latest_value(s),
+        } for s in series_list],
+        "latest_anomaly": ({
+            "onset": events[0].get("onset"), "end": events[0].get("end"),
+            "severity": events[0].get("severity"),
+            "max_deviation_pct": events[0].get("max_deviation_pct"),
+            "corroborating_sources": events[0].get("corroborating_sources"),
+        } if events else None),
+    }
+    if primary:
+        ts, vals = downsample_county_series(primary.get("timestamps") or [],
+                                            primary.get("values") or [])
+        record["primary"] = {"datasource": primary.get("datasource"),
+                             "timestamps": ts, "values": vals,
+                             "bucket_hours": COUNTY_BUCKET_HOURS}
+    return record
+
+
+def fetch_county_series(county, code, start, end, dump=False):
+    """抓一個縣市的三種訊號並跑偵測。回傳已標註互相印證的 series list。
+
+    每個縣市自己開一個 requests.Session：這支在執行緒池裡跑，
+    共用一個 session 不值得為了省幾個 TCP 連線去賭 thread-safety。
+    """
+    session = requests.Session()
+    series = []
+    for ds in DATASOURCES:
+        sig = fetch_signal(code, ds["id"], start, end, session, dump=dump)
+        if sig is None:
+            continue
+        out = analyze_values(sig["timestamps"], sig["values"], direction="drop",
+                             min_baseline_level=ds.get("min_level", 0),
+                             resample=True)
+        out.update({"datasource": ds["id"], "label_zh": ds["label_zh"],
+                    "label_en": ds["label_en"]})
+        series.append(out)
+    if series:
+        annotate_corroboration(series)
+    return series
+
+
+def collect_counties(codes, start, end, island_series_by_iso=None,
+                     workers=FETCH_WORKERS, counties=None, dump=False):
+    """22 縣市的精簡記錄。三離島直接沿用已算好的序列，不重打 API。"""
+    counties = counties or COUNTIES
+    island_series_by_iso = island_series_by_iso or {}
+    todo = []
+    records = {}
+    for county in counties:
+        iso = county["iso"]
+        code = codes.get(iso)
+        if iso in island_series_by_iso:
+            records[iso] = compact_county_record(
+                county, code, island_series_by_iso[iso])
+            continue
+        if not code:
+            records[iso] = {**compact_county_record(county, None, []),
+                            "error_reason": "region_not_found"}
+            continue
+        todo.append((county, code))
+
+    if todo:
+        with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+            results = pool.map(
+                lambda item: (item[0], item[1],
+                              fetch_county_series(item[0], item[1], start, end,
+                                                  dump=dump)),
+                todo)
+            for county, code, series in results:
+                record = compact_county_record(county, code, series)
+                if not series:
+                    record["error_reason"] = "signals_unavailable"
+                records[county["iso"]] = record
+    return [records[c["iso"]] for c in counties]
+
+
 def build_summary(islands):
     events = [(i["id"], s["datasource"], e)
               for i in islands for s in i["series"] for e in s.get("anomalies", [])]
@@ -290,11 +543,32 @@ def build_summary(islands):
     }
 
 
+def build_county_summary(counties):
+    """縣市層的摘要。`by_level` 直接對應地圖色階，前端不必自己數。"""
+    by_level = {}
+    for c in counties:
+        by_level[c["level"]] = by_level.get(c["level"], 0) + 1
+    return {
+        "counties_total": len(counties),
+        "counties_monitored": sum(1 for c in counties
+                                  if c["status"] == "available"),
+        "by_level": by_level,
+        "anomaly_count": sum(c["anomaly_count"] for c in counties),
+        "counties_with_ongoing": sum(1 for c in counties if c["level"] == "alert"),
+    }
+
+
 def main():
     ap = argparse.ArgumentParser(description="IODA 離島網路可達性監測")
     ap.add_argument("--days", type=int, default=DEFAULT_DAYS)
     ap.add_argument("--retain-days", type=int, default=SERIES_RETAIN_DAYS)
     ap.add_argument("--no-correlate", action="store_true")
+    ap.add_argument("--no-counties", action="store_true",
+                    help="只做三離島（舊行為），不抓 22 縣市")
+    ap.add_argument("--refresh-region-codes", action="store_true",
+                    help="忽略快取，重新向 IODA 解析縣市 region 代碼")
+    ap.add_argument("--workers", type=int, default=FETCH_WORKERS,
+                    help=f"縣市抓取的併發數（預設 {FETCH_WORKERS}）")
     ap.add_argument("--dump-raw", action="store_true", help="印出原始 API 回應")
     ap.add_argument("-o", "--output", default=str(DATA_DIR / "ioda.json"))
     args = ap.parse_args()
@@ -360,16 +634,37 @@ def main():
         except Exception as e:
             print(f"⚠️ 船隻關聯失敗（不影響可達性偵測）: {e}")
 
+    # 縣市層要在 trim 之前算：trim 會把序列砍到 14 天並降精度，
+    # 縣市縮圖自己有一套降採樣，吃完整序列才不會被砍兩次。
+    counties = []
+    if not args.no_counties:
+        print(f"🗺️  抓取全台 {len(COUNTIES)} 縣市的可達性訊號 …")
+        island_series_by_iso = {i["iso"]: i["series"] for i in islands
+                                if i.get("iso") and i.get("series")}
+        codes = resolve_county_codes(session, refresh=args.refresh_region_codes,
+                                     dump=args.dump_raw)
+        counties = collect_counties(codes, start, end,
+                                    island_series_by_iso=island_series_by_iso,
+                                    workers=args.workers, dump=args.dump_raw)
+        monitored = sum(1 for c in counties if c["status"] == "available")
+        print(f"   ↳ {monitored}/{len(counties)} 個縣市有訊號｜"
+              f"異常 {sum(c['anomaly_count'] for c in counties)} 件")
+
     for island in islands:
         island["series"] = trim_series_for_output(island["series"],
                                                   retain_days=args.retain_days)
+
+    summary = build_summary(islands)
+    if counties:
+        summary["counties"] = build_county_summary(counties)
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "window_days": args.days,
         "source": "IODA (Georgia Tech) — BGP / active probing / darknet telescope",
         "islands": islands,
-        "summary": build_summary(islands),
+        "counties": counties,
+        "summary": summary,
     }
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)

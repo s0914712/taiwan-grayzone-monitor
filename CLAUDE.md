@@ -12,7 +12,8 @@ Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates A
 - `src/` — Python data pipeline scripts (fetch, analyze, generate)
 - `data/` — Working/intermediate data (not in the Pages artifact). `data/vessel_routes/{mmsi}.json` is gitignored on main; the canonical store is the **Supabase `vessel_routes` table** (one row per MMSI, `track` as jsonb — `src/supabase_store.py`), which the frontend point-queries by MMSI. 30k route files in main history bloated the repo to 200MB+ and made Pages deployments time out; the older workaround — a single-commit **`vessel-data` branch** force-pushed each run — is still the automatic fallback when `SUPABASE_SERVICE_KEY` is unset
 - **`ais-archive` branch** — permanent AIS snapshot archive for offline track-prediction training (the main tier-1/tier-2 files are append-and-trim, 14/28 days, so they drop old snapshots). `update-ais.yml` writes each run's delta as a **new gzipped file** under `archive/<YYYY-MM>/<DD>/ais_{track,commercial}_<YYYYMMDDTHHMMSSZ>.jsonl.gz`. It used to append into one monthly file; `ais_commercial_2026-08.jsonl` reached 99.95 MiB and the next append blew GitHub's 100 MiB blob limit — GH001, push rejected, and every later run of the month would have hit the same wall. One file per run never approaches the limit, and the step clones with `--filter=blob:none --sparse --no-cone` (current day's directory only) so it no longer downloads ~180MB of existing archive each run. The pre-existing `archive/ais_*_2026-0{7,8}.jsonl` monthly files are left frozen in place. Reassemble locally with `cat archive/2026-08/*/ais_track_*.jsonl.gz | gunzip > ais_track_2026-08.jsonl` (filenames sort chronologically). Not in the Pages artifact
-- `.github/workflows/` — 6 CI workflows (AIS hourly daytime / 2h overnight, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, **網路異常掃描 every 2h（Cloudflare Radar 國家級 + IODA 離島縣市級）**, darkship SAR forensics daily 22:00 UTC, Threads weekly, LINE daily push 00:00 UTC = 08:00 TW). All data workflows share the `data-pipeline` concurrency group — they commit to main and would otherwise race on rebase
+- `.github/workflows/` — 7 CI workflows (AIS hourly daytime / 2h overnight, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, **網路異常掃描 every 2h（Cloudflare Radar 國家級 + 縣市級 ADM1 + IODA 全台 22 縣市可達性）**, `radar-region-probe.yml` 手動觸發的 Radar 縣市粒度能力實測, darkship SAR forensics daily 22:00 UTC, Threads weekly, LINE daily push 00:00 UTC = 08:00 TW). All data workflows share the `data-pipeline` concurrency group — they commit to main and would otherwise race on rebase
+- `docs/tw_counties.geojson` — 22 縣市界（geoBoundaries gbOpen TWN ADM1，CC BY 4.0），由 `src/build_tw_counties.py` 精簡後**提交**的靜態資產（81KB）。縣市界幾年才變一次，不進 CI 定期執行。**不要改用 Natural Earth 的 admin-1**：它只有 21 個縣市、缺連江（馬祖），而馬祖正是本專案最關鍵的一塊
 - `chips/` + `reports/` — darkship SAR forensics outputs (chip PNGs, `chips/results.json` cumulative log, daily Markdown reports), committed by `darkship-cron.yml`; **not** in the Pages artifact but public in the repo — a deliberate trade-off chosen when the cron was set up. The public daily report page (`docs/reports/<date>.html`, `generate_report.py`) surfaces this work: SAR×AIS 比對成效 funnel + the latest run's chip images (520px thumbnails in `docs/reports/chips/`, 14-day mtime rotation, `<img onerror>` falls back to the raw.githubusercontent original) with verdict badges
 
 ## Tech Stack
@@ -32,7 +33,8 @@ GitHub Actions → src/fetch_ais_data.py (AIS via SOCKS5 proxy)
               → src/exercise_prediction.py (PLA sortie correlation)
               → src/extract_all_routes.py (per-vessel route JSONs → Supabase vessel_routes)
               → src/fetch_cloudflare_radar.py (網路流量異常 × 海纜旁滯留船隻)
-              → src/fetch_ioda.py (金門/馬祖/澎湖離島可達性，三來源互相印證)
+              → src/fetch_radar_counties.py (縣市級 ADM1 網速／流量指數，geoId 篩選)
+              → src/fetch_ioda.py (全台 22 縣市可達性，三來源互相印證；三離島留完整序列)
               → src/generate_dashboard.py (consolidate → docs/data.json)
               → GitHub Pages deploy
 ```
@@ -306,6 +308,9 @@ installed).
 python3 src/fetch_ais_data.py          # Fetch AIS data + update profiles + save tracks
 python3 src/fetch_gfw_data.py          # Fetch GFW SAR data
 python3 src/fetch_cloudflare_radar.py  # 網路流量異常偵測 + 海纜旁滯留船隻關聯
+python3 src/fetch_radar_counties.py    # 縣市（ADM1）級網速／流量指數
+python3 src/probe_radar_regions.py     # Radar 縣市粒度能力實測（哪些端點吃 geoId）
+python3 src/build_tw_counties.py       # 產生 docs/tw_counties.geojson（22 縣市界，一次性）
 python3 src/match_sar_ais.py           # Re-match GFW dark detections vs local AIS
 python3 src/detect_ship_transfers.py   # Detect STS rendezvous events
 python3 src/detect_gov_formation.py    # 公務船編隊偵測（≥2 艘公務/科研船 ≤10km 持續 ≥6h）
@@ -328,7 +333,7 @@ python3 src/gov_daily_activity.py -o out.png   # 昨日海警／公務船動態�
 - `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID` — LINE Bot daily push (`LINEBot.yml` / `SendMessage.py`; optional). Images need the workflow's `GITHUB_TOKEN` (uploaded to `data/charts/` via the Contents API to get public raw URLs)
 - `GEMINI_API_KEY` — Google Gemini LLM captions for Threads + LINE daily report (optional; both fall back to fixed templates)
 - `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` — Supabase 逐船航跡儲存（`vessel_routes` 表）。**service_role key 會繞過 RLS，只能放 Actions secret**。設定後 `update-ais.yml` / `update-data.yml` 會把航跡 upsert 到 Supabase 並自動跳過 `vessel-data` 分支的 force push；未設定時整條路徑退回舊行為。`SUPABASE_ANON_KEY`（唯讀，可公開）給 `LINEBot.yml` / `publish-threads.yml` 在分支缺檔時點查航跡用；前端的同一把 key 寫在 `docs/js/vessel-routes-source.js`
-- `CLAUDEFARETOKEN` / `CLAUDEFLAREACCOUNTID` — Cloudflare Radar API（optional，`fetch_cloudflare_radar.py`）。Token 需具備 **Radar Read** 權限；Radar 端點不需要 account ID（只作記錄）。未設定時 `update-data.yml` 的偵測步驟自動跳過。程式亦接受標準名稱 `CLOUDFLARE_API_TOKEN`（注意 secret 名稱是 Cloud**flare**，目前的 `CLAUDEFARE`/`CLAUDEFLARE` 拼法已在別名清單中支援）
+- `CLAUDEFARETOKEN` / `CLAUDEFLAREACCOUNTID` — Cloudflare Radar API（optional，`fetch_cloudflare_radar.py` + `fetch_radar_counties.py` + `probe_radar_regions.py`）。Token 需具備 **Radar Read** 權限；Radar 端點不需要 account ID（只作記錄）。未設定時 `update-data.yml` 的偵測步驟自動跳過。程式亦接受標準名稱 `CLOUDFLARE_API_TOKEN`（注意 secret 名稱是 Cloud**flare**，目前的 `CLAUDEFARE`/`CLAUDEFLARE` 拼法已在別名清單中支援）
 
 ## Architecture Notes
 - No build step. Frontend is plain static files.

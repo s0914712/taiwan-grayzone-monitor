@@ -40,9 +40,13 @@ jobs:
         run: |
           npm install --no-save --no-package-lock jsdom leaflet@1.9.4
           node tests/map-integration.js
+          node tests/network-county-map-integration.js
 
       - name: Run animation pages smoke test
         run: node tests/animation-smoke.js
+
+      - name: Run network traffic dashboard smoke test (縣市色塊 + 離島狀態)
+        run: node tests/network-traffic-smoke.js
 
       - name: Run mobile navigation smoke test
         run: node tests/mobile-nav-smoke.js

@@ -290,7 +290,9 @@
         .status-eyebrow, .history-label { color: var(--text-secondary); font-size: var(--fs-caption); }
         .status-conclusion { margin: 3px 0; font-size: clamp(28px, 2.2vw, 36px); line-height: 1.2; }
         .status-meta { color: var(--text-secondary); font-size: var(--fs-body); }
-        .connectivity-map { height: clamp(280px, 34vh, 360px); min-height: 280px; background: #0a0f1c; transition: height .2s ease; }
+        /* 縣市色塊上場後這張圖是主角：太矮的話 22 個縣市會擠成一團（框到的緯度
+           範圍是 21.9~26.4°N，馬祖在最北），因此比原本的點位圖再高一截。 */
+        .connectivity-map { height: clamp(360px, 48vh, 520px); min-height: 360px; background: #0a0f1c; transition: height .2s ease; }
         .dashboard-map.is-expanded .connectivity-map { height: min(70vh, 720px); }
         .map-panel-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
         .map-size-toggle { border: 1px solid rgba(0,245,255,.3); border-radius: 4px; background: transparent; color: var(--accent-cyan); cursor: pointer; font: inherit; padding: 3px 8px; }
@@ -313,6 +315,34 @@
             box-shadow: 0 0 7px currentColor;
         }
         .map-legend-note { flex: 1 1 260px; justify-content: flex-end; text-align: right; }
+        .county-modes { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; }
+        .county-mode {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(0, 245, 255, 0.18);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            padding: 4px 9px;
+            font-size: var(--fs-caption);
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .county-mode:hover, .county-mode:focus-visible { border-color: var(--accent-cyan); color: var(--text-primary); outline: none; }
+        .county-mode.active { border-color: var(--accent-cyan); color: var(--accent-cyan); background: rgba(0, 245, 255, 0.08); }
+        .county-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 0 12px 4px; color: var(--text-secondary); font-size: var(--fs-caption); }
+        .county-legend-swatch { width: 22px; height: 10px; border: 1px solid rgba(255,255,255,.18); }
+        .county-legend-label { margin: 0 6px; }
+        .county-chart-btn {
+            margin-top: 6px;
+            background: transparent;
+            border: 1px solid rgba(0,245,255,.35);
+            color: var(--accent-cyan);
+            border-radius: 4px;
+            padding: 3px 8px;
+            font: inherit;
+            font-size: var(--fs-caption);
+            cursor: pointer;
+        }
+        .county-chart-btn:hover, .county-chart-btn:focus-visible { background: rgba(0,245,255,.08); outline: none; }
         .region-map-label {
             background: rgba(10, 15, 28, .92);
             border: 1px solid rgba(0, 245, 255, .38);
@@ -486,13 +516,15 @@
         </section>
         <section class="panel dashboard-map" aria-labelledby="connectivityMapTitle">
             <div class="panel-title map-panel-title" id="connectivityMapTitle"><span><span class="lang-zh-only">🗺️ 區域連線互動地圖</span><span class="lang-en-only">🗺️ Regional connectivity map</span></span><button type="button" class="map-size-toggle" id="mapSizeToggle" aria-expanded="false"><span class="lang-zh-only">展開地圖</span><span class="lang-en-only">Expand map</span></button></div>
-            <div id="connectivityMap" class="connectivity-map" role="region" aria-label="台灣、金門、馬祖與澎湖網路觀測狀態互動地圖"></div>
+            <div class="county-modes" id="countyModes" role="group" aria-label="縣市指標切換 County metric switch"></div>
+            <div id="connectivityMap" class="connectivity-map" role="region" aria-label="台灣 22 縣市網路指標與離島觀測狀態互動地圖"></div>
+            <div class="county-legend" id="countyLegend" aria-label="縣市色階圖例 County color scale legend"></div>
             <div class="connectivity-map-legend" aria-label="地圖圖例 Map legend">
                 <span><i class="map-legend-dot" style="color:#00ff88;background:#00ff88"></i><span class="lang-zh-only">未見異常</span><span class="lang-en-only">No anomaly</span></span>
                 <span><i class="map-legend-dot" style="color:#ffd700;background:#ffd700"></i><span class="lang-zh-only">近期異常</span><span class="lang-en-only">Recent anomaly</span></span>
                 <span><i class="map-legend-dot" style="color:#ff3366;background:#ff3366"></i><span class="lang-zh-only">目前異常</span><span class="lang-en-only">Ongoing anomaly</span></span>
                 <span><i class="map-legend-dot" style="color:#8aa4c8;background:#8aa4c8"></i><span class="lang-zh-only">資料不足</span><span class="lang-en-only">No data</span></span>
-                <span class="map-legend-note"><span class="lang-zh-only">灰色代表資料不足，不代表斷網。</span><span class="lang-en-only">Gray means insufficient data, not a confirmed outage.</span></span>
+                <span class="map-legend-note"><span class="lang-zh-only">縣市色塊＝所選指標數值，外框＝該縣市異常狀態；灰色代表資料不足，不代表斷網。縣市界：<a href="https://www.geoboundaries.org/" rel="noopener">geoBoundaries</a>（CC BY 4.0）。</span><span class="lang-en-only">County fill = selected metric, outline = anomaly status; gray means insufficient data, not a confirmed outage. Boundaries: <a href="https://www.geoboundaries.org/" rel="noopener">geoBoundaries</a> (CC BY 4.0).</span></span>
             </div>
         </section>
 
@@ -561,7 +593,12 @@
                     <p class="lang-en-only">Vessels within 12 h before onset, 5 km of a cable and ≤5 kn. The densest slow targets near cables are actually fishing-net beacons, so the threat engine's exclusion rules are reused; in-port positions are dropped too — cable landings sit next to ports, so a lawfully berthed ship is always "0 kn, very close to a cable". Candidates are ranked by vessel-type threat weight, commercial and government vessels above fishing boats.</p>
                 </div>
                 <div class="method-step">
-                    <h4><span class="lang-zh-only">5. 解讀限制</span><span class="lang-en-only">5. Interpretation limits</span></h4>
+                    <h4><span class="lang-zh-only">5. 縣市粒度從哪來</span><span class="lang-en-only">5. Where county-level data comes from</span></h4>
+                    <p class="lang-zh-only">縣市色塊有兩個來源，意義完全不同，不可混為一談。<strong>Cloudflare Radar</strong> 自 2025 年 9 月起提供第一級行政區（ADM1）資料，程式對每個縣市依序嘗試「IQI 頻寬 → IQI 延遲 → NetFlows 流量指數」，第一個取得到的就是該縣市顯示的指標 —— 頻寬與延遲是連線品質實測，流量指數則只是「這個縣市送出多少流量」，不能當成網速。<strong>IODA</strong> 給的是可達性（BGP／主動探測／darknet），不需要憑證，是縣市粒度的保底來源。彈出視窗會標明每一格實際用了哪一個指標與來源。</p>
+                    <p class="lang-en-only">County fills come from two sources with different meanings. <strong>Cloudflare Radar</strong> has offered first-level administrative division (ADM1) data since September 2025; for each county the pipeline tries IQI bandwidth → IQI latency → NetFlows traffic index and shows the first one that returns data — bandwidth and latency measure connection quality, while the traffic index only says how much traffic the county sends and is not a speed. <strong>IODA</strong> provides reachability (BGP / active probing / darknet telescope) without credentials and is the fallback that guarantees county-level coverage. Every popup states which metric and source that county actually used.</p>
+                </div>
+                <div class="method-step">
+                    <h4><span class="lang-zh-only">6. 解讀限制</span><span class="lang-en-only">6. Interpretation limits</span></h4>
                     <p class="lang-zh-only">流量變化可能來自維護、路由調整、量測缺口或一般故障；AIS 也可能缺漏、關閉或遭偽造。船隻在時間與空間上接近海纜只構成調查線索，不足以判定故障，更不能證明肇因或行為者。</p>
                     <p class="lang-en-only">Traffic changes can reflect maintenance, routing, measurement gaps, or ordinary failures; AIS can be missing, disabled, or spoofed. Proximity in time and space is an investigative lead only, not proof of an outage, cause, or actor.</p>
                 </div>
