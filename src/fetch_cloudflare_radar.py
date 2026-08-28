@@ -105,13 +105,15 @@ SERIES_SPECS = [
     },
 ]
 
-# ⚠️ `location` 只接受 **ISO 3166-1 alpha-2 國家碼**（TW）。曾經試過用 3166-2 的
-# 行政區碼（TW-LIE 連江縣／TW-KIN 金門縣）取得馬祖、金門的離島粒度，Radar 直接
-# 回 HTTP 400：
+# ⚠️ `location` 只接受 **ISO 3166-1 alpha-2 國家碼**（TW）。用 3166-2 的行政區碼
+# （TW-LIE 連江縣／TW-KIN 金門縣）塞進 `location` 會直接回 HTTP 400：
 #     Invalid location codes. Must be valid alpha-2 location codes
-# Radar 沒有縣市粒度，別再加回來。離島層級的中斷偵測要另尋來源（IODA 有
-# region-level 的 BGP／主動探測資料），或退而求其次看 AS3462 這種承載離島對外
-# 連線的 ASN。
+# 這條規則沒有變，但**縣市粒度本身已經有了**：Cloudflare 在 2025-09-29 推出
+# Regional Data，改用 `geoId`（GeoNames ID）篩選第一級行政區（ADM1），台灣的
+# ADM1 就是 22 個縣市。那條線走 `src/fetch_radar_counties.py`（能力矩陣由
+# `src/probe_radar_regions.py` 實測），本檔維持國家／ASN 級的判讀不變。
+# 離島層級另有 IODA 的 region-level BGP／主動探測資料（`fetch_ioda.py`），
+# 以及 AS3462 這種承載離島對外連線的 ASN。
 
 # ── 船隻關聯參數 ────────────────────────────────────────────────────────────
 CORRELATE_WINDOW_HOURS = 12   # 異常開始前多久內的船隻行為算相關

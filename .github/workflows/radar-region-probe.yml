@@ -1,0 +1,52 @@
+name: Radar Region Probe (縣市粒度實測)
+
+# 手動觸發的一次性實測：Cloudflare Radar 的哪些端點吃 `geoId`（ADM1／縣市）。
+# 只讀 API、不寫任何管線資料、不 commit，因此不需要進 data-pipeline
+# concurrency group。結果同時輸出成 job summary 的表格與 artifact。
+on:
+  workflow_dispatch:
+    inputs:
+      counties:
+        description: '完整矩陣要測幾個縣市'
+        required: false
+        default: '3'
+      dump_raw:
+        description: '附上原始回應片段（除錯用）'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Probe Radar ADM1 capability
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLAUDEFARETOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::CLAUDEFARETOKEN 未設定，無法實測"
+            exit 1
+          fi
+          python src/probe_radar_regions.py \
+            --counties "${{ inputs.counties }}" \
+            ${{ inputs.dump_raw && '--dump-raw' || '' }}
+
+      - name: Upload probe report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: radar-region-probe
+          path: data/radar_region_probe.json
+          if-no-files-found: warn

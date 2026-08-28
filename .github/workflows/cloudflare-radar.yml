@@ -53,9 +53,19 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLAUDEFLAREACCOUNTID }}
         run: python src/fetch_cloudflare_radar.py
 
-      # IODA 給的是**離島縣市級**的可達性訊號（金門／馬祖／澎湖），補上 Cloudflare
-      # Radar 給不了的粒度——Radar 的 location 只吃 alpha-2 國碼。不需要任何憑證，
-      # 因此與 Cloudflare token 的 gate 無關，獨立執行。
+      # 縣市（ADM1）級指標。Radar 的區域資料是 2025-09 才有的，而且「速度」類
+      # 端點吃不吃 geoId 沒有保證（能力矩陣見 radar-region-probe.yml），
+      # 因此這步失敗不影響整條管線——前端沒有這個檔就只用 IODA 的縣市訊號。
+      - name: Detect county-level metrics (Cloudflare ADM1)
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLAUDEFARETOKEN }}
+        run: python src/fetch_radar_counties.py
+        continue-on-error: true
+
+      # IODA 給的是**縣市級**的可達性訊號：三座離島是完整序列，另外輸出全台 22
+      # 縣市的精簡版給前端色塊地圖。不需要任何憑證，因此與 Cloudflare token 的
+      # gate 無關，獨立執行——Radar 的縣市指標拿不到時，這條就是地圖的保底來源。
       - name: Detect island reachability anomalies (IODA)
         run: python src/fetch_ioda.py
         continue-on-error: true
@@ -65,7 +75,7 @@ jobs:
       # update-ais / update-data 執行 generate_dashboard 時一併刷新。
       - name: Copy to docs for GitHub Pages
         run: |
-          for f in cf_radar ioda; do
+          for f in cf_radar cf_radar_counties ioda; do
             [ -f "data/$f.json" ] && cp "data/$f.json" "docs/$f.json" && ls -l "docs/$f.json"
           done
           true
@@ -77,7 +87,9 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add docs/cf_radar.json docs/ioda.json 2>/dev/null || true
+          git add docs/cf_radar.json docs/cf_radar_counties.json docs/ioda.json 2>/dev/null || true
+          # geoId／region 代碼快取進 repo：不然每次 CI 都要重打 22 次解析請求
+          git add data/radar_geolocations_tw.json data/ioda_region_codes.json 2>/dev/null || true
           git diff --staged --quiet && { echo "無變更"; exit 0; }
           git commit -m "🌐 Network anomaly scan $(date -u +'%Y-%m-%d %H:%M') UTC"
           git pull --rebase -X theirs origin main || {

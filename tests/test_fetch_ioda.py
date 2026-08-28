@@ -320,3 +320,142 @@ def test_datasources_carry_min_level_floors():
     assert floors["merit-nt"] >= 20      # 個位數值域，必須擋
     assert floors["bgp"] >= 10
     assert all(v is not None for v in floors.values())
+
+
+# ── 全台 22 縣市擴充 ────────────────────────────────────────────────────────
+
+EXPECTED_COUNTY_ISO = {
+    "TW-CHA", "TW-CYI", "TW-CYQ", "TW-HSQ", "TW-HSZ", "TW-HUA", "TW-ILA",
+    "TW-KEE", "TW-KHH", "TW-KIN", "TW-LIE", "TW-MIA", "TW-NAN", "TW-NWT",
+    "TW-PEN", "TW-PIF", "TW-TAO", "TW-TNN", "TW-TPE", "TW-TTT", "TW-TXG",
+    "TW-YUN",
+}
+
+
+def test_county_roster_matches_the_map_polygons():
+    """縣市名冊的 ISO 必須和 docs/tw_counties.geojson 完全對得起來。
+
+    對不上就會出現「有訊號但沒有色塊」或「色塊永遠灰色」的破圖。
+    """
+    import json
+    from pathlib import Path
+    geo = json.loads((Path(__file__).resolve().parent.parent / "docs" /
+                      "tw_counties.geojson").read_text(encoding="utf-8"))
+    assert {c["iso"] for c in M.COUNTIES} == EXPECTED_COUNTY_ISO
+    assert {f["properties"]["iso"] for f in geo["features"]} == EXPECTED_COUNTY_ISO
+
+
+def test_every_county_has_search_names_and_coordinates():
+    for county in M.COUNTIES:
+        assert county["search"], county["iso"]
+        assert county["label_zh"] and county["label_en"]
+        assert 21.0 < county["lat"] < 27.0
+        assert 118.0 < county["lon"] < 122.5
+
+
+def test_islands_carry_the_iso_used_to_join_counties():
+    assert {i["iso"] for i in M.ISLANDS} == {"TW-KIN", "TW-LIE", "TW-PEN"}
+
+
+def test_resolve_region_code_prefers_exact_name_match():
+    """搜尋「Chiayi」會同時撈到嘉義市與嘉義縣，取第一筆會把兩個縣市混成一個。"""
+    payload = {"data": [
+        {"code": "4201", "name": "Chiayi City", "attrs": {"country_code": "TW"}},
+        {"code": "4202", "name": "Chiayi County", "attrs": {"country_code": "TW"}},
+    ]}
+    session = _Session(_Resp(payload=payload))
+    assert M.resolve_region_code("Chiayi", session,
+                                 prefer=["Chiayi County"]) == "4202"
+    # 沒有 prefer 時維持舊行為（第一筆）
+    assert M.resolve_region_code("Chiayi", session) == "4201"
+
+
+def test_region_code_cache_is_used_when_fresh(tmp_path):
+    cache = tmp_path / "codes.json"
+    cache.write_text('{"resolved_at": "%s", "codes": {"TW-TPE": "4220"}}'
+                     % datetime.now(UTC).isoformat(), encoding="utf-8")
+
+    class _Boom:
+        def get(self, *a, **k):
+            raise AssertionError("快取有效時不該打 IODA")
+
+    assert M.resolve_county_codes(_Boom(), cache_path=cache) == {"TW-TPE": "4220"}
+
+
+def test_region_code_cache_keeps_previously_known_codes(tmp_path):
+    """這次查不到的縣市不能把上次查到的代碼洗掉。"""
+    cache = tmp_path / "codes.json"
+    stale = (datetime.now(UTC) - timedelta(days=90)).isoformat()
+    cache.write_text('{"resolved_at": "%s", "codes": {"TW-TPE": "4220"}}' % stale,
+                     encoding="utf-8")
+    session = _Session(_Resp(payload={"data": []}))   # 全部查不到
+    out = M.resolve_county_codes(session, cache_path=cache,
+                                 counties=[c for c in M.COUNTIES
+                                           if c["iso"] == "TW-HUA"])
+    assert out["TW-TPE"] == "4220"
+
+
+def test_compact_county_record_uses_active_probing_as_primary():
+    series = [
+        {"datasource": "bgp", "timestamps": ["2026-08-01T00:00:00Z"],
+         "values": [400], "anomalies": []},
+        {"datasource": "ping-slash24", "timestamps": ["2026-08-01T00:00:00Z"],
+         "values": [70], "anomalies": []},
+    ]
+    rec = M.compact_county_record(M.COUNTIES[0], "4200", series)
+    assert rec["primary"]["datasource"] == "ping-slash24"
+    assert rec["status"] == "available" and rec["level"] == "normal"
+    assert [s["datasource"] for s in rec["signals"]] == ["bgp", "ping-slash24"]
+
+
+def test_compact_county_record_without_signals_is_unknown():
+    rec = M.compact_county_record(M.COUNTIES[0], None, [])
+    assert rec["status"] == "unavailable" and rec["level"] == "unknown"
+    assert "primary" not in rec
+
+
+def test_county_level_flags_ongoing_anomaly():
+    now = datetime(2026, 8, 28, 12, tzinfo=UTC)
+    ongoing = [{"datasource": "bgp", "anomalies": [
+        {"onset": "2026-08-28T08:00:00Z", "end": "2026-08-28T10:00:00Z"}]}]
+    older = [{"datasource": "bgp", "anomalies": [
+        {"onset": "2026-08-20T08:00:00Z", "end": "2026-08-20T10:00:00Z"}]}]
+    assert M.classify_county_level(ongoing, now=now) == "alert"
+    assert M.classify_county_level(older, now=now) == "watch"
+    assert M.classify_county_level([], now=now) == "unknown"
+
+
+def test_county_series_is_downsampled_for_output():
+    ts = [f"2026-08-01T{h:02d}:00:00Z" for h in range(6)]
+    out_ts, out_vals = M.downsample_county_series(ts, [1, 5, 3, 10, 20, 30],
+                                                  bucket_hours=3)
+    assert out_ts == [ts[0], ts[3]]
+    assert out_vals == [3, 20]
+
+
+def test_collect_counties_reuses_island_series_without_refetching():
+    """三離島已經抓過完整序列，縣市層再打一次是白費請求。"""
+    island_series = {"TW-KIN": [
+        {"datasource": "ping-slash24", "timestamps": ["2026-08-01T00:00:00Z"],
+         "values": [80], "anomalies": []}]}
+    records = M.collect_counties(
+        {}, datetime(2026, 8, 1, tzinfo=UTC), datetime(2026, 8, 2, tzinfo=UTC),
+        island_series_by_iso=island_series,
+        counties=[c for c in M.COUNTIES if c["iso"] in ("TW-KIN", "TW-HUA")])
+    by_iso = {r["iso"]: r for r in records}
+    assert by_iso["TW-KIN"]["status"] == "available"
+    # region 代碼查不到的縣市要留在輸出裡（灰色），不能整個消失
+    assert by_iso["TW-HUA"]["status"] == "unavailable"
+    assert by_iso["TW-HUA"]["error_reason"] == "region_not_found"
+
+
+def test_county_summary_counts_levels():
+    counties = [
+        {"iso": "A", "status": "available", "level": "alert", "anomaly_count": 2},
+        {"iso": "B", "status": "available", "level": "normal", "anomaly_count": 0},
+        {"iso": "C", "status": "unavailable", "level": "unknown", "anomaly_count": 0},
+    ]
+    summary = M.build_county_summary(counties)
+    assert summary == {"counties_total": 3, "counties_monitored": 2,
+                       "by_level": {"alert": 1, "normal": 1, "unknown": 1},
+                       "anomaly_count": 2, "counties_with_ongoing": 1}
