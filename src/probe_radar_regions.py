@@ -47,21 +47,39 @@ PROBE_RANGE = "7d"
 
 # 先確認縣市清單怎麼拿。Radar 的 geolocations 端點參數官方文件寫得不完整，
 # 因此把幾種合理寫法都試一遍，第一個回得出 ADM1 清單的就採用。
+# 第一輪實測（run 33216931232）的結果已經回填在這裡：
+#   `?location=TW&limit=100`  → 200，但只回 6 個 entity，其中 1 個是台灣 ADM1（台北）
+#   `?countryAlpha2=TW`       → 200，參數被忽略，回 183 筆全球清單
+#   `summary_v2`（http/netflows）→ 400 `code 7000 No route for that URI`（路徑不存在）
+# 所以這一輪換成「維度端點」`summary/{dimension}` 與
+# `timeseries_groups/{dimension}`，並把 limit 開到 500、加上分頁參數試探。
 GEO_LIST_ATTEMPTS = [
     {"id": "geolocations_location", "path": "radar/geolocations",
-     "params": {"location": "TW", "limit": 100}},
+     "params": {"location": "TW", "limit": 500}},
     {"id": "geolocations_type_adm1", "path": "radar/geolocations",
-     "params": {"location": "TW", "type": "ADM1", "limit": 100}},
-    {"id": "geolocations_country", "path": "radar/geolocations",
-     "params": {"countryAlpha2": "TW", "limit": 100}},
-    {"id": "geolocations_all", "path": "radar/geolocations",
-     "params": {"limit": 500}},
-    # NetFlows 的 adm1 維度本身也會列出各行政區（附 geoId），是備援解析路徑
-    {"id": "netflows_summary_adm1", "path": "radar/netflows/summary_v2",
-     "params": {"dimension": "adm1", "location": "TW", "dateRange": PROBE_RANGE}},
-    {"id": "http_summary_adm1", "path": "radar/http/summary_v2",
-     "params": {"dimension": "adm1", "location": "TW", "dateRange": PROBE_RANGE}},
+     "params": {"location": "TW", "type": "ADM1", "limit": 500}},
+    {"id": "geolocations_adm1_only", "path": "radar/geolocations",
+     "params": {"type": "ADM1", "limit": 500}},
+    {"id": "geolocations_offset", "path": "radar/geolocations",
+     "params": {"location": "TW", "limit": 500, "offset": 0}},
+    {"id": "entities_locations_tw", "path": "radar/entities/locations",
+     "params": {"location": "TW", "limit": 500}},
+    # 維度端點：有資料的 ADM1 會直接出現在回應裡（附 geoId），是備援解析路徑
+    {"id": "http_summary_adm1", "path": "radar/http/summary/adm1",
+     "params": {"location": "TW", "dateRange": PROBE_RANGE}},
+    {"id": "http_timeseries_groups_adm1",
+     "path": "radar/http/timeseries_groups/adm1",
+     "params": {"location": "TW", "dateRange": PROBE_RANGE, "aggInterval": "1d"}},
+    {"id": "netflows_summary_adm1", "path": "radar/netflows/summary/adm1",
+     "params": {"location": "TW", "dateRange": PROBE_RANGE}},
+    {"id": "netflows_timeseries_groups_adm1",
+     "path": "radar/netflows/timeseries_groups/adm1",
+     "params": {"location": "TW", "dateRange": PROBE_RANGE, "aggInterval": "1d"}},
 ]
+
+# 第一輪唯一解析到的台灣 ADM1（臺北市）。用它當探針：印出它在每個 listing 回應
+# 裡的完整物件，才知道 name／iso 欄位到底叫什麼、為什麼其他 21 個縣市對不上。
+KNOWN_TW_ADM1_GEOID = "7280290"
 
 # 每個縣市要試的端點。`kind` 決定怎麼判定「有沒有拿到值」。
 ENDPOINT_MATRIX = [
@@ -184,8 +202,37 @@ def extract_adm1(payload):
     return list(found.values())
 
 
+def find_entity(payload, geo_id):
+    """在回應裡找出某個 geoId 的完整物件（含所有欄位），找不到回 None。
+
+    第一輪只對到 1 個縣市，代表 name／iso 欄位的名稱和我猜的不一樣。把已知的
+    台北物件原封不動印出來，比再猜十次有效。
+    """
+    found = []
+
+    def walk(node):
+        if isinstance(node, dict):
+            for key in ("geoId", "geo_id", "id", "code"):
+                if str(node.get(key)) == str(geo_id):
+                    found.append(node)
+                    break
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(payload)
+    return found[0] if found else None
+
+
 def resolve_counties(session, token, dump=False):
-    """依序試各種寫法，回傳 (attempts, counties)。"""
+    """依序試各種寫法，回傳 (attempts, counties)。
+
+    **每個 entity 都印進 stdout**，不是只寫進 artifact —— artifact 要認證才下載得到，
+    job log 才是拿得到的那一份（第一輪就是因為只有矩陣沒有清單，卡在「為什麼只
+    對到台北」無從判讀）。
+    """
     attempts, counties = [], []
     for spec in GEO_LIST_ATTEMPTS:
         res = probe(session, token, spec["path"], spec["params"], dump=dump)
@@ -194,19 +241,31 @@ def resolve_counties(session, token, dump=False):
         tw = [e for e in entries
               if (e.get("iso") or "").upper().startswith("TW-")
               or (e.get("name") or "") in TW_NAME_HINTS]
+        known = find_entity(res.get("payload") or {}, KNOWN_TW_ADM1_GEOID)
         attempts.append({
             "id": spec["id"], "status": res.get("status"), "ok": res.get("ok"),
             "error": res.get("error"), "entities_found": len(entries),
             "tw_adm1_found": len(tw),
-            "sample": tw[:3] or entries[:3],
+            "entities": entries[:200],
+            "known_entity": known,
             **({"raw_excerpt": res["raw_excerpt"]} if "raw_excerpt" in res else {}),
         })
+
+        print(f"   ↳ [{spec['id']}] status={res.get('status')} "
+              f"entities={len(entries)} tw={len(tw)}"
+              + (f" ❌ {str(res.get('error'))[:120]}" if not res.get("ok") else ""))
+        if known:
+            print(f"      已知台北 geoId {KNOWN_TW_ADM1_GEOID} 的完整物件："
+                  f"{json.dumps(known, ensure_ascii=False)[:600]}")
+        for entry in entries[:60]:
+            print(f"      · geo_id={entry.get('geo_id')} "
+                  f"type={entry.get('type')} iso={entry.get('iso')} "
+                  f"name={entry.get('name')}")
+        if len(entries) > 60:
+            print(f"      …（另外 {len(entries) - 60} 筆未列出）")
         if tw and not counties:
             counties = tw
-            print(f"   ✅ [{spec['id']}] 解析出 {len(tw)} 個台灣 ADM1")
-        else:
-            print(f"   ↳ [{spec['id']}] status={res.get('status')} "
-                  f"entities={len(entries)} tw={len(tw)}")
+            print(f"   ✅ [{spec['id']}] 採用這一輪的 {len(tw)} 個台灣 ADM1")
     return attempts, counties
 
 

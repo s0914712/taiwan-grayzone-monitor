@@ -40,6 +40,7 @@ const countyMetrics = {
             metric_label_zh: '頻寬（IQI 中位數）', metric_label_en: 'Bandwidth (IQI median)',
             unit: 'Mbps', higher_is_better: true, is_speed: true,
             latest: 12.5, baseline: 60, pct_vs_baseline: -79.2, level: 'alert',
+            speed_test: { bandwidth_download: 31.2, bandwidth_upload: 12.8, latency_idle: 96.4 },
             anomalies: [{ onset: '2026-08-28T00:00:00Z', end: '2026-08-28T06:00:00Z', severity: 'critical' }],
             series: {
                 timestamps: ['2026-08-27T21:00:00Z', '2026-08-28T00:00:00Z', '2026-08-28T03:00:00Z'],

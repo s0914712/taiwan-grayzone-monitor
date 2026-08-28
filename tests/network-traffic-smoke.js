@@ -36,6 +36,7 @@ const countyMetrics = {
         unit: 'Mbps', higher_is_better: true, is_speed: true,
         latest: 50 + index * 3, baseline: 60 + index * 3, pct_vs_baseline: -5,
         level: index === 0 ? 'alert' : 'normal', anomalies: [],
+        speed_test: { bandwidth_download: 124.51, bandwidth_upload: 65.25, latency_idle: 18.4 },
         series: { timestamps: ['2026-08-01T00:00:00Z'], values: [50 + index * 3], bucket_hours: 3 },
     } : {
         iso: feature.properties.iso,
@@ -142,6 +143,11 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'docs', 'js', 'networ
         'counties without data are gray, never colored as if healthy');
     assert(noData[0].layer.popup.includes('資料不足'),
         'no-data popup says insufficient data rather than implying an outage');
+    assert(withData[0].layer.popup.includes('Speed Test') &&
+        withData[0].layer.popup.includes('125 Mbps'),
+        'popup carries the Speed Test median (124.51 → 125 Mbps) alongside the IQI metric');
+    assert(withData[0].layer.popup.includes('不是同一種量測'),
+        'popup says Speed Test and the IQI index are different measurements');
 
     assert(elements.countyModes.innerHTML.includes('網速'), 'speed mode chip rendered');
     assert(!elements.countyModes.innerHTML.includes('流量指數'),

@@ -518,6 +518,30 @@
             rows.push('<div class="region-popup-state" style="color:#8aa4c8">' +
                 t('此指標無資料', 'No data for this metric') + '</div>');
         }
+        // Speed Test 是使用者實跑 speed.cloudflare.com 的中位數，和上面的 IQI
+        // 指數不是同一種量測（台北實測 IQI p50 14.3 Mbps vs Speed Test 下載
+        // 124.5 Mbps，差一個量級），因此另起一行並標明來源，不能混為一談。
+        var speed = view.radar && view.radar.speed_test;
+        if (speed && speed.bandwidth_download != null) {
+            rows.push('<div class="region-popup-row">' +
+                t('Speed Test 實測中位數：', 'Speed Test median: ') + '<strong>↓ ' +
+                escapeHtml(formatMetricValue(speed.bandwidth_download)) + ' Mbps' +
+                (speed.bandwidth_upload != null
+                    ? ' / ↑ ' + escapeHtml(formatMetricValue(speed.bandwidth_upload)) + ' Mbps'
+                    : '') +
+                '</strong></div>');
+            if (speed.latency_idle != null) {
+                rows.push('<div class="region-popup-row">' +
+                    t('Speed Test 閒置延遲：', 'Speed Test idle latency: ') +
+                    '<strong>' + escapeHtml(formatMetricValue(speed.latency_idle)) +
+                    ' ms</strong></div>');
+            }
+            rows.push('<div class="region-popup-row region-popup-note">' +
+                t('（實測測速，與上方 IQI 品質指數不是同一種量測）',
+                    '(user-run speed tests — a different measurement from the IQI index above)') +
+                '</div>');
+        }
+
         var anomalies = (view.radar && view.radar.anomalies ? view.radar.anomalies.length : 0) +
             (view.ioda && view.ioda.anomaly_count ? view.ioda.anomaly_count : 0);
         rows.push('<div class="region-popup-row">' + t('近 28 天異常：', 'Anomalies in 28 days: ') +

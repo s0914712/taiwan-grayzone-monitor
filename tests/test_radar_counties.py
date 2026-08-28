@@ -1,8 +1,8 @@
 """Cloudflare Radar 縣市（ADM1）級指標的純函式測試（不打網路）。
 
-沙箱連不到 api.cloudflare.com，而且「哪些端點吃 geoId」要靠
-src/probe_radar_regions.py 在 Actions 裡實測，因此這裡驗的是**與回應形狀無關**
-的部分：名稱／ISO 比對、指標階梯的降級順序、輸出精簡、色階等級判定。
+沙箱連不到 api.cloudflare.com，因此這裡驗的是**與網路無關**的部分：名稱／ISO
+比對、指標階梯的降級順序、Speed Test 摘要解析、輸出精簡、色階等級判定。
+回應形狀取自 Actions run 33216931232 的實測（台北 geoId 7280290）。
 """
 from datetime import datetime, timedelta, timezone
 
@@ -264,3 +264,97 @@ def test_stale_cache_survives_a_failed_refresh(tmp_path):
     out = M.resolve_county_geoids(_Session(lambda url, params: _Resp(500)),
                                   "tok", cache_path=cache)
     assert out == {"TW-TPE": "old"}
+
+
+# ── Speed Test 實測摘要（形狀取自 run 33216931232 的實測回應）────────────────
+
+SPEED_SUMMARY_PAYLOAD = {"success": True, "result": {"summary_0": {
+    "bandwidthDownload": "124.512334", "bandwidthUpload": "65.248269",
+    "latencyIdle": "18.4", "latencyLoaded": "42.7",
+    "jitterIdle": "2.13", "jitterLoaded": "9.8", "packetLoss": "0.0",
+}}}
+
+
+def test_parse_speed_summary_reads_string_numbers():
+    out = M.parse_speed_summary(SPEED_SUMMARY_PAYLOAD)
+    assert out["bandwidth_download"] == 124.51
+    assert out["bandwidth_upload"] == 65.25
+    assert out["latency_idle"] == 18.4 and out["jitter_idle"] == 2.13
+
+
+def test_parse_speed_summary_tolerates_missing_fields():
+    payload = {"result": {"summary_0": {"bandwidthDownload": "50"}}}
+    assert M.parse_speed_summary(payload) == {"bandwidth_download": 50.0}
+
+
+def test_parse_speed_summary_returns_none_without_bandwidth():
+    assert M.parse_speed_summary({"result": {"summary_0": {"latencyIdle": "5"}}}) is None
+    assert M.parse_speed_summary({"result": {}}) is None
+    assert M.parse_speed_summary(None) is None
+
+
+def test_fetch_speed_test_sends_geoid():
+    session = _Session(lambda url, params: _Resp(200, SPEED_SUMMARY_PAYLOAD))
+    out = M.fetch_speed_test(session, "tok", "7280290")
+    assert out["bandwidth_download"] == 124.51
+    assert session.calls[0][1]["geoId"] == "7280290"
+    assert "quality/speed/summary" in session.calls[0][0]
+
+
+def test_fetch_speed_test_failure_does_not_raise():
+    assert M.fetch_speed_test(_Session(lambda url, params: _Resp(500)),
+                              "tok", "1") is None
+
+
+def test_speed_test_rides_along_but_does_not_drive_the_colour_scale():
+    """色階要的是有基線的時間序列；Speed Test 只是 popup 的補充數字。
+
+    兩者量級差很大（台北實測 IQI p50 14.3 Mbps vs Speed Test 下載 124.5 Mbps），
+    混用會讓地圖上的數字跟圖例對不起來。
+    """
+    county = {"iso": "TW-TPE", "name_zh": "臺北市", "name_en": "Taipei"}
+    analysis = {"values": [14.3], "baseline": [14.0],
+                "timestamps": ["2026-08-28T00:00:00Z"], "points": 1,
+                "baseline_coverage": 1.0, "anomalies": []}
+    rec = M.build_county_record(county, M.METRIC_LADDER[0], analysis,
+                                geo_id="7280290",
+                                speed_test={"bandwidth_download": 124.51})
+    assert rec["latest"] == 14.3, "色階仍用 IQI 序列的最後一筆"
+    assert rec["speed_test"]["bandwidth_download"] == 124.51
+
+
+def test_unavailable_record_carries_null_speed_test():
+    rec = M.unavailable_record({"iso": "TW-KIN", "name_zh": "金門縣",
+                                "name_en": "Kinmen"}, "geoid_not_found")
+    assert rec["speed_test"] is None
+
+
+def test_summary_counts_speed_test_coverage():
+    counties = [
+        {"iso": "A", "status": "available", "level": "normal",
+         "metric_id": "iqi_bandwidth", "is_speed": True, "anomalies": [],
+         "speed_test": {"bandwidth_download": 124.5}},
+        {"iso": "B", "status": "available", "level": "normal",
+         "metric_id": "iqi_bandwidth", "is_speed": True, "anomalies": [],
+         "speed_test": None},
+    ]
+    assert M.build_summary(counties)["counties_with_speed_test"] == 1
+
+
+# ── geoId 解析路徑（實測回填）──────────────────────────────────────────────
+
+def test_geoid_lookups_drop_the_nonexistent_summary_v2_routes():
+    """`radar/{http,netflows}/summary_v2` 實測回 400 `No route for that URI`。
+
+    正確的維度端點是 `summary/{dimension}` 與 `timeseries_groups/{dimension}`；
+    留著錯路徑只是每次執行都白打一次請求。
+    """
+    paths = [path for path, _ in M.GEOID_LOOKUPS]
+    assert not any("summary_v2" in path for path in paths)
+    assert "radar/http/summary/adm1" in paths
+
+
+def test_geoid_lookups_drop_the_ignored_country_alpha2_param():
+    """`countryAlpha2=TW` 實測被忽略（回 183 筆全球清單），別再送。"""
+    for _, params in M.GEOID_LOOKUPS:
+        assert "countryAlpha2" not in params
