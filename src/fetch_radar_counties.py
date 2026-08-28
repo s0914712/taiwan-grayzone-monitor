@@ -57,12 +57,23 @@ OUTPUT_RETAIN_DAYS = 7
 # 「目前異常」的認定：最後一筆異常結束於這麼多小時內
 ONGOING_WINDOW_HOURS = 6
 
+# Speed Test 摘要的取樣窗。實測資料稀疏（縣市級的測速樣本本來就少），
+# 視窗開大一點才不會整片空白；這個數字不參與異常偵測，只是顯示用的實測中位數。
+SPEED_TEST_DAYS = 28
+
 # geoId 快取（GeoNames ID 幾乎不會變，但也不寫死——實測前無從驗證）
 GEOID_CACHE = DATA_DIR / "radar_geolocations_tw.json"
 GEOID_CACHE_DAYS = 30
 
 # 逐縣市依序嘗試，第一個成功的就是這個縣市的指標。
 # `direction` 給 anomaly_detect：drop＝越低越糟，spike＝越高越糟。
+#
+# **實測結論**（`probe_radar_regions.py`，Actions run 33216931232，台北 geoId
+# 7280290）：速度類端點**全部吃 `geoId`** —— IQI 頻寬 200（14.78 Mbps）、IQI 延遲
+# 200（71.49 ms）、IQI summary 200、Speed Test summary 200、speed histogram 200、
+# HTTP timeseries 200、NetFlows timeseries 200。所以第一級就會命中，縣市地圖的
+# 「網速」模式是實測數值，`netflows_traffic` 只是理論上的退路。
+# 對照組 `location=TW-LIE` 仍是 400（alpha-2 限制沒變，變的是多了 geoId 這條路）。
 METRIC_LADDER = [
     {
         "id": "iqi_bandwidth",
@@ -194,12 +205,16 @@ def extract_adm1_entities(payload):
     return list(found.values())
 
 
+# 依實測調整過的清單。拿掉了 `radar/{http,netflows}/summary_v2` —— 那兩個路徑
+# 根本不存在（實測回 400 `code 7000 No route for that URI`），正確的維度端點是
+# `summary/{dimension}` 與 `timeseries_groups/{dimension}`。
+# `countryAlpha2=TW` 也拿掉：實測它被忽略，回的是 183 筆全球清單。
 GEOID_LOOKUPS = [
-    ("radar/geolocations", {"location": "TW", "limit": 100}),
-    ("radar/geolocations", {"location": "TW", "type": "ADM1", "limit": 100}),
-    ("radar/geolocations", {"countryAlpha2": "TW", "limit": 100}),
-    ("radar/netflows/summary_v2", {"dimension": "adm1", "location": "TW",
-                                   "dateRange": "7d"}),
+    ("radar/geolocations", {"location": "TW", "limit": 500}),
+    ("radar/geolocations", {"location": "TW", "type": "ADM1", "limit": 500}),
+    ("radar/http/summary/adm1", {"location": "TW", "dateRange": "7d"}),
+    ("radar/http/timeseries_groups/adm1", {"location": "TW", "dateRange": "7d",
+                                           "aggInterval": "1d"}),
 ]
 
 
@@ -252,6 +267,63 @@ def fetch_metric_series(session, token, geo_id, metric, days=DEFAULT_DAYS):
     if not timestamps or not any(v is not None for v in values):
         return None, status
     return {"timestamps": timestamps, "values": values}, status
+
+
+# Speed Test 摘要要抓哪些欄位（實測回應是字串數值）。
+# 這是**使用者實跑 speed.cloudflare.com 的中位數**，與 IQI 頻寬（Cloudflare 的
+# 品質指數分位數）不是同一種量測：台北實測 IQI p50 = 14.3 Mbps，Speed Test
+# 下載中位數 = 124.5 Mbps，差一個量級。兩個數字都要標明來源，混講就是謊報。
+SPEED_TEST_FIELDS = {
+    "bandwidthDownload": "bandwidth_download",
+    "bandwidthUpload": "bandwidth_upload",
+    "latencyIdle": "latency_idle",
+    "latencyLoaded": "latency_loaded",
+    "jitterIdle": "jitter_idle",
+    "jitterLoaded": "jitter_loaded",
+    "packetLoss": "packet_loss",
+}
+
+
+def parse_speed_summary(payload):
+    """從 `quality/speed/summary` 回應撈出實測值；沒有可用欄位回 None。
+
+    回應形狀（實測）：`{"result": {"summary_0": {"bandwidthDownload": "124.51",
+    "bandwidthUpload": "65.25", ...}}}`。key 名稱（`summary_0`）不硬綁——
+    找第一個帶 `bandwidthDownload` 的 dict。
+    """
+    result = (payload or {}).get("result") or {}
+    if not isinstance(result, dict):
+        return None
+    for key, value in sorted(result.items()):
+        if key == "meta" or not isinstance(value, dict):
+            continue
+        if "bandwidthDownload" not in value:
+            continue
+        out = {}
+        for src, dest in SPEED_TEST_FIELDS.items():
+            num = _to_float(value.get(src))
+            if num is not None:
+                out[dest] = round(num, 2)
+        return out or None
+    return None
+
+
+def _to_float(value):
+    """Radar 的數值以字串回傳（"124.512334"）；轉不動或 NaN 回 None。"""
+    if value is None:
+        return None
+    try:
+        num = float(value)
+    except (TypeError, ValueError):
+        return None
+    return None if num != num else num
+
+
+def fetch_speed_test(session, token, geo_id, days=SPEED_TEST_DAYS):
+    """抓某縣市的 Speed Test 實測摘要。拿不到回 None（不影響主指標）。"""
+    payload, _ = _radar_get(session, token, "radar/quality/speed/summary",
+                            {"dateRange": f"{days}d", "geoId": geo_id})
+    return parse_speed_summary(payload)
 
 
 def fetch_county_metric(session, token, geo_id, days=DEFAULT_DAYS,
@@ -314,8 +386,14 @@ def classify_level(anomalies, now=None):
     return "watch"
 
 
-def build_county_record(county, metric, analysis, geo_id=None, now=None):
-    """組一筆縣市輸出（純函式，方便單測）。"""
+def build_county_record(county, metric, analysis, geo_id=None, now=None,
+                        speed_test=None):
+    """組一筆縣市輸出（純函式，方便單測）。
+
+    `speed_test` 是 Speed Test 實測摘要（`parse_speed_summary`），與色階用的
+    `metric` 分開存：色階要的是有基線、能做異常偵測的時間序列，實測中位數只是
+    給人看的補充數字。
+    """
     value, baseline, pct = latest_reading(analysis)
     timestamps, values = downsample_series(analysis.get("timestamps") or [],
                                            analysis.get("values") or [])
@@ -339,6 +417,7 @@ def build_county_record(county, metric, analysis, geo_id=None, now=None):
         "points": analysis.get("points"),
         "baseline_coverage": analysis.get("baseline_coverage"),
         "anomalies": anomalies,
+        "speed_test": speed_test,
         "series": {"timestamps": timestamps, "values": values,
                    "bucket_hours": OUTPUT_BUCKET_HOURS},
     }
@@ -351,8 +430,9 @@ def unavailable_record(county, reason, geo_id=None):
         "name_en": county["name_en"], "geo_id": geo_id,
         "status": "unavailable", "error_reason": reason,
         "metric_id": None, "level": "unknown", "latest": None,
-        "anomalies": [], "series": {"timestamps": [], "values": [],
-                                     "bucket_hours": OUTPUT_BUCKET_HOURS},
+        "anomalies": [], "speed_test": None,
+        "series": {"timestamps": [], "values": [],
+                   "bucket_hours": OUTPUT_BUCKET_HOURS},
     }
 
 
@@ -370,6 +450,9 @@ def build_summary(counties):
         "counties_total": len(counties),
         "counties_with_data": len(available),
         "counties_with_speed_metric": len(speed_counties),
+        "counties_with_speed_test": sum(
+            1 for c in counties
+            if (c.get("speed_test") or {}).get("bandwidth_download") is not None),
         "metric_availability": availability,
         "by_level": levels,
         "anomaly_count": anomaly_count,
@@ -419,11 +502,17 @@ def main():
             continue
         analysis = analyze_values(series["timestamps"], series["values"],
                                   direction=metric["direction"])
-        record = build_county_record(county, metric, analysis, geo_id=geo_id)
+        speed_test = fetch_speed_test(session, token, geo_id)
+        record = build_county_record(county, metric, analysis, geo_id=geo_id,
+                                     speed_test=speed_test)
         counties.append(record)
+        speed_note = ""
+        if speed_test and speed_test.get("bandwidth_download") is not None:
+            speed_note = (f"｜Speed Test 下載 "
+                          f"{speed_test['bandwidth_download']} Mbps")
         print(f"✅ {county['name_zh']}：{metric['label_zh']} "
               f"{record['latest']}{metric['unit']}｜{analysis['points']} 點｜"
-              f"異常 {len(analysis['anomalies'])} 件")
+              f"異常 {len(analysis['anomalies'])} 件{speed_note}")
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),

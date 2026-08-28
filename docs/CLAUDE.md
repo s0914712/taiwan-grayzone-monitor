@@ -135,7 +135,7 @@ Animation page logic lives in external scripts `js/ais-animation.js` (~2,100 lin
 | `ship_transfers.json` | STS rendezvous events | `detect_ship_transfers.py` |
 | `sar_ais_matches.json` | SAR×AIS re-match results (summary, rematched/residual/infra lists, density grid, zone series) — copied from `data/` by `generate_dashboard.py` | `match_sar_ais.py` |
 | `sar_chip_worklist.json` | Chip-retrieval worklist: east/southwest residual dark × Sentinel-1 coverage, with per-target acquisition time + ready-made `fetch_sar_chip.py` command — copied from `data/` by `generate_dashboard.py`; rendered by the report page's 取證清單 panel | `build_chip_worklist.py` |
-| `cf_radar_counties.json` | 縣市（ADM1）級指標：每縣市的 `metric_id`／單位／最新值／相對基線／異常事件 ＋ 3 小時一格、7 天的縮圖序列。沒有資料的縣市也在裡面（`status: unavailable`、`level: unknown`）。**選配**——需要 Cloudflare token，且不保證每個縣市都有樣本；缺這個檔時地圖退回用 `ioda.json` 的 `counties` | `fetch_radar_counties.py` |
+| `cf_radar_counties.json` | 縣市（ADM1）級指標：每縣市的 `metric_id`／單位／最新值／相對基線／異常事件 ＋ 3 小時一格、7 天的縮圖序列 ＋ `speed_test`（Speed Test 實測中位數；與 IQI 指數是兩種量測，只做顯示、不進色階）。沒有資料的縣市也在裡面（`status: unavailable`、`level: unknown`）。**選配**——需要 Cloudflare token，且不保證每個縣市都有樣本；缺這個檔時地圖退回用 `ioda.json` 的 `counties` | `fetch_radar_counties.py` |
 | `tw_counties.geojson` | 22 縣市界（geoBoundaries CC BY 4.0，81KB）。**committed static asset**，不由 CI 產生 | `build_tw_counties.py`（一次性）|
 | `cf_radar.json` | Cloudflare Radar 流量／延遲時間序列（最近 14 天）+ 季節基線 + 異常事件（含關聯船隻）+ 中斷標註。`data.json` 內的 `network_anomalies` 已剝掉原始陣列，畫圖要用這個檔。**由 `cloudflare-radar.yml` 每 2 小時直接寫入並提交（唯一提交的一份，`data/cf_radar.json` 已 gitignore）** | `fetch_cloudflare_radar.py` |
 | `cable_status.json` | Submarine cable status | Manual |
