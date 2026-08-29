@@ -46,7 +46,9 @@ jobs:
         run: node tests/animation-smoke.js
 
       - name: Run network traffic dashboard smoke test (縣市色塊 + 離島狀態)
-        run: node tests/network-traffic-smoke.js
+        run: |
+          node tests/network-traffic-smoke.js
+          node tests/network-national-only-smoke.js
 
       - name: Run mobile navigation smoke test
         run: node tests/mobile-nav-smoke.js
