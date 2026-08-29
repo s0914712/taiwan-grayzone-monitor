@@ -30,12 +30,30 @@ const geo = JSON.parse(fs.readFileSync(path.join(DOCS, 'tw_counties.geojson')));
 const cf = JSON.parse(fs.readFileSync(path.join(DOCS, 'cf_radar.json')));
 const ioda = JSON.parse(fs.readFileSync(path.join(DOCS, 'ioda.json')));
 
-// 縣市指標檔是選配，這裡合成：連江有進行中的異常，臺北正常，其餘無資料
+// Radar 的台灣 ADM1 只有 4 個分區，所以合成資料也是分區展開的：
+// 福建（金門＋馬祖）有進行中的異常、臺北正常，其餘 18 縣市無資料。
 const countyMetrics = {
     generated_at: new Date().toISOString(),
+    adm1_groups: [
+        {
+            group_id: 'fukien', radar_name: 'Fukien',
+            label_zh: '福建省（金門・馬祖）', label_en: 'Fukien (Kinmen & Matsu)',
+            members: ['TW-KIN', 'TW-LIE'], status: 'available',
+            metric_id: 'iqi_bandwidth', unit: 'Mbps', latest: 12.5, level: 'alert',
+        },
+        {
+            group_id: 'taipei', radar_name: 'Taipei',
+            label_zh: '臺北市', label_en: 'Taipei',
+            members: ['TW-TPE'], status: 'available',
+            metric_id: 'iqi_bandwidth', unit: 'Mbps', latest: 180, level: 'normal',
+        },
+    ],
     counties: [
         {
             iso: 'TW-LIE', name_zh: '連江縣（馬祖）', name_en: 'Lienchiang (Matsu)',
+            is_group_value: true, adm1_group_id: 'fukien',
+            adm1_group_label_zh: '福建省（金門・馬祖）',
+            adm1_group_label_en: 'Fukien (Kinmen & Matsu)',
             status: 'available', metric_id: 'iqi_bandwidth',
             metric_label_zh: '頻寬（IQI 中位數）', metric_label_en: 'Bandwidth (IQI median)',
             unit: 'Mbps', higher_is_better: true, is_speed: true,
@@ -49,6 +67,8 @@ const countyMetrics = {
         },
         {
             iso: 'TW-TPE', name_zh: '臺北市', name_en: 'Taipei',
+            is_group_value: true, adm1_group_id: 'taipei',
+            adm1_group_label_zh: '臺北市', adm1_group_label_en: 'Taipei',
             status: 'available', metric_id: 'iqi_bandwidth',
             metric_label_zh: '頻寬（IQI 中位數）', metric_label_en: 'Bandwidth (IQI median)',
             unit: 'Mbps', higher_is_better: true, is_speed: true,
@@ -113,6 +133,8 @@ setTimeout(() => {
     assert(legend.includes('Mbps'), 'legend carries the unit');
     assert(legend.includes('12.5') || legend.includes('12'), 'legend low end comes from real data');
     assert(legend.includes('180'), 'legend high end comes from real data');
+    assert(legend.includes('福建省') && legend.includes('4 個'),
+        'legend lists the four Radar regions so nobody reads 22 counties into it');
 
     // 標題列的四個觀測點標記仍在色塊之上（circleMarker 也是 path）
     assert(mapEl.querySelectorAll('.leaflet-interactive').length >= 22,

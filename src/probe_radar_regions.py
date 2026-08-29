@@ -8,10 +8,21 @@ alpha-2 國碼，TW-LIE／TW-KIN 回 400，別再加回來」。那是在 Cloudf
 summary / timeseries_groups 都多了 `adm1` 維度與 **`geoId` 篩選**（GeoNames ID），
 `/radar/geolocations` 也能列出 ADM1。台灣的 ADM1 就是 22 個縣市。
 
-但**「網速」能不能拿到縣市粒度，官方沒有說**：IQI（頻寬／延遲）與 Speed Test
-是不是也吃 `geoId`，只能實測。這支腳本就是那個實測——它不寫任何管線資料，只
-產生一張「哪個端點吃 geoId」的能力矩陣，給 `fetch_radar_counties.py` 的指標
-階梯當依據。
+**實測結論（run 33216931232 + 33239842250）**：
+
+1. 速度類端點**全部吃 `geoId`**（IQI 頻寬／延遲／summary、Speed Test
+   summary＋histogram、HTTP、NetFlows 都 200 有值），對照組 `location=TW-LIE`
+   仍是 400。
+2. 但 **Radar 的台灣 ADM1 只有 4 個分區，不是 22 個縣市**：
+   `7280290 Taipei`／`7280289 Takao`（高雄舊名）／`7280288 Fukien`（金門＋馬祖）／
+   `7280291 Taiwan`（其餘 18 縣市）。entity **沒有 ISO 3166-2 欄位**，`code` 是
+   GeoNames 分區碼（台北 `03`），名稱是舊省制分區名——所以拿縣市英文名去比對
+   本來就只可能對到臺北一個。
+   注意「Taiwan」在同一份回應裡出現兩次（COUNTRY 1668284 與臺灣省 ADM1
+   7280291），比對時**必須看 `type`**。
+
+這支腳本仍留著，作為「Radar 哪天把粒度做細」時的重新驗證工具。它不寫任何管線
+資料，只產生一張「哪個端點吃 geoId」的能力矩陣與完整的 entity 清單。
 
 沙箱環境連不到 api.cloudflare.com，因此這支的執行方式是
 `.github/workflows/radar-region-probe.yml`（手動觸發，用 repo 既有的 token）。
