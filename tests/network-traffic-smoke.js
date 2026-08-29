@@ -23,10 +23,18 @@ const ioda = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'docs', 'ioda
 const counties = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'docs', 'tw_counties.geojson')));
 const html = fs.readFileSync(path.join(__dirname, '..', 'docs', 'network-traffic.html'), 'utf8');
 
-// 縣市指標檔是選配（要 Cloudflare token，管線跑過才有），因此這裡合成一份：
-// 一半縣市有網速、一半沒有，正好驗證「有資料上色、沒資料灰色」兩條路。
+// 縣市指標檔是選配（要 Cloudflare token，管線跑過才有），因此這裡合成一份。
+// Radar 的台灣 ADM1 只有 4 個分區，所以每筆縣市記錄都帶 is_group_value 與所屬
+// 分區標籤；這裡讓一半的縣市有值、一半沒有，驗證「有資料上色、沒資料灰色」
+// 與「分區值必須標示」兩條路。
 const countyMetrics = {
     generated_at: new Date().toISOString(),
+    adm1_groups: [{
+        group_id: 'fukien', radar_name: 'Fukien',
+        label_zh: '福建省（金門・馬祖）', label_en: 'Fukien (Kinmen & Matsu)',
+        members: ['TW-KIN', 'TW-LIE'], status: 'available',
+        metric_id: 'iqi_bandwidth', unit: 'Mbps', latest: 31.2, level: 'normal',
+    }],
     counties: counties.features.map((feature, index) => (index % 2 === 0 ? {
         iso: feature.properties.iso,
         name_zh: feature.properties.name_zh,
@@ -37,6 +45,9 @@ const countyMetrics = {
         latest: 50 + index * 3, baseline: 60 + index * 3, pct_vs_baseline: -5,
         level: index === 0 ? 'alert' : 'normal', anomalies: [],
         speed_test: { bandwidth_download: 124.51, bandwidth_upload: 65.25, latency_idle: 18.4 },
+        is_group_value: true, adm1_group_id: 'fukien',
+        adm1_group_label_zh: '福建省（金門・馬祖）',
+        adm1_group_label_en: 'Fukien (Kinmen & Matsu)',
         series: { timestamps: ['2026-08-01T00:00:00Z'], values: [50 + index * 3], bucket_hours: 3 },
     } : {
         iso: feature.properties.iso,
@@ -153,6 +164,12 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'docs', 'js', 'networ
     assert(!elements.countyModes.innerHTML.includes('流量指數'),
         'modes with no county data are not offered');
     assert(elements.countyLegend.innerHTML.includes('Mbps'), 'legend shows the metric unit');
+    assert(elements.countyLegend.innerHTML.includes('4 個'),
+        'legend states Radar only has 4 Taiwan regions, not 22 counties');
+    assert(withData[0].layer.popup.includes('非本縣市單獨量測'),
+        'popup says the value belongs to the Radar region, not the county alone');
+    assert(withData[0].layer.tooltip.includes('福建省'),
+        'tooltip names the Radar region the value came from');
 
     console.log('✅ network traffic dashboard smoke test passed');
 })().catch((err) => { console.error(err); process.exitCode = 1; });

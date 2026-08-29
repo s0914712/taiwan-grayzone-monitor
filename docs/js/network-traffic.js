@@ -502,9 +502,26 @@
         return scale.color(metric.value);
     }
 
+    function countyGroupLabel(view) {
+        var r = view.radar;
+        if (!r || !r.is_group_value) return '';
+        return zh() ? (r.adm1_group_label_zh || '') : (r.adm1_group_label_en || '');
+    }
+
     function countyPopupHtml(view, mode) {
         var metric = countyMetric(view, mode);
         var rows = ['<div class="region-popup-title">' + escapeHtml(countyName(view)) + '</div>'];
+        // Radar 的台灣 ADM1 只有 4 個分區（Taipei / Takao / Fukien＝金馬 /
+        // Taiwan＝其餘 18 縣市），沒有逐縣市的量測。把分區值講成縣市值就是謊報，
+        // 所以每一格都要標明它實際來自哪個分區。
+        var groupLabel = countyGroupLabel(view);
+        if (groupLabel && (mode === 'speed' || mode === 'traffic')) {
+            rows.push('<div class="region-popup-row region-popup-note">' +
+                t('此數值為 Cloudflare Radar 的分區（', 'Value is for the Cloudflare Radar region (') +
+                escapeHtml(groupLabel) +
+                t('）值，非本縣市單獨量測。', '), not a measurement of this county alone.') +
+                '</div>');
+        }
         if (metric) {
             rows.push('<div class="region-popup-state" style="color:' +
                 (REGION_COLORS[view.level] || '#8aa4c8') + '">' +
@@ -677,7 +694,26 @@
             swatches +
             '<span class="county-legend-label">' + escapeHtml(hi) +
             escapeHtml(unit ? ' ' + unit : '') + ' ' +
-            escapeHtml(scale.higherIsBetter ? t('高', 'High') : t('低', 'Low')) + '</span>';
+            escapeHtml(scale.higherIsBetter ? t('高', 'High') : t('低', 'Low')) + '</span>' +
+            radarGroupLegendHtml();
+    }
+
+    // Radar 只有 4 個分區，所以地圖上最多只會出現 4 種顏色。把分區與其涵蓋範圍
+    // 列出來，看的人才不會以為 22 個縣市各有一個量測。
+    function radarGroupLegendHtml() {
+        var groups = (state.countyData && state.countyData.adm1_groups) || [];
+        if (!groups.length) return '';
+        var items = groups.map(function (group) {
+            var label = zh() ? group.label_zh : group.label_en;
+            var value = group.latest == null ? t('無資料', 'no data')
+                : formatMetricValue(group.latest) + (group.unit ? ' ' + group.unit : '');
+            return '<span class="county-group-item">' + escapeHtml(label) + ' ' +
+                escapeHtml(value) + '</span>';
+        }).join('');
+        return '<div class="county-group-note">' +
+            t('Cloudflare Radar 的台灣分區只有 4 個（非 22 縣市）：',
+                'Cloudflare Radar has only 4 Taiwan regions (not 22 counties): ') +
+            items + '</div>';
     }
 
     function renderCountyLayer(views) {
@@ -686,6 +722,7 @@
         var mode = state.countyMode;
         if (!mode) return;
         var scale = buildCountyScale(views, mode);
+        var isGroupMode = (mode === 'speed' || mode === 'traffic');
         var byIso = {};
         views.forEach(function (v) { byIso[v.iso] = v; });
 
@@ -705,17 +742,25 @@
                     // 是深藍灰，和灰色太像，不這樣做會讓「最慢」看起來像「沒資料」
                     fillOpacity: hasData ? 0.75 : 0.22,
                     dashArray: hasData ? null : '3,3',
-                    // 外框永遠編碼「有沒有異常」，和填色的指標互不干擾
+                    // 外框永遠編碼「有沒有異常」（IODA 是真正的逐縣市訊號），
+                    // 和填色的指標互不干擾。Radar 模式下沒有異常的縣市界再淡一級：
+                    // 同一個 Radar 分區的縣市填的是同一個數值，界線畫太重會讓人
+                    // 以為每個縣市各有量測。
                     color: level === 'normal' || level === 'unknown'
-                        ? 'rgba(138,164,200,0.45)' : REGION_COLORS[level],
-                    weight: level === 'alert' ? 2.4 : (level === 'watch' ? 1.8 : 0.7)
+                        ? (isGroupMode ? 'rgba(138,164,200,0.22)' : 'rgba(138,164,200,0.45)')
+                        : REGION_COLORS[level],
+                    weight: level === 'alert' ? 2.4 : (level === 'watch' ? 1.8
+                        : (isGroupMode ? 0.4 : 0.7))
                 };
             },
             onEachFeature: function (feature, layer) {
                 var view = byIso[feature.properties.iso];
                 if (!view) return;
                 var metric = countyMetric(view, mode);
+                var groupLabel = countyGroupLabel(view);
                 layer.bindTooltip(escapeHtml(countyName(view)) +
+                    (groupLabel && (mode === 'speed' || mode === 'traffic')
+                        ? ' · ' + escapeHtml(groupLabel) : '') +
                     (metric ? ' · ' + escapeHtml(metric.display) +
                         (metric.unit ? ' ' + escapeHtml(metric.unit) : '') : ''),
                     { sticky: true, className: 'region-map-label' });

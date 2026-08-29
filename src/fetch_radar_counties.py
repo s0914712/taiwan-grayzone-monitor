@@ -1,17 +1,32 @@
 #!/usr/bin/env python3
 """
-Cloudflare Radar 縣市（ADM1）級網路指標 — Taiwan Gray Zone Monitor
+Cloudflare Radar 分區（ADM1）級網路指標 — Taiwan Gray Zone Monitor
 
 `fetch_cloudflare_radar.py` 抓的是**國家級**（`location=TW`）序列。2025-09-29
-Cloudflare 推出 Regional Data 之後，HTTP／NetFlows 的 summary 與
-timeseries_groups 多了 `adm1` 維度與 **`geoId` 篩選**（GeoNames ID），
-`/radar/geolocations` 可列出 ADM1 —— 台灣的 ADM1 就是 22 個縣市。
-這支腳本就是把那個粒度接進來，讓前端能以縣市為區塊上色。
+Cloudflare 推出 Regional Data 之後，多了 **`geoId` 篩選**（GeoNames ID），
+可以拿到第一級行政區（ADM1）的資料。
 
-**指標階梯**（`METRIC_LADDER`）：Cloudflare 沒有明說「速度」類端點
-（IQI 頻寬／延遲、Speed Test）吃不吃 `geoId`，所以程式**逐縣市依序試**，
-第一個回得出序列的就採用，並把 `metric_id` 寫進輸出——前端據此標明這一格
-到底是「實測頻寬」還是「流量指數」，不會把兩件事混為一談。
+⚠️ **Radar 的台灣 ADM1 只有 4 個分區，不是 22 個縣市**（實測：
+`probe_radar_regions.py`，Actions run 33239842250）。用的是 GeoNames 的舊台灣
+省制分區，entity 也**沒有 ISO 3166-2 欄位**（`code` 是 GeoNames 分區碼）：
+
+    7280290 Taipei  → 臺北市
+    7280289 Takao   → 高雄市（打狗）
+    7280288 Fukien  → **金門縣 + 連江縣（馬祖）**
+    7280291 Taiwan  → 其餘 18 個縣市
+
+所以「每個縣市各自的網速」在 Radar 上**不存在**。這支腳本抓的是這 4 個分區，
+輸出時再展開成 22 筆縣市記錄（`is_group_value: True`），讓前端能以縣市界上色、
+同時在每一格標明「這是分區值，不是本縣市單獨量測」——把分區值講成縣市值就是
+謊報。真正逐縣市的訊號只有 `fetch_ioda.py` 那條（可達性）。
+
+**判讀價值**：Fukien 分區＝金門＋馬祖，是 Radar 唯一單獨切出來的離島分區。
+馬祖正是 IODA 完全沒有資料的那一座島（見 `src/CLAUDE.md` 的否定結果），
+這條線因此是馬祖唯一的頻寬／延遲量測來源。
+
+**指標階梯**（`METRIC_LADDER`）：逐分區依序試 IQI 頻寬 → IQI 延遲 → NetFlows
+流量指數，第一個回得出序列的就採用，`metric_id`／`is_speed` 寫進輸出——前端
+據此標明這一格是「實測頻寬」還是「流量指數」，不會把兩件事混為一談。
 能力矩陣由 `src/probe_radar_regions.py`（手動觸發的 workflow）實測。
 
 判讀邏輯完全沿用 `anomaly_detect`（與國家級、IODA 同一套），此處不重做。
@@ -19,7 +34,7 @@ timeseries_groups 多了 `adm1` 維度與 **`geoId` 篩選**（GeoNames ID），
 用法:
   python3 src/fetch_radar_counties.py               # 抓 28 天、偵測、寫檔
   python3 src/fetch_radar_counties.py --days 14
-  python3 src/fetch_radar_counties.py --refresh-geoids   # 強制重解析 geoId
+  python3 src/fetch_radar_counties.py --refresh-geoids   # 強制重解析分區 geoId
 
 輸出: data/cf_radar_counties.json
 """
@@ -111,6 +126,49 @@ def county_roster():
             for iso in sorted(COUNTY_NAMES_ZH)]
 
 
+# ── Radar 的台灣 ADM1 分區 ──────────────────────────────────────────────────
+# geo_id 是**實測驗證過**的（run 33239842250 印出完整 entity），不是猜的，因此
+# 可以當靜態表用；程式仍會向 `/radar/geolocations` 動態解析並覆寫，Radar 哪天改
+# 代碼也不會整支壞掉。`members` 是這個分區涵蓋的 ISO 3166-2 縣市。
+_SPECIAL_MEMBERS = {"TW-TPE", "TW-KHH", "TW-KIN", "TW-LIE"}
+
+RADAR_ADM1_GROUPS = [
+    {"id": "taipei", "geo_id": "7280290", "radar_name": "Taipei",
+     "label_zh": "臺北市", "label_en": "Taipei",
+     "members": ["TW-TPE"]},
+    {"id": "takao", "geo_id": "7280289", "radar_name": "Takao",
+     "label_zh": "高雄市", "label_en": "Kaohsiung (Takao)",
+     "members": ["TW-KHH"]},
+    # Radar 唯一單獨切出來的離島分區。馬祖在 IODA 沒有資料，這是它唯一的頻寬來源。
+    {"id": "fukien", "geo_id": "7280288", "radar_name": "Fukien",
+     "label_zh": "福建省（金門・馬祖）", "label_en": "Fukien (Kinmen & Matsu)",
+     "members": ["TW-KIN", "TW-LIE"]},
+    {"id": "taiwan_province", "geo_id": "7280291", "radar_name": "Taiwan",
+     "label_zh": "臺灣省（其餘 18 縣市）",
+     "label_en": "Taiwan Province (other 18 counties)",
+     "members": [iso for iso in sorted(COUNTY_NAMES_ZH)
+                 if iso not in _SPECIAL_MEMBERS]},
+]
+
+# Radar 名稱 → 分區 id。名稱是 GeoNames 的舊分區名（Takao＝高雄舊名打狗、
+# Fukien＝福建），因此別名要收得寬一點。
+GROUP_NAME_ALIASES = {
+    "taipei": "taipei",
+    "takao": "takao", "kaohsiung": "takao",
+    "fukien": "fukien", "fujian": "fukien", "kinmen": "fukien", "matsu": "fukien",
+    "taiwan": "taiwan_province", "taiwanprovince": "taiwan_province",
+}
+
+
+def group_by_iso(groups=None):
+    """ISO → 分區 spec，供展開縣市記錄時查表。"""
+    out = {}
+    for spec in (groups or RADAR_ADM1_GROUPS):
+        for iso in spec["members"]:
+            out[iso] = spec
+    return out
+
+
 # ── geoId 解析 ──────────────────────────────────────────────────────────────
 
 def _normalize_name(name):
@@ -121,37 +179,27 @@ def _normalize_name(name):
     return "".join(ch for ch in text if ch.isalnum())
 
 
-NAME_ALIASES = {
-    # Radar 端可能用的別名 → 我們的 ISO 代碼
-    "matsu": "TW-LIE", "lienkiang": "TW-LIE", "lienchiang": "TW-LIE",
-    "newtaipei": "TW-NWT", "taipeicounty": "TW-NWT",
-    "keelung": "TW-KEE", "chiayi": "TW-CYQ", "hsinchu": "TW-HSQ",
-}
+def match_group_geoids(entries, groups=None):
+    """把 Radar 回來的 entity 對到分區 id → geoId。
 
-
-def match_geoids(entries, roster=None):
-    """把 Radar 回來的 ADM1 entity 對到我們的 ISO 代碼。
-
-    先用 ISO（最可靠），沒有 ISO 才用正規化後的英文名；兩者都對不上就丟掉——
-    寧可少一個縣市顯示「資料不足」，也不要把宜蘭的數字畫到花蓮頭上。
+    **必須是 `type == "ADM1"`**：同一份回應裡「Taiwan」出現兩次——一次是
+    COUNTRY（geoId 1668284），一次是臺灣省 ADM1（7280291）。不看 type 就會把
+    整個國家的數值當成臺灣省分區畫上去。
+    entity 沒有 ISO 3166-2 欄位（實測），所以只能用名稱比對。
     """
-    roster = roster or county_roster()
-    by_iso = {c["iso"]: c for c in roster}
-    by_name = {}
-    for c in roster:
-        by_name.setdefault(_normalize_name(c["name_en"]), c["iso"])
-    by_name.update({k: v for k, v in NAME_ALIASES.items()})
-
+    groups = groups or RADAR_ADM1_GROUPS
+    known = {spec["id"] for spec in groups}
     out = {}
     for entry in entries or []:
         geo_id = entry.get("geo_id") or entry.get("geoId") or entry.get("id")
         if geo_id is None:
             continue
-        iso = (entry.get("iso") or "").upper()
-        if iso not in by_iso:
-            iso = by_name.get(_normalize_name(entry.get("name")), "")
-        if iso in by_iso and iso not in out:
-            out[iso] = str(geo_id)
+        entity_type = (entry.get("type") or "").upper()
+        if entity_type and entity_type != "ADM1":
+            continue
+        group_id = GROUP_NAME_ALIASES.get(_normalize_name(entry.get("name")))
+        if group_id in known and group_id not in out:
+            out[group_id] = str(geo_id)
     return out
 
 
@@ -194,6 +242,7 @@ def extract_adm1_entities(payload):
                    or node.get("subdivisionCode") or node.get("alpha2"))
             if geo_id is not None and name:
                 found[str(geo_id)] = {"geo_id": str(geo_id), "name": str(name),
+                                      "type": node.get("type"),
                                       "iso": (str(iso) if iso else None)}
             for value in node.values():
                 walk(value)
@@ -218,37 +267,48 @@ GEOID_LOOKUPS = [
 ]
 
 
-def resolve_county_geoids(session, token, cache_path=GEOID_CACHE, refresh=False):
-    """ISO → geoId。優先讀快取（30 天），過期或 --refresh-geoids 才重打 API。"""
-    cache = load_json(cache_path, {}, label="radar geoId 快取", expect_type=dict)
-    if not refresh and cache.get("geoids"):
+def static_group_geoids(groups=None):
+    """實測驗證過的分區 geoId（動態解析失敗時的保底）。"""
+    return {spec["id"]: spec["geo_id"] for spec in (groups or RADAR_ADM1_GROUPS)}
+
+
+def resolve_group_geoids(session, token, cache_path=GEOID_CACHE, refresh=False):
+    """分區 id → geoId。快取 30 天；動態解析失敗時退回實測驗證過的靜態表。
+
+    靜態表能當保底是因為那四個 geoId 是**實跑確認**的（不是猜的）；動態解析仍
+    優先，Radar 若改了代碼才不會整支壞掉。
+    """
+    cache = load_json(cache_path, {}, label="radar 分區 geoId 快取",
+                      expect_type=dict)
+    if not refresh and cache.get("groups"):
         resolved_at = _parse_ts(cache.get("resolved_at"))
         fresh = resolved_at and (datetime.now(timezone.utc) - resolved_at
                                  < timedelta(days=GEOID_CACHE_DAYS))
         if fresh:
-            print(f"🗂️  geoId 快取命中（{len(cache['geoids'])} 縣市）")
-            return cache["geoids"]
+            print(f"🗂️  分區 geoId 快取命中（{len(cache['groups'])} 個分區）")
+            return {**static_group_geoids(), **cache["groups"]}
 
     for path, params in GEOID_LOOKUPS:
         payload, status = _radar_get(session, token, path, params)
         if not payload:
             print(f"   ↳ [{path}] HTTP {status}")
             continue
-        geoids = match_geoids(extract_adm1_entities(payload))
+        geoids = match_group_geoids(extract_adm1_entities(payload))
         if geoids:
-            print(f"   ✅ [{path}] 解析出 {len(geoids)} 個縣市 geoId")
+            print(f"   ✅ [{path}] 解析出 {len(geoids)} 個分區 geoId：{geoids}")
             atomic_write_json(cache_path, {
                 "resolved_at": datetime.now(timezone.utc).isoformat(),
                 "source": path,
-                "geoids": geoids,
+                "groups": geoids,
             })
-            return geoids
-        print(f"   ↳ [{path}] 回應裡沒有可辨識的台灣 ADM1")
+            return {**static_group_geoids(), **geoids}
+        print(f"   ↳ [{path}] 回應裡沒有可辨識的台灣 ADM1 分區")
 
-    if cache.get("geoids"):
-        print("⚠️ 重新解析失敗，沿用過期的 geoId 快取")
-        return cache["geoids"]
-    return {}
+    if cache.get("groups"):
+        print("⚠️ 重新解析失敗，沿用過期的分區 geoId 快取")
+        return {**static_group_geoids(), **cache["groups"]}
+    print("⚠️ 動態解析失敗，改用實測驗證過的靜態分區表")
+    return static_group_geoids()
 
 
 # ── 指標抓取 ────────────────────────────────────────────────────────────────
@@ -320,14 +380,14 @@ def _to_float(value):
 
 
 def fetch_speed_test(session, token, geo_id, days=SPEED_TEST_DAYS):
-    """抓某縣市的 Speed Test 實測摘要。拿不到回 None（不影響主指標）。"""
+    """抓某分區的 Speed Test 實測摘要。拿不到回 None（不影響主指標）。"""
     payload, _ = _radar_get(session, token, "radar/quality/speed/summary",
                             {"dateRange": f"{days}d", "geoId": geo_id})
     return parse_speed_summary(payload)
 
 
-def fetch_county_metric(session, token, geo_id, days=DEFAULT_DAYS,
-                        ladder=None):
+def fetch_group_metric(session, token, geo_id, days=DEFAULT_DAYS,
+                       ladder=None):
     """依階梯逐一嘗試，回 (metric, series, attempts)；全部失敗 metric 為 None。"""
     attempts = []
     for metric in (ladder or METRIC_LADDER):
@@ -386,9 +446,9 @@ def classify_level(anomalies, now=None):
     return "watch"
 
 
-def build_county_record(county, metric, analysis, geo_id=None, now=None,
-                        speed_test=None):
-    """組一筆縣市輸出（純函式，方便單測）。
+def build_group_record(spec, metric, analysis, geo_id=None, now=None,
+                       speed_test=None):
+    """組一筆**分區**輸出（純函式，方便單測）。
 
     `speed_test` 是 Speed Test 實測摘要（`parse_speed_summary`），與色階用的
     `metric` 分開存：色階要的是有基線、能做異常偵測的時間序列，實測中位數只是
@@ -399,10 +459,12 @@ def build_county_record(county, metric, analysis, geo_id=None, now=None,
                                            analysis.get("values") or [])
     anomalies = analysis.get("anomalies") or []
     return {
-        "iso": county["iso"],
-        "name_zh": county["name_zh"],
-        "name_en": county["name_en"],
-        "geo_id": geo_id,
+        "group_id": spec["id"],
+        "radar_name": spec["radar_name"],
+        "label_zh": spec["label_zh"],
+        "label_en": spec["label_en"],
+        "members": list(spec["members"]),
+        "geo_id": geo_id or spec["geo_id"],
         "status": "available",
         "metric_id": metric["id"],
         "metric_label_zh": metric["label_zh"],
@@ -423,11 +485,12 @@ def build_county_record(county, metric, analysis, geo_id=None, now=None,
     }
 
 
-def unavailable_record(county, reason, geo_id=None):
-    """沒有資料的縣市也要寫進輸出——地圖上是灰色，不是「正常」。"""
+def unavailable_group_record(spec, reason, geo_id=None):
+    """沒有資料的分區也要寫進輸出——地圖上是灰色，不是「正常」。"""
     return {
-        "iso": county["iso"], "name_zh": county["name_zh"],
-        "name_en": county["name_en"], "geo_id": geo_id,
+        "group_id": spec["id"], "radar_name": spec["radar_name"],
+        "label_zh": spec["label_zh"], "label_en": spec["label_en"],
+        "members": list(spec["members"]), "geo_id": geo_id or spec["geo_id"],
         "status": "unavailable", "error_reason": reason,
         "metric_id": None, "level": "unknown", "latest": None,
         "anomalies": [], "speed_test": None,
@@ -436,37 +499,92 @@ def unavailable_record(county, reason, geo_id=None):
     }
 
 
-def build_summary(counties):
+# 展開成縣市時**不複製**的欄位：那是分區層的身分，複製過去會讓人以為
+# 這一格是該縣市自己的量測。
+_GROUP_ONLY_KEYS = {"group_id", "radar_name", "label_zh", "label_en", "members"}
+
+
+def county_records_from_groups(groups, roster=None):
+    """分區記錄 → 22 筆縣市記錄（純函式）。
+
+    前端的資料契約是「一個縣市一筆」，但 Radar 給的是 4 個分區，因此每筆都帶
+    `is_group_value: True` 與所屬分區的標籤——地圖可以照縣市界上色，同時在每一格
+    誠實標明「這是分區值，不是本縣市單獨量測」。
+    """
+    roster = roster or county_roster()
+    by_iso = {}
+    for group in groups:
+        for iso in group.get("members") or []:
+            by_iso[iso] = group
+
+    out = []
+    for county in roster:
+        group = by_iso.get(county["iso"])
+        if group is None:
+            out.append({
+                "iso": county["iso"], "name_zh": county["name_zh"],
+                "name_en": county["name_en"], "status": "unavailable",
+                "error_reason": "no_adm1_group", "metric_id": None,
+                "level": "unknown", "latest": None, "anomalies": [],
+                "speed_test": None, "is_group_value": False,
+                "series": {"timestamps": [], "values": [],
+                           "bucket_hours": OUTPUT_BUCKET_HOURS},
+            })
+            continue
+        record = {k: v for k, v in group.items() if k not in _GROUP_ONLY_KEYS}
+        record.update({
+            "iso": county["iso"],
+            "name_zh": county["name_zh"],
+            "name_en": county["name_en"],
+            "is_group_value": True,
+            "adm1_group_id": group["group_id"],
+            "adm1_group_label_zh": group["label_zh"],
+            "adm1_group_label_en": group["label_en"],
+            "adm1_group_members": list(group.get("members") or []),
+        })
+        out.append(record)
+    return out
+
+
+def build_summary(groups, counties):
+    """摘要以**分區**為主體計數。
+
+    「22 個縣市裡有幾個拿到網速」是誤導性的數字——資料只有 4 個分區，
+    縣市數只是分區覆蓋範圍的副產品，所以縣市那邊只計「被分區覆蓋幾個」。
+    """
     availability, levels = {}, {}
     anomaly_count = 0
-    for c in counties:
-        levels[c["level"]] = levels.get(c["level"], 0) + 1
-        anomaly_count += len(c.get("anomalies") or [])
-        if c.get("metric_id"):
-            availability[c["metric_id"]] = availability.get(c["metric_id"], 0) + 1
-    available = [c for c in counties if c["status"] == "available"]
-    speed_counties = [c for c in available if c.get("is_speed")]
+    for g in groups:
+        levels[g["level"]] = levels.get(g["level"], 0) + 1
+        anomaly_count += len(g.get("anomalies") or [])
+        if g.get("metric_id"):
+            availability[g["metric_id"]] = availability.get(g["metric_id"], 0) + 1
+    available = [g for g in groups if g["status"] == "available"]
     return {
+        "adm1_groups_total": len(groups),
+        "adm1_groups_with_data": len(available),
+        "adm1_groups_with_speed_metric": sum(1 for g in available
+                                             if g.get("is_speed")),
+        "adm1_groups_with_speed_test": sum(
+            1 for g in groups
+            if (g.get("speed_test") or {}).get("bandwidth_download") is not None),
         "counties_total": len(counties),
-        "counties_with_data": len(available),
-        "counties_with_speed_metric": len(speed_counties),
-        "counties_with_speed_test": sum(
-            1 for c in counties
-            if (c.get("speed_test") or {}).get("bandwidth_download") is not None),
+        "counties_covered_by_group": sum(1 for c in counties
+                                         if c.get("is_group_value")),
         "metric_availability": availability,
         "by_level": levels,
         "anomaly_count": anomaly_count,
         "latest_anomaly_onset": max(
-            (e["onset"] for c in counties for e in (c.get("anomalies") or [])),
+            (e["onset"] for g in groups for e in (g.get("anomalies") or [])),
             default=None),
     }
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Cloudflare Radar 縣市級網路指標")
+    ap = argparse.ArgumentParser(description="Cloudflare Radar 分區級網路指標")
     ap.add_argument("--days", type=int, default=DEFAULT_DAYS)
     ap.add_argument("--refresh-geoids", action="store_true",
-                    help="忽略快取，重新向 Radar 解析縣市 geoId")
+                    help="忽略快取，重新向 Radar 解析分區 geoId")
     ap.add_argument("-o", "--output",
                     default=str(DATA_DIR / "cf_radar_counties.json"))
     args = ap.parse_args()
@@ -478,53 +596,58 @@ def main():
         sys.exit(1)
 
     session = requests.Session()
-    print("🌍 解析縣市 geoId …")
-    geoids = resolve_county_geoids(session, token, refresh=args.refresh_geoids)
-    if not geoids:
-        print("❌ Radar 沒有回傳任何台灣 ADM1 geoId —— 這個帳號／版本可能還沒有"
-              "區域資料，先跑 src/probe_radar_regions.py 看能力矩陣")
-        sys.exit(1)
+    print("🌍 解析分區 geoId …")
+    geoids = resolve_group_geoids(session, token, refresh=args.refresh_geoids)
 
-    counties = []
-    for county in county_roster():
-        geo_id = geoids.get(county["iso"])
-        if not geo_id:
-            print(f"⚠️ {county['name_zh']}：Radar 沒有對應的 geoId")
-            counties.append(unavailable_record(county, "geoid_not_found"))
-            continue
-        metric, series, attempts = fetch_county_metric(session, token, geo_id,
-                                                       days=args.days)
+    groups = []
+    for spec in RADAR_ADM1_GROUPS:
+        geo_id = geoids.get(spec["id"], spec["geo_id"])
+        metric, series, attempts = fetch_group_metric(session, token, geo_id,
+                                                      days=args.days)
         if metric is None:
             tried = ",".join(f"{a['metric_id']}:{a['status']}" for a in attempts)
-            print(f"⚠️ {county['name_zh']}：所有指標都拿不到（{tried}）")
-            counties.append(unavailable_record(county, "no_metric_available",
-                                               geo_id))
+            print(f"⚠️ {spec['label_zh']}：所有指標都拿不到（{tried}）")
+            groups.append(unavailable_group_record(spec, "no_metric_available",
+                                                   geo_id))
             continue
         analysis = analyze_values(series["timestamps"], series["values"],
                                   direction=metric["direction"])
         speed_test = fetch_speed_test(session, token, geo_id)
-        record = build_county_record(county, metric, analysis, geo_id=geo_id,
-                                     speed_test=speed_test)
-        counties.append(record)
+        record = build_group_record(spec, metric, analysis, geo_id=geo_id,
+                                    speed_test=speed_test)
+        groups.append(record)
         speed_note = ""
         if speed_test and speed_test.get("bandwidth_download") is not None:
             speed_note = (f"｜Speed Test 下載 "
                           f"{speed_test['bandwidth_download']} Mbps")
-        print(f"✅ {county['name_zh']}：{metric['label_zh']} "
-              f"{record['latest']}{metric['unit']}｜{analysis['points']} 點｜"
-              f"異常 {len(analysis['anomalies'])} 件{speed_note}")
+        print(f"✅ {record['label_zh']}（{spec['radar_name']} / {geo_id}）："
+              f"{metric['label_zh']} {record['latest']}{metric['unit']}｜"
+              f"{analysis['points']} 點｜異常 {len(analysis['anomalies'])} 件"
+              f"{speed_note}｜涵蓋 {len(spec['members'])} 縣市")
+
+    if not any(g["status"] == "available" for g in groups):
+        print("❌ 四個分區都拿不到資料 —— 先跑 src/probe_radar_regions.py 看能力矩陣")
+        sys.exit(1)
+
+    counties = county_records_from_groups(groups)
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "window_days": args.days,
         "agg_interval": AGG_INTERVAL,
         "source": "Cloudflare Radar (ADM1 / geoId)",
+        # 讓看檔案的人一眼知道粒度限制，不必回頭翻程式
+        "granularity_note": ("Radar 的台灣 ADM1 只有 4 個分區（Taipei / Takao / "
+                             "Fukien＝金門馬祖 / Taiwan＝其餘 18 縣市），不是 22 個"
+                             "縣市；counties 內每筆的 is_group_value 標示該數值來自"
+                             "所屬分區，而非該縣市單獨量測。"),
         "metric_ladder": [{k: m[k] for k in
                            ("id", "label_zh", "label_en", "unit",
                             "higher_is_better", "is_speed")}
                           for m in METRIC_LADDER],
+        "adm1_groups": groups,
         "counties": counties,
-        "summary": build_summary(counties),
+        "summary": build_summary(groups, counties),
     }
     out = Path(args.output)
     atomic_write_json(out, payload, compact=True)
