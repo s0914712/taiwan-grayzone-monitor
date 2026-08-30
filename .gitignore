@@ -12,6 +12,11 @@ data/ais_track_commercial.json
 data/track_delta.jsonl
 data/track_commercial_delta.jsonl
 
+# 完整高風險 snapshot：analyze_suspicious.py 每輪重寫（update-ais.yml 一天
+# ~17 次），只作 aggregate_highrisk.py 的累積來源，不進 git；
+# 累積後的 data/highrisk_accumulator.json 才是提交的那份。
+data/highrisk_snapshot.json
+
 # 流量異常偵測輸出：cloudflare-radar.yml 每 2 小時重寫一次，只提交 docs/ 那一份
 # （兩份會讓 repo 成長速度翻倍）。generate_dashboard 找不到這個檔會退回讀 docs/。
 data/cf_radar.json

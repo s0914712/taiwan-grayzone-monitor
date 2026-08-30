@@ -590,6 +590,7 @@ SITEMAP_DATA_PAGE_SUFFIXES = (
     'ship-transfers.html',
     'ais-animation.html',
     'cn-fishing-animation.html',
+    'weekly-report.html',         # 高風險船週報（每週更新）
     'reports/',                   # 每日報告索引
 )
 

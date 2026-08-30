@@ -806,10 +806,13 @@
                 // 22 個縣市因此只占畫面中間一小塊。0.25 級距貼合得多。
                 zoomSnap: 0.25
             }).setView([24.25, 120.05], 6);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                maxZoom: 18,
-                opacity: 0.9,
-                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+            // CARTO 免費底圖已改為需 API key（無 key 會打上浮水印），改用免金鑰的 Esri 暗色底圖
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                maxNativeZoom: 16, maxZoom: 18, opacity: 0.9,
+                attribution: 'Tiles &copy; Esri'
+            }).addTo(state.map);
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+                maxNativeZoom: 16, maxZoom: 18, opacity: 0.9
             }).addTo(state.map);
             state.markerLayer = L.layerGroup().addTo(state.map);
         } else {

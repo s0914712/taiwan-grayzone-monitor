@@ -479,6 +479,10 @@ EN_HOWTO = {
 # names (kept as the English side). Applied to whole text nodes and to title=""
 # attributes on the /en/ mirror only.
 EN_TEXT = {
+    # weekly-report card chips (blog.html)
+    "報表": "Reports",
+    "互動地圖": "Interactive Map",
+    "資料下載": "Data Download",
     # section / list labels
     "系列文章 SERIES →": "SERIES →",
     "海洋法專區 SERIES →": "SERIES →",

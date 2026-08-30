@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>高風險船舶週報 | High-Risk Vessel Weekly Report - Taiwan Gray Zone &amp; Submarine Cable Monitor</title>
+    <meta name="description" content="每週彙整台灣周邊高風險船舶：低速徘徊熱區互動地圖、船種與船籍分布、出入港與海上時間、海纜滯留時數與平均船速，附 CSV/JSON 下載">
+    <meta name="keywords" content="高風險船舶,週報,徘徊熱區,海底電纜,loitering,Taiwan Strait,weekly report,maritime surveillance">
+    <meta name="author" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-report.html">
+    <link rel="alternate" hreflang="zh-TW" href="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-report.html">
+    <link rel="alternate" hreflang="en" href="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-report.html?lang=en">
+    <link rel="alternate" hreflang="x-default" href="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-report.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="高風險船舶週報 | High-Risk Vessel Weekly Report">
+    <meta property="og:description" content="每週彙整台灣周邊高風險船舶：低速徘徊熱區互動地圖、船種與船籍分布、出入港與海纜滯留統計">
+    <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/weekly-report.html">
+    <meta property="og:image" content="https://s0914712.github.io/taiwan-grayzone-monitor/og-banner.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Taiwan Gray Zone &amp; Submarine Cable Monitor 台灣灰色地帶與海底電纜監測">
+    <meta property="og:site_name" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:locale:alternate" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://s0914712.github.io/taiwan-grayzone-monitor/og-banner.png">
+    <meta name="twitter:title" content="高風險船舶週報 | High-Risk Vessel Weekly Report">
+    <meta name="twitter:description" content="每週彙整台灣周邊高風險船舶：低速徘徊熱區互動地圖、船種與船籍分布、出入港與海纜滯留統計">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M82X8QBL');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"></noscript>
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="css/leaflet.css" />
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/main.css">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebPage",
+                "name": "高風險船舶週報 | High-Risk Vessel Weekly Report",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/weekly-report.html",
+                "description": "每週彙整台灣周邊高風險船舶：低速徘徊熱區互動地圖、船種與船籍分布、出入港與海上時間、海纜滯留時數與平均船速",
+                "inLanguage": "zh-TW",
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" }
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "首頁 Home", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/" },
+                    { "@type": "ListItem", "position": 2, "name": "深度文章 Articles", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/blog.html" },
+                    { "@type": "ListItem", "position": 3, "name": "高風險船舶週報 Weekly Report", "item": "https://s0914712.github.io/taiwan-grayzone-monitor/weekly-report.html" }
+                ]
+            },
+            {
+                "@type": "Dataset",
+                "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/weekly-report.html#dataset",
+                "name": "Taiwan High-Risk Vessel Weekly Aggregates",
+                "alternateName": "台灣高風險船舶週彙整資料集",
+                "description": "Weekly and monthly aggregates of high-risk vessels around Taiwan: 0.1-degree low-speed loitering hotspot grid near submarine cables, vessel type and flag-state breakdowns, departure/arrival ports, time at sea, and average speed during cable-proximity loitering. CSV and JSON downloads per ISO week and calendar month.",
+                "url": "https://s0914712.github.io/taiwan-grayzone-monitor/weekly-report.html",
+                "inLanguage": ["zh-TW", "en"],
+                "isAccessibleForFree": true,
+                "keywords": ["high-risk vessels", "loitering", "submarine cables", "Taiwan Strait", "週報", "徘徊熱區"],
+                "spatialCoverage": { "@type": "Place", "geo": { "@type": "GeoShape", "box": "19 116 30 130" } },
+                "license": "https://github.com/s0914712/taiwan-grayzone-monitor/blob/main/LICENSE",
+                "creator": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#org" },
+                "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" },
+                "distribution": {
+                    "@type": "DataDownload",
+                    "encodingFormat": "application/json",
+                    "contentUrl": "https://s0914712.github.io/taiwan-grayzone-monitor/reports/weekly/index.json"
+                }
+            }
+        ]
+    }
+    </script>
+
+    <style>
+        body { overflow-y: auto; }
+
+        /* 站上共用的 .main-content 是兩欄 grid；本頁是直式流（期別列 → 統計 →
+           地圖 → 分布 → 表格），沿用兩欄會把期別 panel 孤立在左半邊。 */
+        .main-content { display: block; }
+        .main-content > * + * { margin-top: 16px; }
+
+        #map { height: 460px; border-radius: 0 0 6px 6px; }
+
+        /* 站上共用的 .map-legend 是浮在地圖上的疊層（position:absolute）；
+           本頁的圖例是地圖下方的橫列，因此用專屬 class，不覆寫共用元件 */
+        .layer-bar {
+            display: flex; flex-wrap: wrap; gap: 14px;
+            padding: 8px 12px; font-size: var(--fs-caption);
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(0, 245, 255, 0.1);
+        }
+        .layer-bar label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .legend-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 2px; }
+        .legend-ramp { display: inline-flex; }
+        .legend-ramp span { width: 11px; height: 11px; }
+
+        /* 期別選擇 chips */
+        .period-groups { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
+        .period-group-label {
+            font-size: var(--fs-label); letter-spacing: 1px;
+            color: var(--text-secondary); text-transform: uppercase;
+        }
+        .period-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .period-chip {
+            background: var(--bg-card); color: var(--text-primary);
+            border: 1px solid rgba(0, 245, 255, 0.25); border-radius: 6px;
+            padding: 5px 10px; cursor: pointer; text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .period-chip:hover { border-color: var(--accent-cyan); }
+        .period-chip.active {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 6px rgba(0, 245, 255, 0.35);
+        }
+        .period-chip .chip-label { display: block; font-size: var(--fs-body); font-weight: 600; }
+        .period-chip .chip-sub { display: block; font-size: var(--fs-label); color: var(--text-secondary); }
+        .period-empty { font-size: var(--fs-caption); color: var(--text-secondary); }
+
+        /* 船種 / 船籍 */
+        .type-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+        .type-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            border: 1px solid; border-radius: 12px; padding: 3px 10px;
+            font-size: var(--fs-caption); color: var(--text-primary);
+            background: var(--bg-card);
+        }
+        .type-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .mid-code { color: var(--text-secondary); font-size: var(--fs-label); margin-left: 4px; }
+
+        /* 表格 */
+        .table-scroll { overflow-x: auto; }
+        table.rpt-table { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+        table.rpt-table th, table.rpt-table td {
+            padding: 6px 10px; text-align: left; white-space: nowrap;
+            border-bottom: 1px solid rgba(0, 245, 255, 0.08);
+        }
+        table.rpt-table th { color: var(--text-secondary); font-weight: 500; font-size: var(--fs-caption); }
+        table.rpt-table td.num, table.rpt-table th.num { text-align: right; }
+        table.rpt-table tbody tr { cursor: pointer; }
+        table.rpt-table tbody tr:hover { background: rgba(0, 245, 255, 0.05); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .v-name { font-weight: 500; }
+        .v-mmsi { color: var(--text-secondary); font-size: var(--fs-label); }
+        .risk-badge {
+            display: inline-block; min-width: 26px; text-align: center;
+            color: #0a0f1c; font-weight: 700; border-radius: 4px;
+            padding: 2px 5px; font-family: 'JetBrains Mono', monospace;
+            font-size: var(--fs-caption);
+        }
+
+        .coverage-note {
+            margin: 0 0 12px; padding: 8px 12px;
+            background: rgba(255, 171, 46, 0.12);
+            border: 1px solid rgba(255, 171, 46, 0.4); border-radius: 6px;
+            font-size: var(--fs-caption); color: var(--text-primary);
+        }
+
+        .dl-row { display: flex; gap: 10px; align-items: center; padding: 10px 12px; flex-wrap: wrap; }
+        .dl-btn {
+            display: inline-block; padding: 6px 14px; border-radius: 6px;
+            border: 1px solid var(--accent-cyan); color: var(--accent-cyan);
+            text-decoration: none; font-size: var(--fs-body);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .dl-btn:hover { background: rgba(0, 245, 255, 0.1); }
+        .dl-hint { font-size: var(--fs-label); color: var(--text-secondary); }
+
+        .pending-notice {
+            margin: 24px auto; max-width: 640px; padding: 24px;
+            background: var(--bg-card); border: 1px dashed rgba(0, 245, 255, 0.35);
+            border-radius: 8px; text-align: center; color: var(--text-secondary);
+            font-size: var(--fs-body); line-height: 1.8;
+        }
+
+        .map-help {
+            padding: 8px 12px; font-size: var(--fs-caption);
+            color: var(--text-secondary); line-height: 1.75;
+            border-top: 1px solid rgba(0, 245, 255, 0.1);
+        }
+        .map-help b { color: var(--accent-cyan); }
+
+        #updateInfo { padding: 6px 12px 14px; font-size: var(--fs-label); color: var(--text-secondary); }
+
+        .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 900px) {
+            #map { max-height: 380px; min-height: 240px; }
+            .panel-grid { grid-template-columns: 1fr; }
+            .stat-card { padding: 10px 8px; }
+            .stat-card .value { font-size: 20px; }
+            .stat-card .label { font-size: 10px; }
+            .main-content { padding-bottom: 72px; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82X8QBL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <header class="header">
+        <h1>📋 <span class="lang-zh-only">高風險船舶週報</span><span class="lang-en-only">High-Risk Vessel Weekly Report</span></h1>
+        <div class="header-nav">
+            <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
+            <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
+            <a href="statistics.html" data-i18n="nav.statistics">統計分析</a>
+            <a href="ais-animation.html" data-i18n="nav.animation">軌跡動畫</a>
+            <a href="weekly-report.html" class="active"><span class="lang-zh-only">週報</span><span class="lang-en-only">Weekly</span></a>
+            <details class="nav-more">
+                <summary><span class="lang-zh-only">更多</span><span class="lang-en-only">More</span> ▾</summary>
+                <div class="nav-more-menu">
+                    <a href="network-traffic.html"><span class="lang-zh-only">網路流量</span><span class="lang-en-only">Network Traffic</span></a>
+                    <a href="sar-ais-match.html"><span class="lang-zh-only">SAR×AIS 比對</span><span class="lang-en-only">SAR×AIS Match</span></a>
+                    <a href="cn-fishing-animation.html" data-i18n="nav.cn_fishing">大陸漁船</a>
+                    <a href="ship-transfers.html" data-i18n="nav.transfers">旁靠偵測</a>
+                    <a href="identity-history.html" data-i18n="nav.identity">身分追蹤</a>
+                    <a href="research-submarine-cable-legal.html" data-i18n="nav.research">研究報告</a>
+                    <a href="blog.html" data-i18n="nav.blog">深度文章</a>
+                    <a href="intro.html"><span class="lang-zh-only">關於本站</span><span class="lang-en-only">About</span></a>
+                </div>
+            </details>
+            <button id="langToggle" onclick="i18n.toggle()" style="font-size:13px;color:var(--accent-cyan);background:var(--bg-card);border:1px solid var(--accent-cyan);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:600">EN</button>
+            <span class="data-status" id="dataStatus" data-i18n="common.loading">載入中...</span>
+        </div>
+    </header>
+
+    <!-- AI / GEO summary — visible, quotable abstract -->
+    <section class="ai-summary" aria-label="頁面摘要 Page summary">
+        <h2 class="lang-zh-only">本頁重點</h2>
+        <h2 class="lang-en-only">What this page shows</h2>
+        <p class="lang-zh-only">
+            威脅評分引擎每天標出上千艘高風險船（score ≥8），單日快照看不出趨勢。本頁把它們按 ISO 週與日曆月彙整：
+            互動地圖畫出海纜旁 0.1° 低速徘徊熱區（滯留總時數、涉及船數、平均船速）與高風險船最後位置；
+            逐船列出船種、船籍、出港／進港港口、海上時間、海纜滯留時數與滯留期間平均船速，
+            每期附 CSV／JSON 原始檔可直接下載作為報告素材。
+        </p>
+        <p class="lang-en-only">
+            The scoring engine flags hundreds of high-risk vessels (score ≥8) every day; single-day
+            snapshots hide the trend. This page aggregates them by ISO week and calendar month: an
+            interactive map shows 0.1° low-speed loitering hotspots near submarine cables (total loiter
+            hours, distinct vessels, average speed) and last-known high-risk vessel positions; the
+            per-vessel table lists type, flag state, departure/arrival ports, time at sea, and average
+            speed while loitering near cables. Each period ships raw CSV/JSON downloads.
+        </p>
+    </section>
+
+    <div class="main-content">
+
+        <!-- 期別選擇 -->
+        <div class="panel">
+            <div class="panel-title"><span class="lang-zh-only">🗓️ 選擇期別</span><span class="lang-en-only">🗓️ Select period</span></div>
+            <div class="period-groups">
+                <div>
+                    <div class="period-group-label"><span class="lang-zh-only">週報（ISO 週，UTC）</span><span class="lang-en-only">Weekly (ISO week, UTC)</span></div>
+                    <div class="period-list" id="periodListWeekly"></div>
+                </div>
+                <div>
+                    <div class="period-group-label"><span class="lang-zh-only">月報（日曆月，UTC）</span><span class="lang-en-only">Monthly (calendar month, UTC)</span></div>
+                    <div class="period-list" id="periodListMonthly"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 尚未產生 -->
+        <div class="pending-notice" id="pendingNotice" style="display:none">
+            <div style="font-size:28px">⏳</div>
+            <p class="lang-zh-only">第一份週報尚未產生。資料管線每天累積高風險船資料，
+                並於每週一（UTC）彙整上一 ISO 週、每月 1 日彙整上一日曆月 —— 首份報表出現後本頁會自動列出。</p>
+            <p class="lang-en-only">The first weekly report has not been generated yet. The pipeline
+                accumulates high-risk vessel data daily and aggregates the previous ISO week every
+                Monday (UTC) and the previous calendar month on the 1st — reports will appear here
+                automatically.</p>
+        </div>
+
+        <div id="reportBody">
+            <!-- 統計 -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="value" id="statVessels">--</div>
+                    <div class="label"><span class="lang-zh-only">高風險船（不重複）</span><span class="lang-en-only">High-risk vessels</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="value alert" id="statCritical">--</div>
+                    <div class="label"><span class="lang-zh-only">Critical（≥12 分）</span><span class="lang-en-only">Critical (≥12)</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="statLoiterVessels" style="color:var(--accent-orange)">--</div>
+                    <div class="label"><span class="lang-zh-only">海纜旁低速徘徊船</span><span class="lang-en-only">Cable-loiter vessels</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="statLoiterHours" style="color:var(--accent-yellow)">--</div>
+                    <div class="label"><span class="lang-zh-only">徘徊總時數 (h)</span><span class="lang-en-only">Total loiter hours</span></div>
+                </div>
+            </div>
+
+            <div class="coverage-note" id="coverageNote" style="display:none"></div>
+
+            <!-- 地圖 -->
+            <div class="panel map-panel">
+                <div class="panel-title"><span class="lang-zh-only">📍 低速徘徊熱區（0.1° 網格）＋ 高風險船位置 ＋ 海纜路線</span><span class="lang-en-only">📍 Loitering hotspots (0.1° grid) + high-risk vessel positions + cable routes</span></div>
+                <div id="map"></div>
+                <div class="layer-bar">
+                    <label><input type="checkbox" id="lyrHotspots" checked>
+                        <span class="legend-ramp"><span style="background:#3d3520"></span><span style="background:#7a5c1e"></span><span style="background:#b3701f"></span><span style="background:#e05a33"></span><span style="background:#ff2d55"></span></span>
+                        <span class="lang-zh-only">徘徊熱區（滯留時數 淡→深）</span><span class="lang-en-only">Hotspots (loiter hours, low→high)</span></label>
+                    <label><input type="checkbox" id="lyrVessels" checked><span class="legend-swatch" style="background:#ff7847;border-radius:50%"></span><span class="lang-zh-only">高風險船最後位置（框色=風險等級）</span><span class="lang-en-only">Vessel last positions (ring = risk level)</span></label>
+                    <label><input type="checkbox" id="lyrCables" checked><span class="legend-swatch" style="background:#00f5ff;height:3px"></span><span class="lang-zh-only">海底電纜</span><span class="lang-en-only">Submarine cables</span></label>
+                </div>
+                <div class="map-help">
+                    <span class="lang-zh-only"><b>如何判讀：</b>方格＝該 0.1° 網格內「船速 &lt;5 節、距海纜 5 公里內、連續 ≥3 小時」的徘徊事件總時數，顏色越紅代表該格被佔用越久；圓點＝該期高風險船的最後已知位置（外框顏色＝風險等級，填色＝船種）。點方格或圓點看明細，點下方表格的任一列可定位到地圖。港內點與 &gt;5 節的過境已在後端排除。</span>
+                    <span class="lang-en-only"><b>How to read this:</b> each square is one 0.1° grid cell, shaded by the total hours of qualifying loitering inside it (speed &lt;5 kn, within 5 km of a submarine cable, sustained ≥3 h) — redder means occupied longer. Circles are last-known positions of that period's high-risk vessels (ring = risk level, fill = vessel type). Click any square or circle for details, or click a table row below to locate it. In-port positions and &gt;5 kn transits are already excluded upstream.</span>
+                </div>
+                <div id="updateInfo"></div>
+            </div>
+
+            <!-- 分布 -->
+            <div class="panel-grid" style="margin-top:16px">
+                <div class="panel">
+                    <div class="panel-title"><span class="lang-zh-only">🚢 船種分布</span><span class="lang-en-only">🚢 By vessel type</span></div>
+                    <div class="type-chips" id="byTypeChips"></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title"><span class="lang-zh-only">🏳️ 船籍分布（前 8）</span><span class="lang-en-only">🏳️ By flag state (top 8)</span></div>
+                    <div class="table-scroll">
+                        <table class="rpt-table">
+                            <thead><tr>
+                                <th><span class="lang-zh-only">船籍</span><span class="lang-en-only">Flag</span></th>
+                                <th class="num"><span class="lang-zh-only">船數</span><span class="lang-en-only">Vessels</span></th>
+                            </tr></thead>
+                            <tbody id="byFlagList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 熱區表 -->
+            <div class="panel" style="margin-top:16px">
+                <div class="panel-title"><span class="lang-zh-only">🔥 高風險熱區排行（點列可定位地圖）</span><span class="lang-en-only">🔥 Top hotspots (click a row to locate on map)</span></div>
+                <div class="table-scroll">
+                    <table class="rpt-table">
+                        <thead><tr>
+                            <th>#</th>
+                            <th><span class="lang-zh-only">位置</span><span class="lang-en-only">Location</span></th>
+                            <th class="num"><span class="lang-zh-only">滯留時數</span><span class="lang-en-only">Loiter h</span></th>
+                            <th class="num"><span class="lang-zh-only">船數</span><span class="lang-en-only">Vessels</span></th>
+                            <th class="num"><span class="lang-zh-only">均速 kn</span><span class="lang-en-only">Avg kn</span></th>
+                        </tr></thead>
+                        <tbody id="hotspotTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 逐船表 -->
+            <div class="panel" style="margin-top:16px">
+                <div class="panel-title"><span class="lang-zh-only">⚠️ 高風險船排行（前 20；點列可定位地圖，完整清單見下載檔）</span><span class="lang-en-only">⚠️ Top high-risk vessels (top 20; click to locate — full list in downloads)</span></div>
+                <div class="table-scroll">
+                    <table class="rpt-table">
+                        <thead><tr>
+                            <th><span class="lang-zh-only">分數</span><span class="lang-en-only">Score</span></th>
+                            <th><span class="lang-zh-only">船名 / MMSI</span><span class="lang-en-only">Name / MMSI</span></th>
+                            <th><span class="lang-zh-only">船種</span><span class="lang-en-only">Type</span></th>
+                            <th><span class="lang-zh-only">船籍</span><span class="lang-en-only">Flag</span></th>
+                            <th class="num"><span class="lang-zh-only">海纜滯留 h</span><span class="lang-en-only">Cable loiter h</span></th>
+                            <th class="num"><span class="lang-zh-only">滯留均速 kn</span><span class="lang-en-only">Loiter avg kn</span></th>
+                            <th class="num"><span class="lang-zh-only">出現天數</span><span class="lang-en-only">Days</span></th>
+                            <th><span class="lang-zh-only">出港港口</span><span class="lang-en-only">Departure port</span></th>
+                        </tr></thead>
+                        <tbody id="vesselTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 下載 -->
+            <div class="panel" style="margin-top:16px">
+                <div class="panel-title"><span class="lang-zh-only">⬇️ 下載本期原始資料</span><span class="lang-en-only">⬇️ Download this period's raw data</span></div>
+                <div class="dl-row">
+                    <a class="dl-btn" id="dlCsv" href="#" download>CSV</a>
+                    <a class="dl-btn" id="dlJson" href="#" download>JSON</a>
+                    <span class="dl-hint lang-zh-only">CSV 為 UTF-8（含 BOM），Excel 可直接開啟；JSON 另含完整熱區網格與逐日統計</span>
+                    <span class="dl-hint lang-en-only">CSV is UTF-8 with BOM (opens directly in Excel); JSON additionally carries the full hotspot grid and daily counts</span>
+                </div>
+            </div>
+
+            <p style="font-size:var(--fs-label);color:var(--text-secondary);margin:14px 4px 0;line-height:1.7">
+                <span class="lang-zh-only">⚠️ 判讀限制：高風險評分是行為訊號的彙整，屬於線索而非違法事實認定。逐船明細每日以優先排序取前 400 艘（critical → 海纜滯留 → 離岸滯留 → 分數），統計摘要涵蓋全部入選船；「出港／進港港口」由 AIS 航跡與已知港區（台灣全部、中國閩／浙南／粵東）比對推得，查無靠港以「未觀測到靠港」標示，不代表未曾靠港。</span>
+                <span class="lang-en-only">⚠️ Interpretation limits: risk scores aggregate behavioral signals — they are leads, not findings of wrongdoing. The per-vessel detail keeps the top 400 vessels per day by priority (critical → cable loitering → offshore loitering → score); departure/arrival ports are inferred from AIS tracks against known port areas (all of Taiwan; Fujian / southern Zhejiang / eastern Guangdong for China) — "no port call observed" does not mean none occurred.</span>
+            </p>
+        </div>
+    </div>
+
+    <script defer src="js/i18n.js"></script>
+    <script defer src="js/weekly-report.js"></script>
+    <script defer src="js/mobile-nav.js"></script>
+</body>
+
+</html>

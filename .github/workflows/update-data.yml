@@ -90,6 +90,14 @@ jobs:
           python src/analyze_suspicious.py
         continue-on-error: true
 
+      # 高風險船累積：讀 analyze_suspicious 的完整 snapshot（gitignored），
+      # 優先排序取前 400 艘/日 merge 進 data/highrisk_accumulator.json（45 天）。
+      # 只在本 workflow 跑 — update-ais.yml 一天 17 輪、且 14 天評分視窗下
+      # 2 次/日已足夠涵蓋。
+      - name: Accumulate high-risk vessels (weekly/monthly reports)
+        run: python src/aggregate_highrisk.py --mode accumulate
+        continue-on-error: true
+
       # 產生逐船航跡檔（plot_gov_vessel_tracks 需要；main 不再 tracked，須現場產生）
       - name: Extract all vessel routes
         run: python src/extract_all_routes.py
@@ -145,6 +153,16 @@ jobs:
       - name: Generate daily report page
         run: |
           python src/generate_report.py
+
+      # 週/月報：週一~三產上一 ISO 週、每月 1-3 日產上一日曆月（Python 端
+      # 依日期 + 輸出檔存在自我 gate，補跑/重跑冪等；dispatch 也會嘗試）。
+      # 掛在 00 UTC cron 下與 gov 圖同節奏 — 見下方 cron 判斷的說明。
+      - name: Generate weekly/monthly high-risk vessel reports
+        if: github.event.schedule == '0 0 * * *' || github.event_name == 'workflow_dispatch'
+        run: |
+          python src/aggregate_highrisk.py --mode weekly
+          python src/aggregate_highrisk.py --mode monthly
+        continue-on-error: true
 
       # 依觸發的 cron 判斷（而非牆上時鐘）：GitHub 排程常延遲 2-3 小時，
       # 之前比對 date +%H == 00 永遠不成立，導致這張圖一個月沒更新過

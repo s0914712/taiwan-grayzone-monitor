@@ -30,6 +30,7 @@ GitHub Actions → src/fetch_ais_data.py (AIS via SOCKS5 proxy)
               → src/detect_ship_transfers.py (STS rendezvous detection)
               → src/detect_gov_formation.py (公務船編隊／護航科考偵測)
               → src/analyze_suspicious.py (threat scoring)
+              → src/aggregate_highrisk.py (高風險船累積 → 週/月報 CSV+JSON)
               → src/exercise_prediction.py (PLA sortie correlation)
               → src/extract_all_routes.py (per-vessel route JSONs → Supabase vessel_routes)
               → src/fetch_cloudflare_radar.py (網路流量異常 × 海纜旁滯留船隻)
@@ -219,6 +220,7 @@ final_score = round(raw_behavioral_score × type_multiplier) + high_threat_indic
 
 ### Output
 - `data/suspicious_vessels.json` — Top 50 suspicious vessels + top 200 classifications + full summary stats
+- `data/highrisk_snapshot.json`（**gitignored** — update-ais.yml 一天寫 ~17 次）— 全部 suspicious 的 compact 列（`compact_highrisk_row`），供 `aggregate_highrisk.py` 累積成週/月報；`cable_details` 另帶 `loiter_events`（每段 ≥3h 徘徊的起訖/中心/均速，cap 5）與 `loiter_avg_speed_kn`
 - Summary includes per-criterion trigger counts, risk distribution, exclusion breakdown
 
 ### Performance Optimization
@@ -315,6 +317,9 @@ python3 src/match_sar_ais.py           # Re-match GFW dark detections vs local A
 python3 src/detect_ship_transfers.py   # Detect STS rendezvous events
 python3 src/detect_gov_formation.py    # 公務船編隊偵測（≥2 艘公務/科研船 ≤10km 持續 ≥6h）
 python3 src/analyze_suspicious.py      # Run threat scoring engine
+python3 src/aggregate_highrisk.py --mode accumulate       # 高風險船每日累積（讀 highrisk_snapshot）
+python3 src/aggregate_highrisk.py --mode weekly --force   # 產上一 ISO 週報 docs/reports/weekly/
+python3 src/aggregate_highrisk.py --mode monthly --force  # 產上一日曆月報 docs/reports/monthly/
 python3 src/generate_dashboard.py      # Consolidate → docs/data.json
 python3 src/extract_all_routes.py      # Batch extract vessel routes (tier-1 + tier-2) + upsert 到 Supabase
 python3 src/extract_all_routes.py --no-supabase   # 同上，但只寫本地檔案
