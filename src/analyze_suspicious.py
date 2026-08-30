@@ -1693,9 +1693,23 @@ def classify_vessel(profile, track_points, identity_events=None,
     """
     mmsi = profile['mmsi']
 
+    # vessel_profiles.json 是 Actions 快取備援的，冷啟動時可能整份是空的
+    # （classify_vessel 的船型判定早已為此準備 track fallback）。船名同理：
+    # 沒有 profile 名稱時改用航跡點上的船名，否則整份報表的船名欄全是空的。
+    names = profile.get('names_seen', [])
+    if not names:
+        track_names = []
+        for p in reversed(track_points or []):
+            n = (p.get('name') or '').strip()
+            if n and n not in track_names:
+                track_names.append(n)
+                if len(track_names) >= 2:
+                    break
+        names = track_names
+
     classification = {
         'mmsi': mmsi,
-        'names': profile.get('names_seen', []),
+        'names': names,
         'total_snapshots': profile.get('total_snapshots', 0),
         'cable_proximity': False,
         'cable_loitering': False,

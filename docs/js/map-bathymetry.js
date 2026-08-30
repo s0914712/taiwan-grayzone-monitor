@@ -172,8 +172,8 @@ var MapBathymetryFactory = function(map, layers) {
         return loading;
     }
 
-    // CC BY 4.0 requires visible attribution while the tiles are shown. The
-    // map runs with attributionControl:false, so a dedicated control is added
+    // CC BY 4.0 requires visible attribution while the tiles are shown. A
+    // dedicated control (separate from the basemap's Esri attribution) is added
     // only while the bathymetry layer group is on the map.
     map.on('layeradd', function(e) {
         if (e.layer !== layers.bathymetry) return;

@@ -944,13 +944,18 @@
             center: [24.5, 123.0],
             zoom: 6,
             zoomControl: true,
-            attributionControl: false,
+            attributionControl: true,
             preferCanvas: true
         });
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 18,
-            opacity: 0.9
+        // CARTO 免費底圖已改為需 API key（無 key 會打上浮水印），改用免金鑰的 Esri 暗色底圖
+        // （World_Dark_Gray 原生只到 z16，maxNativeZoom 讓更深的縮放放大 z16 圖磚而非變空白）
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+            maxNativeZoom: 16, maxZoom: 18, opacity: 0.9,
+            attribution: 'Tiles &copy; Esri'
+        }).addTo(map);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+            maxNativeZoom: 16, maxZoom: 18, opacity: 0.9
         }).addTo(map);
 
         // Fishing hotspots

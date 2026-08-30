@@ -263,13 +263,17 @@ MM.focusVessel('412345678', result.vessels);
     assert.strictEqual(depthGrids(), 0, 'bathymetry hidden before toggle');
     MM.toggleLayer('bathymetry', true);
     assert.strictEqual(depthGrids(), 1, 'bathymetry grid layer shown after toggle on');
-    const attribEl = window.document.querySelector('.leaflet-control-attribution');
-    assert(attribEl && attribEl.textContent.includes('Open Water Software'),
+    const attribText = () => [...window.document.querySelectorAll(
+        '.leaflet-control-attribution')].map(e => e.textContent).join(' | ');
+    assert(attribText().includes('Open Water Software'),
         'CC BY attribution shown while bathymetry is on');
     MM.toggleLayer('bathymetry', false);
     assert.strictEqual(depthGrids(), 0, 'bathymetry removed after toggle off');
-    assert(!window.document.querySelector('.leaflet-control-attribution'),
-        'attribution control removed with the layer');
+    // 底圖改用 Esri（需常駐出處標註）後，關掉水深層只移除 CC BY 那份，
+    // Esri 的基本標註仍在 — 不能再斷言 attribution 元素完全消失
+    assert(!attribText().includes('Open Water Software'),
+        'CC BY attribution removed with the layer');
+    assert(attribText().includes('Esri'), 'basemap Esri attribution persists');
 
     // Terrarium decode + depth colormap pure functions
     const bathy = window.MapBathymetryFactory(map, { bathymetry: window.L.layerGroup() });

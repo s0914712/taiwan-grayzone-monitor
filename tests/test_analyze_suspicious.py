@@ -818,3 +818,21 @@ def test_compact_highrisk_row_tolerates_missing_fields():
     assert row['ev'] == []
     assert row['loiter_kn'] is None
     assert row['zone'] is None
+
+
+def test_names_fall_back_to_track_when_profile_empty():
+    """profile 是 Actions 快取備援的，冷啟動時可能空白 —— 船名要退回航跡點，
+    否則整份週報的船名欄全空（船型早已有同樣的 fallback）。"""
+    pts = make_track([(23.8, 122.5)] * 3, speed=4.0, name='TRACK NAME')
+    profile = {'mmsi': '412000099', 'names_seen': [], 'types_seen': ['cargo'],
+               'total_snapshots': 3}
+    result = asus.classify_vessel(profile, pts)
+    assert result['names'] == ['TRACK NAME']
+
+
+def test_profile_names_win_over_track_names():
+    pts = make_track([(23.8, 122.5)] * 3, speed=4.0, name='TRACK NAME')
+    profile = {'mmsi': '412000098', 'names_seen': ['PROFILE NAME'],
+               'types_seen': ['cargo'], 'total_snapshots': 3}
+    result = asus.classify_vessel(profile, pts)
+    assert result['names'] == ['PROFILE NAME']

@@ -357,3 +357,39 @@ def test_write_report_csv_empty_has_header(tmp_path):
         header = next(r)
         assert header == agg.CSV_COLUMNS
         assert list(r) == []
+
+
+# ══════════════════════════════════════════════════════════════════
+# 前端 manifest
+# ══════════════════════════════════════════════════════════════════
+
+def test_build_manifest_entry():
+    report = {'week': '2026-W35', 'start': '2026-08-24', 'end': '2026-08-30',
+              'days_covered': 7, 'generated_at': 'x',
+              'summary': {'unique_highrisk': 400, 'critical': 113,
+                          'cable_loiter_vessels': 283,
+                          'cable_loiter_hours_total': 2024.4}}
+    e = agg.build_manifest_entry(report)
+    assert e['week'] == '2026-W35'
+    assert e['unique_highrisk'] == 400
+    assert 'month' not in e
+
+
+def test_write_manifest_scans_dirs_newest_first(tmp_path):
+    import json
+    wd = tmp_path / 'weekly'
+    md = tmp_path / 'monthly'
+    wd.mkdir()
+    md.mkdir()
+    for label in ('2026-W34', '2026-W35'):
+        (wd / f'{label}.json').write_text(json.dumps(
+            {'week': label, 'summary': {'unique_highrisk': 1}}))
+    (wd / f'{label}.csv').write_text('x')          # 非 json 不干擾
+    (md / '2026-08.json').write_text(json.dumps(
+        {'month': '2026-08', 'summary': {}}))
+    m = agg.write_manifest(weekly_dir=wd, monthly_dir=md)
+    assert [e['week'] for e in m['weekly']] == ['2026-W35', '2026-W34']
+    assert m['monthly'][0]['month'] == '2026-08'
+    # 自己的 index.json 不會被掃回去（重跑冪等）
+    m2 = agg.write_manifest(weekly_dir=wd, monthly_dir=md)
+    assert len(m2['weekly']) == 2

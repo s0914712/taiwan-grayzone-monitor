@@ -505,6 +505,59 @@ def iso_weeks_in_range(start, end):
 
 
 # ══════════════════════════════════════════════════════════════════
+# 前端 manifest（docs/weekly-report.html 的期別清單）
+# ══════════════════════════════════════════════════════════════════
+
+def build_manifest_entry(report):
+    """從完整報表抽出列表頁需要的輕量摘要（純函式）。"""
+    s = report.get('summary') or {}
+    entry = {
+        'start': report.get('start'),
+        'end': report.get('end'),
+        'days_covered': report.get('days_covered'),
+        'generated_at': report.get('generated_at'),
+        'unique_highrisk': s.get('unique_highrisk'),
+        'critical': s.get('critical'),
+        'cable_loiter_vessels': s.get('cable_loiter_vessels'),
+        'cable_loiter_hours_total': s.get('cable_loiter_hours_total'),
+    }
+    if report.get('week'):
+        entry['week'] = report['week']
+    if report.get('month'):
+        entry['month'] = report['month']
+    return entry
+
+
+def write_manifest(weekly_dir=WEEKLY_DIR, monthly_dir=MONTHLY_DIR):
+    """重掃兩個輸出目錄 → docs/reports/weekly/index.json（新→舊）。
+
+    週報頁（docs/weekly-report.html）靠這個檔知道有哪些期別 — 靜態站
+    沒有目錄列表。每次 weekly/monthly 產出後重建。
+    """
+    def collect(d, key):
+        items = []
+        for p in Path(d).glob('*.json'):
+            if p.name == 'index.json':
+                continue
+            rep = load_json(p, None, expect_type=dict)
+            if rep and rep.get(key):
+                items.append(build_manifest_entry(rep))
+        items.sort(key=lambda e: e.get(key) or '', reverse=True)
+        return items
+
+    manifest = {
+        'updated_at': datetime.now(timezone.utc).isoformat(),
+        'weekly': collect(weekly_dir, 'week'),
+        'monthly': collect(monthly_dir, 'month'),
+    }
+    out = Path(weekly_dir) / 'index.json'
+    atomic_write_json(out, manifest)
+    print(f'🗂️ manifest：週報 {len(manifest["weekly"])} 期 / '
+          f'月報 {len(manifest["monthly"])} 期 → {out}')
+    return manifest
+
+
+# ══════════════════════════════════════════════════════════════════
 # CSV
 # ══════════════════════════════════════════════════════════════════
 
@@ -612,6 +665,7 @@ def run_weekly(args):
     atomic_write_json(out_json, report)
     out_csv = WEEKLY_DIR / f'{label}.csv'
     write_report_csv(out_csv, report['vessels'])
+    write_manifest()
     print(f'📊 週報 {label}：{report["summary"]["unique_highrisk"]} 艘 / '
           f'熱區 {len(report["hotspots"])} 格 → {out_json} + {out_csv}')
     return 0
@@ -668,6 +722,7 @@ def run_monthly(args):
     atomic_write_json(out_json, report)
     out_csv = MONTHLY_DIR / f'{label}.csv'
     write_report_csv(out_csv, report['vessels'])
+    write_manifest()
     print(f'📊 月報 {label}：{report["summary"]["unique_highrisk"]} 艘 / '
           f'{len(weeks)} 週 → {out_json} + {out_csv}')
     return 0
