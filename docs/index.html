@@ -245,84 +245,6 @@
             <span class="brief-updated" id="briefUpdated"></span>
         </section>
 
-        <!-- 今日關鍵指標 — 4 tiles. Hover (or click to pin) slides the matching
-             detail panel out below the row. Values populated by app.js. -->
-        <section class="metrics-row" aria-label="今日關鍵指標 Key metrics">
-            <button type="button" class="metric-card" data-panel="cable" aria-expanded="false" aria-controls="panel-cable">
-                <span class="metric-label" data-i18n="metric.cable">海纜狀況</span>
-                <span class="metric-value" id="metricCable">--</span>
-                <span class="metric-sub" id="metricCableSub"></span>
-                <span class="metric-chevron" aria-hidden="true"></span>
-            </button>
-            <button type="button" class="metric-card" data-panel="suspicious" aria-expanded="false" aria-controls="panel-suspicious">
-                <span class="metric-label" data-i18n="metric.suspicious">可疑船舶</span>
-                <span class="metric-value alert" id="metricSuspicious">--</span>
-                <span class="metric-sub" id="metricSuspiciousSub"></span>
-                <span class="metric-chevron" aria-hidden="true"></span>
-            </button>
-            <button type="button" class="metric-card" data-panel="gov" aria-expanded="false" aria-controls="panel-gov">
-                <span class="metric-label" data-i18n="metric.gov">中國公務／科研船</span>
-                <span class="metric-value" id="metricGov">--</span>
-                <span class="metric-sub" id="metricGovSub"></span>
-                <span class="metric-chevron" aria-hidden="true"></span>
-            </button>
-            <button type="button" class="metric-card" data-panel="dark" aria-expanded="false" aria-controls="panel-dark">
-                <span class="metric-label" data-i18n="metric.dark">SAR 暗船</span>
-                <span class="metric-value" id="metricDark">--</span>
-                <span class="metric-sub" id="metricDarkSub"></span>
-                <span class="metric-chevron" aria-hidden="true"></span>
-            </button>
-        </section>
-
-        <!-- Detail panels — the old right-hand sidebar, merged into the tiles above.
-             One open at a time; ids are unchanged so app.js keeps filling them. -->
-        <div class="metric-panels" id="metricPanels">
-            <section class="metric-panel" id="panel-cable" role="region" aria-hidden="true" aria-label="海纜狀態 Cable status">
-                <div class="metric-panel-inner">
-                    <div class="metric-panel-body" id="cableStatusSection">
-                        <div class="section-title" data-i18n="cable.status_title">🔌 海纜狀態</div>
-                        <div class="cable-status-summary" id="cableStatusSummary"></div>
-                        <div class="cable-fault-list" id="cableFaultList"></div>
-                        <div class="panel-source">
-                            <a href="https://moda.gov.tw/major-policies/subseacable/fault/1749" target="_blank" rel="noopener" data-i18n="cable.source_link">資料來源：數位發展部</a>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="metric-panel" id="panel-suspicious" role="region" aria-hidden="true" aria-label="可疑船隻 Suspicious vessels">
-                <div class="metric-panel-inner">
-                    <div class="metric-panel-body">
-                        <div class="section-title"><span data-i18n="idx.suspicious_title">🔍 可疑船隻（海纜威脅偵測）</span><span class="section-count" id="suspiciousCount">0</span></div>
-                        <div class="suspicious-list" id="suspiciousList">
-                            <div class="panel-empty" data-i18n="idx.suspicious_wait">累積觀測資料中...</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="metric-panel" id="panel-gov" role="region" aria-hidden="true" aria-label="中國公務／科研船 China gov / research vessels">
-                <div class="metric-panel-inner">
-                    <div class="metric-panel-body" id="govVesselSection">
-                        <div class="section-title" data-i18n="idx.gov_title">🛡️ 中國公務／科研船追蹤</div>
-                        <div class="suspicious-list" id="govVesselList"></div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="metric-panel" id="panel-dark" role="region" aria-hidden="true" aria-label="SAR 暗船 SAR dark vessels">
-                <div class="metric-panel-inner">
-                    <div class="metric-panel-body">
-                        <div class="section-title" data-i18n="panel.dark_title">🛰️ SAR×AIS 比對結果</div>
-                        <div class="dark-funnel" id="darkFunnel"></div>
-                        <div class="panel-source">
-                            <a href="dark-vessels.html" data-i18n="dark.view_page">查看暗船偵測頁 →</a>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
         <div class="main-grid">
         <section class="map-pane" aria-labelledby="mapPaneTitle">
             <div class="pane-heading">
@@ -403,6 +325,89 @@
                 資料更新時間: --
             </div>
         </section>
+
+        <!-- 右欄：4 張關鍵指標卡（點/hover 展開明細面板）。桌機專用；
+             ≤900px 由 .metrics-row / .metric-panels 的既有規則隱藏，
+             手機仍走 map-first + bottom sheet。 -->
+        <aside class="metrics-rail" aria-label="今日關鍵指標 Key metrics">
+            <!-- 今日關鍵指標 — 4 tiles. Hover (or click to pin) slides the matching
+                 detail panel out below the row. Values populated by app.js. -->
+            <section class="metrics-row">
+                <button type="button" class="metric-card" data-panel="cable" aria-expanded="false" aria-controls="panel-cable">
+                    <span class="metric-label" data-i18n="metric.cable">海纜狀況</span>
+                    <span class="metric-value" id="metricCable">--</span>
+                    <span class="metric-sub" id="metricCableSub"></span>
+                    <span class="metric-chevron" aria-hidden="true"></span>
+                </button>
+                <button type="button" class="metric-card" data-panel="suspicious" aria-expanded="false" aria-controls="panel-suspicious">
+                    <span class="metric-label" data-i18n="metric.suspicious">可疑船舶</span>
+                    <span class="metric-value alert" id="metricSuspicious">--</span>
+                    <span class="metric-sub" id="metricSuspiciousSub"></span>
+                    <span class="metric-chevron" aria-hidden="true"></span>
+                </button>
+                <button type="button" class="metric-card" data-panel="gov" aria-expanded="false" aria-controls="panel-gov">
+                    <span class="metric-label" data-i18n="metric.gov">中國公務／科研船</span>
+                    <span class="metric-value" id="metricGov">--</span>
+                    <span class="metric-sub" id="metricGovSub"></span>
+                    <span class="metric-chevron" aria-hidden="true"></span>
+                </button>
+                <button type="button" class="metric-card" data-panel="dark" aria-expanded="false" aria-controls="panel-dark">
+                    <span class="metric-label" data-i18n="metric.dark">SAR 暗船</span>
+                    <span class="metric-value" id="metricDark">--</span>
+                    <span class="metric-sub" id="metricDarkSub"></span>
+                    <span class="metric-chevron" aria-hidden="true"></span>
+                </button>
+            </section>
+
+            <!-- Detail panels — the old right-hand sidebar, merged into the tiles above.
+                 One open at a time; ids are unchanged so app.js keeps filling them. -->
+            <div class="metric-panels" id="metricPanels">
+                <section class="metric-panel" id="panel-cable" role="region" aria-hidden="true" aria-label="海纜狀態 Cable status">
+                    <div class="metric-panel-inner">
+                        <div class="metric-panel-body" id="cableStatusSection">
+                            <div class="section-title" data-i18n="cable.status_title">🔌 海纜狀態</div>
+                            <div class="cable-status-summary" id="cableStatusSummary"></div>
+                            <div class="cable-fault-list" id="cableFaultList"></div>
+                            <div class="panel-source">
+                                <a href="https://moda.gov.tw/major-policies/subseacable/fault/1749" target="_blank" rel="noopener" data-i18n="cable.source_link">資料來源：數位發展部</a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="metric-panel" id="panel-suspicious" role="region" aria-hidden="true" aria-label="可疑船隻 Suspicious vessels">
+                    <div class="metric-panel-inner">
+                        <div class="metric-panel-body">
+                            <div class="section-title"><span data-i18n="idx.suspicious_title">🔍 可疑船隻（海纜威脅偵測）</span><span class="section-count" id="suspiciousCount">0</span></div>
+                            <div class="suspicious-list" id="suspiciousList">
+                                <div class="panel-empty" data-i18n="idx.suspicious_wait">累積觀測資料中...</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="metric-panel" id="panel-gov" role="region" aria-hidden="true" aria-label="中國公務／科研船 China gov / research vessels">
+                    <div class="metric-panel-inner">
+                        <div class="metric-panel-body" id="govVesselSection">
+                            <div class="section-title" data-i18n="idx.gov_title">🛡️ 中國公務／科研船追蹤</div>
+                            <div class="suspicious-list" id="govVesselList"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="metric-panel" id="panel-dark" role="region" aria-hidden="true" aria-label="SAR 暗船 SAR dark vessels">
+                    <div class="metric-panel-inner">
+                        <div class="metric-panel-body">
+                            <div class="section-title" data-i18n="panel.dark_title">🛰️ SAR×AIS 比對結果</div>
+                            <div class="dark-funnel" id="darkFunnel"></div>
+                            <div class="panel-source">
+                                <a href="dark-vessels.html" data-i18n="dark.view_page">查看暗船偵測頁 →</a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </aside>
         </div>
     </div>
 

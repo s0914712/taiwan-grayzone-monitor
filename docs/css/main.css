@@ -58,28 +58,39 @@ body {
    Layout
    ============================================================================= */
 
-/* Homepage shell (index.html only). Desktop reading order, top to bottom:
-   header → 今日態勢 brief → 4 key-metric tiles (+ slide-out detail panels)
-   → full-width map → page sections.
-   Vertical flow (not a 100vh grid) so the brief and metrics sit above the fold
-   and the page scrolls into the sections below. */
+/* Homepage shell (index.html only). Desktop reading order:
+   header → 今日態勢 brief (full width) → .main-grid = map (left) +
+   .metrics-rail (right: 4 key-metric tiles + their slide-out panels)
+   → page sections.
+   Vertical flow (not a 100vh grid) so the brief sits above the fold and the
+   page scrolls into the sections below. The tiles moved out of a full-width
+   4-across row into the rail, so the map gets the width and the numbers stay
+   beside it instead of pushing it below the fold. */
 .app-container {
     display: flex;
     flex-direction: column;
 }
 
-/* Homepage top half runs at 2× the dashboard typography floor — these blocks
-   are read at a glance from a distance, unlike the map chrome (legend, layer
-   panel, Leaflet popups) which keeps the compact --fs-* defaults so it doesn't
-   swallow the map. Overriding the tokens cascades into every descendant that
-   already references them (.metric-label, .suspicious-item, .section-title…). */
-.today-brief,
-.metrics-row,
-.metric-panels {
+/* 今日態勢 runs at 2× the dashboard typography floor — it is read at a glance
+   from a distance, unlike the map chrome (legend, layer panel, Leaflet popups)
+   which keeps the compact --fs-* defaults so it doesn't swallow the map. */
+.today-brief {
     --fs-label: 20px;
     --fs-caption: 22px;
     --fs-body: 24px;
     --fs-title: 26px;
+}
+
+/* The rail is ~360px, not a full-width row, so the tiles run at ~1.4× instead
+   of the brief's 2× — at 2× a sub-line like「critical 639 · high 1,128（評分
+   ≥8）」wraps to three lines and the four tiles no longer fit beside the map.
+   Overriding the tokens cascades into every descendant that references them
+   (.metric-label, .suspicious-item, .section-title…). */
+.metrics-rail {
+    --fs-label: 13px;
+    --fs-caption: 14px;
+    --fs-body: 15px;
+    --fs-title: 16px;
 }
 
 /* ---- 今日態勢 brief ---- */
@@ -146,12 +157,11 @@ body {
     white-space: nowrap;
 }
 
-/* ---- Key metric tiles ---- */
+/* ---- Key metric tiles (stacked in the right rail) ---- */
 .metrics-row {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
-    padding: 0 var(--spacing-md) 12px;
 }
 
 /* Each tile is a button: hover slides its panel out, click pins it open. */
@@ -222,7 +232,7 @@ body {
 
 .metric-value {
     font-family: 'Orbitron', sans-serif;
-    font-size: 52px;
+    font-size: 38px;
     font-weight: 700;
     line-height: 1.15;
     color: var(--accent-cyan);
@@ -241,7 +251,7 @@ body {
 
 /* ---- Slide-out detail panels (the former right sidebar) ----
    0fr → 1fr on grid-template-rows animates height without measuring it. */
-.metric-panels { padding: 0 var(--spacing-md); }
+.metric-panels { padding: 0; }
 
 .metric-panel {
     display: grid;
@@ -352,12 +362,32 @@ body {
 .dark-funnel-row.is-residual .dark-funnel-value { color: var(--accent-red); }
 .dark-funnel-row.is-cleared .dark-funnel-value { color: var(--accent-green); }
 
-/* ---- Map pane (full width — the old right sidebar now lives in the tiles) ---- */
+/* ---- Map + right metrics rail ---- */
 .main-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 26vw, 380px);
+    gap: 16px;
+    align-items: start;
     padding: 14px var(--spacing-md) var(--spacing-md);
     border-top: 1px solid rgba(0, 245, 255, 0.12);
+}
+
+/* Right rail. min-width:0 so a long sub-line wraps instead of widening the
+   column and squeezing the map. Panels open below the stack, as they did
+   below the row. */
+.metrics-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+/* 面板在欄內展開（原本是在橫列下方展開）。可疑船隻／公務船是長清單，
+   不設上限右欄會比地圖高出數百 px，左邊留一大塊空白 —— 因此給定高度
+   上限並讓內容自己捲動。 */
+.metrics-rail .metric-panel-body {
+    max-height: min(46vh, 420px);
+    overflow-y: auto;
 }
 
 .map-pane {
@@ -554,7 +584,8 @@ body {
    stay visible above it and the page keeps scrolling to the sections below. */
 .map-section {
     position: relative;
-    height: clamp(420px, calc(100vh - 360px), 760px);
+    /* 扣掉 header + 今日態勢 + pane 標題；指標卡已移到右欄，不再佔上方空間 */
+    height: clamp(420px, calc(100vh - 300px), 820px);
     overflow: hidden;
     border: 1px solid var(--border-glow);
     border-radius: 8px;
@@ -1448,9 +1479,11 @@ body {
     /* Homepage: the desktop brief / metric tiles / pane chrome are desktop-only.
        Mobile keeps the map-first shell + bottom sheet it already had. */
     .today-brief,
+    .metrics-rail,
     .metrics-row,
     .metric-panels,
     .pane-heading { display: none; }
+    /* display:block 讓右欄的雙欄 grid 失效，手機維持既有的 map-first 版面 */
     .main-grid { display: block; padding: 0; border-top: none; }
     .map-pane { display: block; }
     .map-section { height: auto; border: none; border-radius: 0; overflow: visible; }
