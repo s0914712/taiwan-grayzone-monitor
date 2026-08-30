@@ -98,19 +98,6 @@ const i18n = (function () {
         'pane.map_sub':          { zh: 'AIS 船位、SAR 暗船與海底電纜路由', en: 'AIS positions, SAR dark vessels and cable routes' },
         'pane.layers':           { zh: '圖層', en: 'Layers' },
 
-        // ── 資料健康 Data freshness ──
-        'freshness.title':       { zh: '🩺 資料健康', en: '🩺 Data Health' },
-        'freshness.source':      { zh: '資料源', en: 'Source' },
-        'freshness.updated':     { zh: '最新更新', en: 'Last update' },
-        'freshness.interval':    { zh: '預期頻率', en: 'Expected' },
-        'freshness.status':      { zh: '狀態', en: 'Status' },
-        'freshness.ok':          { zh: '正常', en: 'OK' },
-        'freshness.late':        { zh: '延遲', en: 'Late' },
-        'freshness.stale':       { zh: '過期', en: 'Stale' },
-        'freshness.unknown':     { zh: '未知', en: 'Unknown' },
-        'freshness.every_h':     { zh: '每 {0} 小時', en: 'every {0}h' },
-        'freshness.every_d':     { zh: '每 {0} 天', en: 'every {0}d' },
-
         // ── 頁面標題 Page Titles ──
         'title.index':           { zh: '🛰️ 台灣灰色地帶與海底電纜監測', en: '🛰️ Taiwan Gray Zone & Submarine Cable Monitor' },
         'title.dark':            { zh: '🔦 暗船偵測 Dark Vessel Detection', en: '🔦 Dark Vessel Detection' },

@@ -62,7 +62,7 @@ body {
    header → 今日態勢 brief → 4 key-metric tiles (+ slide-out detail panels)
    → full-width map → page sections.
    Vertical flow (not a 100vh grid) so the brief and metrics sit above the fold
-   and the page scrolls into the AI-summary / data-health blocks below. */
+   and the page scrolls into the sections below. */
 .app-container {
     display: flex;
     flex-direction: column;
@@ -2756,64 +2756,6 @@ body:not(.lang-en):not(.lang-zh) .lang-en-only { display: none !important; }
 }
 
 /* ============================================================================
-   Data freshness / health status table
-   ============================================================================ */
-.data-health {
-    max-width: 1100px;
-    margin: 16px auto;
-    padding: 16px 20px;
-    background: var(--bg-card, rgba(13, 22, 41, 0.7));
-    border: 1px solid var(--border-glow, rgba(0, 245, 255, 0.25));
-    border-radius: 10px;
-}
-.data-health h2 {
-    margin: 0 0 12px;
-    font-size: 14px;
-    letter-spacing: 0.04em;
-    color: var(--accent-cyan, #00f5ff);
-    text-transform: uppercase;
-}
-.freshness-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12.5px;
-}
-.freshness-table th {
-    text-align: left;
-    padding: 7px 10px;
-    color: var(--accent-cyan, #00f5ff);
-    border-bottom: 1px solid var(--border-glow, rgba(0, 245, 255, 0.25));
-    font-size: 11px;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
-    white-space: nowrap;
-}
-.freshness-table td {
-    padding: 8px 10px;
-    border-bottom: 1px solid rgba(0, 245, 255, 0.06);
-    color: var(--text-secondary, #9fb0c3);
-}
-.freshness-table td:first-child {
-    color: var(--text-primary, #e6edf3);
-    font-weight: 500;
-}
-.fresh-badge {
-    display: inline-block;
-    padding: 2px 9px;
-    border-radius: 10px;
-    font-size: var(--fs-caption);
-    font-weight: 600;
-    font-family: 'JetBrains Mono', monospace;
-}
-.fresh-ok { background: rgba(0, 255, 136, 0.15); color: #00ff88; }
-.fresh-late { background: rgba(255, 215, 0, 0.15); color: #ffd700; }
-.fresh-stale { background: rgba(255, 51, 102, 0.15); color: #ff5e8a; }
-.fresh-unknown { background: rgba(136, 136, 136, 0.15); color: #aaa; }
-@media (max-width: 900px) {
-    .data-health { margin: 12px; padding: 14px 16px; }
-}
-
-/* ============================================================================
    Desktop readability — larger fonts on wider screens (≥901px).
    Mobile-first base sizes are intentionally compact; on desktop we scale up
    the readable content. `body .class` is used where needed to win specificity
@@ -2857,13 +2799,10 @@ body:not(.lang-en):not(.lang-zh) .lang-en-only { display: none !important; }
     body .rp-table { font-size: 14px; }
     body .rp-meta { font-size: 12.5px; }
 
-    /* AI summary + data-health (shared main.css blocks) */
+    /* AI summary (shared main.css block, used by the blog pages) */
     .ai-summary h2 { font-size: 15px; }
     .ai-summary p { font-size: 15.5px; line-height: 1.8; }
     .ai-summary li { font-size: 14px; }
-    .data-health h2 { font-size: 15px; }
-    .freshness-table { font-size: 14px; }
-    .freshness-table th { font-size: 12.5px; }
 
     /* Homepage "About / Methodology" section */
     .about-title { font-size: 18px; }

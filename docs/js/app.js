@@ -756,61 +756,6 @@ const App = (function () {
         }
     }
 
-    // 各資料源新鮮度狀態表（data.json 的 data_sources）
-    let dataSources = null;
-
-    /**
-     * Classify a source's freshness: ok / late / stale / unknown.
-     * late = age > 1.5×interval, stale = age > 3×interval.
-     */
-    function sourceStatus(updatedAt, intervalHours) {
-        if (!updatedAt) return { key: 'unknown', ageH: null };
-        const ts = parseTs(updatedAt).getTime();
-        if (isNaN(ts)) return { key: 'unknown', ageH: null };
-        const ageH = (Date.now() - ts) / 3600000;
-        const iv = intervalHours || 24;
-        let key = 'ok';
-        if (ageH > iv * 3) key = 'stale';
-        else if (ageH > iv * 1.5) key = 'late';
-        return { key: key, ageH: ageH };
-    }
-
-    function intervalLabel(h) {
-        const t = (k, v) => typeof i18n !== 'undefined' ? i18n.t(k).replace('{0}', v) : ('' + v);
-        if (h % 24 === 0 && h >= 24) return t('freshness.every_d', h / 24);
-        return t('freshness.every_h', h);
-    }
-
-    /**
-     * Render the per-source data-health table into #dataFreshnessBody.
-     * Computed client-side so status stays accurate long after build time.
-     */
-    function renderDataSources() {
-        const body = document.getElementById('dataFreshnessBody');
-        if (!body) return;
-        const panel = body.closest('.data-health');
-        if (!dataSources || !dataSources.length) {
-            if (panel) panel.style.display = 'none';
-            return;
-        }
-        if (panel) panel.style.display = '';
-        const lang = (typeof i18n !== 'undefined' && i18n.getLang) ? i18n.getLang() : 'zh';
-        const tt = (k) => typeof i18n !== 'undefined' ? i18n.t(k) : k;
-        body.innerHTML = dataSources.map(function (s) {
-            const st = sourceStatus(s.updated_at, s.interval_hours);
-            const name = (lang === 'en' && s.label_en) ? s.label_en : s.label;
-            const fresh = s.updated_at ? formatFreshness(s.updated_at) : { label: tt('common.unknown') };
-            const ago = fresh.label || tt('common.unknown');
-            return '<tr>'
-                + '<td>' + name + '</td>'
-                + '<td>' + ago + '</td>'
-                + '<td>' + intervalLabel(s.interval_hours) + '</td>'
-                + '<td><span class="fresh-badge fresh-' + st.key + '">'
-                + tt('freshness.' + st.key) + '</span></td>'
-                + '</tr>';
-        }).join('');
-    }
-
     /**
      * Load data from JSON
      */
@@ -832,18 +777,14 @@ const App = (function () {
 
             latestData = data;
             lastUpdatedAt = data.updated_at;
-            dataSources = data.data_sources || null;
             refreshFreshness();
-            renderDataSources();
             if (!freshnessTimer) {
                 freshnessTimer = setInterval(function () {
                     refreshFreshness();
-                    renderDataSources();
                     updateBriefAndMetrics();
                 }, 60000);
                 window.addEventListener('langchange', function () {
                     refreshFreshness();
-                    renderDataSources();
                     updateBriefAndMetrics();
                 });
             }
