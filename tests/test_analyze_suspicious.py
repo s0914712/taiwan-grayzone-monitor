@@ -699,3 +699,122 @@ def test_vessel_type_falls_back_to_track_when_profile_empty():
         p['name'] = 'MINDONGYU63179'
     result = asus.classify_vessel({'mmsi': '412446718'}, track)
     assert result['survey_pattern'] is False
+
+
+# =========================================================================
+# 徘徊事件擷取（loiter_events / loiter_avg_speed_kn — 週報彙整來源）
+# =========================================================================
+
+def _dt(day, hour):
+    from datetime import datetime, timezone
+    return datetime(2026, 7, day, hour, 0, tzinfo=timezone.utc)
+
+
+def test_split_loiter_runs_breaks_on_gap():
+    """相鄰點間隔 > LOITER_MAX_GAP_HOURS 即斷開為兩個 run。"""
+    pts = [(_dt(1, 0), 22.8, 120.27, 2.0),
+           (_dt(1, 2), 22.8, 120.27, 2.0),
+           (_dt(1, 12), 22.8, 120.27, 2.0),   # gap 10h > 4h
+           (_dt(1, 14), 22.8, 120.27, 2.0)]
+    runs = asus.split_loiter_runs(pts)
+    assert len(runs) == 2
+    assert [len(r) for r in runs] == [2, 2]
+
+
+def test_split_loiter_runs_sorts_unordered_input():
+    pts = [(_dt(1, 4), 22.8, 120.27, 2.0),
+           (_dt(1, 0), 22.8, 120.27, 2.0),
+           (_dt(1, 2), 22.8, 120.27, 2.0)]
+    runs = asus.split_loiter_runs(pts)
+    assert len(runs) == 1
+    assert [p[0].hour for p in runs[0]] == [0, 2, 4]
+
+
+def test_build_loiter_events_min_hours_and_speeds():
+    """只收 ≥3h 的 run；avg/min speed 正確；<3h 的 run 不出事件。"""
+    long_run = [(_dt(1, h), 22.8 + h * 0.001, 120.27, s)
+                for h, s in [(0, 1.0), (2, 2.0), (4, 3.0)]]  # 跨度 4h
+    short_run = [(_dt(2, 0), 23.5, 121.0, 2.0),
+                 (_dt(2, 2), 23.5, 121.0, 2.0)]              # 跨度 2h
+    events = asus.build_loiter_events([long_run, short_run])
+    assert len(events) == 1
+    ev = events[0]
+    assert ev['hours'] == 4.0
+    assert ev['avg_speed_kn'] == 2.0
+    assert ev['min_speed_kn'] == 1.0
+    assert ev['points'] == 3
+    assert abs(ev['center_lat'] - 22.802) < 1e-6
+    assert ev['start'].startswith('2026-07-01T00')
+
+
+def test_build_loiter_events_cap_and_order():
+    """事件依時數降冪、cap 5。"""
+    runs = []
+    for i in range(7):
+        span = 3 + i  # 3..9 小時
+        runs.append([(_dt(1 + i, 0), 22.8, 120.27, 2.0),
+                     (_dt(1 + i, span), 22.8, 120.27, 2.0)])
+    events = asus.build_loiter_events(runs)
+    assert len(events) == 5
+    assert [e['hours'] for e in events] == [9.0, 8.0, 7.0, 6.0, 5.0]
+
+
+def test_cable_proximity_emits_loiter_events():
+    """check_cable_proximity 現在輸出事件與均速，且與 loiter_slow_hours 一致。"""
+    pts = _near_cable_track(hours=6, speed=2.0)
+    _, details = asus.check_cable_proximity(pts)
+    assert details['loiter_triggered'] is True
+    assert details['loiter_avg_speed_kn'] == 2.0
+    assert len(details['loiter_events']) == 1
+    ev = details['loiter_events'][0]
+    assert ev['hours'] == details['loiter_slow_hours']
+    assert 22.7 < ev['center_lat'] < 22.9
+
+
+def test_cable_proximity_no_loiter_no_events():
+    """高速過境：無合格徘徊段 → 事件空、均速 None。"""
+    pts = _near_cable_track(hours=6, speed=7.5)
+    _, details = asus.check_cable_proximity(pts)
+    assert details['loiter_events'] == []
+    assert details['loiter_avg_speed_kn'] is None
+
+
+# =========================================================================
+# compact_highrisk_row（highrisk_snapshot.json 的列格式）
+# =========================================================================
+
+def test_compact_highrisk_row_fields():
+    c = {
+        'mmsi': '412345678', 'names': ['SHIP A', 'SHIP B'],
+        'vessel_type': 'cargo', 'risk_score': 11, 'risk_level': 'high',
+        'non_top10_flag': True, 'sanctioned': False,
+        'cable_loitering': True, 'offshore_loitering': False,
+        'cable_details': {
+            'loiter_slow_hours': 4.0, 'loiter_avg_speed_kn': 1.8,
+            'cables_nearby': ['a', 'b', 'c', 'd'],
+            'loiter_events': [
+                {'center_lat': 24.1234, 'center_lon': 121.5678,
+                 'hours': 4.0, 'avg_speed_kn': 1.8,
+                 'start': '2026-07-01T00:00:00+00:00'}]},
+        'offshore_loiter_details': {'loiter_days': 0.0},
+        'last_lat': 24.1, 'last_lon': 121.5,
+        'last_seen': '2026-07-01T06:00:00+00:00',
+        'geofence': {'zone': 'eez'},
+    }
+    row = asus.compact_highrisk_row(c)
+    assert row['mmsi'] == '412345678'
+    assert row['name'] == 'SHIP A'
+    assert row['loiter_h'] == 4.0
+    assert row['loiter_kn'] == 1.8
+    assert row['cables'] == ['a', 'b', 'c']          # cap 3
+    assert row['ev'] == [[24.1234, 121.5678, 4.0, 1.8, '2026-07-01']]
+    assert row['zone'] == 'eez'
+
+
+def test_compact_highrisk_row_tolerates_missing_fields():
+    """冷啟動/舊格式：缺 details 不噴例外。"""
+    row = asus.compact_highrisk_row({'mmsi': '9', 'risk_score': 8})
+    assert row['name'] == ''
+    assert row['ev'] == []
+    assert row['loiter_kn'] is None
+    assert row['zone'] is None

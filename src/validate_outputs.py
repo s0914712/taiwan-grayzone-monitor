@@ -49,6 +49,10 @@ CHECKS = [
      lambda d: isinstance(d, dict) and 'summary' in d
      and isinstance(d.get('vessel_index'), dict),
      False),
+    # 高風險船累積檔：僅 update-data.yml 的 aggregate_highrisk 產生
+    ('data/highrisk_accumulator.json',
+     lambda d: isinstance(d, dict) and isinstance(d.get('daily'), dict),
+     False),
 ]
 
 

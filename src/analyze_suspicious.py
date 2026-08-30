@@ -45,6 +45,9 @@ IDENTITY_EVENTS_FILE = DATA_DIR / "identity_events.json"
 SANCTIONS_FILE = DATA_DIR / "un_sanctions_vessels.json"
 SANCTIONS_BLACKLIST_FILE = DATA_DIR / "sanctions_blacklist.json"  # 多機構影子船隊黑名單
 OUTPUT_FILE = DATA_DIR / "suspicious_vessels.json"
+# 完整高風險清單（suspicious 不截斷、compact 列）— aggregate_highrisk.py 的
+# 累積來源。gitignored：update-ais.yml 一天寫 ~17 次，不能進 git。
+HIGHRISK_SNAPSHOT_FILE = DATA_DIR / "highrisk_snapshot.json"
 ITU_MARS_CACHE = DATA_DIR / "itu_mars_cache.json"
 SHIP_TRANSFERS_FILE = DATA_DIR / "ship_transfers.json"
 GOV_FORMATIONS_FILE = DATA_DIR / "gov_formations.json"  # detect_gov_formation.py 產出
@@ -1057,6 +1060,55 @@ def check_offshore_loitering(track_points, vessel_type):
     }
 
 
+def split_loiter_runs(slow_points, max_gap_hours=LOITER_MAX_GAP_HOURS):
+    """把海纜旁低速點序列依時間間隔切成連續 runs（純函式，供單元測試）。
+
+    slow_points: [(datetime, lat, lon, speed_kn), ...]，未必已排序。
+    相鄰點間隔 > max_gap_hours 即斷開 — 船中途離開再回來不能累計成一段長徘徊。
+    回傳依時間排序的 run list（每個 run 是點的 list）。
+    """
+    if not slow_points:
+        return []
+    pts = sorted(slow_points, key=lambda p: p[0])
+    runs = [[pts[0]]]
+    for p in pts[1:]:
+        gap = (p[0] - runs[-1][-1][0]).total_seconds() / 3600
+        if gap > max_gap_hours:
+            runs.append([p])
+        else:
+            runs[-1].append(p)
+    return runs
+
+
+def build_loiter_events(runs, min_hours=CABLE_LOITER_HOURS, max_events=5):
+    """從 split_loiter_runs 的結果組出徘徊事件（純函式）。
+
+    只收跨度 ≥ min_hours 的 run；依時數降冪排序、cap max_events。
+    aggregate_highrisk.py 用事件的中心座標統計熱區、avg_speed_kn 統計
+    「海纜高風險滯留期間平均船速」— 這些資訊原本在此被丟棄。
+    """
+    events = []
+    for run in runs:
+        if len(run) < 2:
+            continue
+        hours = (run[-1][0] - run[0][0]).total_seconds() / 3600
+        if hours < min_hours:
+            continue
+        speeds = [p[3] for p in run if isinstance(p[3], (int, float))]
+        events.append({
+            'start': run[0][0].isoformat(),
+            'end': run[-1][0].isoformat(),
+            'hours': round(hours, 1),
+            'center_lat': round(sum(p[1] for p in run) / len(run), 4),
+            'center_lon': round(sum(p[2] for p in run) / len(run), 4),
+            'avg_speed_kn': round(sum(speeds) / len(speeds), 1) if speeds else None,
+            'min_speed_kn': round(min(speeds), 1) if speeds else None,
+            'points': len(run),
+        })
+    events.sort(key=lambda e: -e['hours'])
+    return events[:max_events]
+
+
 def check_cable_proximity(track_points):
     """
     檢查船隻航跡是否經過海纜附近
@@ -1090,7 +1142,7 @@ def check_cable_proximity(track_points):
     near_cables = set()
     min_dist = float('inf')
     near_count = 0
-    loiter_slow_timestamps = []  # 海纜鄰近且低速的時間戳
+    loiter_slow_points = []  # 海纜鄰近且低速的 (時間, lat, lon, speed)
 
     for pt in valid_pts:
         plat = pt['lat']
@@ -1115,37 +1167,35 @@ def check_cable_proximity(track_points):
             if is_near_cable:
                 break
 
-        # 記錄低速徘徊時間戳（海纜鄰近 + 速度 < 5 knots）
+        # 記錄低速徘徊點（海纜鄰近 + 速度 < 5 knots）
         if is_near_cable and pt.get('speed', 99) < CABLE_LOITER_MAX_KNOTS:
             ts = pt.get('t', '')
             if ts:
-                loiter_slow_timestamps.append(ts)
+                try:
+                    t = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+                except (ValueError, AttributeError):
+                    t = None
+                if t is not None:
+                    loiter_slow_points.append((t, plat, plon, pt.get('speed')))
 
     # 從實際時間戳計算「最長連續」徘徊時數 —
     # 相鄰慢速時間戳間隔 > LOITER_MAX_GAP_HOURS 即斷開（船中途離開再回來
-    # 不能累計成一段長徘徊）
-    loiter_hours = 0.0
-    if len(loiter_slow_timestamps) >= 2:
-        parsed = []
-        for ts in loiter_slow_timestamps:
-            try:
-                parsed.append(datetime.fromisoformat(ts.replace('Z', '+00:00')))
-            except (ValueError, AttributeError):
-                continue
-        parsed.sort()
-        seg_start = None
-        prev = None
-        for t in parsed:
-            if seg_start is None:
-                seg_start = prev = t
-                continue
-            gap = (t - prev).total_seconds() / 3600
-            if gap > LOITER_MAX_GAP_HOURS:
-                seg_start = t  # 斷開，重新起算
-            else:
-                loiter_hours = max(
-                    loiter_hours, (t - seg_start).total_seconds() / 3600)
-            prev = t
+    # 不能累計成一段長徘徊）。loiter_slow_hours 與 loiter_events 由同一批
+    # runs 導出，兩者不會打架。
+    runs = split_loiter_runs(loiter_slow_points)
+    loiter_hours = max(
+        ((r[-1][0] - r[0][0]).total_seconds() / 3600
+         for r in runs if len(r) >= 2), default=0.0)
+    loiter_events = build_loiter_events(runs)
+    # 合格徘徊段（≥3h）全部點的 SOG 均值 — 週報「海纜滯留期間平均船速」
+    qual_speeds = [
+        p[3]
+        for r in runs
+        if len(r) >= 2
+        and (r[-1][0] - r[0][0]).total_seconds() / 3600 >= CABLE_LOITER_HOURS
+        for p in r if isinstance(p[3], (int, float))]
+    loiter_avg_speed = (round(sum(qual_speeds) / len(qual_speeds), 1)
+                        if qual_speeds else None)
     is_loitering = loiter_hours >= CABLE_LOITER_HOURS
 
     is_near = len(near_cables) > 0
@@ -1155,6 +1205,8 @@ def check_cable_proximity(track_points):
         'proximity_points': near_count,
         'loiter_slow_hours': round(loiter_hours, 1),
         'loiter_triggered': is_loitering,
+        'loiter_events': loiter_events,
+        'loiter_avg_speed_kn': loiter_avg_speed,
     }
 
 
@@ -2083,6 +2135,44 @@ def classify_vessel(profile, track_points, identity_events=None,
     return classification
 
 
+def compact_highrisk_row(c):
+    """可疑船 classification → 週報累積用 compact 列（純函式）。
+
+    只保留 aggregate_highrisk.py 需要的欄位；徘徊事件壓成
+    [[lat, lon, hours, avg_kn, start_date], ...] — start_date 讓彙整端能
+    跨日去重（14 天航跡視窗下同一事件會連續多天出現在快照裡）。
+    欄位縮寫換空間：這個檔涵蓋全部 suspicious（~1750 艘），完整記錄會是
+    suspicious_vessels.json 的數倍。
+    """
+    cd = c.get('cable_details') or {}
+    od = c.get('offshore_loiter_details') or {}
+    gf = c.get('geofence') or {}
+    names = c.get('names') or []
+    ev = [[e['center_lat'], e['center_lon'], e['hours'], e.get('avg_speed_kn'),
+           (e.get('start') or '')[:10]]
+          for e in (cd.get('loiter_events') or [])]
+    return {
+        'mmsi': c.get('mmsi'),
+        'name': names[0] if names else '',
+        'vessel_type': c.get('vessel_type', 'unknown'),
+        'risk_score': c.get('risk_score', 0),
+        'risk_level': c.get('risk_level', 'normal'),
+        'non_top10_flag': bool(c.get('non_top10_flag')),
+        'sanctioned': bool(c.get('sanctioned')),
+        'cable_loitering': bool(c.get('cable_loitering')),
+        'offshore_loitering': bool(c.get('offshore_loitering')),
+        'loiter_h': cd.get('loiter_slow_hours', 0.0),
+        'loiter_kn': cd.get('loiter_avg_speed_kn'),
+        'ev': ev,
+        'cables': (cd.get('cables_nearby') or [])[:3],
+        'off_days': od.get('loiter_days', 0.0),
+        'last_lat': c.get('last_lat'),
+        'last_lon': c.get('last_lon'),
+        'last_seen': c.get('last_seen'),
+        'zone': gf.get('zone'),
+    }
+
+
 def main():
     print("=" * 60)
     print("🔍 海底電纜威脅偵測 — 可疑船隻分析")
@@ -2371,6 +2461,14 @@ def main():
     }
 
     atomic_write_json(OUTPUT_FILE, output)
+
+    # 完整高風險 snapshot（suspicious 全列、不截斷）→ 週/月彙整的累積來源。
+    # suspicious_vessels.json 只留 top-50，週報只讀它會漏掉九成以上高風險船。
+    atomic_write_json(HIGHRISK_SNAPSHOT_FILE, {
+        'updated_at': datetime.now(timezone.utc).isoformat(),
+        'count': len(suspicious_vessels),
+        'vessels': [compact_highrisk_row(c) for c in suspicious_vessels],
+    }, compact=True)
 
     print(f"\n📋 分析結果:")
     print(f"   分析船隻數: {len(active_mmsi)} "
