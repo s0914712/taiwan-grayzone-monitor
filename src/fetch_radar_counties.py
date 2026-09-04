@@ -504,12 +504,16 @@ def unavailable_group_record(spec, reason, geo_id=None):
 _GROUP_ONLY_KEYS = {"group_id", "radar_name", "label_zh", "label_en", "members"}
 
 
-def county_records_from_groups(groups, roster=None):
+def county_records_from_groups(groups, roster=None, differentiated=True):
     """分區記錄 → 22 筆縣市記錄（純函式）。
 
     前端的資料契約是「一個縣市一筆」，但 Radar 給的是 4 個分區，因此每筆都帶
     `is_group_value: True` 與所屬分區的標籤——地圖可以照縣市界上色，同時在每一格
     誠實標明「這是分區值，不是本縣市單獨量測」。
+
+    `differentiated=False`（`detect_geoid_ignored` 判定 Radar 忽略了 geoId）時，
+    每筆改標 `status="national_only"`：前端據此**不以此上色**，只在圖例顯示一個
+    全國值。把全國值畫成四塊分區，比沒有資料更糟。
     """
     roster = roster or county_roster()
     by_iso = {}
@@ -536,14 +540,40 @@ def county_records_from_groups(groups, roster=None):
             "iso": county["iso"],
             "name_zh": county["name_zh"],
             "name_en": county["name_en"],
-            "is_group_value": True,
+            "is_group_value": bool(differentiated),
             "adm1_group_id": group["group_id"],
             "adm1_group_label_zh": group["label_zh"],
             "adm1_group_label_en": group["label_en"],
             "adm1_group_members": list(group.get("members") or []),
         })
+        if not differentiated and record.get("status") == "available":
+            record["status"] = "national_only"
+            record["error_reason"] = "geoid_ignored_by_radar"
         out.append(record)
     return out
+
+
+def detect_geoid_ignored(groups):
+    """四個分區的值完全相同 → Radar 靜默忽略了 `geoId`。
+
+    **這是實跑管線才抓到的假陽性**（2026-08-29）：探測只驗「HTTP 200 且有值」，
+    但 quality 端點對 `geoId` 是照收不誤、照回全國值。四個地理位置差極遠的分區
+    （臺北／高雄／金馬／臺灣省）不可能連續 28 天逐點相同，連 Speed Test 的每個
+    欄位都一樣更不可能——那只會是同一份全國資料被回了四次。
+
+    偵測到就不能把這些數字當分區值用：寧可只顯示一個全國值，也不要在地圖上畫出
+    四塊「各自量到的網速」。
+    """
+    available = [g for g in groups if g.get("status") == "available"]
+    if len(available) < 2:
+        return False
+
+    def signature(group):
+        return (json.dumps(group.get("series", {}).get("values")),
+                json.dumps(group.get("speed_test"), sort_keys=True))
+
+    first = signature(available[0])
+    return all(signature(g) == first for g in available[1:])
 
 
 def build_summary(groups, counties):
@@ -561,6 +591,8 @@ def build_summary(groups, counties):
             availability[g["metric_id"]] = availability.get(g["metric_id"], 0) + 1
     available = [g for g in groups if g["status"] == "available"]
     return {
+        "geoid_differentiated": all(g.get("differentiated") is not False
+                                    for g in groups),
         "adm1_groups_total": len(groups),
         "adm1_groups_with_data": len(available),
         "adm1_groups_with_speed_metric": sum(1 for g in available
@@ -629,18 +661,29 @@ def main():
         print("❌ 四個分區都拿不到資料 —— 先跑 src/probe_radar_regions.py 看能力矩陣")
         sys.exit(1)
 
-    counties = county_records_from_groups(groups)
+    geoid_ignored = detect_geoid_ignored(groups)
+    for group in groups:
+        group["differentiated"] = not geoid_ignored
+    if geoid_ignored:
+        print("⚠️ 四個分區的序列與 Speed Test 完全相同 —— Radar 忽略了 geoId，"
+              "這批是**全國值**。標成 national_only，前端不以此上色。")
+    counties = county_records_from_groups(groups,
+                                          differentiated=not geoid_ignored)
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "window_days": args.days,
         "agg_interval": AGG_INTERVAL,
         "source": "Cloudflare Radar (ADM1 / geoId)",
+        "granularity": "national_only" if geoid_ignored else "adm1",
         # 讓看檔案的人一眼知道粒度限制，不必回頭翻程式
-        "granularity_note": ("Radar 的台灣 ADM1 只有 4 個分區（Taipei / Takao / "
-                             "Fukien＝金門馬祖 / Taiwan＝其餘 18 縣市），不是 22 個"
-                             "縣市；counties 內每筆的 is_group_value 標示該數值來自"
-                             "所屬分區，而非該縣市單獨量測。"),
+        "granularity_note": (
+            ("Radar 對 quality 端點靜默忽略 geoId：四個分區回的是同一份全國值，"
+             "因此 counties 全部標 national_only，不得當成分區或縣市值使用。")
+            if geoid_ignored else
+            ("Radar 的台灣 ADM1 只有 4 個分區（Taipei / Takao / Fukien＝金門馬祖 / "
+             "Taiwan＝其餘 18 縣市），不是 22 個縣市；counties 內每筆的 "
+             "is_group_value 標示該數值來自所屬分區，而非該縣市單獨量測。")),
         "metric_ladder": [{k: m[k] for k in
                            ("id", "label_zh", "label_en", "unit",
                             "higher_is_better", "is_speed")}
