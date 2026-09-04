@@ -580,12 +580,13 @@ body {
    Map Section
    ============================================================================= */
 
-/* Map viewport inside .map-pane. Height is bounded so the brief + metric tiles
-   stay visible above it and the page keeps scrolling to the sections below. */
+/* Map viewport inside .map-pane. Height is bounded so the brief stays visible
+   above it and the page keeps scrolling to the sections below. */
 .map-section {
     position: relative;
-    /* 扣掉 header + 今日態勢 + pane 標題；指標卡已移到右欄，不再佔上方空間 */
-    height: clamp(420px, calc(100vh - 300px), 820px);
+    /* 只需扣掉 header + 今日態勢 + pane 標題（約 240px）—— 指標卡已移到右欄。
+       上限放到 1200px，高解析螢幕才吃得到更大的地圖。 */
+    height: clamp(480px, calc(100vh - 240px), 1200px);
     overflow: hidden;
     border: 1px solid var(--border-glow);
     border-radius: 8px;

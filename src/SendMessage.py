@@ -70,6 +70,11 @@ MIN_TRACK_POINTS = 15
 CHART_DIR = "data/charts"
 # 昨日海警船動態圖檔名（固定名稱：每天覆寫同一路徑，不累積歷史圖檔）
 GOV_MAP_NAME = "line_gov_daily.png"
+# 週/月報推送用的圖檔（固定檔名，每次覆寫；歷史版本在 docs/reports/ 內）
+HOTSPOT_MAP_NAME = "line_{mode}_hotspots.png"
+BREAKDOWN_NAME = "line_{mode}_breakdown.png"
+WEEKLY_PAGE_URL = SITE_URL + "weekly-report.html"
+PERIOD_DIRS = {"weekly": "weekly", "monthly": "monthly"}
 
 LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push"
 LINE_MAX_CHARS = 4900  # LINE 單則文字訊息上限 5000 字，預留緩衝
@@ -250,6 +255,228 @@ def compose_report(summary, data, top_vessel=None, gov_context=""):
     return text
 
 
+# ══════════════════════════════════════════════════════════════════
+# 週報 / 月報（--mode weekly|monthly）
+# ══════════════════════════════════════════════════════════════════
+
+def resolve_period_label(mode, today=None):
+    """回傳該模式要推送的期別標籤（上一個完整週/月）。"""
+    from aggregate_highrisk import previous_iso_week, previous_month
+    day = today or datetime.now(timezone.utc).date()
+    if mode == "weekly":
+        return previous_iso_week(day)[0]
+    return previous_month(day)[0]
+
+
+def load_period_report(mode, today=None, base_dir=None):
+    """讀 docs/reports/{weekly,monthly}/<label>.json；不存在回 (label, None)。
+
+    aggregate_highrisk 用相對路徑，這裡一律以 BASE_DIR 為準（LINEBot 由
+    workflow 於 repo 根目錄執行，但 SendMessage 自身以絕對路徑取檔較保險）。
+    """
+    label = resolve_period_label(mode, today)
+    root = Path(base_dir) if base_dir else DOCS_DIR
+    path = root / "reports" / PERIOD_DIRS[mode] / f"{label}.json"
+    if not path.exists():
+        return label, None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return label, json.load(f)
+    except (OSError, ValueError) as e:
+        print(f"⚠️ 讀取 {path} 失敗: {e}")
+        return label, None
+
+
+def _fmt_speed(v):
+    """均速可能是 None（該格沒有可用 SOG）—— 顯示破折號，絕不顯示 0。"""
+    return "—" if v is None else f"{v:g} kn"
+
+
+def build_period_template(report, mode):
+    """週/月報的固定模板訊息（純函式）。"""
+    summary = (report or {}).get("summary") or {}
+    label = report.get("week") or report.get("month") or ""
+    kind = "週報" if mode == "weekly" else "月報"
+    lines = [f"📋 台灣灰色地帶 高風險船舶{kind} — {label}",
+             f"期間（UTC）：{report.get('start', '?')} ~ {report.get('end', '?')}",
+             ""]
+
+    lines.append(
+        f"高風險船 {summary.get('unique_highrisk', 0)} 艘"
+        f"（critical {summary.get('critical', 0)}、high {summary.get('high', 0)}）")
+    lines.append(
+        f"海纜旁低速徘徊 {summary.get('cable_loiter_vessels', 0)} 艘，"
+        f"合計 {summary.get('cable_loiter_hours_total', 0):g} 小時")
+    if summary.get("offshore_loiter_vessels"):
+        lines.append(f"離岸長期徘徊商船 {summary['offshore_loiter_vessels']} 艘")
+    lines.append("")
+
+    hotspots = (report or {}).get("hotspots") or []
+    if hotspots:
+        lines.append("🔥 徘徊熱區 TOP3：")
+        for i, h in enumerate(hotspots[:3], 1):
+            lines.append(
+                f"{i}. {h['lat']:.1f}N {h['lon']:.1f}E — "
+                f"{h['loiter_hours']:g}h／{h['vessels']} 艘／均速 "
+                f"{_fmt_speed(h.get('avg_speed_kn'))}")
+        lines.append("")
+
+    vessels = (report or {}).get("vessels") or []
+    if vessels:
+        lines.append("⚠️ 高風險船 TOP3：")
+        for i, v in enumerate(vessels[:3], 1):
+            name = v.get("name") or f"MMSI {v.get('mmsi')}"
+            loiter = v.get("cable_loiter_hours") or 0
+            tail = (f"，海纜滯留 {loiter:g}h／均速 "
+                    f"{_fmt_speed(v.get('cable_loiter_avg_speed_kn'))}"
+                    if loiter else "")
+            lines.append(
+                f"{i}. {name}（{v.get('mmsi')}）{v.get('vessel_type', '?')}／"
+                f"{v.get('flag_zh', '未知')} 分數 {v.get('max_risk_score', 0)}{tail}")
+        lines.append("")
+
+    expected = 7 if mode == "weekly" else 28
+    covered = report.get("days_covered", 0)
+    if covered < expected:
+        lines.append(f"※ 本期僅累積 {covered} 天資料，數字尚不完整。")
+    cap = report.get("daily_cap")
+    if cap and summary.get("unique_highrisk", 0) >= cap:
+        lines.append(f"※ 逐船明細每日取前 {cap} 艘（critical 優先），非全量。")
+
+    lines.append("")
+    lines.append(WEEKLY_PAGE_URL)
+    return "\n".join(lines)
+
+
+def compose_period_report(report, mode):
+    """先試 LLM 潤稿，失敗退回模板；確保末行有連結並截斷至 LINE 上限。"""
+    text = generate_llm_period_report(report, mode)
+    if not text:
+        text = build_period_template(report, mode)
+    if WEEKLY_PAGE_URL not in text:
+        text = text.rstrip() + "\n" + WEEKLY_PAGE_URL
+    if len(text) > LINE_MAX_CHARS:
+        text = text[: LINE_MAX_CHARS - 1].rstrip() + "…"
+    return text
+
+
+def generate_llm_period_report(report, mode):
+    """用 Gemini 把週/月報摘要潤成中文簡報；任何失敗回 None（改用模板）。"""
+    api_key = _get_env("GEMINI_API_KEY")
+    if not api_key:
+        print("⚠️ GEMINI_API_KEY 未設定，改用固定模板")
+        return None
+
+    facts = build_period_template(report, mode)
+    kind = "週報" if mode == "weekly" else "月報"
+    prompt = (
+        f"你是台灣海域安全的 OSINT 分析師。以下是本期{kind}的統計事實，"
+        "請改寫成一則 LINE 推播（繁體中文，350 字內，條列可用）。"
+        "只能使用下列數字，不得杜撰或外推；語氣客觀，"
+        "並提醒風險評分是線索排序而非違法認定。"
+        f"最後一行必須是網址 {WEEKLY_PAGE_URL}。\n\n{facts}")
+    try:
+        resp = requests.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{LLM_MODEL}:generateContent?key={api_key}",
+            json={"contents": [{"parts": [{"text": prompt}]}],
+                  "generationConfig": {"maxOutputTokens": 800,
+                                       "temperature": 0.6}},
+            timeout=30)
+        if resp.status_code != 200:
+            print(f"⚠️ Gemini 回應 {resp.status_code}，改用固定模板")
+            return None
+        parts = (resp.json().get("candidates") or [{}])[0] \
+            .get("content", {}).get("parts") or []
+        text = "".join(p.get("text", "") for p in parts).strip()
+        return text or None
+    except Exception as e:
+        print(f"⚠️ Gemini 失敗（{e}），改用固定模板")
+        return None
+
+
+def render_period_images(report, mode):
+    """產生熱區圖與統計圖，回傳 [(local_path, repo_path)]。
+
+    matplotlib 匯入失敗（本機沒裝）時只警告不中斷 —— 改推純文字。
+    """
+    pending = []
+    try:
+        import report_charts
+    except Exception as e:
+        print(f"⚠️ 無法載入繪圖模組，改推純文字: {e}")
+        return pending
+
+    hot_name = HOTSPOT_MAP_NAME.format(mode=mode)
+    hot_path = str(BASE_DIR / CHART_DIR / hot_name)
+    try:
+        if report_charts.render_hotspot_map(report, hot_path):
+            pending.append((hot_path, f"{CHART_DIR}/{hot_name}"))
+        else:
+            print("ℹ️ 本期無徘徊熱區，略過熱區圖")
+    except Exception as e:
+        print(f"⚠️ 熱區圖產生失敗: {e}")
+
+    brk_name = BREAKDOWN_NAME.format(mode=mode)
+    brk_path = str(BASE_DIR / CHART_DIR / brk_name)
+    try:
+        if report_charts.render_breakdown_chart(report, brk_path):
+            pending.append((brk_path, f"{CHART_DIR}/{brk_name}"))
+    except Exception as e:
+        print(f"⚠️ 統計圖產生失敗: {e}")
+    return pending
+
+
+def run_period_push(mode, dry_run=False):
+    """週/月報推送流程。回傳 process exit code。"""
+    kind = "週報" if mode == "weekly" else "月報"
+    label, report = load_period_report(mode)
+    if not report:
+        # 冷啟動或該期尚未產生：不推空訊息，等下一輪
+        print(f"⏭️ 找不到{kind} {label} 的報表檔，略過推送"
+              f"（資料管線產出後才會有）")
+        return 0
+
+    print(f"📋 載入{kind} {label}："
+          f"{report.get('summary', {}).get('unique_highrisk', 0)} 艘高風險船／"
+          f"熱區 {len(report.get('hotspots') or [])} 格")
+
+    report_text = compose_period_report(report, mode)
+    print("\n" + "=" * 50)
+    print(report_text)
+    print("=" * 50 + f"\n（{len(report_text)} 字）\n")
+
+    print("🗺️  產生熱區圖與統計圖...")
+    pending = render_period_images(report, mode)
+    for local, _ in pending:
+        print(f"  → {local}")
+
+    if dry_run:
+        print("🔍 --dry-run：不推送")
+        return 0
+
+    image_urls = []
+    github_token = _get_env("GITHUB_TOKEN")
+    if pending and github_token:
+        print(f"📤 上傳 {len(pending)} 張圖到 GitHub...")
+        image_urls = upload_charts_to_github(pending, github_token)
+    elif pending:
+        print("⚠️ GITHUB_TOKEN 未設定，略過圖片上傳，改傳純文字")
+
+    token = _get_env("LINE_CHANNEL_ACCESS_TOKEN", "LINECHANNELACCESSTOKEN")
+    user_id = _get_env("LINE_USER_ID", "USERID")
+    if not token or not user_id:
+        print("❌ 缺少 LINE_CHANNEL_ACCESS_TOKEN 或 LINE_USER_ID")
+        return 1
+
+    messages = [{"type": "text", "text": report_text}]
+    for url in image_urls[:LINE_MAX_IMAGES]:
+        messages.append({"type": "image", "originalContentUrl": url,
+                         "previewImageUrl": url})
+    print("📤 推送到 LINE...")
+    return 0 if push_to_line(messages, token, user_id) else 1
+
+
 def push_to_line(messages, token, user_id):
     """以 LINE Push Message API 推送一組訊息（最多 5 則）。"""
     headers = {
@@ -267,9 +494,16 @@ def push_to_line(messages, token, user_id):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="推送 Taiwan Gray Zone Monitor 每日報告到 LINE")
+    parser = argparse.ArgumentParser(description="推送 Taiwan Gray Zone Monitor 報告到 LINE")
     parser.add_argument("--dry-run", action="store_true", help="只印出報告內容、產生圖片，不實際推送")
+    parser.add_argument("--mode", choices=["daily", "weekly", "monthly"],
+                        default="daily",
+                        help="daily=每日簡報（預設）；weekly/monthly=高風險船週/月報（含熱區圖）")
     args = parser.parse_args()
+
+    # 週/月報走獨立流程：讀 docs/reports/ 的彙整結果，附熱區圖與統計圖
+    if args.mode in ("weekly", "monthly"):
+        sys.exit(run_period_push(args.mode, dry_run=args.dry_run))
 
     print("📊 產生每日摘要...")
     data = load_data()

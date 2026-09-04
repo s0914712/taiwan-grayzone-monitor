@@ -1,17 +1,34 @@
-name: LINE Bot Daily Report
+name: LINE Bot Report Push
 
 on:
   schedule:
-    # GitHub cron 使用 UTC 時間。
-    # 台灣時間 (UTC+8) 每天早上 08:00 推送 → UTC 00:00。
-    # 格式：分 時 日 月 星期
+    # GitHub cron 使用 UTC 時間。格式：分 時 日 月 星期
+    # 台灣時間 (UTC+8) 每天早上 08:00 推送每日簡報 → UTC 00:00
     - cron: '0 0 * * *'
+    # 高風險船「週報」：每週一 台灣 10:00 → UTC 02:00。
+    # 刻意晚兩小時 —— update-data.yml 的 0 0 * * * cron 才剛在產生上一週的
+    # 報表檔，同時段推送會抓不到檔（或抓到上一期的）。
+    - cron: '0 2 * * 1'
+    # 高風險船「月報」：每月 1 號 台灣 10:00 → UTC 02:00（同上理由）
+    - cron: '0 2 1 * *'
 
   # 允許在 GitHub 網頁上手動觸發測試，不用等排程
   workflow_dispatch:
+    inputs:
+      mode:
+        description: '推送模式'
+        type: choice
+        default: daily
+        options: [daily, weekly, monthly]
+
+# 週一 08:00 的日報與 10:00 的週報是兩次獨立執行；1 號適逢週一時更會有三次。
+# 它們都會透過 Contents API 寫圖進 main，排隊執行避免互相踩踏。
+concurrency:
+  group: line-push
+  cancel-in-progress: false
 
 jobs:
-  push-daily-report:
+  push-report:
     runs-on: ubuntu-latest
     # 上傳危險船隻航跡圖到 repo 需要寫入權限（取得公開圖片 URL 給 LINE）
     permissions:
@@ -41,7 +58,21 @@ jobs:
       - name: 安裝中文字型
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-wqy-zenhei
 
-      - name: 產生並推送每日報告
+      # 依「觸發的那條 cron」判斷模式，而非牆上時鐘：GitHub 排程常延遲
+      # 2-3 小時，比對 date +%H 會失準（update-data.yml 有同樣的教訓註解）。
+      - name: 決定推送模式
+        id: mode
+        run: |
+          case "${{ github.event.schedule }}" in
+            "0 2 * * 1")  MODE=weekly ;;
+            "0 2 1 * *")  MODE=monthly ;;
+            "0 0 * * *")  MODE=daily ;;
+            *)            MODE="${{ github.event.inputs.mode || 'daily' }}" ;;
+          esac
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "推送模式：$MODE"
+
+      - name: 產生並推送報告
         env:
           # 將 Secrets 轉成腳本讀取的環境變數
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
@@ -53,4 +84,4 @@ jobs:
           # 航跡改存 Supabase：vessel-data 分支缺檔時由此點查（見 supabase_store.py）
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: python src/SendMessage.py
+        run: python src/SendMessage.py --mode ${{ steps.mode.outputs.mode }}
