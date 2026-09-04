@@ -12,6 +12,8 @@ const assert = require('assert');
 const DOCS = path.join(__dirname, '..', 'docs');
 const html = fs.readFileSync(path.join(DOCS, 'weekly-report.html'), 'utf8');
 const source = fs.readFileSync(path.join(DOCS, 'js', 'weekly-report.js'), 'utf8');
+// 熱區色階／幾何抽到共用模組，頁面以 <script> 先載入它 —— 這裡照同一順序注入
+const hotspotLayer = fs.readFileSync(path.join(DOCS, 'js', 'hotspot-layer.js'), 'utf8');
 
 // ── 合成報表（管線尚未跑出真檔時 CI 也要能驗證）─────────────────────────
 const MANIFEST = {
@@ -201,6 +203,7 @@ function makeEnv(manifest, opts) {
         },
     };
     vm.createContext(ctx);
+    vm.runInContext(hotspotLayer, ctx);
     vm.runInContext(source, ctx);
     return { ctx, elements, listeners, domReady, state };
 }
@@ -217,6 +220,9 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
     });
     assert(html.includes('leaflet@1.9.4'), 'Leaflet runtime loaded');
     assert(html.includes('js/weekly-report.js'), 'page script wired');
+    assert(html.includes('js/hotspot-layer.js'), 'shared hotspot module loaded');
+    assert(html.indexOf('js/hotspot-layer.js') < html.indexOf('js/weekly-report.js'),
+        'hotspot-layer.js must load before weekly-report.js (it reads HotspotLayer at parse time)');
     assert(html.includes('js/mobile-nav.js'), 'mobile nav shell included');
     assert(!html.includes('cartocdn'),
         'CARTO tiles now require an API key — page must not use them');

@@ -312,25 +312,6 @@ const i18n = (function () {
         'th.coords':             { zh: '座標點', en: 'Points' },
 
         // ── Statistics 頁面 ──
-        'st.days_7':             { zh: '7 天', en: '7 Days' },
-        'st.days_30':            { zh: '30 天', en: '30 Days' },
-        'st.days_90':            { zh: '90 天', en: '90 Days' },
-        'st.predict_title':      { zh: '🎯 軍演預測指標', en: '🎯 Exercise Prediction Indicator' },
-        'st.predict_7d':         { zh: '7日預測風險等級', en: '7-day Forecast Risk Level' },
-        'st.predict_desc_high':  { zh: '暗船活動顯著高於平均，需密切關注', en: 'Dark vessel activity significantly above average, requires close attention' },
-        'st.predict_desc_mid':   { zh: '暗船活動略高於平均，持續觀察中', en: 'Dark vessel activity slightly above average, monitoring' },
-        'st.predict_desc_low':   { zh: '暗船活動處於正常範圍', en: 'Dark vessel activity within normal range' },
-        'st.predict_high':       { zh: '高', en: 'HIGH' },
-        'st.predict_mid':        { zh: '中', en: 'MED' },
-        'st.predict_low':        { zh: '低', en: 'LOW' },
-        'st.corr_lag1':          { zh: '暗船→架次 (1日滯後)', en: 'Dark→Sortie (1-day lag)' },
-        'st.corr_lag3':          { zh: '暗船→架次 (3日滯後)', en: 'Dark→Sortie (3-day lag)' },
-        'st.corr_lag7':          { zh: '暗船→架次 (7日滯後)', en: 'Dark→Sortie (7-day lag)' },
-        'st.trend_title':        { zh: '📈 暗船數量趨勢', en: '📈 Dark Vessel Trend' },
-        'st.region_title':       { zh: '🗺️ 區域暗船分布', en: '🗺️ Regional Distribution' },
-        'st.flag_title':         { zh: '🚩 有 AIS 船隻國旗分布 ▸ 點擊展開', en: '🚩 AIS Vessel Flag Distribution ▸ tap to expand' },
-        'st.daily_title':        { zh: '📋 每日數據', en: '📋 Daily Data' },
-        'st.data_loaded':        { zh: '✅ 資料已載入', en: '✅ Data loaded' },
 
         // ── Animation 頁面 ──
         'anim.range':            { zh: '範圍', en: 'Range' },

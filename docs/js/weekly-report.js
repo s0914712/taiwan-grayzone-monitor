@@ -44,8 +44,9 @@
         unknown: '#888'
     };
     var RISK_COLORS = { critical: '#ff2d55', high: '#ff7847', medium: '#ffab2e' };
-    // 熱區時數色階（淡→深；分位數切檔，離島與本島量級差太大，等距會擠在同一色）
-    var HEAT_COLORS = ['#3d3520', '#7a5c1e', '#b3701f', '#e05a33', '#ff2d55'];
+    // 熱區色階／分位切檔／格線幾何由 js/hotspot-layer.js 提供（statistics.html
+    // 與 Python 的 report_charts.py 同一組值 —— 同一份資料不能各頁不同色）
+    var HEAT_COLORS = HotspotLayer.HEAT_COLORS;
 
     function typeLabel(t) {
         var e = TYPE_LABELS[t];
@@ -106,41 +107,18 @@
         }).catch(function () { /* 海纜圖層缺檔不擋主功能 */ });
     }
 
-    // 分位數切檔：回傳 value → 色階 index 的函式
-    function quantileScale(values, buckets) {
-        var sorted = values.slice().sort(function (a, b) { return a - b; });
-        if (!sorted.length) return function () { return 0; };
-        var cuts = [];
-        for (var i = 1; i < buckets; i++) {
-            cuts.push(sorted[Math.min(sorted.length - 1,
-                Math.floor(sorted.length * i / buckets))]);
-        }
-        return function (v) {
-            for (var j = 0; j < cuts.length; j++) if (v <= cuts[j]) return j;
-            return buckets - 1;
-        };
-    }
-
     function plotHotspots(cells) {
-        layers.hotspots.clearLayers();
-        var scale = quantileScale(cells.map(function (c) { return c.loiter_hours; }),
-                                  HEAT_COLORS.length);
-        cells.forEach(function (c) {
-            var color = HEAT_COLORS[scale(c.loiter_hours)];
-            L.rectangle(
-                [[c.lat - 0.05, c.lon - 0.05], [c.lat + 0.05, c.lon + 0.05]],
-                { color: color, weight: 1, opacity: 0.9,
-                  fillColor: color, fillOpacity: 0.45 }
-            ).bindPopup(
-                '<b>' + (zh() ? '低速徘徊熱區' : 'Loiter hotspot') + '</b><br>' +
-                c.lat.toFixed(1) + '°N, ' + c.lon.toFixed(1) + '°E<br>' +
-                (zh() ? '滯留總時數：' : 'Total loiter: ') + c.loiter_hours +
-                ' h<br>' +
-                (zh() ? '涉及船數：' : 'Vessels: ') + c.vessels + '<br>' +
-                (zh() ? '事件數：' : 'Events: ') + c.events + '<br>' +
-                (zh() ? '平均船速：' : 'Avg speed: ') +
-                (c.avg_speed_kn == null ? '—' : c.avg_speed_kn + ' kn')
-            ).addTo(layers.hotspots);
+        HotspotLayer.plotCells(L, layers.hotspots, cells, {
+            popup: function (c) {
+                return '<b>' + (zh() ? '低速徘徊熱區' : 'Loiter hotspot') + '</b><br>' +
+                    c.lat.toFixed(1) + '°N, ' + c.lon.toFixed(1) + '°E<br>' +
+                    (zh() ? '滯留總時數：' : 'Total loiter: ') + c.loiter_hours +
+                    ' h<br>' +
+                    (zh() ? '涉及船數：' : 'Vessels: ') + c.vessels + '<br>' +
+                    (zh() ? '事件數：' : 'Events: ') + c.events + '<br>' +
+                    (zh() ? '平均船速：' : 'Avg speed: ') +
+                    HotspotLayer.speedLabel(c.avg_speed_kn);
+            }
         });
     }
 

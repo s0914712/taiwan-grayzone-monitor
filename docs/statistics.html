@@ -52,6 +52,9 @@
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"></noscript>
 
     <!-- Chart.js -->
+    <!-- Leaflet（熱區地圖）+ Chart.js（船種／船籍長條圖）-->
+    <link rel="stylesheet" href="css/leaflet.css" />
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <!-- Main Stylesheet -->
@@ -131,125 +134,79 @@
     </script>
 
     <style>
-        body {
-            overflow-y: auto;
-        }
+        body { overflow-y: auto; }
 
-        .time-range-selector {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
+        /* 站上共用的 .main-content 是兩欄 grid；本頁是直式流 */
+        .main-content { display: block; }
+        .main-content > * + * { margin-top: 16px; }
 
-        .time-range-btn {
-            padding: 6px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-glow);
-            border-radius: 4px;
+        #map { height: clamp(420px, calc(100vh - 320px), 760px); border-radius: 0 0 6px 6px; }
+
+        /* 共用的 .map-legend 是浮在地圖上的疊層；本頁圖例在地圖下方，用專屬 class */
+        .layer-bar {
+            display: flex; flex-wrap: wrap; gap: 14px;
+            padding: 8px 12px; font-size: var(--fs-caption);
             color: var(--text-secondary);
-            font-size: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
+            border-top: 1px solid rgba(0, 245, 255, 0.1);
         }
+        .layer-bar label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .legend-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 2px; }
+        .legend-ramp { display: inline-flex; }
+        .legend-ramp span { width: 11px; height: 11px; }
 
-        .time-range-btn:hover,
-        .time-range-btn.active {
-            color: var(--accent-cyan);
+        .map-help {
+            padding: 8px 12px; font-size: var(--fs-caption);
+            color: var(--text-secondary); line-height: 1.75;
+            border-top: 1px solid rgba(0, 245, 255, 0.1);
+        }
+        .map-help b { color: var(--accent-cyan); }
+
+        /* 期別 chips */
+        .period-groups { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
+        .period-group-label {
+            font-size: var(--fs-label); letter-spacing: 1px;
+            color: var(--text-secondary); text-transform: uppercase;
+        }
+        .period-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .period-chip {
+            background: var(--bg-card); color: var(--text-primary);
+            border: 1px solid rgba(0, 245, 255, 0.25); border-radius: 6px;
+            padding: 5px 10px; cursor: pointer; text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .period-chip:hover { border-color: var(--accent-cyan); }
+        .period-chip.active {
             border-color: var(--accent-cyan);
-            background: rgba(0, 245, 255, 0.1);
+            box-shadow: 0 0 6px rgba(0, 245, 255, 0.35);
+        }
+        .period-chip .chip-label { display: block; font-size: var(--fs-body); font-weight: 600; }
+        .period-chip .chip-sub { display: block; font-size: var(--fs-label); color: var(--text-secondary); }
+        .period-empty { font-size: var(--fs-caption); color: var(--text-secondary); }
+
+        .chart-box { padding: 10px 12px 14px; height: 320px; }
+
+        .coverage-note {
+            margin: 0; padding: 8px 12px;
+            background: rgba(255, 171, 46, 0.12);
+            border: 1px solid rgba(255, 171, 46, 0.4); border-radius: 6px;
+            font-size: var(--fs-caption); color: var(--text-primary);
         }
 
-        .prediction-indicator {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: var(--bg-card);
-            border-radius: 6px;
-            margin-bottom: 10px;
+        .pending-notice {
+            margin: 24px auto; max-width: 640px; padding: 24px;
+            background: var(--bg-card); border: 1px dashed rgba(0, 245, 255, 0.35);
+            border-radius: 8px; text-align: center; color: var(--text-secondary);
+            font-size: var(--fs-body); line-height: 1.8;
         }
 
-        .prediction-level {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-        }
+        #updateInfo { padding: 6px 12px 14px; font-size: var(--fs-label); color: var(--text-secondary); }
 
-        .prediction-level.low {
-            color: var(--accent-green);
-        }
-
-        .prediction-level.medium {
-            color: var(--accent-yellow);
-        }
-
-        .prediction-level.high {
-            color: var(--accent-orange);
-        }
-
-        .prediction-level.critical {
-            color: var(--accent-red);
-        }
-
-        .prediction-details {
-            flex: 1;
-        }
-
-        .prediction-title {
-            font-size: 11px;
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-
-        .prediction-desc {
-            font-size: 9px;
-            color: var(--text-secondary);
-        }
-
-        .correlation-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-        }
-
-        .correlation-item {
-            background: var(--bg-card);
-            border-radius: 4px;
-            padding: 10px;
-            text-align: center;
-        }
-
-        .correlation-value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .correlation-positive {
-            color: var(--accent-red);
-        }
-
-        .correlation-negative {
-            color: var(--accent-green);
-        }
-
-        .correlation-neutral {
-            color: var(--text-secondary);
-        }
-
-        .correlation-label {
-            font-size: 8px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
+        .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 900px) {
+            .panel-grid { grid-template-columns: 1fr; }
+            #map { height: clamp(300px, 60vh, 420px); }
+            .chart-box { height: 280px; }
             .main-content { padding-bottom: 72px; }
-            .time-range-btn { min-height: 44px; font-size: 12px; padding: 8px 16px; }
-            .prediction-indicator { flex-direction: column; text-align: center; }
-            .correlation-grid { grid-template-columns: repeat(2, 1fr); }
-            .correlation-label { font-size: 12px; }
-            .correlation-value { font-size: 16px; }
         }
     </style>
 </head>
@@ -290,737 +247,88 @@
         <h2 class="lang-zh-only">本頁重點</h2>
         <h2 class="lang-en-only">What this page shows</h2>
         <p class="lang-zh-only">
-            本頁彙整台灣周邊海域監測的趨勢統計，包括 AIS 船舶數量、暗船偵測與漁撈活動的歷史變化。
-            數據用於觀察整體態勢，個別數字可能受資料覆蓋範圍與更新延遲影響。
+            高風險船舶（威脅評分 ≥8）在台灣周邊海域的分布：海纜旁 0.1° 低速徘徊熱區地圖，
+            以及該期高風險船的船種與船籍分布。熱區的判定條件是「船速 &lt;5 節、距海纜 5 公里內、
+            連續 ≥3 小時」，港內點與 &gt;5 節的過境已在後端排除。評分是線索排序，並非違法認定。
         </p>
         <p class="lang-en-only">
-            This page aggregates trend statistics for the monitored waters around Taiwan, including
-            historical AIS vessel counts, dark-vessel detections, and fishing activity. The figures
-            show overall trends; individual numbers can be affected by data coverage and update latency.
+            Where high-risk vessels (threat score ≥8) concentrate around Taiwan: a 0.1° map of
+            low-speed loitering hotspots near submarine cables, plus the vessel-type and flag-state
+            breakdown for the period. A hotspot counts loitering sustained ≥3 h at &lt;5 kn within
+            5 km of a cable; in-port positions and &gt;5 kn transits are excluded upstream. Scores
+            rank leads, not legal findings.
         </p>
-        <ul>
-            <li class="lang-zh-only">AIS 統計每 2 小時更新；SAR 暗船分析每 12 小時更新。</li>
-            <li class="lang-en-only">AIS statistics update every 2 hours; SAR dark-vessel analysis every 12 hours.</li>
-            <li class="lang-zh-only">歷史資料保留約 90 天；趨勢供研判參考，非精確普查。</li>
-            <li class="lang-en-only">History is kept for about 90 days; trends are an analytical aid, not a precise census.</li>
-        </ul>
     </section>
 
-    <div style="padding: 10px 16px;">
-        <div class="time-range-selector">
-            <button class="time-range-btn" data-range="7" data-i18n="st.days_7">7 天</button>
-            <button class="time-range-btn active" data-range="30" data-i18n="st.days_30">30 天</button>
-            <button class="time-range-btn" data-range="90" data-i18n="st.days_90">90 天</button>
-        </div>
-    </div>
-
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="value" id="statTotalDark">--</div>
-            <div class="label" data-i18n="dark.dark_total">暗船總數</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statAvgDaily">--</div>
-            <div class="label" data-i18n="dark.avg_daily">日均暗船</div>
-        </div>
-        <div class="stat-card">
-            <div class="value alert" id="statDarkRatio">--%</div>
-            <div class="label" data-i18n="dark.ratio">暗船比例</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statChnHours">--</div>
-            <div class="label" data-i18n="idx.chn_hours">中國船時(萬)</div>
-        </div>
-    </div>
-
     <div class="main-content">
-        <h2 class="stats-group-title">🛰️ <span class="lang-zh-only">暗船趨勢與軍演預測</span><span class="lang-en-only">Dark-Vessel Trends &amp; Exercise Prediction</span></h2>
-        <div class="panel" style="grid-column: 1 / -1;">
-            <div class="panel-title" data-i18n="st.predict_title">🎯 軍演預測指標</div>
-            <div class="panel-body">
-                <div class="prediction-indicator">
-                    <div class="prediction-level medium" id="predictionLevel" data-i18n="st.predict_mid">中</div>
-                    <div class="prediction-details">
-                        <div class="prediction-title" data-i18n="st.predict_7d">7日預測風險等級</div>
-                        <div class="prediction-desc" id="predictionDesc" data-i18n="st.predict_desc_mid">暗船活動略高於平均，持續觀察中</div>
-                    </div>
-                </div>
-                <div class="correlation-grid">
-                    <div class="correlation-item">
-                        <div class="correlation-value correlation-positive" id="corrLag1">+0.42</div>
-                        <div class="correlation-label" data-i18n="st.corr_lag1">暗船→架次 (1日滯後)</div>
-                    </div>
-                    <div class="correlation-item">
-                        <div class="correlation-value correlation-positive" id="corrLag3">+0.38</div>
-                        <div class="correlation-label" data-i18n="st.corr_lag3">暗船→架次 (3日滯後)</div>
-                    </div>
-                    <div class="correlation-item">
-                        <div class="correlation-value correlation-positive" id="corrLag7">+0.29</div>
-                        <div class="correlation-label" data-i18n="st.corr_lag7">暗船→架次 (7日滯後)</div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="panel chart-panel">
-            <div class="panel-title" data-i18n="st.trend_title">📈 暗船數量趨勢</div>
-            <div class="chart-container">
-                <canvas id="trendChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Region + flag distributions live on dark-vessels.html (richer table/list there);
-             the duplicate pie charts were removed from this page -->
-        <div class="panel" style="grid-column: 1 / -1;">
-            <div class="panel-title">
-                <a href="dark-vessels.html" style="color:var(--accent-cyan);text-decoration:none">
-                    🗺️ <span class="lang-zh-only">區域暗船分布與國旗統計 → 見「暗船偵測」頁</span>
-                    <span class="lang-en-only">Region &amp; flag distribution → see the Dark Vessels page</span>
-                </a>
-            </div>
-        </div>
-
-        <div class="panel" style="grid-column: 1 / -1;">
-            <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded')" data-i18n="st.daily_title">📋 每日數據</div>
-            <div class="panel-collapsible-body">
-            <div class="panel-body">
-                <table class="region-table" id="dailyTable">
-                    <thead>
-                        <tr>
-                            <th data-i18n="th.date">日期</th>
-                            <th data-i18n="th.sar_detect">SAR 偵測</th>
-                            <th data-i18n="th.dark">暗船</th>
-                            <th data-i18n="th.dark_ratio">暗船比例</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="dailyTableBody">
-                        <tr>
-                            <td colspan="5" class="empty-state" data-i18n="common.loading">載入中...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- AIS 歷史趨勢 -->
-    <div class="main-content" style="margin-top: 0;">
-        <h2 class="stats-group-title">📡 <span class="lang-zh-only">AIS 船隊歷史</span><span class="lang-en-only">AIS Fleet History</span></h2>
-        <div class="panel chart-panel" style="grid-column: 1 / -1;">
-            <div class="panel-title"><span class="lang-zh-only">📈 船舶數量趨勢（每日快照）</span><span class="lang-en-only">📈 Vessel Count Trend (daily snapshots)</span></div>
-            <div class="chart-container" style="height: 280px;">
-                <canvas id="aisHistoryChart"></canvas>
-            </div>
-        </div>
-
-        <div class="panel chart-panel">
-            <div class="panel-title"><span class="lang-zh-only">🐟 可疑漁船數量趨勢</span><span class="lang-en-only">🐟 Suspicious Fishing-Vessel Trend</span></div>
-            <div class="chart-container" style="height: 200px;">
-                <canvas id="aisSuspiciousChart"></canvas>
-            </div>
-        </div>
-
-        <div class="panel chart-panel">
-            <div class="panel-title"><span class="lang-zh-only">🚢 船型分布趨勢</span><span class="lang-en-only">🚢 Ship-Type Distribution Trend</span></div>
-            <div class="chart-container" style="height: 200px;">
-                <canvas id="aisTypeChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- SCFI vs 船舶流量相關性分析 -->
-    <div class="main-content" id="scfiSection" style="margin-top: 0; display: none;">
-        <h2 class="stats-group-title">📊 <span class="lang-zh-only">SCFI 運價指數相關性</span><span class="lang-en-only">SCFI Freight-Index Correlation</span></h2>
-        <div class="panel" style="grid-column: 1 / -1;">
-            <div class="panel-title"><span class="lang-zh-only">📊 SCFI 運價指數 vs 商船流量相關性分析</span><span class="lang-en-only">📊 SCFI vs Merchant-Traffic Correlation</span></div>
-            <div class="panel-body">
-                <p id="scfiConclusion" style="font-size: 13px; line-height: 1.7; color: var(--text-primary); white-space: pre-line; margin: 0 0 12px 0;"></p>
-                <div id="scfiCaveat" style="font-size: 11px; color: var(--text-secondary); border-left: 3px solid var(--accent-yellow); padding-left: 10px; margin-top: 8px;"></div>
-            </div>
-        </div>
-
-        <div class="panel chart-panel" style="grid-column: 1 / -1;">
-            <div class="panel-title"><span class="lang-zh-only">📈 SCFI 指數 vs 商船數量（週資料，雙軸）</span><span class="lang-en-only">📈 SCFI vs Merchant Count (weekly, dual-axis)</span></div>
-            <div class="chart-container" style="height: 320px;">
-                <canvas id="scfiVesselChart"></canvas>
-            </div>
-            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; text-align: center;">
-                <span style="color: #ffd700;">●</span> SCFI 綜合指數（左軸）
-                &nbsp;&nbsp;
-                <span style="color: #00f5ff;">●</span> 台灣周邊商船 貨船+油輪（右軸）
-            </div>
-        </div>
-
-        <div class="panel chart-panel">
-            <div class="panel-title"><span class="lang-zh-only">📉 滯後相關係數</span><span class="lang-en-only">📉 Lagged Correlation</span></div>
-            <div class="chart-container" style="height: 220px;">
-                <canvas id="scfiLagChart"></canvas>
-            </div>
-            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
-                正值 lag = 船舶領先 SCFI；負值 lag = SCFI 領先船舶
-            </div>
-        </div>
-
+        <!-- 期別選擇 -->
         <div class="panel">
-            <div class="panel-title"><span class="lang-zh-only">📏 相關性統計摘要</span><span class="lang-en-only">📏 Correlation Summary</span></div>
-            <div class="panel-body" id="scfiStatsBody" style="font-size: 12px; line-height: 1.9;">
-                <div>樣本週數: <span id="scfiSampleN" style="color: var(--accent-cyan); font-weight: 600;">-</span></div>
-                <div>商船 Pearson r: <span id="scfiPearsonR" class="correlation-value">-</span></div>
-                <div>商船 Spearman r: <span id="scfiSpearmanR" class="correlation-value">-</span></div>
-                <div>週變化率相關: <span id="scfiRocR" class="correlation-value">-</span></div>
-                <div>最佳滯後: <span id="scfiBestLag" style="color: var(--accent-cyan); font-weight: 600;">-</span></div>
-                <div>Granger 商船→SCFI: <span id="scfiGrangerV2S" style="font-weight: 600;">-</span></div>
-                <div>Granger SCFI→商船: <span id="scfiGrangerS2V" style="font-weight: 600;">-</span></div>
-                <div>預測可行性: <span id="scfiPredictability" style="font-weight: 600;">-</span></div>
+            <div class="panel-title"><span class="lang-zh-only">🗓️ 選擇期別</span><span class="lang-en-only">🗓️ Select period</span></div>
+            <div class="period-groups">
+                <div>
+                    <div class="period-group-label"><span class="lang-zh-only">週報（ISO 週，UTC）</span><span class="lang-en-only">Weekly (ISO week, UTC)</span></div>
+                    <div class="period-list" id="periodListWeekly"></div>
+                </div>
+                <div>
+                    <div class="period-group-label"><span class="lang-zh-only">月報（日曆月，UTC）</span><span class="lang-en-only">Monthly (calendar month, UTC)</span></div>
+                    <div class="period-list" id="periodListMonthly"></div>
+                </div>
             </div>
         </div>
 
-        <div class="panel" style="grid-column: 1 / -1;">
-            <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded')"><span class="lang-zh-only">📋 週資料明細</span><span class="lang-en-only">📋 Weekly Data Detail</span></div>
-            <div class="panel-collapsible-body">
-            <div class="panel-body">
-                <table class="region-table" id="scfiTable">
-                    <thead>
-                        <tr>
-                            <th>週結束日</th>
-                            <th>SCFI 綜合</th>
-                            <th>商船</th>
-                            <th>貨船</th>
-                            <th>油輪</th>
-                            <th>船舶總數</th>
-                        </tr>
-                    </thead>
-                    <tbody id="scfiTableBody"></tbody>
-                </table>
+        <div class="pending-notice" id="pendingNotice" style="display:none">
+            <div style="font-size:28px">⏳</div>
+            <p class="lang-zh-only">尚未產生任何彙整報表。資料管線每天累積高風險船資料，
+                並於每週一（UTC）彙整上一 ISO 週、每月 1 日彙整上一日曆月 —— 首份報表出現後本頁會自動顯示。</p>
+            <p class="lang-en-only">No aggregated report has been generated yet. The pipeline accumulates
+                high-risk vessel data daily and aggregates the previous ISO week every Monday (UTC) and
+                the previous calendar month on the 1st — this page fills in automatically once one exists.</p>
+        </div>
+
+        <div id="reportBody">
+            <div class="coverage-note" id="coverageNote" style="display:none"></div>
+
+            <!-- 熱區地圖 -->
+            <div class="panel map-panel">
+                <div class="panel-title"><span class="lang-zh-only">📍 海纜旁低速徘徊熱區（0.1° 網格）</span><span class="lang-en-only">📍 Low-speed loitering hotspots near cables (0.1° grid)</span></div>
+                <div id="map"></div>
+                <div class="layer-bar">
+                    <label><input type="checkbox" id="lyrHotspots" checked>
+                        <span class="legend-ramp"><span style="background:#3d3520"></span><span style="background:#7a5c1e"></span><span style="background:#b3701f"></span><span style="background:#e05a33"></span><span style="background:#ff2d55"></span></span>
+                        <span class="lang-zh-only">徘徊熱區（滯留時數 淡→深）</span><span class="lang-en-only">Hotspots (loiter hours, low→high)</span></label>
+                    <label><input type="checkbox" id="lyrCables" checked><span class="legend-swatch" style="background:#00f5ff;height:3px"></span><span class="lang-zh-only">海底電纜</span><span class="lang-en-only">Submarine cables</span></label>
+                </div>
+                <div class="map-help">
+                    <span class="lang-zh-only"><b>如何判讀：</b>方格＝該 0.1° 網格內徘徊事件的總時數，顏色越紅代表該格被佔用越久。色階用分位數切檔（離島與本島量級差極大，等距會讓多數格擠在同一色）。點方格看該格的船數、事件數與平均船速。</span>
+                    <span class="lang-en-only"><b>How to read this:</b> each square is one 0.1° cell shaded by total qualifying loiter hours inside it — redder means occupied longer. The scale uses quantile bins (offshore-island and main-island magnitudes differ so much that equal-interval bins collapse into one colour). Click a square for its vessel count, event count and average speed.</span>
+                </div>
+                <div id="updateInfo"></div>
             </div>
+
+            <!-- 船種／船籍 -->
+            <div class="panel-grid" style="margin-top:16px">
+                <div class="panel">
+                    <div class="panel-title"><span class="lang-zh-only">🚢 船種分布</span><span class="lang-en-only">🚢 By vessel type</span></div>
+                    <div class="chart-box"><canvas id="typeChart"></canvas></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title"><span class="lang-zh-only">🏳️ 船籍分布（前 8）</span><span class="lang-en-only">🏳️ By flag state (top 8)</span></div>
+                    <div class="chart-box"><canvas id="flagChart"></canvas></div>
+                </div>
             </div>
+
+            <p style="font-size:var(--fs-label);color:var(--text-secondary);margin:14px 4px 0;line-height:1.7">
+                <span class="lang-zh-only">⚠️ 逐船明細每日以優先排序取前 400 艘（critical → 海纜滯留 → 離岸滯留 → 分數），因此分布圖反映的是入選船隻的組成，非全量。完整逐船清單與 CSV／JSON 下載在 <a href="weekly-report.html" style="color:var(--accent-cyan)">高風險船舶週報</a>。</span>
+                <span class="lang-en-only">⚠️ The per-vessel detail keeps the top 400 vessels per day by priority (critical → cable loitering → offshore loitering → score), so these breakdowns describe the selected set, not the full fleet. The full per-vessel list and CSV/JSON downloads live on the <a href="weekly-report.html" style="color:var(--accent-cyan)">weekly report page</a>.</span>
+            </p>
         </div>
     </div>
 
-    <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>
-
-    <footer class="site-footer">
-        <p>Contact: <a href="mailto:s0914712@gmail.com">s0914712@gmail.com</a></p>
-    </footer>
-
-    <!-- JavaScript -->
     <script defer src="js/i18n.js"></script>
-    <script defer src="js/charts.js"></script>
-    <script>
-        let fullData = null;
-        let selectedRange = 30;
-
-        async function loadData() {
-            try {
-                const res = await fetch('data.json?' + Date.now());
-                fullData = await res.json();
-
-                document.getElementById('dataStatus').textContent = i18n.t('st.data_loaded');
-                document.getElementById('updateInfo').textContent =
-                    i18n.t('common.updated') + ' ' + new Date(fullData.updated_at).toLocaleString();
-
-                renderStats();
-                renderCharts();
-                renderDailyTable();
-                renderPrediction();
-                loadScfiAnalysis();
-            } catch (e) {
-                console.error('Load failed:', e);
-                document.getElementById('dataStatus').textContent = i18n.t('common.error_load');
-            }
-        }
-
-        function renderStats() {
-            if (!fullData.dark_vessels || !fullData.dark_vessels.overall) return;
-
-            const overall = fullData.dark_vessels.overall;
-            document.getElementById('statTotalDark').textContent =
-                ChartsModule.formatCompact(overall.dark_vessels || 0);
-            document.getElementById('statAvgDaily').textContent =
-                Math.round((overall.dark_vessels || 0) / Math.max(1, selectedRange));
-            document.getElementById('statDarkRatio').textContent =
-                (overall.dark_ratio || 0) + '%';
-
-            if (fullData.vessel_monitoring && fullData.vessel_monitoring.summary) {
-                const s = fullData.vessel_monitoring.summary;
-                document.getElementById('statChnHours').textContent =
-                    (s.chn_presence_hours / 10000).toFixed(1);
-            }
-        }
-
-        function renderCharts() {
-            // Trend chart
-            if (fullData.vessel_monitoring && fullData.vessel_monitoring.daily) {
-                const daily = fullData.vessel_monitoring.daily.slice(-selectedRange);
-                const labels = daily.map(d => d.date.slice(5));
-                const darkData = daily.map(d => d.dark_vessels);
-                const totalData = daily.map(d => d.total_detections);
-
-                ChartsModule.renderTrendChart('trendChart', {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: i18n.t('dark.dark_vessel'),
-                            data: darkData,
-                            borderColor: '#ff3366',
-                            backgroundColor: 'rgba(255, 51, 102, 0.1)',
-                            fill: true,
-                            tension: 0.3
-                        },
-                        {
-                            label: i18n.t('dark.total_detect_s'),
-                            data: totalData,
-                            borderColor: '#00f5ff',
-                            backgroundColor: 'transparent',
-                            borderDash: [5, 5],
-                            tension: 0.3
-                        }
-                    ]
-                });
-            }
-
-            // Region / flag distributions moved to dark-vessels.html
-        }
-
-        function renderDailyTable() {
-            const tbody = document.getElementById('dailyTableBody');
-            if (!fullData.vessel_monitoring || !fullData.vessel_monitoring.daily) {
-                tbody.innerHTML = `<tr><td colspan="5" class="empty-state">${i18n.t('common.no_data')}</td></tr>`;
-                return;
-            }
-
-            const daily = fullData.vessel_monitoring.daily.slice(-selectedRange).reverse();
-
-            tbody.innerHTML = daily.map(d => {
-                const ratio = d.total_detections > 0
-                    ? Math.round(d.dark_vessels / d.total_detections * 100)
-                    : 0;
-                const barWidth = Math.max(2, Math.min(100, ratio));
-
-                return `
-                    <tr>
-                        <td>${d.date}</td>
-                        <td>${d.total_detections}</td>
-                        <td style="color:var(--accent-red);font-weight:600">${d.dark_vessels}</td>
-                        <td>${ratio}%</td>
-                        <td><span class="ratio-bar" style="width:${barWidth}px"></span></td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function renderPrediction() {
-            if (!fullData.exercise_prediction) return;
-
-            const pred = fullData.exercise_prediction;
-
-            // Update correlation values if available
-            if (pred.lag_correlation) {
-                const lags = pred.lag_correlation;
-                // Find correlations for lag 1, 3, 7
-                lags.forEach(l => {
-                    if (l.lag === 1) updateCorrelation('corrLag1', l.correlation);
-                    if (l.lag === 3) updateCorrelation('corrLag3', l.correlation);
-                    if (l.lag === 7) updateCorrelation('corrLag7', l.correlation);
-                });
-            }
-
-            // Update prediction level based on recent trends
-            if (pred.high_sortie_analysis) {
-                const analysis = pred.high_sortie_analysis;
-                const levelEl = document.getElementById('predictionLevel');
-                const descEl = document.getElementById('predictionDesc');
-
-                if (analysis.avg_dark_before_high > analysis.overall_avg_dark * 1.5) {
-                    levelEl.textContent = i18n.t('st.predict_high');
-                    levelEl.className = 'prediction-level high';
-                    descEl.textContent = i18n.t('st.predict_desc_high');
-                } else if (analysis.avg_dark_before_high > analysis.overall_avg_dark * 1.2) {
-                    levelEl.textContent = i18n.t('st.predict_mid');
-                    levelEl.className = 'prediction-level medium';
-                    descEl.textContent = i18n.t('st.predict_desc_mid');
-                } else {
-                    levelEl.textContent = i18n.t('st.predict_low');
-                    levelEl.className = 'prediction-level low';
-                    descEl.textContent = i18n.t('st.predict_desc_low');
-                }
-            }
-        }
-
-        function updateCorrelation(elId, value) {
-            const el = document.getElementById(elId);
-            if (!el) return;
-
-            el.textContent = (value > 0 ? '+' : '') + value.toFixed(2);
-            el.className = 'correlation-value ' +
-                (value > 0.2 ? 'correlation-positive' :
-                    value < -0.2 ? 'correlation-negative' : 'correlation-neutral');
-        }
-
-        // Time range selector
-        document.querySelectorAll('.time-range-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.time-range-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedRange = parseInt(btn.dataset.range);
-                renderStats();
-                renderCharts();
-                renderDailyTable();
-            });
-        });
-
-        // AIS History charts
-        async function loadAisHistory() {
-            try {
-                const res = await fetch('ais_history.json?' + Date.now());
-                const history = await res.json();
-                if (!Array.isArray(history) || history.length === 0) return;
-
-                const labels = history.map(d => d.date.slice(5));
-
-                // Total vessels + fishing vessels trend
-                ChartsModule.renderTrendChart('aisHistoryChart', {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: '船舶總數',
-                            data: history.map(d => d.stats.total_vessels),
-                            borderColor: '#00f5ff',
-                            backgroundColor: 'rgba(0, 245, 255, 0.1)',
-                            fill: true,
-                            tension: 0.3
-                        },
-                        {
-                            label: '漁船',
-                            data: history.map(d => d.stats.fishing_vessels),
-                            borderColor: '#ff6b35',
-                            backgroundColor: 'transparent',
-                            tension: 0.3
-                        }
-                    ]
-                });
-
-                // Suspicious vessel count trend
-                ChartsModule.renderTrendChart('aisSuspiciousChart', {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: '可疑船舶',
-                            data: history.map(d => d.stats.suspicious_count),
-                            borderColor: '#ff3366',
-                            backgroundColor: 'rgba(255, 51, 102, 0.15)',
-                            fill: true,
-                            tension: 0.3
-                        }
-                    ]
-                });
-
-                // Type distribution stacked area
-                const types = ['cargo', 'tanker', 'fishing', 'passenger', 'special'];
-                const typeColors = {
-                    cargo: '#00f5ff',
-                    tanker: '#ff5e8a',
-                    fishing: '#00ff88',
-                    passenger: '#ffd700',
-                    special: '#9b59b6'
-                };
-                const typeLabels = {
-                    cargo: '貨船',
-                    tanker: '油輪',
-                    fishing: '漁船',
-                    passenger: '客船',
-                    special: '特殊'
-                };
-
-                ChartsModule.renderTrendChart('aisTypeChart', {
-                    labels: labels,
-                    datasets: types.map(t => ({
-                        label: typeLabels[t] || t,
-                        data: history.map(d => (d.stats.by_type || {})[t] || 0),
-                        borderColor: typeColors[t] || '#888',
-                        backgroundColor: 'transparent',
-                        tension: 0.3
-                    }))
-                });
-
-            } catch (e) {
-                console.log('AIS history not available:', e.message);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', loadAisHistory);
-
-        // ============================================================
-        // SCFI vs Vessel Traffic Correlation
-        // ============================================================
-        async function loadScfiAnalysis() {
-            try {
-                const scfiCorr = fullData && fullData.scfi_correlation;
-                if (!scfiCorr || scfiCorr.status !== 'ok') {
-                    console.log('SCFI analysis not available:', scfiCorr && scfiCorr.status);
-                    return;
-                }
-
-                document.getElementById('scfiSection').style.display = '';
-
-                // 結論
-                const conclEl = document.getElementById('scfiConclusion');
-                if (conclEl && scfiCorr.conclusion && scfiCorr.conclusion.zh) {
-                    conclEl.textContent = scfiCorr.conclusion.zh;
-                }
-
-                // Caveat (小樣本提示)
-                const caveatEl = document.getElementById('scfiCaveat');
-                if (caveatEl) {
-                    const n = scfiCorr.sample_size || 0;
-                    if (n < 10) {
-                        caveatEl.textContent = `⚠️ 當前樣本僅 ${n} 週，統計檢驗信心不足。系統會持續累積週資料，預期 10 週後可進行 Granger 因果檢驗，30 週後結論才具高可信度。`;
-                    } else if (n < 30) {
-                        caveatEl.textContent = `ℹ️ 當前樣本 ${n} 週，已可進行 Granger 因果檢驗；建議累積至 30 週以上再作決策依據。`;
-                    } else {
-                        caveatEl.textContent = `✅ 樣本 ${n} 週，統計推論具足夠信心度。`;
-                    }
-                }
-
-                // 統計摘要
-                setText('scfiSampleN', scfiCorr.sample_size + ' 週');
-
-                const commercial = (scfiCorr.correlations && scfiCorr.correlations.commercial) || {};
-                updateCorrVal('scfiPearsonR', commercial.pearson_r, commercial.significant_pearson, commercial.pearson_p);
-                updateCorrVal('scfiSpearmanR', commercial.spearman_r, commercial.significant_spearman, commercial.spearman_p);
-
-                const roc = scfiCorr.rate_of_change_correlation || {};
-                updateCorrVal('scfiRocR', roc.pearson_r, roc.significant_pearson, roc.pearson_p);
-
-                const bestLag = (scfiCorr.lag_analysis && scfiCorr.lag_analysis.commercial &&
-                                 scfiCorr.lag_analysis.commercial.best) || {};
-                if (bestLag.lag !== undefined) {
-                    const arrow = bestLag.lag > 0 ? '船→SCFI' : (bestLag.lag < 0 ? 'SCFI→船' : '同步');
-                    setText('scfiBestLag', `${bestLag.lag} 週 (r=${(bestLag.correlation||0).toFixed(2)}, ${arrow})`);
-                }
-
-                // Granger
-                const granger = scfiCorr.granger_causality || {};
-                setGranger('scfiGrangerV2S', granger.vessels_to_scfi, granger.note);
-                setGranger('scfiGrangerS2V', granger.scfi_to_vessels, granger.note);
-
-                // 預測可行性
-                const pred = (scfiCorr.conclusion && scfiCorr.conclusion.predictability) || 'unknown';
-                const predMap = {
-                    'vessels_predict_scfi':    ['✅ 船舶→SCFI 可預測', 'var(--accent-green)'],
-                    'scfi_predicts_vessels':   ['✅ SCFI→船舶 可預測', 'var(--accent-green)'],
-                    'bidirectional':           ['✅ 雙向互為預測', 'var(--accent-green)'],
-                    'correlated_no_causality': ['⚠️ 相關但無因果', 'var(--accent-yellow)'],
-                    'weak':                    ['❌ 預測可行性低', 'var(--accent-red)'],
-                    'insufficient':            ['⏳ 資料不足', 'var(--text-secondary)'],
-                    'unknown':                 ['-', 'var(--text-secondary)'],
-                };
-                const predEl = document.getElementById('scfiPredictability');
-                if (predEl) {
-                    const [txt, color] = predMap[pred] || predMap.unknown;
-                    predEl.textContent = txt;
-                    predEl.style.color = color;
-                }
-
-                renderScfiDualChart(scfiCorr);
-                renderScfiLagChart(scfiCorr);
-                renderScfiTable(scfiCorr);
-
-            } catch (e) {
-                console.error('SCFI render failed:', e);
-            }
-        }
-
-        function setText(id, val) {
-            const el = document.getElementById(id);
-            if (el) el.textContent = val;
-        }
-
-        function updateCorrVal(id, val, significant, p) {
-            const el = document.getElementById(id);
-            if (!el || val == null) { if (el) el.textContent = 'N/A'; return; }
-            const sig = significant ? ' *' : '';
-            const pStr = (p != null && !isNaN(p)) ? ` (p=${p.toFixed(3)})` : '';
-            el.textContent = (val > 0 ? '+' : '') + val.toFixed(3) + sig + pStr;
-            el.className = 'correlation-value ' +
-                (val > 0.2 ? 'correlation-positive' :
-                    val < -0.2 ? 'correlation-negative' : 'correlation-neutral');
-        }
-
-        function setGranger(id, grangerObj, note) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            if (!grangerObj || Object.keys(grangerObj).length === 0) {
-                el.textContent = note || '資料不足';
-                el.style.color = 'var(--text-secondary)';
-                return;
-            }
-            // 找最小 p-value
-            let minP = null, lagAtMin = null;
-            for (const [lag, v] of Object.entries(grangerObj)) {
-                if (v && typeof v === 'object' && v.p_value != null) {
-                    if (minP === null || v.p_value < minP) {
-                        minP = v.p_value;
-                        lagAtMin = lag;
-                    }
-                }
-            }
-            if (minP === null) {
-                el.textContent = '無有效結果';
-                el.style.color = 'var(--text-secondary)';
-                return;
-            }
-            const sig = minP < 0.05;
-            el.textContent = `p=${minP.toFixed(3)} (lag=${lagAtMin})` + (sig ? ' ✓' : '');
-            el.style.color = sig ? 'var(--accent-green)' : 'var(--text-secondary)';
-        }
-
-        function renderScfiDualChart(scfiCorr) {
-            const series = scfiCorr.weekly_series || [];
-            if (series.length === 0) return;
-
-            const canvas = document.getElementById('scfiVesselChart');
-            if (!canvas) return;
-            if (canvas._chart) canvas._chart.destroy();
-
-            const labels = series.map(s => s.week_ending.slice(5));
-            const scfiData = series.map(s => s.scfi_composite);
-            const commercialData = series.map(s => s.commercial);
-
-            canvas._chart = new Chart(canvas.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'SCFI 綜合指數',
-                            data: scfiData,
-                            borderColor: '#ffd700',
-                            backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                            yAxisID: 'y',
-                            tension: 0.3,
-                            borderWidth: 2,
-                            pointRadius: 4,
-                            fill: true,
-                        },
-                        {
-                            label: '商船 (貨+油)',
-                            data: commercialData,
-                            borderColor: '#00f5ff',
-                            backgroundColor: 'transparent',
-                            yAxisID: 'y1',
-                            tension: 0.3,
-                            borderWidth: 2,
-                            pointRadius: 4,
-                        },
-                    ],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { labels: { color: '#e8eef7' } },
-                    },
-                    scales: {
-                        x: {
-                            ticks: { color: '#8aa4c8' },
-                            grid: { color: 'rgba(138, 164, 200, 0.1)' },
-                        },
-                        y: {
-                            type: 'linear',
-                            position: 'left',
-                            title: { display: true, text: 'SCFI 指數', color: '#ffd700' },
-                            ticks: { color: '#ffd700' },
-                            grid: { color: 'rgba(255, 215, 0, 0.1)' },
-                        },
-                        y1: {
-                            type: 'linear',
-                            position: 'right',
-                            title: { display: true, text: '商船數量', color: '#00f5ff' },
-                            ticks: { color: '#00f5ff' },
-                            grid: { drawOnChartArea: false },
-                        },
-                    },
-                },
-            });
-        }
-
-        function renderScfiLagChart(scfiCorr) {
-            const lags = (scfiCorr.lag_analysis && scfiCorr.lag_analysis.commercial &&
-                          scfiCorr.lag_analysis.commercial.lags) || [];
-            if (lags.length === 0) return;
-
-            const canvas = document.getElementById('scfiLagChart');
-            if (!canvas) return;
-            if (canvas._chart) canvas._chart.destroy();
-
-            const best = (scfiCorr.lag_analysis.commercial.best || {}).lag;
-
-            canvas._chart = new Chart(canvas.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: lags.map(l => l.lag + 'w'),
-                    datasets: [{
-                        label: '相關係數',
-                        data: lags.map(l => l.correlation),
-                        backgroundColor: lags.map(l =>
-                            l.lag === best ? '#ff6b35' :
-                            (l.correlation > 0 ? 'rgba(0, 245, 255, 0.6)' : 'rgba(255, 51, 102, 0.6)')
-                        ),
-                        borderColor: lags.map(l =>
-                            l.lag === best ? '#ff6b35' :
-                            (l.correlation > 0 ? '#00f5ff' : '#ff3366')
-                        ),
-                        borderWidth: 1,
-                    }],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: {
-                            title: { display: true, text: 'Lag (週)', color: '#8aa4c8' },
-                            ticks: { color: '#8aa4c8' },
-                            grid: { color: 'rgba(138, 164, 200, 0.1)' },
-                        },
-                        y: {
-                            min: -1, max: 1,
-                            title: { display: true, text: '相關係數 r', color: '#8aa4c8' },
-                            ticks: { color: '#8aa4c8' },
-                            grid: { color: 'rgba(138, 164, 200, 0.1)' },
-                        },
-                    },
-                },
-            });
-        }
-
-        function renderScfiTable(scfiCorr) {
-            const tbody = document.getElementById('scfiTableBody');
-            if (!tbody) return;
-            const series = scfiCorr.weekly_series || [];
-            if (series.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">無資料</td></tr>';
-                return;
-            }
-            tbody.innerHTML = series.slice().reverse().map(s => `
-                <tr>
-                    <td>${s.week_ending}</td>
-                    <td style="color: #ffd700; font-weight: 600;">${s.scfi_composite.toFixed(1)}</td>
-                    <td style="color: #00f5ff; font-weight: 600;">${s.commercial.toFixed(0)}</td>
-                    <td>${s.cargo.toFixed(0)}</td>
-                    <td>${s.tanker.toFixed(0)}</td>
-                    <td>${s.total_vessels.toFixed(0)}</td>
-                </tr>
-            `).join('');
-        }
-
-        // Initialize (wait for deferred Chart.js / modules to load)
-        document.addEventListener('DOMContentLoaded', loadData);
-    </script>
+    <!-- 熱區色階／幾何：與 weekly-report.html 共用，須在頁面 script 之前載入 -->
+    <script defer src="js/hotspot-layer.js"></script>
+    <script defer src="js/statistics.js"></script>
     <script defer src="js/mobile-nav.js"></script>
 </body>
 
