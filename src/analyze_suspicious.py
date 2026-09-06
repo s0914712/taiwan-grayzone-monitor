@@ -222,6 +222,62 @@ TOP_10_FLAG_MIDS = {
     '416',
 }
 
+# ── 有效 MID（MMSI 前 3 碼須為 ITU 指配）────────────────────
+# 觀測到大量 MMSI 根本不是合法識別碼：'KKK' (106000000)、
+# 'HOSM AIS TEST SHIP' (100900000)、'00000000000000' (400000000)，
+# 以及數百個 8 碼以下的漁網信標（'2680005'、'66750010'…）。
+# 這些設備誤設/測試訊號會因「非前十大船旗 +1」「身分變更 +3」等條件
+# 長期佔據高風險榜首，卻沒有任何情報價值。
+MID_FLAGS_FILE = DATA_DIR / "mid_flags.json"
+# 測試/CLI 可能不在 repo 根目錄執行，DATA_DIR 是相對路徑 → 備援用檔案位置回推
+_MID_FLAGS_FALLBACK = Path(__file__).resolve().parent.parent / "data" / "mid_flags.json"
+_valid_mids_cache = None
+
+
+def load_valid_mids(path=None):
+    """ITU 已指配的 MID 集合（data/mid_flags.json 的鍵，與前端
+    docs/js/map-data.js 的 MID_FLAG_TABLE 由 tests/test_mid_flags.py 同步）。
+
+    載入失敗 → 回空集合，呼叫端據此**停用**排除規則：表壞掉時寧可全部照常
+    評分，也不要把整支船隊誤判成無效身分。
+    """
+    global _valid_mids_cache
+    if path is None and _valid_mids_cache is not None:
+        return _valid_mids_cache
+    mids = frozenset()
+    for candidate in ([path] if path else [MID_FLAGS_FILE, _MID_FLAGS_FALLBACK]):
+        try:
+            with open(candidate, 'r', encoding='utf-8') as f:
+                table = json.load(f)
+            mids = frozenset(
+                k for k in table if isinstance(k, str) and re.fullmatch(r'\d{3}', k)
+            )
+            if mids:
+                break
+        except Exception:
+            continue
+    if not mids:
+        print("⚠️ 無法載入 MID 表，無效 MMSI 排除規則停用")
+    if path is None:
+        _valid_mids_cache = mids
+    return mids
+
+
+def is_malformed_mmsi(mmsi):
+    """MMSI 不是 9 位純數字 → 格式無效（AIS 設備誤設或去零的岸台/AtoN）。"""
+    return not re.fullmatch(r'\d{9}', str(mmsi or ''))
+
+
+def has_unassigned_mid(mmsi, valid_mids=None):
+    """9 位 MMSI 的前 3 碼不在 ITU MID 表中 → 船籍碼無效。
+    MID 表載入失敗（空集合）時一律回 False，避免整批誤排除。"""
+    mids = load_valid_mids() if valid_mids is None else valid_mids
+    if not mids:
+        return False
+    s = str(mmsi or '')
+    return re.fullmatch(r'\d{9}', s) is not None and s[:3] not in mids
+
+
 # ── 排除規則 (Exclusion Rules) ──────────────────────────────
 # 符合任一規則的船隻/設備將被排除在可疑計算之外。
 # 新增規則只需在此列表加入一個 dict：
@@ -269,6 +325,16 @@ EXCLUSION_RULES = [
             re.search(r'\d+%$', (n or '').strip())
             for n in names if n
         ),
+    },
+    {
+        'id': 'mmsi_malformed',
+        'label': '無效 MMSI (非 9 位數字)',
+        'check': lambda mmsi, names: is_malformed_mmsi(mmsi),
+    },
+    {
+        'id': 'mmsi_unassigned_mid',
+        'label': '無效 MMSI (MID 未經 ITU 指配)',
+        'check': lambda mmsi, names: has_unassigned_mid(mmsi),
     },
 ]
 

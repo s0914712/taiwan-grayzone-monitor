@@ -99,3 +99,37 @@ def test_annotate_combines_zone_and_cable(monkeypatch):
     out = geofence.annotate(24.005, 121.5)
     assert "zone" in out and "cable_band" in out
     assert out["cable_band"] == "within_1km"
+
+
+# ── 台灣港區/錨泊區 ─────────────────────────────────────────
+# 2026-W35 第 3 大徘徊熱區（23.0/120.2）是三艘外籍貨輪停在安平商港區
+# 300-447 小時，距 PORTS 的「安平漁港」2.5-3.5km（2km 圈外），
+# 位置在自然地球海岸線陸側。TPKM3 海纜登陸點就在安平，因此每週被記成
+# 「海纜旁長時間低速徘徊」。
+
+def test_anping_basin_berthed_vessels_are_in_port():
+    for lat, lon in [(22.9788, 120.1745),    # HAI BAO
+                     (22.9784, 120.1736),    # FA ZHAN
+                     (22.9677, 120.1714)]:   # OCEAN ANGELA
+        assert geofence.is_in_port(lat, lon) == "安平商港區 Anping-basin"
+
+
+def test_anping_fishing_port_still_matches_ports_table():
+    """漁港本身仍由 PORTS 命中 — 錨泊區表不得蓋掉原本的港名。"""
+    assert geofence.is_in_port(22.9972, 120.1600) == "安平漁港 Anping"
+
+
+def test_anchorage_radius_does_not_swallow_open_water():
+    # 安平外海 ~8km、以及南邊二仁溪口外都應維持「非港內」
+    assert geofence.is_in_port(22.9750, 120.0950) is None
+    assert geofence.is_in_port(22.9200, 120.1900) is None
+    # 金門料羅灣外錨地（本週最大熱區）刻意不納入 — 那是真訊號不是靠泊
+    assert geofence.is_in_port(24.4000, 118.4000) is None
+
+
+def test_anchorages_excluded_from_moored_taiwan_port_rule():
+    """TW_ANCHORAGES 不進 PORTS：停在港區的外籍船仍照常評分，
+    只是港內點不計海纜鄰近/徘徊分（見 analyze_suspicious 的 moored_taiwan_port）。"""
+    for name, (lat, lon, radius) in geofence.TW_ANCHORAGES.items():
+        assert name not in geofence.PORTS
+        assert radius > geofence.PORT_EXCLUSION_KM

@@ -85,6 +85,16 @@ Current rules:
 - Name contains `BUOY`
 - Name ends with voltage pattern like `12.5V` (fishing net beacons)
 - Name ends with `digits%` pattern
+- **MMSI is not 9 digits** (`mmsi_malformed`) — leading-zero-stripped coast stations/AtoN
+  and mis-configured net beacons (`2680005`, `66750010`, …)
+- **MMSI's MID is not an ITU-assigned MID** (`mmsi_unassigned_mid`) — the valid set is the
+  key set of `data/mid_flags.json` (`load_valid_mids()`, cached; **empty table → rule
+  disabled**, so a broken file can never exclude the whole fleet). These garbage identities
+  (`KKK` 106000000 → 36 pts, `HOSM AIS TEST SHIP` 100900000 → 33, `00000000000000`
+  400000000 → 30) sat at the top of the high-risk ranking purely on "non-top-10 flag +
+  identity anomaly" combos. Measured on tier-1: 2,917 of 10,981 vessels have an invalid
+  MID, 2,412 were already caught by the buoy/net rules, so these two rules newly exclude
+  **505**.
 
 **To add a new exclusion rule:** Append a dict to `EXCLUSION_RULES` list. No other code changes needed.
 
@@ -133,9 +143,19 @@ past the suspicious threshold.
 **In-port suppression:** cable landings sit next to ports, so a ship legally moored in
 Kaohsiung would otherwise score ~9 (proximity + loiter + combos + buffers) and cross the
 suspicious threshold. `annotate_port_points()` marks every track point via
-`geofence.is_in_port_cached()` (Taiwan ports 2km / CN coastal ports 8km+, shared with STS
-detection — the port list lives in `geofence.py`); those points are skipped for criteria
-1a/1b and the geofence buffer bonuses. Track points also carry the `anc` flag
+`geofence.is_in_port_cached()` (Taiwan ports 2km / **Taiwan port basins & anchorages with
+per-entry radii, `TW_ANCHORAGES`** / CN coastal ports 8km+, shared with STS detection — the
+port list lives in `geofence.py`); those points are skipped for criteria 1a/1b and the
+geofence buffer bonuses. `TW_ANCHORAGES` exists because `PORTS` is one point + a flat 2km
+radius, which doesn't cover a large commercial basin: W35's #3 loitering hotspot
+(23.0/120.2, 81.8h) was three foreign-flag cargo ships (HAI BAO / FA ZHAN / OCEAN ANGELA)
+berthed at 0.0-0.3kn for 300-447h at 22.967-22.979N/120.171-120.175E — 2.5-3.5km from the
+"安平漁港" point, but landward of the Natural Earth coastline, i.e. inside 安平商港, right
+next to the TPKM3 landing. Anchorage entries are deliberately **not** added to `PORTS`, so
+they suppress the track points without triggering the `moored_taiwan_port` whole-vessel
+exclusion — a foreign ship berthed in a Taiwan basin still gets scored on everything else.
+Kinmen's 料羅灣外錨地 (W35's #1 hotspot) is deliberately left in: that is signal, not
+berthing. Track points also carry the `anc` flag
 (nav_status 1=at anchor / 5=moored, written by `fetch_ais_data.py`).
 
 ### Vessel Type Multiplier

@@ -472,11 +472,33 @@ CN_PORTS = {
     "惠來 Huilai":            (23.0300, 116.3000),
 }
 
+# ── 台灣港區/錨泊區（範圍大於 PORTS 單點 2km 的港灣）──────
+# PORTS 是「一港一點 + 2km」，對港區範圍大的商港內港與外錨地不夠用：
+# 實測 2026-W35 的第 3 大徘徊熱區（23.0/120.2，81.8 小時、4 艘）就是
+# HAI BAO / FA ZHAN / OCEAN ANGELA 三艘外籍貨輪以 0.0-0.3kn 在
+# 22.967-22.979N / 120.171-120.175E 停泊 300-447 小時 —— 距 PORTS 的
+# 「安平漁港」2.5-3.5km（在 2km 圈外），但位置落在自然地球 1:10m 海岸線
+# 的陸側，也就是安平商港港區內。因為 TPKM3 海纜登陸點就在安平，這批
+# 合法靠泊船每週都會被記成「海纜旁長時間低速徘徊」而衝上高風險榜。
+# 值為 (lat, lon, 半徑km)，半徑必填（會用到這張表就表示 2km 不夠）。
+#
+# 注意：這些區域只用於 is_in_port()（航跡點的港內抑制），**不列入 PORTS**，
+# 所以不會觸發 analyze_suspicious 的 moored_taiwan_port 全船排除 ——
+# 停在港區內的外籍船仍照常評分，只是港內點不計海纜鄰近/徘徊分。
+TW_ANCHORAGES = {
+    "安平商港區 Anping-basin": (22.9750, 120.1730, 3.0),
+}
+
+
 def is_in_port(lat, lon):
-    """檢查是否在任何港口排除區域內（台灣港口 2km；大陸沿岸港口/灣內預設 8km，
-    部分大型灣澳以 CN_PORTS 第三元素指定半徑）"""
+    """檢查是否在任何港口排除區域內（台灣港口 2km、台灣港區/錨泊區依
+    TW_ANCHORAGES 指定半徑；大陸沿岸港口/灣內預設 8km，部分大型灣澳以
+    CN_PORTS 第三元素指定半徑）"""
     for name, (plat, plon) in PORTS.items():
         if haversine_km(lat, lon, plat, plon) < PORT_EXCLUSION_KM:
+            return name
+    for name, (plat, plon, radius) in TW_ANCHORAGES.items():
+        if haversine_km(lat, lon, plat, plon) < radius:
             return name
     for name, coords in CN_PORTS.items():
         plat, plon = coords[0], coords[1]
