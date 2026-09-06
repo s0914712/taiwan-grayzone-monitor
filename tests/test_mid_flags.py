@@ -35,7 +35,38 @@ def js_table():
 
 
 def test_json_matches_js_entry_for_entry(json_table, js_table):
-    assert json_table == js_table
+    # JSON 另存 ISO 3166 碼（JS 端用不到），比對只看 en/zh
+    stripped = {m: {'en': v['en'], 'zh': v['zh']} for m, v in json_table.items()}
+    assert stripped == js_table
+
+
+def test_table_covers_full_itu_range(json_table):
+    """表若不完整，合法船旗會被標成「未知」——本週實測有 7.1% 落入未知，
+    其中一半是這張表漏收（含制裁油輪的尼加拉瓜籍 MID 350）。"""
+    assert len(json_table) >= 290
+    # 曾經漏收或標錯的代表性 MID
+    for mid, en in [('350', 'Nicaragua'), ('219', 'Denmark'), ('218', 'Germany'),
+                    ('209', 'Cyprus'), ('205', 'Belgium'), ('608', 'Ascension Is')]:
+        assert mid in json_table, f'MID {mid} 缺漏'
+        assert en.split()[0] in json_table[mid]['en'], f'MID {mid} 名稱不符'
+
+
+def test_previously_wrong_entries_are_corrected(json_table):
+    """前端表原本有 14 筆錯置（由 pyais 的 ITU 表 + repo 內制裁清單雙重佐證）。
+    613 尤其關鍵：三艘受制裁油輪本被標成葛摩，實際是喀麥隆。"""
+    for mid, en in [('613', 'Cameroon'), ('612', 'Cen Afr Rep'), ('610', 'Benin'),
+                    ('230', 'Finland'), ('231', 'Faroe Is'), ('325', 'Dominica'),
+                    ('327', 'Dominican Rep'), ('339', 'Jamaica'), ('457', 'Mongolia'),
+                    ('459', 'Nepal'), ('536', 'N Mariana Is')]:
+        assert json_table[mid]['en'] == en, \
+            f"MID {mid} 應為 {en}，實得 {json_table[mid]['en']}"
+    # 葛摩是 620，不是 613
+    assert json_table['620']['zh'] == '葛摩'
+
+
+def test_every_entry_has_iso_code(json_table):
+    for mid, v in json_table.items():
+        assert v.get('iso') and len(v['iso']) == 2, f'MID {mid} 缺 ISO 碼'
 
 
 def test_covers_top10_flag_mids_and_cn_tw(json_table):
