@@ -286,7 +286,11 @@ Pipeline (per detection):
 2. **Time interpolation / dead reckoning** — SAR imaging is instantaneous; AIS is a 2h
    snapshot cadence. AIS tracks (tier-1 + tier-2 + snapshot; AtoN/buoy/net-beacon
    transmitters excluded) are interpolated to the SAR overpass instant. Overpass time
-   priority: per-detection timestamp > **real Sentinel-1 pass times from NASA CMR**
+   priority: per-detection timestamp (from the report endpoint's **`entryTimestamp`** —
+   `fetch_gfw_data.extract_detection_timestamp()`; accepted only when `entryTimestamp ==
+   exitTimestamp` and its date matches the row's own date, so a long `date-range` that
+   flattens both fields into the whole query window can't poison Δt) > **real Sentinel-1
+   pass times from NASA CMR**
    (`fetch_s1_passes.py` → `data/s1_pass_times.json`, per-date/per-platform IW-GRD
    acquisition times + asc/desc, optional `EARTHDATA_TOKEN` Bearer; frames ≤30min
    apart cluster into one pass) > fixed pass windows at Taiwan longitude (ascending

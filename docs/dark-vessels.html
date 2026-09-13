@@ -260,11 +260,15 @@
         </div>
         <div class="stat-card">
             <div class="value alert" id="statRatio">--%</div>
-            <div class="label" data-i18n="dark.ratio">暗船比例</div>
+            <div class="label"><span data-i18n="dark.ratio">暗船比例</span><span id="ratioProvisional"
+                style="display:none;margin-left:4px;padding:0 4px;border:1px solid #ffd700;border-radius:3px;color:#ffd700;font-size:9px;vertical-align:top"></span></div>
         </div>
     </div>
 
     <div class="main-content">
+        <div class="panel" id="darkCaveat"
+             style="display:none;padding:10px 14px;font-size:12px;line-height:1.7;border-left:3px solid #ffd700"></div>
+
         <div class="panel" style="padding:10px 14px;font-size:12px;line-height:1.6">
             <span class="lang-zh-only">🎯 GFW 標記的暗船已用<b>航港局本地 AIS</b> 重新交叉比對（固定設施過濾、航位推算內插、一對一匹配）——</span>
             <span class="lang-en-only">🎯 GFW-flagged dark vessels are re-matched against <b>local Port Bureau AIS</b> (infrastructure filtering, dead-reckoning interpolation, one-to-one assignment) — </span>
@@ -288,7 +292,7 @@
         </div>
 
         <div class="panel chart-panel">
-            <div class="panel-title" data-i18n="dv.daily_title">📊 每日暗船數量趨勢</div>
+            <div class="panel-title" id="dailyChartTitle" data-i18n="dv.daily_title">📊 每日暗船數量趨勢</div>
             <div class="chart-container">
                 <canvas id="dailyChart"></canvas>
             </div>
@@ -360,6 +364,7 @@
         let map;
         const sarLayers = {};   // 比對成果圖層（目標＋區域）
         let sarData = null;     // sar_ais_matches.json 快取（langchange 重繪用）
+        let darkData = null;    // data.json 的 dark_vessels 區塊（同上）
 
         function zh() { return (typeof i18n !== 'undefined' ? i18n.getLang() : 'zh') !== 'en'; }
 
@@ -550,6 +555,99 @@
             tbody.innerHTML = rows.join('') || `<tr><td colspan="5" class="empty-state">${i18n.t('common.no_data')}</td></tr>`;
         }
 
+        // ── 暗船比例的判讀註記 ──
+        // GFW 的 AIS 配對是**回溯補**的：近期日期的「未配對」會被高估。
+        // 本專案 2026-09 的 API 實測顯示，同一資料集在 2024-01~2025-08 穩定
+        // 落在 18~20%，2026 年中之後跳到 ~40% —— 比較可能是配對管線還沒跑完，
+        // 而不是暗船真的翻倍。在 revision 量測收斂前，這個數字標為暫定值。
+        function dayDiff(a, b) {
+            const ms = Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z');
+            return Number.isFinite(ms) ? Math.round(ms / 86400000) : null;
+        }
+
+        function lastDataDate(overall) {
+            const src = (overall.total_by_date && Object.keys(overall.total_by_date).length)
+                ? overall.total_by_date : (overall.dark_by_date || {});
+            const dates = Object.keys(src).filter(d => src[d] > 0).sort();
+            return dates.length ? dates[dates.length - 1] : null;
+        }
+
+        function renderDarkCaveat(dv) {
+            const el = document.getElementById('darkCaveat');
+            if (!el) return;
+            const overall = dv.overall || {};
+            const lines = [];
+
+            // (1) 資料延遲：最右端的低點是資料還沒進來，不是海上變安靜
+            const last = lastDataDate(overall);
+            const end = (dv.data_range || {}).end;
+            if (last && end) {
+                const lag = dayDiff(last, end);
+                lines.push(zh()
+                    ? `⏳ 最新一筆 SAR 偵測是 <b>${last}</b>，查詢區間到 ${end}`
+                      + (lag && lag > 0 ? `（落後 ${lag} 天）` : '')
+                      + ' —— GFW 的 SAR 資料約有 3~4 天延遲，Sentinel-1 也不是每天過境。'
+                      + '趨勢圖最右端偏低是資料還沒進來，不是海上變安靜。'
+                    : `⏳ Latest SAR detection is <b>${last}</b>, query window ends ${end}`
+                      + (lag && lag > 0 ? ` (${lag} d behind)` : '')
+                      + ' — GFW SAR data lags ~3–4 days and Sentinel-1 does not pass daily. '
+                      + 'A low right edge on the trend chart means data has not landed yet.');
+            }
+
+            // (2) 暗船比例是暫定值
+            lines.push(zh()
+                ? '⚠️ <b>暗船比例為暫定值</b>：GFW 的 AIS 配對是回溯補的，近期日期的'
+                  + '「未配對」會被系統性高估。本專案的 API 實測顯示同一資料集在 '
+                  + '2024-01~2025-08 長期落在 18~20%，2026 年中之後才跳到約 40% —— '
+                  + '較可能是配對管線尚未跑完，而非暗船真的翻倍。引用單一數字前請先看下方的回溯修訂量測。'
+                : '⚠️ <b>The dark-vessel ratio is provisional.</b> GFW backfills its AIS '
+                  + 'matching, so recent dates systematically over-report "unmatched". '
+                  + 'API testing on this project found the same dataset sat at 18–20% from '
+                  + '2024-01 to 2025-08 and only jumped to ~40% after mid-2026 — more likely '
+                  + 'an unfinished matching pipeline than a real doubling. Check the revision '
+                  + 'measurement below before quoting a single figure.');
+
+            // (3) 回溯修訂量測（30 天滾動視窗會把同一個偵測日重查約 30 次）
+            const rev = dv.revision;
+            if (rev && rev.dates_tracked) {
+                if (rev.dates_revised) {
+                    let zhTxt = `🔁 <b>回溯修訂量測</b>：追蹤 ${rev.dates_tracked} 個偵測日，`
+                        + `其中 ${rev.dates_revised} 天在後續重查時被 GFW 改寫`
+                        + `（下修 ${rev.dates_revised_down} 天），暗船數合計 `
+                        + `${rev.dark_delta_pct > 0 ? '+' : ''}${rev.dark_delta_pct}%。`;
+                    let enTxt = `🔁 <b>Backfill revision measured</b>: of ${rev.dates_tracked} `
+                        + `detection days tracked, ${rev.dates_revised} were rewritten by GFW on `
+                        + `re-query (${rev.dates_revised_down} revised down), `
+                        + `${rev.dark_delta_pct > 0 ? '+' : ''}${rev.dark_delta_pct}% on dark count.`;
+                    if (rev.ratio_delta_pts !== undefined) {
+                        zhTxt += ` 首次公布的暗船比例 ${rev.first_ratio_pct}% → 目前 `
+                            + `${rev.latest_ratio_pct}%（${rev.ratio_delta_pts > 0 ? '+' : ''}`
+                            + `${rev.ratio_delta_pts} 個百分點）。`;
+                        enTxt += ` First-published ratio ${rev.first_ratio_pct}% → now `
+                            + `${rev.latest_ratio_pct}% (${rev.ratio_delta_pts > 0 ? '+' : ''}`
+                            + `${rev.ratio_delta_pts} pts).`;
+                    }
+                    lines.push(zh() ? zhTxt : enTxt);
+                } else {
+                    lines.push(zh()
+                        ? `🔁 <b>回溯修訂量測進行中</b>：已追蹤 ${rev.dates_tracked} 個偵測日`
+                          + '（30 天滾動視窗會把同一天重查約 30 次），目前尚未觀察到 GFW 改寫既有數字。'
+                        : `🔁 <b>Revision measurement running</b>: ${rev.dates_tracked} detection `
+                          + 'days tracked (the 30-day rolling window re-queries each day ~30 times); '
+                          + 'no GFW rewrite observed yet.');
+                }
+            }
+
+            el.innerHTML = lines.map(t => `<div>${t}</div>`).join('');
+            el.style.display = 'block';
+
+            const badge = document.getElementById('ratioProvisional');
+            if (badge) {
+                badge.textContent = zh() ? '暫定' : 'prov.';
+                badge.style.display = 'inline-block';
+            }
+        }
+
         function renderFlagList(regions) {
             const flagList = document.getElementById('flagList');
             // Aggregate matched_by_flag across every region present (handles both
@@ -584,6 +682,7 @@
                 const data = await res.json();
 
                 const dv = data.dark_vessels;
+                darkData = dv;
                 if (!dv) {
                     document.getElementById('dataStatus').textContent = i18n.t('dv.no_dark_data');
                     return;
@@ -598,6 +697,7 @@
                 document.getElementById('statMatched').textContent =
                     ((overall.total_detections || 0) - (overall.dark_vessels || 0)).toLocaleString();
                 document.getElementById('statRatio').textContent = (overall.dark_ratio || 0) + '%';
+                renderDarkCaveat(dv);
 
                 // 優先顯示比對成果（目標＋區域）；沒有比對檔才退回原始 GFW 樣本點
                 try {
@@ -610,9 +710,20 @@
                     plotDarkVessels(regions);
                 }
 
-                // Daily chart
+                // Daily chart —— 帶上同日總偵測數，才畫得出暗船「比例」折線
+                // （只看數量等於在看 Sentinel-1 當天掃了多大面積）
                 if (overall.dark_by_date && Object.keys(overall.dark_by_date).length > 0) {
-                    ChartsModule.renderDailyChart('dailyChart', overall.dark_by_date);
+                    ChartsModule.renderDailyChart('dailyChart', overall.dark_by_date,
+                                                  overall.total_by_date);
+                    if (overall.total_by_date && Object.keys(overall.total_by_date).length) {
+                        const dailyTitle = document.getElementById('dailyChartTitle');
+                        if (dailyTitle) {
+                            dailyTitle.removeAttribute('data-i18n');
+                            dailyTitle.textContent = zh()
+                                ? '📊 每日暗船數量與比例趨勢'
+                                : '📊 Daily dark-vessel count & ratio';
+                        }
+                    }
                 }
 
                 // Region table
@@ -644,6 +755,7 @@
         // 語言切換時重繪比對圖層（popup／標題語言）
         window.addEventListener('langchange', function () {
             if (sarData) renderSarLayers(sarData);
+            if (darkData) renderDarkCaveat(darkData);
         });
     </script>
     <script defer src="js/mobile-nav.js"></script>

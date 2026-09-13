@@ -80,15 +80,123 @@ DARK_HISTORY_PATH = DATA_DIR / 'dark_vessel_history.json'
 DARK_HISTORY_MAX_DAYS = 365
 
 
+def merge_dark_history(history, dark_by_date, total_by_date, observed_on):
+    """把本輪的逐日暗船／總偵測數併進持久歷史，並保留「首次觀測到的值」。
+
+    GFW 的 AIS 配對是**回溯補**的：同一個偵測日在 30 天滾動視窗裡會被重查約
+    30 次，暗船數會隨著配對補完而下修。原本的寫法用最新值直接覆蓋，修訂被
+    靜默蓋掉——頁面上的暗船比例等於「最近一次查詢說了算」，而近期月份的比例
+    正好因為配對還沒跑完而被高估（實測 2024-01~2025-08 穩定在 18~20%，
+    2026-05 後跳到 39~40%）。這裡多存 first_* 與觀測日期，
+    summarize_dark_revision() 就能直接量出回溯修訂的幅度，不必等幾個月。
+
+    就地更新並回傳 history。observed_on 是本輪的觀測日（UTC YYYY-MM-DD）。
+    """
+    for d in sorted(set(dark_by_date) | set(total_by_date)):
+        try:
+            dark = int(dark_by_date.get(d, 0))
+        except (TypeError, ValueError):
+            continue
+        has_total = d in total_by_date
+        try:
+            total = int(total_by_date[d]) if has_total else dark
+        except (TypeError, ValueError):
+            has_total, total = False, dark
+
+        entry = history.get(d)
+        if entry is None:
+            # 本輪才第一次看到這個偵測日 → 現在的值就是首次觀測值
+            entry = {'first_dark': dark, 'first_seen': observed_on, 'revisions': 0}
+            if has_total:
+                entry['first_total'] = total
+            history[d] = entry
+        elif 'first_dark' not in entry:
+            # 舊格式（只有 dark_vessels/total_detections）→ 既有值視為首次觀測值。
+            # 舊格式的 total_detections 是「沿用暗船數」的假分母，不能拿來算比例，
+            # 所以不回填 first_total。
+            entry['first_dark'] = int(entry.get('dark_vessels', dark))
+            entry.setdefault('revisions', 0)
+
+        if 'dark_vessels' in entry and (
+                entry.get('dark_vessels') != dark
+                or (has_total and entry.get('total_detections') != total)):
+            entry['revisions'] = int(entry.get('revisions', 0)) + 1
+
+        entry['dark_vessels'] = dark
+        if has_total:
+            entry['total_detections'] = total
+            entry['total_is_measured'] = True
+        else:
+            entry.setdefault('total_detections', dark)
+        entry['last_seen'] = observed_on
+    return history
+
+
+def summarize_dark_revision(history):
+    """量出 GFW 回溯配對對已發布數字的修訂幅度（首次觀測值 vs 目前值）。
+
+    dark_delta_pct 為負 = 暗船數被回溯下修，也就是先前公布的暗船比例偏高。
+    ratio_* 只計算分母是實測總偵測數的日期（舊格式的假分母不列入）。
+
+    這個量測只會**低估**修訂幅度：偵測日在被本站第一次看到之前可能已經被 GFW
+    改寫過（部署當下 30 天視窗裡的舊日期尤其如此），那段修訂沒有記錄可比。
+    """
+    tracked = revised = revised_down = 0
+    first_dark = latest_dark = 0
+    ratio_dates = 0
+    f_num = f_den = l_num = l_den = 0
+
+    for entry in history.values():
+        if not isinstance(entry, dict) or 'first_dark' not in entry:
+            continue
+        tracked += 1
+        fd = int(entry['first_dark'])
+        ld = int(entry.get('dark_vessels', fd))
+        first_dark += fd
+        latest_dark += ld
+        if ld != fd:
+            revised += 1
+            if ld < fd:
+                revised_down += 1
+
+        ft = entry.get('first_total')
+        lt = entry.get('total_detections')
+        if ft and lt and entry.get('total_is_measured'):
+            ratio_dates += 1
+            f_num, f_den = f_num + fd, f_den + int(ft)
+            l_num, l_den = l_num + ld, l_den + int(lt)
+
+    out = {
+        'dates_tracked': tracked,
+        'dates_revised': revised,
+        'dates_revised_down': revised_down,
+        'first_dark_total': first_dark,
+        'latest_dark_total': latest_dark,
+        'dark_delta_pct': round((latest_dark - first_dark) / first_dark * 100, 1)
+                          if first_dark else 0.0,
+        'ratio_dates': ratio_dates,
+    }
+    if f_den and l_den:
+        first_ratio = f_num / f_den * 100
+        latest_ratio = l_num / l_den * 100
+        out['first_ratio_pct'] = round(first_ratio, 1)
+        out['latest_ratio_pct'] = round(latest_ratio, 1)
+        out['ratio_delta_pts'] = round(latest_ratio - first_ratio, 1)
+    return out
+
+
 def refresh_vessel_monitoring_daily(vessel_data, dark_vessels_data):
     """
     用最新的 dark_vessels.json (overall.dark_by_date) 更新並累積一份持久的
     暗船每日歷史，再覆寫 vessel_monitoring.daily / summary，讓前端趨勢圖
     不再凍結在 vessel_data.json 最後一次手動產生的日期。
 
-    - dark_by_date 只提供每日暗船數；SAR 每日總偵測數無逐日拆分，
-      沿用歷史慣例讓 total_detections 與 dark_vessels 相同（不捏造數字）。
+    - 逐日暗船數來自 dark_by_date、逐日總偵測數來自 total_by_date（分母）。
+      舊資料沒有 total_by_date，那些日期沿用歷史慣例讓 total_detections 與
+      dark_vessels 相同（不捏造數字），且不輸出 dark_ratio —— 那是假分母。
     - 首次執行會以既有 vessel_data.json 的 daily 作為種子，保留舊日期的資料。
+    - 同時量測 GFW 的回溯修訂（見 merge_dark_history / summarize_dark_revision），
+      結果掛回 dark_vessels_data['revision'] 供前端標注暫定值。
     """
     # 1. 載入既有持久歷史 {date: {dark_vessels, total_detections}}
     history = {}
@@ -110,14 +218,15 @@ def refresh_vessel_monitoring_daily(vessel_data, dark_vessels_data):
                 'total_detections': entry.get('total_detections', dark),
             }
 
-    # 3. 覆蓋：用最新 dark_by_date 作為這些日期的權威值
+    # 3. 併入本輪：最新值為權威值，但保留首次觀測值以偵測 GFW 的回溯修訂
     if dark_vessels_data:
-        dark_by_date = (dark_vessels_data.get('overall') or {}).get('dark_by_date') or {}
-        for d, cnt in dark_by_date.items():
-            history[d] = {
-                'dark_vessels': cnt,
-                'total_detections': cnt,  # SAR 無逐日總數拆分，沿用歷史慣例
-            }
+        overall = dark_vessels_data.get('overall') or {}
+        merge_dark_history(
+            history,
+            overall.get('dark_by_date') or {},
+            overall.get('total_by_date') or {},
+            datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+        )
 
     if not history:
         return vessel_data  # 無任何暗船資料可用，維持原樣
@@ -133,20 +242,39 @@ def refresh_vessel_monitoring_daily(vessel_data, dark_vessels_data):
         print(f"⚠️ 寫入 {DARK_HISTORY_PATH.name} 失敗: {e}")
 
     # 6. 組裝 daily 並覆寫 vessel_monitoring
-    daily = [
-        {'date': d, 'dark_vessels': history[d]['dark_vessels'],
-         'total_detections': history[d]['total_detections']}
-        for d in sorted(history.keys())
-    ]
+    daily = []
+    for d in sorted(history.keys()):
+        e = history[d]
+        row = {'date': d, 'dark_vessels': e['dark_vessels'],
+               'total_detections': e['total_detections']}
+        # 只有分母是實測總偵測數時才給比例；舊格式的 total==dark 是假分母
+        if e.get('total_is_measured') and e['total_detections']:
+            row['dark_ratio'] = round(
+                e['dark_vessels'] / e['total_detections'] * 100, 1)
+        daily.append(row)
     vessel_data['daily'] = daily
 
+    # 回溯修訂量測 → 掛回 dark_vessels 區塊供前端標注「暫定值」
+    revision = summarize_dark_revision(history)
+    if dark_vessels_data is not None:
+        dark_vessels_data['revision'] = revision
+    if revision['dates_revised']:
+        print(f"🔁 GFW 回溯修訂: {revision['dates_revised']}/{revision['dates_tracked']} 天有變動"
+              f"（下修 {revision['dates_revised_down']} 天，暗船數合計 "
+              f"{revision['dark_delta_pct']:+}%）")
+
     dark_counts = [e['dark_vessels'] for e in daily]
+    # 有實測總數的日期才拿來算平均總偵測數；一天都沒有時沿用舊慣例（＝暗船數）
+    total_counts = [e['total_detections'] for e in daily
+                    if history[e['date']].get('total_is_measured')] or dark_counts
     recent_7d = dark_counts[-7:]
     summary = vessel_data.get('summary') or {}
     summary.update({
         'total_days': len(daily),
         'avg_daily_dark_vessels': round(sum(dark_counts) / len(dark_counts), 1) if dark_counts else 0,
-        'avg_daily_detections': round(sum(dark_counts) / len(dark_counts), 1) if dark_counts else 0,
+        'avg_daily_detections': round(sum(total_counts) / len(total_counts), 1) if total_counts else 0,
+        'measured_total_days': sum(1 for e in daily
+                                   if history[e['date']].get('total_is_measured')),
         'recent_7d_avg': round(sum(recent_7d) / len(recent_7d), 1) if recent_7d else 0,
     })
     vessel_data['summary'] = summary

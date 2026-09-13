@@ -62,6 +62,9 @@ jobs:
       - name: Run gov vessel roster smoke test (48h window + formations)
         run: node tests/gov-roster-smoke.js
 
+      - name: Run dark vessel page smoke test (暗船比例折線 + 暫定值註記)
+        run: node tests/dark-vessels-smoke.js
+
       - name: Compile all pipeline scripts
         run: python -m py_compile src/*.py
 

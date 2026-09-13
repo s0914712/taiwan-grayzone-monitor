@@ -19,32 +19,72 @@ const ChartsModule = (function () {
     }
 
     /**
-     * Render daily dark vessel bar chart
+     * Render daily dark vessel bar chart.
+     *
+     * `totalByDate`（可選）是同日的 SAR 總偵測數。有分母時才畫暗船「比例」
+     * 折線 —— Sentinel-1 不是每天過境、每次掃的幅寬也不同（實測 08-16 有
+     * 2,107 筆、隔天只有 25 筆），單看暗船「數量」等於在看衛星覆蓋面積，
+     * 讀不出船的行為。
      */
-    function renderDailyChart(canvasId, darkByDate) {
+    function renderDailyChart(canvasId, darkByDate, totalByDate) {
         const ctx = document.getElementById(canvasId);
         if (!ctx) return null;
 
-        const dates = Object.keys(darkByDate).sort();
-        const counts = dates.map(d => darkByDate[d]);
+        const totals = totalByDate || {};
+        const dates = Array.from(new Set(
+            Object.keys(darkByDate).concat(Object.keys(totals)))).sort();
+        const counts = dates.map(d => darkByDate[d] || 0);
+        const totalCounts = dates.map(d => totals[d] || 0);
+        const hasTotals = totalCounts.some(v => v > 0);
+        const ratios = dates.map((d, i) =>
+            totalCounts[i] > 0 ? Math.round(counts[i] / totalCounts[i] * 1000) / 10 : null);
+
+        const t = key => (typeof i18n !== 'undefined' ? i18n.t(key) : null);
 
         // Destroy existing chart if any
         if (charts[canvasId]) {
             charts[canvasId].destroy();
         }
 
+        const datasets = [{
+            label: t('dark.count') || '暗船數量',
+            data: counts,
+            backgroundColor: 'rgba(255, 51, 102, 0.6)',
+            borderColor: '#ff3366',
+            borderWidth: 1,
+            borderRadius: 2,
+            order: 2
+        }];
+        if (hasTotals) {
+            datasets.unshift({
+                label: t('dark.total_detect') || 'SAR 總偵測數',
+                data: totalCounts,
+                backgroundColor: 'rgba(0, 245, 255, 0.18)',
+                borderColor: 'rgba(0, 245, 255, 0.5)',
+                borderWidth: 1,
+                borderRadius: 2,
+                order: 3
+            });
+            datasets.push({
+                type: 'line',
+                label: t('dark.ratio') || '暗船比例',
+                data: ratios,
+                yAxisID: 'y1',
+                borderColor: '#ffd700',
+                backgroundColor: '#ffd700',
+                borderWidth: 2,
+                pointRadius: 2,
+                tension: 0.25,
+                spanGaps: true,   // 沒有過境的日子留空，不要連成假的下墜
+                order: 1
+            });
+        }
+
         charts[canvasId] = new Chart(ctx.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: dates.map(d => d.slice(5)), // MM-DD format
-                datasets: [{
-                    label: typeof i18n !== 'undefined' ? i18n.t('dark.count') : '暗船數量',
-                    data: counts,
-                    backgroundColor: 'rgba(255, 51, 102, 0.6)',
-                    borderColor: '#ff3366',
-                    borderWidth: 1,
-                    borderRadius: 2
-                }]
+                datasets: datasets
             },
             options: {
                 responsive: true,
@@ -52,10 +92,22 @@ const ChartsModule = (function () {
                 plugins: {
                     legend: {
                         labels: { color: '#8aa4c8', font: { size: 10 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (item) {
+                                const v = item.parsed.y;
+                                if (v === null || v === undefined) return null;
+                                return item.dataset.yAxisID === 'y1'
+                                    ? `${item.dataset.label}: ${v}%`
+                                    : `${item.dataset.label}: ${v.toLocaleString()}`;
+                            }
+                        }
                     }
                 },
                 scales: {
                     x: {
+                        stacked: false,
                         ticks: { color: '#8aa4c8', font: { size: 8 }, maxRotation: 45 },
                         grid: { color: 'rgba(0,245,255,0.05)' }
                     },
@@ -63,6 +115,17 @@ const ChartsModule = (function () {
                         ticks: { color: '#8aa4c8', font: { size: 9 } },
                         grid: { color: 'rgba(0,245,255,0.08)' },
                         beginAtZero: true
+                    },
+                    y1: {
+                        display: hasTotals,
+                        position: 'right',
+                        beginAtZero: true,
+                        suggestedMax: 100,
+                        ticks: {
+                            color: '#ffd700', font: { size: 9 },
+                            callback: v => v + '%'
+                        },
+                        grid: { drawOnChartArea: false }
                     }
                 }
             }

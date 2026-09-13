@@ -27,7 +27,8 @@ API:
       "total_detections": int,
       "dark_vessels": int,
       "dark_ratio": float,
-      "dark_by_date": {"YYYY-MM-DD": int, ...}
+      "dark_by_date": {"YYYY-MM-DD": int, ...},
+      "total_by_date": {"YYYY-MM-DD": int, ...}
     },
     "regions": {
       "taiwan_region": {
@@ -37,6 +38,7 @@ API:
         "matched_vessels": int,
         "dark_ratio": float,
         "dark_by_date": {...},
+        "total_by_date": {...},
         "matched_by_flag": {...},
         "dark_details": [{"lat","lon","date","detections"}, ...],
         "sub_zones": {
@@ -222,6 +224,10 @@ def build_region_summary(records):
     dark = 0
     matched = 0
     dark_by_date = defaultdict(int)
+    # 逐日「總」偵測數。Sentinel-1 不是每天過境、每次掃的幅寬也不同
+    # （實測 2026-08-16 有 2,107 筆、隔天只有 25 筆），所以每日暗船「數量」
+    # 主要反映衛星覆蓋而非船的行為；有了同分母才能畫出每日暗船「比例」。
+    total_by_date = defaultdict(int)
     matched_by_flag = defaultdict(int)
     dark_details = []
 
@@ -234,6 +240,8 @@ def build_region_summary(records):
     for r in records:
         total += 1
         date_str = (r.get('date') or '')[:10]
+        if date_str:
+            total_by_date[date_str] += 1
         is_dark = not r.get('vesselId')
 
         lat = r.get('lat', r.get('latitude'))
@@ -290,19 +298,71 @@ def build_region_summary(records):
         'matched_vessels': matched,
         'dark_ratio': dark_ratio,
         'dark_by_date': dict(sorted(dark_by_date.items())),
+        'total_by_date': dict(sorted(total_by_date.items())),
         'matched_by_flag': dict(matched_by_flag),
         'dark_details': dark_details,
         'sub_zones': sub_zones_out,
     }
 
 
+# GFW report 端點的偵測時刻欄位叫 entryTimestamp / exitTimestamp —— 不是
+# timestamp／datetime（先前抓錯欄位名，導致 sar_detections.json 從來沒有一筆
+# 帶時刻，match_sar_ais.pass_candidates() 的第一優先序永遠落空，只能退回
+# s1_pass_times.json 的候選過境表：每天中位數 2 個、最多 4 個候選時刻，而
+# gate 半徑 = 基礎誤差 + 速度×Δt，Δt 挑錯就整個放大）。
+#
+# 實測（2026-09 GFW v3 API 驗證）：date-range 縮到單日時，整批偵測共用同一個
+# entryTimestamp，就是該次 Sentinel-1 過境時刻；但長區間查詢會把 entry/exit
+# 壓平成整個查詢區間。本站一次查 30 天，所以只在下列條件都成立時才採用：
+#   1. entryTimestamp == exitTimestamp（兩者不同 = 這列聚合了不只一次成像）
+#   2. 時刻的日期 == 該列自己的 date（被壓平的時刻會落在別天，逐列擋掉）
+# 區間起始日那天騙得過逐列檢查，故另有 drop_flattened_timestamps() 整批防呆。
+TIMESTAMP_FIELDS = ('entryTimestamp', 'timestamp', 'datetime')
+
+
+def extract_detection_timestamp(record, date_str):
+    """回傳該筆偵測明確的成像時刻（ISO 字串）；無法確定時回 None。"""
+    if not date_str:
+        return None
+    ts = None
+    for field in TIMESTAMP_FIELDS:
+        value = record.get(field)
+        if value:
+            ts = str(value)
+            break
+    if not ts:
+        return None
+    exit_ts = record.get('exitTimestamp')
+    if exit_ts and str(exit_ts) != ts:
+        return None          # 一列涵蓋多次成像 → 時刻不明確
+    if ts[:10] != date_str[:10]:
+        return None          # 被壓平成查詢區間
+    return ts
+
+
+def drop_flattened_timestamps(dark_records):
+    """整批防呆：偵測橫跨多日、時刻卻全擠在同一天 → 判定被壓平，全數丟棄。
+
+    就地修改 dark_records，回傳仍帶 timestamp 的筆數。
+    """
+    rec_dates = {r['date'] for r in dark_records if r.get('date')}
+    ts_dates = {r['timestamp'][:10] for r in dark_records if r.get('timestamp')}
+    if len(rec_dates) >= 3 and len(ts_dates) == 1:
+        for r in dark_records:
+            r.pop('timestamp', None)
+        return 0
+    return sum(1 for r in dark_records if r.get('timestamp'))
+
+
 def build_dark_detection_records(records):
     """收集所有 GFW 標為 unmatched 的偵測點（完整精度，不截斷數量）。
 
-    dark_vessels.json 的 dark_details 只留 400 筆且座標捨入到 0.01°，
-    不足以做 SAR×AIS 重比對；此結構寫入 sar_detections.json 供
-    match_sar_ais.py 使用。若 API 回應帶有偵測層級欄位（timestamp /
-    船長估計），一併透傳。
+    dark_vessels.json 的 dark_details 只留 400 筆，不足以做 SAR×AIS 重比對；
+    此結構寫入 sar_detections.json 供 match_sar_ais.py 使用。座標為 API 在
+    spatial-resolution=HIGH 下能給的最高精度（0.01° 網格中心）。
+
+    偵測層級欄位（成像時刻 / 船長估計）在可確定時一併透傳，時刻的採用條件見
+    extract_detection_timestamp()。
     """
     dark = []
     for r in records:
@@ -321,13 +381,14 @@ def build_dark_detection_records(records):
             'date': (r.get('date') or '')[:10],
             'detections': r.get('detections', 1),
         }
-        ts = r.get('timestamp') or r.get('datetime')
+        ts = extract_detection_timestamp(r, rec['date'])
         if ts:
             rec['timestamp'] = ts
         length = r.get('length_m', r.get('length'))
         if length is not None:
             rec['length_m'] = length
         dark.append(rec)
+    drop_flattened_timestamps(dark)
     return dark
 
 
@@ -392,6 +453,7 @@ def main():
             'dark_vessels': summary['dark_vessels'],
             'dark_ratio': summary['dark_ratio'],
             'dark_by_date': summary['dark_by_date'],
+            'total_by_date': summary['total_by_date'],
         },
         'regions': {
             'taiwan_region': summary,
@@ -401,15 +463,18 @@ def main():
     atomic_write_json(OUTPUT_PATH, output)
 
     dark_records = build_dark_detection_records(records)
+    timestamped = sum(1 for r in dark_records if r.get('timestamp'))
     atomic_write_json(DETECTIONS_PATH, {
         'updated_at': output['updated_at'],
         'data_range': output['data_range'],
         'bbox': TAIWAN_BBOX,
         'total_detections': summary['total_detections'],
         'matched_vessels': summary['matched_vessels'],
+        'timestamped_detections': timestamped,
         'dark_detections': dark_records,
     }, compact=True)
-    print(f"\n✅ 已儲存全量暗船偵測點: {DETECTIONS_PATH} ({len(dark_records)} 筆)")
+    print(f"\n✅ 已儲存全量暗船偵測點: {DETECTIONS_PATH} ({len(dark_records)} 筆，"
+          f"{timestamped} 筆帶實際成像時刻)")
 
     print("\n" + "=" * 70)
     print(f"✅ 已儲存: {OUTPUT_PATH}")
