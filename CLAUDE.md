@@ -319,6 +319,17 @@ Output `data/sar_ais_matches.json` (copied to `docs/`, summary embedded in
   detections, reason}`, `reason` ∈ `recurrence`/`mask`), so every dark-vessel card can
   show a definitive verdict instead of going blank on a filtered point
 - `density_grid` — residual-dark 0.1° heatmap cells
+
+`residual_dark` in that file is a **frontend sample** capped at
+`MAX_RESIDUAL_DETAILS` (1,200). The complete list goes to
+`data/residual_dark_full.json` (gitignored, same-job handoff) because
+`build_chip_worklist.py` picks forensics targets out of it: selecting from the
+1,200-row sample cost ~90% of the focus-zone candidates (measured 469 → 30) and
+routinely produced an **empty** worklist, so the nightly darkship cron had
+nothing to do. `validate_outputs.py` now fails the run when
+`summary.in_ais_coverage == 0` — that state (dark_total 322, coverage 0,
+rematched 0) ran silently green from late 2026-07 to 09-10, froze the daily
+report on the same two 2026-06-23 chips, and no check was looking at it
 - `zone_series` — daily time series by maritime zone (12nm / 24nm contiguous / EEZ,
   via `geofence.classify_maritime_zone`) and by compass sub-zone, both `raw_*` and
   `screened_*` variants — ready for changepoint detection.

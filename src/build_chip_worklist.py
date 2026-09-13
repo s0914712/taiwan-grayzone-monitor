@@ -34,6 +34,10 @@ CDSE_ODATA_URL = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
 
 DATA_DIR = Path("data")
 MATCHES_PATH = DATA_DIR / 'sar_ais_matches.json'
+# 優先來源：match_sar_ais.py 的全量殘餘工作檔。sar_ais_matches.json 的
+# residual_dark 是給前端的樣本（上限 1,200 筆），拿它挑取證目標會讓關注海域的
+# 候選少掉九成（實測 475 → 46）—— 取證佇列因此時常空手而回。
+RESIDUAL_FULL_PATH = DATA_DIR / 'residual_dark_full.json'
 S1_PASS_TIMES_PATH = DATA_DIR / 's1_pass_times.json'
 OUTPUT_PATH = DATA_DIR / 'sar_chip_worklist.json'
 
@@ -242,22 +246,39 @@ def zones_bbox(zones=WORKLIST_ZONES):
 # 主程式
 # =============================================================================
 
+def load_residual():
+    """殘餘暗船來源：全量工作檔優先，缺檔才退回前端樣本。
+
+    回傳 (rows, source)。source 寫進輸出的 summary，讓人一眼看出這份清單
+    是用全量還是樣本挑的。
+    """
+    full = load_json(RESIDUAL_FULL_PATH, None, expect_type=dict)
+    rows = (full or {}).get('residual_dark') or []
+    if rows:
+        return rows, 'residual_dark_full'
+    matches = load_json(MATCHES_PATH, None, expect_type=dict)
+    return ((matches or {}).get('residual_dark') or []), 'sar_ais_matches_sample'
+
+
 def main():
     print("=" * 70)
     print("🧰 SAR 取證清單（東部＋西南殘餘暗船 × Sentinel-1 產品涵蓋）")
     print(f"執行時間: {datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S} UTC")
     print("=" * 70)
 
-    matches = load_json(MATCHES_PATH, None, expect_type=dict)
-    residual = (matches or {}).get('residual_dark') or []
+    residual, residual_source = load_residual()
     if not residual:
         print("⚠️ 沒有殘餘暗船資料（先跑 match_sar_ais.py），跳過")
         return 0
+    if residual_source != 'residual_dark_full':
+        print(f"⚠️ 找不到 {RESIDUAL_FULL_PATH.name}，退回 sar_ais_matches.json 的"
+              "前端樣本 —— 關注海域的候選會少很多（同 job 內應先跑 match_sar_ais.py）")
 
     in_zone = [r for r in residual
                if r.get('lat') is not None and r.get('lon') is not None
                and zone_of(r['lat'], r['lon']) is not None]
-    print(f"🔦 殘餘暗船 {len(residual)} 筆，關注海域內 {len(in_zone)} 筆")
+    print(f"🔦 殘餘暗船 {len(residual)} 筆（來源 {residual_source}），"
+          f"關注海域內 {len(in_zone)} 筆")
     if not in_zone:
         print("⚠️ 關注海域內沒有目標，輸出空清單")
 
@@ -280,6 +301,7 @@ def main():
         'zones': {zid: {k: v for k, v in z.items()}
                   for zid, z in WORKLIST_ZONES.items()},
         'summary': {
+            'residual_source': residual_source,
             'residual_total': len(residual),
             'in_zone': len(in_zone),
             'listed': len(targets),

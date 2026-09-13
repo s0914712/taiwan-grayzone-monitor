@@ -195,3 +195,61 @@ def test_wide_tables_scroll_in_their_own_container():
     # itself never scrolls horizontally on mobile
     assert out.count('<table class="rp-table">') == out.count(
         '<div class="rp-table-wrap"><table class="rp-table">')
+
+
+# ── 退回顯示舊切片時必須講出多舊 ──────────────────────────────────────────
+# 2026-07 下旬起取證管線空轉七週，每日報告天天秀同兩張 6/23 的切片，
+# 而頁面只寫「近期已確認的實體目標」—— 讀者無從察覺那是七週前的東西。
+
+def test_days_since():
+    from datetime import date
+    assert gr._days_since('2026-06-23', today=date(2026, 9, 12)) == 81
+    assert gr._days_since('2026-09-12T10:00:00Z', today=date(2026, 9, 12)) == 0
+    assert gr._days_since(None) is None
+    assert gr._days_since('not-a-date') is None
+
+
+def test_fallback_note_states_the_forensics_date_and_age(monkeypatch):
+    from datetime import date, datetime as _dt, timezone as _tz
+
+    class _FixedDate(_dt):
+        @classmethod
+        def now(cls, tz=None):
+            return _dt(2026, 9, 12, tzinfo=tz or _tz.utc)
+
+    monkeypatch.setattr(gr, 'datetime', _FixedDate)
+    html_out = gr.render_forensics_section({
+        'featured': [{'lat': 24.0, 'lon': 121.9, 'date': '2026-06-23',
+                      'verdict': 'confirmed', 'thumb': None, 'chip_url': None,
+                      'ran_at': '2026-07-23', 'time': None, 'zone': 'east',
+                      'jurisdiction': 'eez', 'length_m': None,
+                      'peak_ratio': 37.6, 'n_pixels': None, 'product': None,
+                      'png': None}],
+        'featured_source': 'recent_confirmed',
+        'featured_ran_at': '2026-07-23',
+        'verdict_counts_total': {'confirmed': 2},
+        'verdict_counts_run': {'none': 10},
+        'latest_run': '2026-09-12', 'run_count': 10, 'total_count': 164,
+        'confirmed_rate_pct': 1.2, 'run_targets': [], 'report_md_url': None,
+    })
+    assert '2026-07-23' in html_out
+    assert '51 天' in html_out          # 距今天數講清楚
+    assert '51 d ago' in html_out
+
+
+def test_latest_run_hits_carry_no_stale_note():
+    html_out = gr.render_forensics_section({
+        'featured': [{'lat': 23.3, 'lon': 118.3, 'date': '2026-09-06',
+                      'verdict': 'confirmed', 'thumb': None, 'chip_url': None,
+                      'ran_at': '2026-09-12', 'time': None, 'zone': 'southwest',
+                      'jurisdiction': 'eez', 'length_m': None,
+                      'peak_ratio': 19.6, 'n_pixels': None, 'product': None,
+                      'png': None}],
+        'featured_source': 'latest_run',
+        'featured_ran_at': '2026-09-12',
+        'verdict_counts_total': {'confirmed': 3},
+        'verdict_counts_run': {'confirmed': 1},
+        'latest_run': '2026-09-12', 'run_count': 10, 'total_count': 164,
+        'confirmed_rate_pct': 1.8, 'run_targets': [], 'report_md_url': None,
+    })
+    assert '距今' not in html_out

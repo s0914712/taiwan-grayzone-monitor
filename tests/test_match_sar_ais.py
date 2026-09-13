@@ -298,3 +298,21 @@ def test_pass_candidates_prefers_exact_timestamp():
     rec2 = {'date': '2026-07-10'}
     labels = [c[0] for c in m.pass_candidates(rec2)]
     assert labels == ['ascending', 'descending']
+
+
+# ── 全量殘餘另存（取證清單的來源） ────────────────────────────────────────
+# residual_dark 是給前端的樣本（MAX_RESIDUAL_DETAILS 上限），build_chip_worklist
+# 若拿它挑目標，關注海域候選會少一個數量級。run_matching 另外回傳全量，
+# main() 取出寫進 gitignore 的工作檔。
+
+def test_run_matching_returns_full_residual_alongside_the_capped_sample(monkeypatch):
+    monkeypatch.setattr(m, 'MAX_RESIDUAL_DETAILS', 2)
+    dark = [{'lat': 22.0 + i * 0.1, 'lon': 118.0, 'date': '2026-07-10',
+             'detections': 1} for i in range(5)]
+
+    result = m.run_matching(dark, {})
+
+    assert result['summary']['residual_dark'] == 5      # 統計講的是全量
+    assert len(result['residual_dark']) == 2            # 前端樣本受上限約束
+    assert len(result['residual_dark_full']) == 5       # 取證清單拿得到全量
+    assert result['residual_dark'] == result['residual_dark_full'][:2]

@@ -75,12 +75,24 @@ def collect_sar_matching():
     }
 
 
+def _days_since(day, today=None):
+    """'YYYY-MM-DD' → 距今天數；無法解析回 None。"""
+    if not day:
+        return None
+    try:
+        d = datetime.strptime(str(day)[:10], "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return None
+    return ((today or datetime.now(timezone.utc).date()) - d).days
+
+
 def _chip_row(r):
     """chips/results.json 的一筆 → 報告用的精簡紀錄。"""
     png = str(r.get("png") or "")
     name = png.split("/")[-1]
     return {
         "date": r.get("date"),
+        "ran_at": (str(r.get("ran_at"))[:10] if r.get("ran_at") else None),
         "lat": r.get("lat"),
         "lon": r.get("lon"),
         "time": (str(r.get("time"))[:5] if r.get("time") else None),
@@ -141,6 +153,8 @@ def collect_forensics():
         "confirmed_rate_pct": (round(counts_total.get("confirmed", 0) / checked * 100, 1)
                                if checked else 0),
         "featured_source": featured_source,
+        "featured_ran_at": max((str(r.get("ran_at") or "")[:10] for r in hits),
+                               default=None) or None,
         "featured": [_chip_row(r) for r in hits],
         "run_targets": [_chip_row(r) for r in run_rows],
         "report_md_url": (f"{RAW}reports/darkship_report_{latest_run}.md"
@@ -401,10 +415,14 @@ def render_forensics_section(f):
     if f["featured"]:
         gallery = f'<div class="rp-chips">{"".join(_chip_card(c) for c in f["featured"])}</div>'
         if f["featured_source"] == "recent_confirmed":
+            ran = f.get("featured_ran_at")
+            age = _days_since(ran)
+            zh_age = f"（{ran} 取證，距今 {age} 天）" if age is not None else ""
+            en_age = f" ({ran}, {age} d ago)" if age is not None else ""
             gallery += (f'<p class="rp-meta">'
-                        + _bi("本輪未命中亮目標，以下為近期已確認的實體目標。",
-                              "No hits in the latest run — showing recently confirmed "
-                              "physical targets instead.") + "</p>")
+                        + _bi(f"本輪未命中亮目標，以下為上一次確認的實體目標{zh_age}。",
+                              "No hits in the latest run — showing the last confirmed "
+                              f"physical targets instead{en_age}.") + "</p>")
     else:
         gallery = ('<p class="rp-meta">'
                    + _bi("本輪取證尚無命中目標。", "No targets hit in the latest run.")

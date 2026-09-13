@@ -75,6 +75,11 @@ FIXED_INFRA_PATH = DATA_DIR / 'fixed_infrastructure.json'
 S1_PASS_TIMES_PATH = DATA_DIR / 's1_pass_times.json'
 DETECTION_HISTORY_PATH = DATA_DIR / 'sar_detection_history.json'
 OUTPUT_PATH = DATA_DIR / 'sar_ais_matches.json'
+# 殘餘暗船「全量」工作檔（.gitignore，同一個 job 內給 build_chip_worklist.py 用）。
+# sar_ais_matches.json 的 residual_dark 只留 MAX_RESIDUAL_DETAILS 筆給前端，
+# 而取證清單要從裡面挑關注海域（東部＋西南）的目標 —— 拿 10% 樣本去挑，等於
+# 讓取證佇列隨機挨餓（實測全量 12,408 筆殘餘裡有 475 筆在關注海域，樣本裡只剩 46）。
+RESIDUAL_FULL_PATH = DATA_DIR / 'residual_dark_full.json'
 
 # Sentinel-1 固定過境窗（UTC 時 · 分）：台灣經度（~120°E，LST≈UTC+8）
 #   ascending  節點 18:00 LST → ~09:50 UTC
@@ -918,6 +923,8 @@ def run_matching(dark_records, tracks, static_mask=(), profiles=None,
         'infrastructure_cells': infra_details[:MAX_INFRA_DETAILS],
         'infrastructure': infrastructure,
         'residual_dark': residual[:MAX_RESIDUAL_DETAILS],
+        # 全量殘餘：main() 取出另存工作檔，不寫進 sar_ais_matches.json
+        'residual_dark_full': residual,
         'density_grid': density,
         'zone_series': zone_series,
         'length_checks': length_checks,
@@ -969,7 +976,13 @@ def main():
         .replace('+00:00', 'Z')
     result['source'] = source
 
+    residual_full = result.pop('residual_dark_full', [])
     atomic_write_json(OUTPUT_PATH, result, compact=True)
+    atomic_write_json(RESIDUAL_FULL_PATH, {
+        'updated_at': result['updated_at'],
+        'count': len(residual_full),
+        'residual_dark': residual_full,
+    }, compact=True)
 
     s = result['summary']
     print("\n" + "=" * 70)
@@ -980,7 +993,8 @@ def main():
     print(f"   AIS 覆蓋內:      {s['in_ais_coverage']}")
     print(f"   本地重比對成功:  {s['rematched_local']} "
           f"({s['rematch_rate_of_coverage_pct']}% of coverage)")
-    print(f"   殘餘暗船:        {s['residual_dark']}")
+    print(f"   殘餘暗船:        {s['residual_dark']}"
+          f"（全量另存 {RESIDUAL_FULL_PATH.name}，前端樣本上限 {MAX_RESIDUAL_DETAILS}）")
     print(f"   假暗船剔除率:    {s['false_dark_removed_pct']}%")
     if s['length_checked']:
         print(f"   船長交叉驗證:    {s['length_checked']} 筆 / "

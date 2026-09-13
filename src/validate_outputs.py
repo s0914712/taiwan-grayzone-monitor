@@ -53,6 +53,21 @@ CHECKS = [
     ('data/highrisk_accumulator.json',
      lambda d: isinstance(d, dict) and isinstance(d.get('daily'), dict),
      False),
+    # SAR×AIS 重比對：`in_ais_coverage == 0` 代表 AIS 那一側整個沒載入，
+    # 本地重比對其實沒跑。2026-07 下旬~09-10 就是這個狀態（暗偵測只有 322 筆、
+    # 覆蓋 0、重比對 0），連帶讓取證清單空白、darkship cron 每晚空轉七週，
+    # 而所有 workflow 全程顯示綠燈 —— 沒有任何一項檢查看這條管線。
+    ('data/sar_ais_matches.json',
+     lambda d: isinstance(d, dict) and isinstance(d.get('summary'), dict)
+     and d['summary'].get('dark_total', 0) > 0
+     and d['summary'].get('in_ais_coverage', 0) > 0,
+     True),
+    # 取證清單：關注海域內 0 筆代表 darkship cron 今晚沒事可做。
+    # 偶爾為真（Sentinel-1 東部覆蓋本來就稀疏），所以只警告不擋 commit。
+    ('data/sar_chip_worklist.json',
+     lambda d: isinstance(d, dict)
+     and (d.get('summary') or {}).get('in_zone', 0) > 0,
+     False),
 ]
 
 

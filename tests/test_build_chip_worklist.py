@@ -107,3 +107,56 @@ def test_build_worklist_caps_targets():
     targets, _ = bw.build_worklist(residual, products, max_targets=10)
     assert len(targets) == 10
     assert targets[0]['date'] == '2026-06-28'    # 最新優先
+
+
+# ── 殘餘暗船來源（2026-07~09 取證空轉的根因） ──────────────────────────────
+# sar_ais_matches.json 的 residual_dark 是給前端的 1,200 筆樣本；拿它挑取證
+# 目標，關注海域的候選會少掉九成（實測全量 469 筆 → 樣本 30 筆），清單因此
+# 時常整份空白，darkship cron 每晚沒事可做。全量工作檔優先。
+
+def _write(path, obj):
+    import json
+    path.write_text(json.dumps(obj), encoding='utf-8')
+
+
+def test_load_residual_prefers_the_full_working_file(tmp_path, monkeypatch):
+    full = tmp_path / 'residual_dark_full.json'
+    matches = tmp_path / 'sar_ais_matches.json'
+    _write(full, {'count': 3, 'residual_dark': [{'lat': 1}, {'lat': 2}, {'lat': 3}]})
+    _write(matches, {'residual_dark': [{'lat': 1}]})
+    monkeypatch.setattr(bw, 'RESIDUAL_FULL_PATH', full)
+    monkeypatch.setattr(bw, 'MATCHES_PATH', matches)
+
+    rows, source = bw.load_residual()
+    assert len(rows) == 3
+    assert source == 'residual_dark_full'
+
+
+def test_load_residual_falls_back_to_the_frontend_sample(tmp_path, monkeypatch):
+    matches = tmp_path / 'sar_ais_matches.json'
+    _write(matches, {'residual_dark': [{'lat': 1}, {'lat': 2}]})
+    monkeypatch.setattr(bw, 'RESIDUAL_FULL_PATH', tmp_path / 'missing.json')
+    monkeypatch.setattr(bw, 'MATCHES_PATH', matches)
+
+    rows, source = bw.load_residual()
+    assert len(rows) == 2
+    assert source == 'sar_ais_matches_sample'
+
+
+def test_load_residual_with_no_source_at_all(tmp_path, monkeypatch):
+    monkeypatch.setattr(bw, 'RESIDUAL_FULL_PATH', tmp_path / 'a.json')
+    monkeypatch.setattr(bw, 'MATCHES_PATH', tmp_path / 'b.json')
+    rows, source = bw.load_residual()
+    assert rows == []
+    assert source == 'sar_ais_matches_sample'
+
+
+def test_empty_full_file_does_not_shadow_the_sample(tmp_path, monkeypatch):
+    full = tmp_path / 'residual_dark_full.json'
+    matches = tmp_path / 'sar_ais_matches.json'
+    _write(full, {'count': 0, 'residual_dark': []})
+    _write(matches, {'residual_dark': [{'lat': 1}]})
+    monkeypatch.setattr(bw, 'RESIDUAL_FULL_PATH', full)
+    monkeypatch.setattr(bw, 'MATCHES_PATH', matches)
+    rows, source = bw.load_residual()
+    assert len(rows) == 1 and source == 'sar_ais_matches_sample'
