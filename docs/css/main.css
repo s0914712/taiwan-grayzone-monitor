@@ -515,46 +515,21 @@ body {
     background: rgba(0,245,255,0.1);
 }
 
-/* "More" dropdown in the header — collapses secondary nav links (no JS, native <details>) */
-.nav-more { position: relative; }
-.nav-more summary {
-    list-style: none;
-    font-size: 13px;
-    color: var(--text-secondary);
-    padding: 3px 8px;
-    border: 1px solid var(--border-glow);
-    border-radius: 4px;
-    cursor: pointer;
-    user-select: none;
+/* Desktop: all nav links flat (no "更多" dropdown). Title and lang/status keep their width;
+   the nav takes the middle and wraps onto a second row on narrower desktops. */
+@media (min-width: 901px) {
+    .header { flex-wrap: nowrap; gap: 16px; }
+    .header h1 { flex: 0 1 auto; white-space: nowrap; font-size: 18px; }
+    .header-nav { flex: 1 1 auto; flex-wrap: wrap; justify-content: center; gap: 6px; }
+    .header-nav a { font-size: 13px; padding: 3px 9px; white-space: nowrap; }
+    .header-info { flex: 0 0 auto; flex-wrap: nowrap; }
 }
-.nav-more summary::-webkit-details-marker { display: none; }
-.nav-more summary:hover { color: var(--accent-cyan); border-color: var(--accent-cyan); }
-.nav-more[open] summary { color: var(--accent-cyan); border-color: var(--accent-cyan); }
-.nav-more-menu {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 6px);
-    z-index: 1100;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 160px;
-    padding: 6px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-glow);
-    border-radius: 6px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+/* Narrower desktops: two rows — title + lang/status on top, the full nav on its own row below */
+@media (min-width: 901px) and (max-width: 1800px) {
+    .header { flex-wrap: wrap; row-gap: 8px; }
+    .header-nav { order: 3; flex: 1 0 100%; justify-content: flex-start; gap: 5px; }
+    .header-nav a { padding: 3px 8px; }
 }
-.nav-more-menu a {
-    font-size: 13px;
-    color: var(--text-secondary);
-    text-decoration: none;
-    padding: 6px 10px;
-    border: none; /* cancel the .header-nav a pill border inside the menu */
-    border-radius: 4px;
-    transition: all var(--transition-fast);
-}
-.nav-more-menu a:hover { color: var(--accent-cyan); background: rgba(0, 245, 255, 0.08); }
 
 .data-status {
     font-family: 'JetBrains Mono', monospace;
@@ -1503,12 +1478,9 @@ body {
         text-overflow: ellipsis;
         max-width: calc(100vw - 120px);
     }
-    .header-nav,
     .header-info { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-    .header-nav a,
-    .header-info a,
-    .header-nav .nav-more,
-    .header-info .nav-more { display: none; }
+    .header-nav { display: none; }
+    .header-info a { display: none; }
 
     /* Language toggle */
     #langToggle {
