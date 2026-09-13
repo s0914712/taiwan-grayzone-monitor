@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>暗船偵測 | Dark Vessel Detection - Taiwan Gray Zone &amp; Submarine Cable Monitor</title>
-    <meta name="description" content="SAR 合成孔徑雷達衛星偵測台灣海峽周邊無 AIS 訊號的暗船分布、區域比較與每日趨勢分析">
+    <meta name="description" content="SAR 合成孔徑雷達衛星偵測台灣海峽周邊無 AIS 訊號的暗船分布與每日趨勢分析">
     <meta name="keywords" content="暗船,dark vessel,SAR,合成孔徑雷達,AIS,台灣海峽,Taiwan Strait,衛星偵測,maritime surveillance">
     <meta name="author" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
     <meta name="robots" content="index, follow">
@@ -71,7 +71,7 @@
                 "@type": "WebPage",
                 "name": "暗船偵測 | Dark Vessel Detection",
                 "url": "https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html",
-                "description": "SAR 合成孔徑雷達衛星偵測台灣海峽周邊無 AIS 訊號的暗船分布、區域比較與每日趨勢分析",
+                "description": "SAR 合成孔徑雷達衛星偵測台灣海峽周邊無 AIS 訊號的暗船分布與每日趨勢分析",
                 "inLanguage": "zh-TW",
                 "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" }
             },
@@ -85,7 +85,7 @@
             {
                 "@type": "NewsArticle",
                 "headline": "暗船偵測 | Dark Vessel Detection — Taiwan Gray Zone Monitor",
-                "description": "SAR 合成孔徑雷達衛星偵測台灣海峽周邊無 AIS 訊號的暗船分布、區域比較與每日趨勢分析。SAR satellite detection of dark vessels (no AIS) in waters around Taiwan, with regional breakdown and daily trend analysis.",
+                "description": "SAR 合成孔徑雷達衛星偵測台灣海峽周邊無 AIS 訊號的暗船分布與每日趨勢分析。SAR satellite detection of dark vessels (no AIS) in waters around Taiwan, with daily trend analysis.",
                 "url": "https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html",
                 "inLanguage": "zh-TW",
                 "publisher": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#org" },
@@ -109,7 +109,7 @@
                 "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html#dataset",
                 "name": "Taiwan Dark-Vessel Detections Dataset",
                 "alternateName": "台灣暗船偵測資料集",
-                "description": "SAR satellite detections of dark vessels (radar-visible targets with no matching AIS signal) in the waters around Taiwan, with regional breakdown and daily trends.",
+                "description": "SAR satellite detections of dark vessels (radar-visible targets with no matching AIS signal) in the waters around Taiwan, with daily trends.",
                 "url": "https://s0914712.github.io/taiwan-grayzone-monitor/dark-vessels.html",
                 "inLanguage": ["zh-TW", "en"],
                 "isAccessibleForFree": true,
@@ -141,11 +141,44 @@
         }
 
         #map {
-            height: 400px;
+            height: 460px;
             border-radius: 0 0 6px 6px;
         }
 
+        /* 兩欄：左＝地圖＋趨勢圖＋報告連結（主角），右＝統計／判讀註記／摘要 */
+        .dv-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            gap: 10px;
+            padding: 10px var(--spacing-md);
+            align-items: start;
+        }
+        .dv-main, .dv-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+        .dv-side .stats-row { grid-template-columns: repeat(2, 1fr); padding: 0; }
+        .dv-side .ai-summary { margin: 0; max-width: none; }
+
+        .dv-report-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: border-color .15s;
+        }
+        .dv-report-link:hover { border-color: var(--accent-cyan); }
+        .dv-report-icon { font-size: 24px; }
+        .dv-report-text { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+        .dv-report-text b { font-size: 14px; color: var(--accent-cyan); }
+        .dv-report-arrow { margin-left: auto; font-size: 18px; color: var(--accent-cyan); }
+
         .map-legend {
+            /* main.css 的 .map-legend 是浮在地圖上的絕對定位；本頁圖例排在地圖下方 */
+            position: static;
+            z-index: auto;
+            background: transparent;
+            border: 0;
+            border-radius: 0;
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
@@ -176,12 +209,12 @@
         }
 
         @media (max-width: 900px) {
+            .dv-layout { grid-template-columns: minmax(0, 1fr); padding: 8px 10px 72px; }
             #map { height: calc(100vh - 48px - 56px - 20px); max-height: 350px; min-height: 200px; }
             .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px 10px; }
             .stat-card { padding: 10px 8px; }
             .stat-card .value { font-size: 22px; }
             .stat-card .label { font-size: 11px; }
-            .main-content { padding-bottom: 72px; }
         }
         @media (max-width: 600px) {
             .stats-row { gap: 6px; padding: 6px 8px; }
@@ -223,125 +256,88 @@
         </div>
     </header>
 
-    <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
-    <section class="ai-summary" aria-label="頁面摘要 Page summary">
-        <h2 class="lang-zh-only">本頁重點</h2>
-        <h2 class="lang-en-only">What this page shows</h2>
-        <p class="lang-zh-only">
-            本頁顯示 SAR（合成孔徑雷達）衛星偵測到、但沒有對應 AIS 訊號的「暗船」。
-            關閉 AIS 不代表船隻消失，仍可能被雷達拍到。SAR 偵測代表雷達可見目標，不必然代表違法活動。
-        </p>
-        <p class="lang-en-only">
-            This page shows "dark vessels" — targets detected by SAR (synthetic aperture radar)
-            satellites that have no matching AIS broadcast. Switching off AIS does not make a vessel
-            disappear from radar. A SAR detection indicates a radar-visible target, not necessarily
-            illegal activity.
-        </p>
-        <ul>
-            <li class="lang-zh-only">暗船 ＝ SAR 偵測到、卻無 AIS 匹配的目標。</li>
-            <li class="lang-en-only">Dark vessel = a SAR-detected target with no AIS match.</li>
-            <li class="lang-zh-only">SAR 暗船分析每 12 小時更新，資料來自 Global Fishing Watch。</li>
-            <li class="lang-en-only">SAR dark-vessel analysis updates every 12 hours, sourced from Global Fishing Watch.</li>
-        </ul>
-    </section>
+    <div class="dv-layout">
+        <!-- 左欄：暗船目標地圖 + 每日趨勢 + darkship 照片比對報告連結 -->
+        <main class="dv-main">
+            <div class="panel map-panel">
+                <div class="panel-title" id="mapPanelTitle" data-i18n="dv.map_title">📍 暗船位置分布（SAR 衛星偵測、無 AIS 匹配）</div>
+                <div id="map"></div>
+                <div class="map-legend" id="sarLegend" style="display:none">
+                    <label><input type="checkbox" id="lyrResidual" checked><span class="legend-swatch" style="background:#ff3366"></span><span class="lang-zh-only">殘餘暗船（已驗證）</span><span class="lang-en-only">Residual dark (verified)</span></label>
+                    <label><input type="checkbox" id="lyrUnverified" checked><span class="legend-swatch hollow" style="border-color:#ff8c66"></span><span class="lang-zh-only">覆蓋外・未驗證</span><span class="lang-en-only">Outside coverage (unverified)</span></label>
+                    <label><input type="checkbox" id="lyrIdentified" checked><span class="legend-swatch" style="background:#00ff88"></span><span class="lang-zh-only">已識別目標（本地 AIS）</span><span class="lang-en-only">Identified targets (local AIS)</span></label>
+                    <label><input type="checkbox" id="lyrInfra" checked><span class="legend-swatch" style="background:#ffd700"></span><span class="lang-zh-only">固定設施</span><span class="lang-en-only">Fixed infrastructure</span></label>
+                    <label><input type="checkbox" id="lyrDensity"><span class="legend-swatch" style="background:rgba(255,51,102,0.45)"></span><span class="lang-zh-only">密度熱區</span><span class="lang-en-only">Density heat</span></label>
+                    <label><input type="checkbox" id="lyrZones" checked><span class="legend-swatch" style="background:linear-gradient(90deg,#e040fb,#00f5ff,#ffd700)"></span><span class="lang-zh-only">領海基線／12浬／24浬</span><span class="lang-en-only">Baseline / 12nm / 24nm</span></label>
+                </div>
+            </div>
 
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="value" id="statTotal">--</div>
-            <div class="label" data-i18n="dark.total_detect">SAR 總偵測數</div>
-        </div>
-        <div class="stat-card">
-            <div class="value alert" id="statDark">--</div>
-            <div class="label" data-i18n="dark.count">暗船數量</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" id="statMatched">--</div>
-            <div class="label" data-i18n="dark.ais_match">有 AIS 匹配</div>
-        </div>
-        <div class="stat-card">
-            <div class="value alert" id="statRatio">--%</div>
-            <div class="label"><span data-i18n="dark.ratio">暗船比例</span><span id="ratioProvisional"
-                style="display:none;margin-left:4px;padding:0 4px;border:1px solid #ffd700;border-radius:3px;color:#ffd700;font-size:9px;vertical-align:top"></span></div>
-        </div>
-    </div>
+            <div class="panel chart-panel">
+                <div class="panel-title" id="dailyChartTitle" data-i18n="dv.daily_title">📊 每日暗船數量趨勢</div>
+                <div class="chart-container">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
 
-    <div class="main-content">
-        <div class="panel" id="darkCaveat"
-             style="display:none;padding:10px 14px;font-size:12px;line-height:1.7;border-left:3px solid #ffd700"></div>
-
-        <div class="panel" style="padding:10px 14px;font-size:12px;line-height:1.6">
-            <span class="lang-zh-only">🎯 GFW 標記的暗船已用<b>航港局本地 AIS</b> 重新交叉比對（固定設施過濾、航位推算內插、一對一匹配）——</span>
-            <span class="lang-en-only">🎯 GFW-flagged dark vessels are re-matched against <b>local Port Bureau AIS</b> (infrastructure filtering, dead-reckoning interpolation, one-to-one assignment) — </span>
-            <a href="sar-ais-match.html" style="color:var(--accent-cyan)">
-                <span class="lang-zh-only">查看 SAR×AIS 交叉比對報告 →</span>
-                <span class="lang-en-only">view the SAR–AIS cross-match report →</span>
+            <a class="panel dv-report-link" href="reports/">
+                <span class="dv-report-icon" aria-hidden="true">🛰️</span>
+                <span class="dv-report-text">
+                    <b class="lang-zh-only">darkship 衛星照片比對報告</b>
+                    <b class="lang-en-only">Darkship satellite imagery reports</b>
+                    <span class="lang-zh-only">殘餘暗船逐筆裁切 Sentinel-1 SAR 影像，確認海面上是否真的有船 —— 每日海域報告附切片牆與判定表</span>
+                    <span class="lang-en-only">Each residual dark detection checked against a Sentinel-1 SAR chip — daily reports carry the chip gallery and verdict table</span>
+                </span>
+                <span class="dv-report-arrow" aria-hidden="true">→</span>
             </a>
-        </div>
+        </main>
 
-        <div class="panel map-panel">
-            <div class="panel-title" id="mapPanelTitle" data-i18n="dv.map_title">📍 暗船位置分布（SAR 衛星偵測、無 AIS 匹配）</div>
-            <div id="map"></div>
-            <div class="map-legend" id="sarLegend" style="display:none">
-                <label><input type="checkbox" id="lyrResidual" checked><span class="legend-swatch" style="background:#ff3366"></span><span class="lang-zh-only">殘餘暗船（已驗證）</span><span class="lang-en-only">Residual dark (verified)</span></label>
-                <label><input type="checkbox" id="lyrUnverified" checked><span class="legend-swatch hollow" style="border-color:#ff8c66"></span><span class="lang-zh-only">覆蓋外・未驗證</span><span class="lang-en-only">Outside coverage (unverified)</span></label>
-                <label><input type="checkbox" id="lyrIdentified" checked><span class="legend-swatch" style="background:#00ff88"></span><span class="lang-zh-only">已識別目標（本地 AIS）</span><span class="lang-en-only">Identified targets (local AIS)</span></label>
-                <label><input type="checkbox" id="lyrInfra" checked><span class="legend-swatch" style="background:#ffd700"></span><span class="lang-zh-only">固定設施</span><span class="lang-en-only">Fixed infrastructure</span></label>
-                <label><input type="checkbox" id="lyrDensity"><span class="legend-swatch" style="background:rgba(255,51,102,0.45)"></span><span class="lang-zh-only">密度熱區</span><span class="lang-en-only">Density heat</span></label>
-                <label><input type="checkbox" id="lyrZones" checked><span class="legend-swatch" style="background:linear-gradient(90deg,#e040fb,#00f5ff,#ffd700)"></span><span class="lang-zh-only">領海基線／12浬／24浬</span><span class="lang-en-only">Baseline / 12nm / 24nm</span></label>
-            </div>
-        </div>
-
-        <div class="panel chart-panel">
-            <div class="panel-title" id="dailyChartTitle" data-i18n="dv.daily_title">📊 每日暗船數量趨勢</div>
-            <div class="chart-container">
-                <canvas id="dailyChart"></canvas>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title" data-i18n="dv.region_title">🗺️ 各區域暗船比較</div>
-            <div class="panel-body">
-                <table class="region-table" id="regionTable">
-                    <thead>
-                        <tr>
-                            <th data-i18n="th.region">區域</th>
-                            <th data-i18n="th.total">總偵測</th>
-                            <th data-i18n="th.dark">暗船</th>
-                            <th data-i18n="th.ratio">比例</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="regionTableBody">
-                        <tr>
-                            <td colspan="5" class="empty-state" data-i18n="common.loading">載入中...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title collapsible" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('expanded')" data-i18n="dv.flag_title">🚩 有 AIS 船隻國旗分布（台灣海峽）</div>
-            <div class="panel-collapsible-body">
-                <div class="panel-body">
-                    <div class="flag-list" id="flagList">
-                        <div class="empty-state" data-i18n="common.loading">載入中...</div>
-                    </div>
+        <!-- 右欄：統計數字、判讀註記、頁面摘要 -->
+        <aside class="dv-side" aria-label="暗船統計與判讀註記 Stats and caveats">
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="value" id="statTotal">--</div>
+                    <div class="label" data-i18n="dark.total_detect">SAR 總偵測數</div>
                 </div>
-                <div class="panel-body" style="border-top:1px solid rgba(0,245,255,0.1);font-size:9px;color:var(--text-secondary)">
-                    <div style="padding:2px 0;font-weight:600;color:var(--text-primary)" data-i18n="dv.flag_ref_title">📋 全球主要船旗國參考</div>
-                    <div class="flag-item"><span>1. 🇱🇷 Liberia</span><span style="font-size:8px" data-i18n="dv.flag_ref_lr">連續蟬聯全球最大船旗註冊國</span></div>
-                    <div class="flag-item"><span>2. 🇵🇦 Panama</span><span style="font-size:8px" data-i18n="dv.flag_ref_pa">長期佔據榜首，目前位居第二</span></div>
-                    <div class="flag-item"><span>3. 🇲🇭 Marshall Islands</span><span style="font-size:8px" data-i18n="dv.flag_ref_mh">持續穩定增長，維持前三</span></div>
-                    <div class="flag-item"><span>4. 🇭🇰 Hong Kong</span><span style="font-size:8px" data-i18n="dv.flag_ref_hk">2025 年初被新加坡超越</span></div>
-                    <div class="flag-item"><span>5. 🇸🇬 Singapore</span><span style="font-size:8px" data-i18n="dv.flag_ref_sg">增長強勁，2024 年穩居前五</span></div>
-                    <div class="flag-item"><span>6. 🇲🇹 Malta</span><span style="font-size:8px" data-i18n="dv.flag_ref_mt">歐洲最大船旗國之一</span></div>
-                    <div class="flag-item"><span>7. 🇧🇸 Bahamas</span><span style="font-size:8px" data-i18n="dv.flag_ref_bs">傳統航運強國，郵輪註冊量大</span></div>
-                    <div class="flag-item"><span>8. 🇬🇷 Greece</span><span style="font-size:8px" data-i18n="dv.flag_ref_gr">傳統海運大國</span></div>
-                    <div class="flag-item"><span>9. 🇯🇵 Japan</span><span style="font-size:8px" data-i18n="dv.flag_ref_jp">2024 年表現穩定</span></div>
+                <div class="stat-card">
+                    <div class="value alert" id="statDark">--</div>
+                    <div class="label" data-i18n="dark.count">暗船數量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="statMatched">--</div>
+                    <div class="label" data-i18n="dark.ais_match">有 AIS 匹配</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value alert" id="statRatio">--%</div>
+                    <div class="label"><span data-i18n="dark.ratio">暗船比例</span><span id="ratioProvisional"
+                        style="display:none;margin-left:4px;padding:0 4px;border:1px solid #ffd700;border-radius:3px;color:#ffd700;font-size:9px;vertical-align:top"></span></div>
                 </div>
             </div>
-        </div>
+
+            <div class="panel" id="darkCaveat"
+                 style="display:none;padding:10px 14px;font-size:12px;line-height:1.7;border-left:3px solid #ffd700"></div>
+
+            <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
+            <section class="ai-summary" aria-label="頁面摘要 Page summary">
+                <h2 class="lang-zh-only">本頁重點</h2>
+                <h2 class="lang-en-only">What this page shows</h2>
+                <p class="lang-zh-only">
+                    本頁顯示 SAR（合成孔徑雷達）衛星偵測到、但沒有對應 AIS 訊號的「暗船」。
+                    關閉 AIS 不代表船隻消失，仍可能被雷達拍到。SAR 偵測代表雷達可見目標，不必然代表違法活動。
+                </p>
+                <p class="lang-en-only">
+                    This page shows "dark vessels" — targets detected by SAR (synthetic aperture radar)
+                    satellites that have no matching AIS broadcast. Switching off AIS does not make a vessel
+                    disappear from radar. A SAR detection indicates a radar-visible target, not necessarily
+                    illegal activity.
+                </p>
+                <ul>
+                    <li class="lang-zh-only">暗船 ＝ SAR 偵測到、卻無 AIS 匹配的目標。</li>
+                    <li class="lang-en-only">Dark vessel = a SAR-detected target with no AIS match.</li>
+                    <li class="lang-zh-only">SAR 暗船分析每 12 小時更新，資料來自 Global Fishing Watch。</li>
+                    <li class="lang-en-only">SAR dark-vessel analysis updates every 12 hours, sourced from Global Fishing Watch.</li>
+                </ul>
+            </section>
+        </aside>
     </div>
 
     <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>
@@ -538,23 +534,6 @@
             });
         }
 
-        function renderRegionTable(regions) {
-            const tbody = document.getElementById('regionTableBody');
-            const rows = Object.entries(regions).map(([key, r]) => {
-                const barWidth = Math.max(2, Math.min(100, r.dark_ratio));
-                const color = MapModule.REGION_COLORS[key] || '#ff3366';
-                return `
-                    <tr>
-                        <td style="color:${color};font-weight:500">${r.name || key}</td>
-                        <td>${r.total_detections}</td>
-                        <td style="color:var(--accent-red);font-weight:600">${r.dark_vessels}</td>
-                        <td>${r.dark_ratio}%</td>
-                        <td><span class="ratio-bar" style="width:${barWidth}px"></span></td>
-                    </tr>`;
-            });
-            tbody.innerHTML = rows.join('') || `<tr><td colspan="5" class="empty-state">${i18n.t('common.no_data')}</td></tr>`;
-        }
-
         // ── 暗船比例的判讀註記 ──
         // GFW 的 AIS 配對是**回溯補**的：近期日期的「未配對」會被高估。
         // 本專案 2026-09 的 API 實測顯示，同一資料集在 2024-01~2025-08 穩定
@@ -648,34 +627,6 @@
             }
         }
 
-        function renderFlagList(regions) {
-            const flagList = document.getElementById('flagList');
-            // Aggregate matched_by_flag across every region present (handles both
-            // single-region taiwan_region layout and legacy 4-sub-region layout).
-            const flagTotals = {};
-            Object.values(regions).forEach(r => {
-                const mbf = (r && r.matched_by_flag) || {};
-                Object.entries(mbf).forEach(([flag, count]) => {
-                    flagTotals[flag] = (flagTotals[flag] || 0) + count;
-                });
-            });
-
-            if (Object.keys(flagTotals).length === 0) {
-                flagList.innerHTML = `<div class="empty-state">${i18n.t('common.no_data')}</div>`;
-                return;
-            }
-
-            const flags = Object.entries(flagTotals)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 15);
-            flagList.innerHTML = flags.map(([flag, count]) => `
-                <div class="flag-item">
-                    <span>${flag}</span>
-                    <span style="color:var(--accent-cyan);font-family:'JetBrains Mono',monospace">${count}</span>
-                </div>
-            `).join('') || `<div class="empty-state">${i18n.t('common.no_data')}</div>`;
-        }
-
         async function loadData() {
             try {
                 const res = await fetch('data.json?' + Date.now());
@@ -725,12 +676,6 @@
                         }
                     }
                 }
-
-                // Region table
-                renderRegionTable(regions);
-
-                // Flag list
-                renderFlagList(regions);
 
                 // Update status — 全零代表上游那次擷取沒回傳，別讓頁面看起來像壞掉
                 const range = dv.data_range || {};
