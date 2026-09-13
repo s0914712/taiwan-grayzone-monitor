@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>SAR×AIS 交叉比對報告 | SAR–AIS Cross-Match Report - Taiwan Gray Zone &amp; Submarine Cable Monitor</title>
-    <meta name="description" content="以航港局本地 AIS 重新比對 GFW SAR 暗船偵測：固定設施過濾、航位推算時間內插、動態匹配半徑與一對一指派，輸出殘餘暗船密度熱圖與取證清單">
+    <meta name="description" content="殘餘暗船逐筆比對 Sentinel-1 SAR 衛星切片照片：依成像日期整理的取證判定（確認實體目標／弱目標／無目標）、估計船長與峰值比">
     <meta name="keywords" content="暗船,dark vessel,SAR,AIS,交叉比對,dead reckoning,台灣海峽,Taiwan Strait,maritime surveillance">
     <meta name="author" content="Taiwan Gray Zone &amp; Submarine Cable Monitor">
     <meta name="robots" content="index, follow">
@@ -17,7 +17,7 @@
     <!-- Open Graph -->
     <meta property="og:type" content="article">
     <meta property="og:title" content="SAR×AIS 交叉比對報告 | SAR–AIS Cross-Match Report">
-    <meta property="og:description" content="以航港局本地 AIS 重新比對 GFW SAR 暗船偵測，刪掉假暗船並輸出殘餘暗船密度熱圖與取證清單">
+    <meta property="og:description" content="殘餘暗船逐筆比對 Sentinel-1 SAR 衛星切片照片，依日期整理的取證判定報告">
     <meta property="og:url" content="https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html">
     <meta property="og:image" content="https://s0914712.github.io/taiwan-grayzone-monitor/og-banner.png">
     <meta property="og:image:width" content="1200">
@@ -31,7 +31,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="https://s0914712.github.io/taiwan-grayzone-monitor/og-banner.png">
     <meta name="twitter:title" content="SAR×AIS 交叉比對報告 | SAR–AIS Cross-Match Report">
-    <meta name="twitter:description" content="以航港局本地 AIS 重新比對 GFW SAR 暗船偵測，刪掉假暗船並輸出殘餘暗船密度熱圖與取證清單">
+    <meta name="twitter:description" content="殘餘暗船逐筆比對 Sentinel-1 SAR 衛星切片照片，依日期整理的取證判定報告">
 
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -44,18 +44,12 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://unpkg.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
     <link rel="preload" as="style"
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"
         onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@400;700;900&display=swap"></noscript>
-
-    <!-- Leaflet -->
-    <link rel="stylesheet" href="css/leaflet.css" />
-    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="css/main.css">
@@ -69,7 +63,7 @@
                 "@type": "WebPage",
                 "name": "SAR×AIS 交叉比對報告 | SAR–AIS Cross-Match Report",
                 "url": "https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html",
-                "description": "以航港局本地 AIS 重新比對 GFW SAR 暗船偵測：固定設施過濾、航位推算時間內插、動態匹配半徑與一對一指派，輸出殘餘暗船密度熱圖與取證清單",
+                "description": "殘餘暗船逐筆比對 Sentinel-1 SAR 衛星切片照片：依成像日期整理的取證判定（確認實體目標／弱目標／無目標）、估計船長與峰值比",
                 "inLanguage": "zh-TW",
                 "dateModified": "2026-09-13",
                 "isPartOf": { "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/#website" }
@@ -85,9 +79,9 @@
             {
                 "@type": "Dataset",
                 "@id": "https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html#dataset",
-                "name": "Taiwan SAR–AIS Cross-Match Dataset",
-                "alternateName": "台灣 SAR×AIS 交叉比對資料集",
-                "description": "GFW-unmatched SAR detections re-matched against local Port Bureau AIS: fixed-infrastructure filtering, dead-reckoning interpolation to overpass time, dynamic gating and one-to-one assignment; residual-dark density grid and a chip-retrieval worklist.",
+                "name": "Taiwan Dark-Vessel SAR Chip Forensics",
+                "alternateName": "台灣暗船 SAR 切片取證資料集",
+                "description": "Residual dark-vessel detections (unmatched after re-matching GFW SAR against local Port Bureau AIS) checked one by one against Sentinel-1 SAR image chips, grouped by acquisition date, with per-target verdicts (confirmed / weak / no target), estimated length and peak-to-sea ratio.",
                 "url": "https://s0914712.github.io/taiwan-grayzone-monitor/sar-ais-match.html",
                 "inLanguage": ["zh-TW", "en"],
                 "isAccessibleForFree": true,
@@ -99,7 +93,7 @@
                 "distribution": {
                     "@type": "DataDownload",
                     "encodingFormat": "application/json",
-                    "contentUrl": "https://s0914712.github.io/taiwan-grayzone-monitor/sar_ais_matches.json"
+                    "contentUrl": "https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/chips/results.json"
                 }
             }
         ]
@@ -107,52 +101,48 @@
     </script>
 
     <style>
-        body {
-            overflow-y: auto;
-        }
+        body { overflow-y: auto; }
 
-        #map {
-            height: 420px;
-            border-radius: 0 0 6px 6px;
-        }
+        .stats-row { max-width: 1400px; margin: 0 auto; }
+        .chip-report { max-width: 1400px; margin: 0 auto; padding: 10px var(--spacing-md) 24px; }
+        .chip-report .ai-summary { max-width: none; margin: 0 0 12px; }
 
-        .map-legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            padding: 8px 12px;
-            font-size: 11px;
-            color: var(--text-secondary);
-            border-top: 1px solid rgba(0, 245, 255, 0.1);
-        }
+        .chip-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 12px; font-size: 12px; color: var(--text-secondary); }
+        .chip-filter { font: inherit; font-size: 12px; color: var(--text-secondary); background: var(--bg-card); border: 1px solid var(--border-glow); border-radius: 14px; padding: 4px 12px; cursor: pointer; }
+        .chip-filter.active { color: var(--bg-primary); background: var(--accent-cyan); border-color: var(--accent-cyan); font-weight: 600; }
+        .chip-toolbar .chip-note { margin-left: auto; }
 
-        .map-legend label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-        }
+        .date-group { background: var(--bg-card); border: 1px solid var(--border-glow); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+        .date-group > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 12px 16px; }
+        .date-group > summary::-webkit-details-marker { display: none; }
+        .date-group > summary::before { content: '▸'; color: var(--accent-cyan); display: inline-block; transition: transform .15s; }
+        .date-group[open] > summary::before { transform: rotate(90deg); }
+        .date-title { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600; color: var(--accent-cyan); }
+        .date-counts { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--text-secondary); }
 
-        .legend-swatch {
-            display: inline-block;
-            width: 11px;
-            height: 11px;
-            border-radius: 2px;
-        }
-
-        table.region-table td, table.region-table th { white-space: nowrap; }
-        .table-scroll { overflow-x: auto; }
+        .chip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; padding: 0 16px 16px; }
+        .chip-card { margin: 0; background: rgba(5, 8, 15, 0.6); border: 1px solid rgba(0, 245, 255, 0.12); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+        .chip-card img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #05080f; }
+        .chip-card .no-img { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 12px; background: #05080f; }
+        .chip-card figcaption { padding: 8px 10px; font-size: 11px; line-height: 1.7; color: var(--text-secondary); }
+        .chip-card .mono { font-family: 'JetBrains Mono', monospace; }
+        .chip-card .note { color: var(--text-primary); }
+        .verdict { font-weight: 600; font-size: 12px; }
+        .v-confirmed { color: var(--accent-green); }
+        .v-weak { color: var(--accent-yellow, #ffd700); }
+        .v-land { color: var(--accent-orange, #ff9500); }
+        .v-none { color: var(--text-secondary); }
+        .v-error { color: var(--accent-red); }
+        .empty-group { padding: 0 16px 16px; font-size: 12px; color: var(--text-secondary); }
 
         @media (max-width: 900px) {
-            #map { height: calc(100vh - 48px - 56px - 20px); max-height: 350px; min-height: 200px; }
+            .chip-report { padding: 8px 10px 80px; }
+            .chip-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 0 10px 10px; }
+            .date-group > summary { padding: 10px 12px; }
+            .chip-toolbar .chip-note { margin-left: 0; }
             .stat-card { padding: 10px 8px; }
             .stat-card .value { font-size: 20px; }
             .stat-card .label { font-size: 10px; }
-            .main-content { padding-bottom: 72px; }
-        }
-        @media (max-width: 600px) {
-            .stat-card { padding: 8px 6px; }
-            .stat-card .value { font-size: 18px; }
         }
     </style>
 </head>
@@ -164,7 +154,7 @@
     <!-- End Google Tag Manager (noscript) -->
 
     <header class="header">
-        <h1>🎯 <span class="lang-zh-only">SAR×AIS 交叉比對</span><span class="lang-en-only">SAR–AIS Cross-Match</span></h1>
+        <h1>🛰️ <span class="lang-zh-only">SAR×AIS 比對 — 衛星切片取證報告</span><span class="lang-en-only">SAR–AIS Match — Satellite Chip Report</span></h1>
         <div class="header-nav">
             <a href="index.html" data-i18n="nav.grayzone">灰色地帶監測</a>
             <a href="dark-vessels.html" data-i18n="nav.dark_vessels">暗船偵測</a>
@@ -188,75 +178,57 @@
         </div>
     </header>
 
-    <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
-    <section class="ai-summary" aria-label="頁面摘要 Page summary">
-        <h2 class="lang-zh-only">本頁重點</h2>
-        <h2 class="lang-en-only">What this page shows</h2>
-        <p class="lang-zh-only">
-            GFW 的「暗船」標記是用他們自己的 AIS 來源比對的；本站接的航港局 AIS 在台海近岸密度更高。
-            本頁把 GFW 標為 unmatched 的 SAR 偵測，拿本地 AIS 重新比對一次 —— 先過濾風機／養殖平台等固定設施，
-            再把 AIS 軌跡以航位推算內插到衛星過境時刻、用動態半徑做一對一匹配。剩下的才是「驗證後殘餘暗船」。
-        </p>
-        <p class="lang-en-only">
-            GFW's "dark vessel" flag is made against GFW's own AIS feed; the local Port Bureau AIS feed
-            is denser near Taiwan. This page re-matches every GFW-unmatched SAR detection against local
-            AIS — first filtering fixed infrastructure (wind turbines, aquaculture platforms), then
-            dead-reckoning AIS tracks to the satellite overpass instant and matching one-to-one with a
-            dynamic gating radius. What remains is the screened residual dark-vessel set.
-        </p>
-    </section>
-
     <div class="stats-row">
         <div class="stat-card">
-            <div class="value alert" id="statResidual">--</div>
-            <div class="label"><span class="lang-zh-only">殘餘暗船</span><span class="lang-en-only">Residual dark</span></div>
+            <div class="value" id="statChecked">--</div>
+            <div class="label"><span class="lang-zh-only">已取證目標</span><span class="lang-en-only">Targets checked</span></div>
         </div>
         <div class="stat-card">
-            <div class="value" id="statRematched" style="color:var(--accent-green)">--</div>
-            <div class="label"><span class="lang-zh-only">本地 AIS 對上（假暗船）</span><span class="lang-en-only">Re-matched locally (false dark)</span></div>
+            <div class="value" id="statConfirmed" style="color:var(--accent-green)">--</div>
+            <div class="label"><span class="lang-zh-only">✅ 確認實體目標</span><span class="lang-en-only">✅ Confirmed targets</span></div>
         </div>
         <div class="stat-card">
-            <div class="value" id="statRemovedPct">--%</div>
-            <div class="label"><span class="lang-zh-only">假暗船剔除率</span><span class="lang-en-only">False-dark removed</span></div>
+            <div class="value" id="statWeak" style="color:var(--accent-yellow, #ffd700)">--</div>
+            <div class="label"><span class="lang-zh-only">🟡 弱目標</span><span class="lang-en-only">🟡 Weak targets</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="statRate">--%</div>
+            <div class="label"><span class="lang-zh-only">確認率</span><span class="lang-en-only">Confirmation rate</span></div>
         </div>
     </div>
 
-    <div class="main-content">
-        <div class="panel map-panel">
-            <div class="panel-title"><span class="lang-zh-only">📍 殘餘暗船密度熱圖（0.1° 網格）＋ 比對結果</span><span class="lang-en-only">📍 Residual-dark density heatmap (0.1° grid) + match results</span></div>
-            <div id="map"></div>
-            <div class="map-legend">
-                <label><input type="checkbox" id="lyrDensity" checked><span class="legend-swatch" style="background:#ff3366"></span><span class="lang-zh-only">殘餘暗船密度</span><span class="lang-en-only">Residual-dark density</span></label>
-                <label><input type="checkbox" id="lyrRematched" checked><span class="legend-swatch" style="background:#00ff88"></span><span class="lang-zh-only">本地 AIS 對上（假暗船）</span><span class="lang-en-only">Re-matched (false dark)</span></label>
-                <label><input type="checkbox" id="lyrInfra" checked><span class="legend-swatch" style="background:#ffd700"></span><span class="lang-zh-only">固定設施格</span><span class="lang-en-only">Infrastructure cells</span></label>
-            </div>
+    <main class="chip-report">
+        <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
+        <section class="ai-summary" aria-label="頁面摘要 Page summary">
+            <h2 class="lang-zh-only">本頁重點</h2>
+            <h2 class="lang-en-only">What this page shows</h2>
+            <p class="lang-zh-only">
+                GFW 標為「暗船」的 SAR 偵測，先用航港局本地 AIS 重新比對剔除假暗船；剩下的殘餘暗船，
+                再逐筆裁切 Sentinel-1 雷達影像確認海面上是否真的有船。本頁依<b>成像日期</b>列出每一張比對切片與判定：
+                ✅ 確認實體目標（峰值 ≥ 10× 海面背景）、🟡 弱目標、⚪ 無目標（小型木殼船雷達截面低，SAR 可能拍不到，不等於誤報）。
+                長度估計誤差約 ±20–30 m；所有結果是研判線索，不是法律認定。
+            </p>
+            <p class="lang-en-only">
+                SAR detections GFW flags as "dark" are first re-matched against local Port Bureau AIS to remove false dark
+                vessels; each remaining residual detection is then checked against a cropped Sentinel-1 radar chip to see
+                whether a ship is really there. This page lists every chip and verdict by <b>acquisition date</b>:
+                ✅ confirmed target (peak ≥ 10× sea clutter), 🟡 weak target, ⚪ no target (small wooden hulls have low radar
+                cross-section, so "no target" is not a false alarm). Length estimates are ±20–30 m; results are leads, not legal findings.
+            </p>
+        </section>
+
+        <div class="chip-toolbar" role="group" aria-label="判定篩選 Verdict filter">
+            <button class="chip-filter active" data-filter="all"><span class="lang-zh-only">全部</span><span class="lang-en-only">All</span></button>
+            <button class="chip-filter" data-filter="hit"><span class="lang-zh-only">有目標（✅＋🟡）</span><span class="lang-en-only">Hits (✅+🟡)</span></button>
+            <button class="chip-filter" data-filter="confirmed">✅ <span class="lang-zh-only">確認</span><span class="lang-en-only">Confirmed</span></button>
+            <button class="chip-filter" data-filter="none">⚪ <span class="lang-zh-only">無目標</span><span class="lang-en-only">No target</span></button>
+            <span class="chip-note"><span class="lang-zh-only">點切片開啟原圖（Sentinel-1 GRD，VV 極化、dB 尺度；青色十字＝偵測座標，紅圈＝找到的亮目標）</span><span class="lang-en-only">Click a chip for the full image (Sentinel-1 GRD, VV, dB; cyan cross = detection, red circle = bright target found)</span></span>
         </div>
 
-        <div class="panel">
-            <div class="panel-title"><span class="lang-zh-only">🧰 取證清單 — 東部＋西南殘餘暗船 × Sentinel-1 影像涵蓋</span><span class="lang-en-only">🧰 Chip-retrieval worklist — east/southwest residual dark × Sentinel-1 coverage</span></div>
-            <div class="panel-body" style="font-size:11px;color:var(--text-secondary);line-height:1.6" id="worklistIntro"></div>
-            <div class="panel-body table-scroll">
-                <table class="region-table" id="worklistTable">
-                    <thead>
-                        <tr>
-                            <th><span class="lang-zh-only">日期</span><span class="lang-en-only">Date</span></th>
-                            <th><span class="lang-zh-only">海域</span><span class="lang-en-only">Area</span></th>
-                            <th><span class="lang-zh-only">位置</span><span class="lang-en-only">Position</span></th>
-                            <th><span class="lang-zh-only">法域</span><span class="lang-en-only">Zone</span></th>
-                            <th><span class="lang-zh-only">影像</span><span class="lang-en-only">Imagery</span></th>
-                            <th><span class="lang-zh-only">取證指令（點擊複製）</span><span class="lang-en-only">Command (click to copy)</span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="worklistTableBody">
-                        <tr>
-                            <td colspan="6" class="empty-state" data-i18n="common.loading">載入中...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <div id="chipReport">
+            <div class="empty-state" data-i18n="common.loading">載入中...</div>
         </div>
-
-    </div>
+    </main>
 
     <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>
 
@@ -267,205 +239,159 @@
     <!-- JavaScript -->
     <script defer src="js/i18n.js"></script>
     <script>
-        let map;
-        const layers = {};
+        // 取證切片（chips/results.json）由 darkship-cron.yml commit 在 repo 根目錄、不在 Pages 產物內，
+        // 線上經 raw.githubusercontent.com 讀取（與 js/map-vessels.js 的 CHIP_BASE 同一規則）
+        const CHIP_BASE = /\.github\.io$/.test(location.hostname)
+            ? 'https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/chips/'
+            : '../chips/';
+        const CONFIRMED_PEAK_RATIO = 10;   // 與 src/darkship_batch.py 相同
+        const OPEN_LATEST_DATES = 2;       // 預設展開最近幾個成像日（其餘收合，收合區的圖片不會下載）
+
+        let chipRecords = null;
+        let chipFilter = 'all';
+        const openState = {};              // date → 使用者手動展開/收合狀態（重繪時保留）
 
         function zh() { return (typeof i18n !== 'undefined' ? i18n.getLang() : 'zh') !== 'en'; }
-
-        function initMap() {
-            map = L.map('map', {
-                center: [24.0, 120.5],
-                zoom: 6,
-                zoomControl: true,
-                attributionControl: true
-            });
-            // CARTO 免費底圖已改為需 API key（無 key 會打上浮水印），改用免金鑰的 Esri 暗色底圖
-            // （World_Dark_Gray 原生只到 z16，maxNativeZoom 讓更深的縮放放大 z16 圖磚而非變空白）
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-                maxNativeZoom: 16, maxZoom: 18, opacity: 0.9,
-                attribution: 'Tiles &copy; Esri'
-            }).addTo(map);
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
-                maxNativeZoom: 16, maxZoom: 18, opacity: 0.9
-            }).addTo(map);
-            layers.density = L.layerGroup().addTo(map);
-            layers.rematched = L.layerGroup().addTo(map);
-            layers.infra = L.layerGroup().addTo(map);
-
-            [['lyrDensity', 'density'], ['lyrRematched', 'rematched'], ['lyrInfra', 'infra']].forEach(([id, key]) => {
-                document.getElementById(id).addEventListener('change', e => {
-                    if (e.target.checked) map.addLayer(layers[key]);
-                    else map.removeLayer(layers[key]);
-                });
-            });
+        function esc(v) {
+            return String(v == null ? '' : v).replace(/[&<>"']/g, c =>
+                ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
         }
 
-        function plotDensity(cells) {
-            const maxCount = Math.max(1, ...cells.map(c => c.count));
-            cells.forEach(c => {
-                const intensity = Math.sqrt(c.count / maxCount);   // 壓縮動態範圍
-                L.rectangle(
-                    [[c.lat - 0.05, c.lon - 0.05], [c.lat + 0.05, c.lon + 0.05]], {
-                        color: '#ff3366',
-                        weight: 0,
-                        fillColor: '#ff3366',
-                        fillOpacity: 0.12 + 0.55 * intensity
-                    }).addTo(layers.density).bindPopup(
-                        `<b style="color:#ff3366">${zh() ? '殘餘暗船密度' : 'Residual-dark density'}</b><br>` +
-                        `${c.lat.toFixed(1)}, ${c.lon.toFixed(1)}<br>` +
-                        `${zh() ? '偵測數' : 'Detections'}: ${c.count}`);
-            });
+        // Mirrors verdict_key() in src/darkship_batch.py
+        function verdictKey(r) {
+            if (r.error) return 'error';
+            if (r.saturated) return 'land';
+            if (r.found) return (r.peak_ratio || 0) >= CONFIRMED_PEAK_RATIO ? 'confirmed' : 'weak';
+            return 'none';
         }
-
-        function plotRematched(items) {
-            items.forEach(r => {
-                L.circleMarker([r.lat, r.lon], {
-                    radius: 5,
-                    fillColor: '#00ff88',
-                    color: '#00ff88',
-                    weight: 1,
-                    opacity: 0.9,
-                    fillOpacity: 0.55
-                }).addTo(layers.rematched).bindPopup(
-                    `<b style="color:#00ff88">${zh() ? '假暗船（本地 AIS 對上）' : 'False dark (matched locally)'}</b><br>` +
-                    `${r.date} · ${r.pass}<br>` +
-                    `MMSI ${r.mmsi} ${r.name || ''}<br>` +
-                    `${zh() ? '距離' : 'Distance'} ${r.distance_km} km (gate ${r.gate_km} km)<br>` +
-                    `Δt ${r.dt_minutes} min · ${r.method}`);
-            });
-        }
-
-        function plotInfra(cells) {
-            cells.forEach(c => {
-                L.rectangle(
-                    [[c.lat - 0.005, c.lon - 0.005], [c.lat + 0.005, c.lon + 0.005]], {
-                        color: '#ffd700',
-                        weight: 1,
-                        fillColor: '#ffd700',
-                        fillOpacity: 0.4
-                    }).addTo(layers.infra).bindPopup(
-                        `<b style="color:#ffd700">${zh() ? '固定設施（重現性判定）' : 'Fixed infrastructure (recurrence)'}</b><br>` +
-                        `${c.lat.toFixed(3)}, ${c.lon.toFixed(3)}<br>` +
-                        `${zh() ? '出現日數' : 'Days seen'}: ${c.dates_seen}`);
-            });
-        }
-
-        let cached = null;
-        let cachedWorklist = null;
-
-        // ── 取證清單（build_chip_worklist.py 產出）──
-        function renderWorklist(wl) {
-            const intro = document.getElementById('worklistIntro');
-            const tbody = document.getElementById('worklistTableBody');
-            if (!wl || !Array.isArray(wl.targets)) {
-                intro.textContent = '';
-                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${zh()
-                    ? '清單尚未產生（下次資料管線執行後出現）'
-                    : 'Worklist not generated yet (appears after the next pipeline run)'}</td></tr>`;
-                return;
-            }
-            const s = wl.summary || {};
-            intro.textContent = zh()
-                ? `每 12 小時自動預查：關注海域內 ${s.in_zone || 0} 筆殘餘暗船，其中 ${s.covered || 0} 筆當日有 Sentinel-1 影像可取證（成像時刻已附在指令裡）、${s.no_coverage || 0} 筆當日無影像涵蓋（不用手動試了）。在本機設定 CDSE 金鑰後，點指令複製直接執行。`
-                : `Pre-checked every 12 h: ${s.in_zone || 0} residual dark detections in the focus areas — ${s.covered || 0} have same-day Sentinel-1 imagery (acquisition time embedded in the command), ${s.no_coverage || 0} have no coverage that day (no need to try manually). Set your CDSE keys locally, click a command to copy, and run.`;
-
-            if (!wl.targets.length) {
-                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${zh()
-                    ? '目前關注海域內沒有殘餘暗船' : 'No residual dark detections in the focus areas'}</td></tr>`;
-                return;
-            }
-            const zoneName = t => {
-                const z = (wl.zones || {})[t.zone] || {};
-                return zh() ? (z.name || t.zone) : (z.name_en || t.zone);
-            };
-            tbody.innerHTML = wl.targets.map(t => `
-                <tr>
-                    <td>${t.date}</td>
-                    <td>${zoneName(t)}</td>
-                    <td style="font-family:'JetBrains Mono',monospace">${t.lat.toFixed(2)}, ${t.lon.toFixed(2)}</td>
-                    <td>${zoneLabelWl(t.maritime_zone)}</td>
-                    <td>${t.covered
-                        ? `<span style="color:var(--accent-green)">🎯 ${(t.time || '').slice(0, 5)} UTC</span>`
-                        : `<span style="color:var(--text-secondary)">${zh() ? '無涵蓋' : 'none'}</span>`}</td>
-                    <td>${t.covered
-                        ? `<code class="wl-cmd" style="cursor:pointer;font-size:10px" title="${zh() ? '點擊複製' : 'Click to copy'}">${t.command}</code>`
-                        : '--'}</td>
-                </tr>`).join('');
-            tbody.querySelectorAll('.wl-cmd').forEach(el => {
-                el.addEventListener('click', () => {
-                    navigator.clipboard && navigator.clipboard.writeText(el.textContent);
-                    const orig = el.textContent;
-                    el.textContent = zh() ? '✅ 已複製' : '✅ Copied';
-                    setTimeout(() => { el.textContent = orig; }, 900);
-                });
-            });
-        }
-
-        const WL_ZONE_LABELS = {
-            internal_waters: ['內水', 'Internal'],
-            territorial_sea: ['領海', '12 nm'],
-            contiguous_zone: ['鄰接區', '24 nm'],
-            eez: ['EEZ', 'EEZ'],
-            high_seas: ['公海', 'High seas'],
-            unknown: ['—', '—'],
+        const VERDICTS = {
+            confirmed: ['✅', '確認實體目標', 'Confirmed target'],
+            weak: ['🟡', '弱目標', 'Weak target'],
+            land: ['⚠️', '疑似陸地／固定結構', 'Land / fixed structure'],
+            none: ['⚪', '無目標', 'No target'],
+            error: ['❌', '取證失敗', 'Failed'],
         };
-        function zoneLabelWl(z) {
-            const pair = WL_ZONE_LABELS[z] || WL_ZONE_LABELS.unknown;
-            return zh() ? pair[0] : pair[1];
+        const VERDICT_ORDER = { confirmed: 0, weak: 1, land: 2, none: 3, error: 4 };
+        const AREA_LABELS = { east: ['台灣東部海域', 'East of Taiwan'], southwest: ['台灣西南海域', 'Southwest of Taiwan'] };
+        const ZONE_LABELS = {
+            internal_waters: ['內水', 'Internal waters'], territorial_sea: ['領海', 'Territorial sea'],
+            contiguous_zone: ['鄰接區', 'Contiguous zone'], eez: ['EEZ', 'EEZ'], high_seas: ['公海', 'High seas'],
+        };
+        const pick = (pair, fallback) => pair ? (zh() ? pair[0] : pair[1]) : (fallback || '');
+
+        function passesFilter(k) {
+            if (chipFilter === 'all') return true;
+            if (chipFilter === 'hit') return k === 'confirmed' || k === 'weak';
+            return k === chipFilter;
         }
 
-        async function loadWorklist() {
-            try {
-                const res = await fetch('sar_chip_worklist.json?' + Date.now());
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                cachedWorklist = await res.json();
-            } catch (e) {
-                console.warn('worklist unavailable:', e);
-                cachedWorklist = null;
+        function chipCard(r) {
+            const k = verdictKey(r);
+            const v = VERDICTS[k];
+            const url = r.png ? CHIP_BASE + String(r.png).replace(/^chips\//, '') : '';
+            const pos = `${Number(r.lat).toFixed(2)}, ${Number(r.lon).toFixed(2)}`;
+            const img = url
+                ? `<a href="${esc(url)}" target="_blank" rel="noopener"><img src="${esc(url)}" alt="SAR chip ${esc(r.date)} ${esc(pos)}" loading="lazy" decoding="async"></a>`
+                : `<div class="no-img">${zh() ? '無切片影像' : 'No chip image'}</div>`;
+            const meta = [];
+            if (r.time) meta.push(`🛰️ ${esc(String(r.time).slice(0, 5))} UTC`);
+            meta.push(`📍 <span class="mono">${esc(pos)}</span>`);
+            const where = [pick(AREA_LABELS[r.zone], r.zone), pick(ZONE_LABELS[r.jurisdiction], r.jurisdiction)]
+                .filter(Boolean).map(esc).join(' · ');
+            const detail = [];
+            if (r.length_m) detail.push(`~${esc(r.length_m)} m`);
+            if (r.peak_ratio) detail.push(`${esc(r.peak_ratio)}×${r.n_pixels ? ` (${esc(r.n_pixels)} px)` : ''}`);
+            return `<figure class="chip-card">${img}<figcaption>` +
+                `<span class="verdict v-${k}">${v[0]} ${zh() ? v[1] : v[2]}</span>` +
+                (detail.length ? ` · <span class="mono">${detail.join(' · ')}</span>` : '') +
+                `<br>${meta.join(' · ')}` +
+                (where ? `<br>${where}` : '') +
+                (r.error ? `<br><span class="v-error">${esc(String(r.error).slice(0, 120))}</span>` : '') +
+                (r.note && zh() ? `<br><span class="note">📝 ${esc(r.note)}</span>` : '') +
+                `</figcaption></figure>`;
+        }
+
+        function renderStats(list) {
+            const counts = { confirmed: 0, weak: 0, land: 0, none: 0, error: 0 };
+            list.forEach(r => counts[verdictKey(r)]++);
+            const checked = list.length - counts.error;
+            document.getElementById('statChecked').textContent = checked.toLocaleString();
+            document.getElementById('statConfirmed').textContent = counts.confirmed.toLocaleString();
+            document.getElementById('statWeak').textContent = counts.weak.toLocaleString();
+            document.getElementById('statRate').textContent =
+                checked ? (counts.confirmed / checked * 100).toFixed(1) + '%' : '--%';
+        }
+
+        function renderReport() {
+            const root = document.getElementById('chipReport');
+            if (!chipRecords) return;
+            if (!chipRecords.length) {
+                root.innerHTML = `<div class="empty-state">${zh() ? '尚無取證結果' : 'No chip forensics yet'}</div>`;
+                return;
             }
-            renderWorklist(cachedWorklist);
+            const byDate = {};
+            chipRecords.forEach(r => { (byDate[r.date] = byDate[r.date] || []).push(r); });
+            const dates = Object.keys(byDate).sort().reverse();
+
+            root.innerHTML = dates.map((date, i) => {
+                const rows = byDate[date].slice().sort((a, b) =>
+                    (VERDICT_ORDER[verdictKey(a)] - VERDICT_ORDER[verdictKey(b)]) ||
+                    ((b.peak_ratio || 0) - (a.peak_ratio || 0)));
+                const counts = {};
+                rows.forEach(r => { const k = verdictKey(r); counts[k] = (counts[k] || 0) + 1; });
+                const countHtml = Object.keys(VERDICTS).filter(k => counts[k])
+                    .map(k => `<span class="v-${k}">${VERDICTS[k][0]} ${counts[k]}</span>`).join('');
+                const shown = rows.filter(r => passesFilter(verdictKey(r)));
+                const open = (date in openState) ? openState[date] : i < OPEN_LATEST_DATES;
+                return `<details class="date-group" data-date="${esc(date)}"${open ? ' open' : ''}>` +
+                    `<summary><span class="date-title">${esc(date)}</span>` +
+                    `<span class="date-counts"><span>${zh() ? `取證 ${rows.length} 筆` : `${rows.length} checked`}</span>${countHtml}</span></summary>` +
+                    (shown.length
+                        ? `<div class="chip-grid">${shown.map(chipCard).join('')}</div>`
+                        : `<div class="empty-group">${zh() ? '此日期沒有符合篩選的切片' : 'No chips match this filter on this date'}</div>`) +
+                    `</details>`;
+            }).join('');
+
+            root.querySelectorAll('details.date-group').forEach(el => {
+                el.addEventListener('toggle', () => { openState[el.dataset.date] = el.open; });
+            });
         }
 
-        function renderAll(d) {
-            const s = d.summary || {};
-            document.getElementById('statResidual').textContent = (s.residual_dark || 0).toLocaleString();
-            document.getElementById('statRematched').textContent = (s.rematched_local || 0).toLocaleString();
-            document.getElementById('statRemovedPct').textContent = (s.false_dark_removed_pct || 0) + '%';
-
-            Object.values(layers).forEach(l => l.clearLayers());
-            plotDensity(d.density_grid || []);
-            plotRematched(d.rematched || []);
-            plotInfra(d.infrastructure_cells || []);
-
-            document.getElementById('updateInfo').textContent =
-                (zh() ? '資料更新時間: ' : 'Updated: ') + new Date(d.updated_at).toLocaleString();
-            document.getElementById('dataStatus').textContent = '✅';
-        }
-
-        async function loadData() {
+        async function loadChips() {
             try {
-                const res = await fetch('sar_ais_matches.json?' + Date.now());
+                const res = await fetch(CHIP_BASE + 'results.json?' + Date.now());
                 if (!res.ok) throw new Error('HTTP ' + res.status);
-                cached = await res.json();
-                renderAll(cached);
+                const list = await res.json();
+                chipRecords = Array.isArray(list) ? list : [];
+                renderStats(chipRecords);
+                renderReport();
+                document.getElementById('dataStatus').textContent = '✅';
+                const latestRun = chipRecords.map(r => String(r.ran_at || '')).sort().pop();
+                if (latestRun) {
+                    document.getElementById('updateInfo').textContent =
+                        (zh() ? '最近一次取證: ' : 'Last forensics run: ') + new Date(latestRun).toLocaleString();
+                }
             } catch (e) {
                 console.error('Load failed:', e);
                 document.getElementById('dataStatus').textContent = zh()
-                    ? '⏳ 比對結果尚未產生（下次資料管線執行後出現）'
-                    : '⏳ Match results not generated yet (appears after the next pipeline run)';
+                    ? '⏳ 取證結果尚未產生' : '⏳ Chip forensics not available yet';
+                document.getElementById('chipReport').innerHTML =
+                    `<div class="empty-state">${zh() ? '取證結果載入失敗' : 'Failed to load chip forensics'}</div>`;
             }
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            initMap();
-            loadData();
-            loadWorklist();
+            document.querySelectorAll('.chip-filter').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    chipFilter = btn.dataset.filter;
+                    document.querySelectorAll('.chip-filter').forEach(b => b.classList.toggle('active', b === btn));
+                    renderReport();
+                });
+            });
+            loadChips();
         });
-        // 語言切換時重繪動態文字（圖表標籤、表格、註記、popup）
-        window.addEventListener('langchange', function () {
-            if (cached) renderAll(cached);
-            renderWorklist(cachedWorklist);
-        });
+        // 語言切換時重繪卡片文字
+        window.addEventListener('langchange', renderReport);
     </script>
     <script defer src="js/mobile-nav.js"></script>
 </body>
