@@ -630,6 +630,34 @@
         })[0] || null;
     }
 
+    // Cloudflare 對 quality 端點會靜默忽略 geoId：四個分區回的是同一份全國值
+    // （管線用 detect_geoid_ignored 抓到後把 granularity 標成 national_only）。
+    // 這種時候不能拿它上色——但那個全國數字本身仍有價值，改用一行文字呈現。
+    function nationalRadarNoteHtml() {
+        var data = state.countyData;
+        if (!data || data.granularity !== 'national_only') return '';
+        var group = (data.adm1_groups || []).filter(function (g) {
+            return g.status === 'available' && g.latest != null;
+        })[0];
+        if (!group) return '';
+        var speed = group.speed_test || {};
+        var parts = [escapeHtml(zh() ? group.metric_label_zh : group.metric_label_en) +
+            ' ' + escapeHtml(formatMetricValue(group.latest)) +
+            (group.unit ? ' ' + escapeHtml(group.unit) : '')];
+        if (speed.bandwidth_download != null) {
+            parts.push(t('Speed Test 下載 ', 'Speed Test download ') +
+                escapeHtml(formatMetricValue(speed.bandwidth_download)) + ' Mbps');
+        }
+        if (speed.latency_idle != null) {
+            parts.push(t('閒置延遲 ', 'idle latency ') +
+                escapeHtml(formatMetricValue(speed.latency_idle)) + ' ms');
+        }
+        return '<div class="county-group-note">' +
+            t('Cloudflare Radar 目前只給得到<strong>全國單一值</strong>（分區篩選被忽略，四個分區回傳完全相同的序列），因此地圖不以它上色：',
+                'Cloudflare Radar currently returns a <strong>single national value</strong> (its region filter is ignored — all four regions return identical series), so the map does not colour by it: ') +
+            '<span class="county-group-item">' + parts.join(' · ') + '</span></div>';
+    }
+
     function renderCountyModes(views) {
         var wrap = el('countyModes');
         if (!wrap) return;
@@ -637,6 +665,8 @@
         if (!modes.length) {
             wrap.innerHTML = '';
             wrap.style.display = 'none';
+            var legend = el('countyLegend');
+            if (legend) legend.innerHTML = nationalRadarNoteHtml();
             return;
         }
         wrap.style.display = '';
@@ -662,7 +692,8 @@
         if (!state.countyMode) { wrap.innerHTML = ''; return; }
         if (state.countyMode === 'reach') {
             wrap.innerHTML = '<span class="county-legend-label">' +
-                t('IODA 可達性訊號狀態', 'IODA reachability status') + '</span>';
+                t('IODA 可達性訊號狀態', 'IODA reachability status') + '</span>' +
+                nationalRadarNoteHtml();
             return;
         }
         var unit = '';
@@ -695,7 +726,7 @@
             '<span class="county-legend-label">' + escapeHtml(hi) +
             escapeHtml(unit ? ' ' + unit : '') + ' ' +
             escapeHtml(scale.higherIsBetter ? t('高', 'High') : t('低', 'Low')) + '</span>' +
-            radarGroupLegendHtml();
+            radarGroupLegendHtml() + nationalRadarNoteHtml();
     }
 
     // Radar 只有 4 個分區，所以地圖上最多只會出現 4 種顏色。把分區與其涵蓋範圍
