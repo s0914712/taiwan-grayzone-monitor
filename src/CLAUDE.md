@@ -129,6 +129,7 @@ The `/en/` mirror strips the Chinese half so Sources render English-only; extern
 - Large accumulating files (`vessel_profiles.json`, `ais_track_history.json`, `ais_track_commercial.json`) are written to `docs/` as compact JSON (no indent) to stay under GitHub's 100 MiB per-file limit. `data/` counterparts are gitignored.
 
 ## Conventions
+- SOCKS5 代理一律走 **`socks5h://`**（`fetch_ais_data.PROXY_SCHEMES`）：DNS 由代理端解析，代理看到的是主機名而非 IP。`socks5://` 在本機解析，代理商的主機名名單比不到就擋掉（2026-09 Byteful 事件，AIS 停擺十天）。`build_proxy_attempts()` 先用 socks5h 掃 10 個代理，全掛才用 socks5 再試 3 個（總次數有界）；`PROXY_SCHEME` 環境變數可覆寫。Tests: `tests/test_ais_proxy.py`
 - All timestamps ISO 8601 UTC
 - MMSI as strings (preserve leading zeros)
 - Monitoring bbox (`TAIWAN_BBOX` in `fetch_ais_data.py`): lat 19-30°N, lon 116-130°E
