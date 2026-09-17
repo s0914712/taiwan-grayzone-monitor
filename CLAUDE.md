@@ -387,7 +387,17 @@ python3 src/gov_daily_activity.py -o out.png   # 昨日海警／公務船動態�
   attempt → 0x05, i.e. the hostname now clears the provider's ruleset and the block
   moved upstream. `src/diagnose_proxy.py` runs the control probes that separate
   "provider still blocking" from "MPB refusing this exit IP" — run it before
-  escalating to the provider again.
+  escalating to the provider again. It has no local copy of the pool (POOL lives
+  only in secrets), so run it from the **`proxy-diagnose.yml`** workflow
+  (`workflow_dispatch` only, commits nothing). The repo and its Actions logs are
+  public, so the script prints the proxy's port but not its host, and masks the
+  exit IP to two octets — do not pass `--show-host` there.
+- 2026-09-17, 30 random exits out of the 100-proxy pool, all under `socks5h`:
+  **every one returned 0x05, zero successes**, and the 2 `socks5` fallbacks both
+  returned 0x02. A block that uniform across 30 different exits is a rule, not
+  per-exit-IP luck — so raising `MAX_PROXY_ATTEMPTS` further is not a fix, and
+  the remaining question (provider blocking the hostname under a different code
+  vs. MPB refusing these exits) is what the control probes answer.
 - CSIS methodology from "Signals in the Swarm" report: cable proximity, zigzag detection, going-dark, identity manipulation.
 - Monitoring area (`TAIWAN_BBOX` in `fetch_ais_data.py`): 19-30°N, 116-130°E (Taiwan Strait, East Taiwan, South/East China Sea).
 - Timestamps in ISO 8601 (UTC). Track points deduplicated by consecutive identical lat/lon.

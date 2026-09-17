@@ -46,16 +46,27 @@ SOCKS5_REPLY = {
 
 _REP_RE = re.compile(r'(0x0[0-8]):')
 
+GENERIC_HEADERS = {'User-Agent': 'curl/8.0'}
+
+# 出口位置查詢：走代理出去，回傳的就是該出口的國別
+EXIT_URL = 'http://ip-api.com/json/?fields=status,country,regionName,query'
+
 # (標籤, scheme, url, 說明)
 PROBES = [
     ('控制組-主機名', 'socks5h', 'https://example.com', '代理 domain 路徑是否正常'),
     ('控制組-IP  ', 'socks5', 'https://example.com', '是否「一律禁止 IP 形式」'),
-    ('出口 IP    ', 'socks5h', 'https://api.ipify.org?format=json', '出口位於哪一國'),
+    ('出口位置   ', 'socks5h', EXIT_URL, '出口在哪一國（MPB 會擋境外）'),
     ('目標-主機名', 'socks5h', MPB_URL, '本案主體'),
     ('目標-IP    ', 'socks5', MPB_URL, '原本的失敗方式'),
     ('目標-80埠  ', 'socks5h', MPB_URL.replace('https://', 'http://'), '規則是否綁 443'),
     ('DNS 基準   ', 'socks5h', 'https://nx-does-not-exist-9f3a.example', '解析失敗長什麼樣'),
 ]
+
+
+def mask_ip(ip):
+    """公開 log 不印完整出口 IP（residential 出口屬於代理商資產）。"""
+    parts = str(ip).split('.')
+    return '.'.join(parts[:2] + ['x', 'x']) if len(parts) == 4 else '?'
 
 
 def describe(exc):
@@ -75,9 +86,17 @@ def describe(exc):
 def probe(proxy, scheme, url, timeout):
     proxy_url = build_proxy_url(proxy, scheme)
     proxies = {'http': proxy_url, 'https': proxy_url}
+    headers = MPB_HEADERS if 'motcmpb' in url else GENERIC_HEADERS
     try:
-        r = requests.get(url, headers=MPB_HEADERS, proxies=proxies,
+        r = requests.get(url, headers=headers, proxies=proxies,
                          timeout=timeout, verify=False)
+        if url == EXIT_URL:
+            try:
+                d = r.json()
+                return (f'✅ {d.get("country", "?")} / {d.get("regionName", "?")}'
+                        f'（出口 {mask_ip(d.get("query"))}）')
+            except ValueError:
+                pass
         body = r.text[:60].replace('\n', ' ') if len(r.content) < 400 else ''
         return f'✅ HTTP {r.status_code} · {len(r.content):,}B {body}'
     except requests.RequestException as e:
@@ -88,6 +107,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--proxies', type=int, default=3, help='測幾個代理（預設 3）')
     ap.add_argument('--timeout', type=int, default=20)
+    ap.add_argument('--show-host', action='store_true',
+                    help='印出代理 host（本機用；公開的 Actions log 不要開）')
     args = ap.parse_args()
 
     pool = get_proxy_list()
@@ -97,7 +118,8 @@ def main():
     print(f'\n共 {len(pool)} 個代理，取前 {args.proxies} 個診斷'
           f'（逐項 timeout {args.timeout}s）')
     for p in pool[:args.proxies]:
-        print(f'\n{"="*72}\n代理 {p["host"]}:{p["port"]}\n{"="*72}')
+        who = f'{p["host"]}:{p["port"]}' if args.show_host else f'port {p["port"]}'
+        print(f'\n{"="*72}\n代理 {who}\n{"="*72}')
         for label, scheme, url, why in PROBES:
             print(f'  {label} {probe(p, scheme, url, args.timeout)}')
             print(f'             ↳ {why}')
@@ -110,7 +132,7 @@ def main():
   控制組-IP 也回 0x02                → 0x02 是「禁止 IP 形式」的通則，
                                         不是 MPB 被列黑名單（＝客服說的字面意思）
   控制組-IP ✅ 而 目標-IP 回 0x02     → MPB 確實在對方黑名單上
-  出口 IP 不在台灣 + 目標 0x05        → 很可能是 MPB 擋境外 IP，
+  出口位置不在台灣 + 目標 0x05        → 很可能是 MPB 擋境外 IP，
                                         得跟 Byteful 要台灣出口
   目標-80埠 ✅ 而 443 ❌              → 規則綁在 443
   DNS 基準 與 目標-主機名 同碼         → 代理端根本沒解析成功，不是對方拒絕
