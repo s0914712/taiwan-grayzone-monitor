@@ -184,10 +184,14 @@ def is_cn_fishing_vessel(name):
 # 可用環境變數 PROXY_SCHEME 覆寫（逗號分隔，依序嘗試）以便臨時驗證。
 PROXY_SCHEMES = ('socks5h', 'socks5')
 
-# 嘗試連線的代理數量上限（主要 scheme）
-MAX_PROXY_ATTEMPTS = 10
-# 主要 scheme 全掛後，後備 scheme 再試幾個代理（避免逾時把 job 拖成兩倍長）
-MAX_FALLBACK_ATTEMPTS = 3
+# 嘗試連線的代理數量上限（主要 scheme）。POOL 有 100 個代理，原本只試 10 個；
+# 失敗回得很快（實測 ~4.6s／次，13 次總共 1 分鐘），所以多掃一些幾乎不花時間，
+# 而且若封鎖是「按出口 IP」而非代理商的全域規則，多試就有機會碰到沒被擋的出口。
+MAX_PROXY_ATTEMPTS = 30
+# 主要 scheme 全掛後，後備 scheme 再試幾個代理。2026-09-17 實測 socks5（送 IP）
+# 每一個代理都回 0x02「Connection not allowed by ruleset」——代理商在規則層就擋
+# 掉 IP 形式的連線，這條路基本上是死的，只留 2 次當作對方改規則時的偵測。
+MAX_FALLBACK_ATTEMPTS = 2
 
 
 def _parse_proxy_line(line):

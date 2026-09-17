@@ -332,6 +332,7 @@ installed).
 ## Common Commands
 ```bash
 python3 src/fetch_ais_data.py          # Fetch AIS data + update profiles + save tracks
+POOL="$(cat pool.txt)" python3 src/diagnose_proxy.py  # 代理連線診斷（分辨代理商擋 vs 目的端擋）
 python3 src/fetch_gfw_data.py          # Fetch GFW SAR data
 python3 src/fetch_cloudflare_radar.py  # 網路流量異常偵測 + 海纜旁滯留船隻關聯
 python3 src/fetch_radar_counties.py    # Radar ADM1 分區（4 個）網速／流量指數
@@ -378,6 +379,15 @@ python3 src/gov_daily_activity.py -o out.png   # 昨日海警／公務船動態�
   frozen (09-07 → 09-17) while every run stays green, because `save_all()` keeps the old
   snapshot on a 0-vessel fetch — `validate_outputs.py` now fails on a snapshot older than
   `AIS_SNAPSHOT_MAX_AGE_HOURS` (24h).
+- Reading SOCKS5 failures: the REP code in the error string tells you *who* refused.
+  `0x02 Connection not allowed by ruleset` = the **provider's own rule** (this is the
+  blacklist); `0x05 Connection refused` = the proxy dialled out and the far end/path
+  refused; `0x04` usually means proxy-side DNS failed. 2026-09-17 measured across the
+  100-proxy pool: every `socks5` (IP) attempt → 0x02, every `socks5h` (hostname)
+  attempt → 0x05, i.e. the hostname now clears the provider's ruleset and the block
+  moved upstream. `src/diagnose_proxy.py` runs the control probes that separate
+  "provider still blocking" from "MPB refusing this exit IP" — run it before
+  escalating to the provider again.
 - CSIS methodology from "Signals in the Swarm" report: cable proximity, zigzag detection, going-dark, identity manipulation.
 - Monitoring area (`TAIWAN_BBOX` in `fetch_ais_data.py`): 19-30°N, 116-130°E (Taiwan Strait, East Taiwan, South/East China Sea).
 - Timestamps in ISO 8601 (UTC). Track points deduplicated by consecutive identical lat/lon.

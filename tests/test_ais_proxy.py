@@ -64,3 +64,31 @@ def test_env_override_accepts_list(monkeypatch):
 def test_blank_env_falls_back_to_default(monkeypatch):
     monkeypatch.setenv('PROXY_SCHEME', '   ')
     assert f.get_proxy_schemes() == f.PROXY_SCHEMES
+
+
+# ── diagnose_proxy.describe：把 SOCKS5 REP 碼從例外訊息裡撈出來 ────────────
+# 樣本是 2026-09-17 update-ais.yml 實際 log 的原字串。
+
+def _err(msg):
+    return Exception(
+        "SOCKSHTTPSConnectionPool(host='mpbais.motcmpb.gov.tw', port=443): Max "
+        "retries exceeded with url: /aismpb/tools/geojsonais.ashx (Caused by "
+        f'NewConnectionError("SOCKSHTTPSConnection(host=\'mpbais.motcmpb.gov.tw\', '
+        f'port=443): Failed to establish a new connection: {msg}"))')
+
+
+def test_describe_ruleset_block_is_labelled_as_provider_side():
+    from diagnose_proxy import describe
+    out = describe(_err('0x02: Connection not allowed by ruleset'))
+    assert out.startswith('0x02') and '代理商自己擋' in out
+
+
+def test_describe_refused_is_labelled_as_upstream():
+    from diagnose_proxy import describe
+    out = describe(_err('0x05: Connection refused'))
+    assert out.startswith('0x05') and '代理撥出去了' in out
+
+
+def test_describe_timeout_without_rep_code():
+    from diagnose_proxy import describe
+    assert describe(Exception('HTTPSConnectionPool: Read timed out.')) == '逾時'
