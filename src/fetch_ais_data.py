@@ -184,14 +184,15 @@ def is_cn_fishing_vessel(name):
 # 可用環境變數 PROXY_SCHEME 覆寫（逗號分隔，依序嘗試）以便臨時驗證。
 PROXY_SCHEMES = ('socks5h', 'socks5')
 
-# 嘗試連線的代理數量上限（主要 scheme）。POOL 有 100 個代理，原本只試 10 個；
-# 失敗回得很快（實測 ~4.6s／次，13 次總共 1 分鐘），所以多掃一些幾乎不花時間，
-# 而且若封鎖是「按出口 IP」而非代理商的全域規則，多試就有機會碰到沒被擋的出口。
-MAX_PROXY_ATTEMPTS = 30
-# 主要 scheme 全掛後，後備 scheme 再試幾個代理。2026-09-17 實測 socks5（送 IP）
-# 每一個代理都回 0x02「Connection not allowed by ruleset」——代理商在規則層就擋
-# 掉 IP 形式的連線，這條路基本上是死的，只留 2 次當作對方改規則時的偵測。
-MAX_FALLBACK_ATTEMPTS = 2
+# 總嘗試次數上限。兩種 scheme **交錯**進行（見 build_proxy_attempts），所以
+# 12 次 = 6 個代理 × 2 種 scheme。
+#
+# 為什麼不再是「先掃完主要 scheme 再退回後備」：2026-09-17 15:0x 的那輪，前 30 次
+# socks5h 全部 0x05（代理端解析不出主機名），第 31 次 socks5 一次就成功、抓回
+# 6840 筆。分段式讓當下唯一能通的路排在最後順位，前面 30 次全是白費的 3 分鐘；
+# 若當時 fallback 只剩 1 次，整輪就會直接失敗。兩種 scheme 誰能通會隨代理商的
+# 規則與 DNS 狀態變動，所以不要賭順序，交錯試。
+MAX_PROXY_ATTEMPTS = 12
 
 
 def _parse_proxy_line(line):
@@ -244,18 +245,21 @@ def build_proxy_url(proxy, scheme='socks5h'):
 
 
 def build_proxy_attempts(proxy_list, schemes=PROXY_SCHEMES,
-                         max_attempts=MAX_PROXY_ATTEMPTS,
-                         max_fallback=MAX_FALLBACK_ATTEMPTS):
-    """回傳 [(proxy, scheme), ...] 的嘗試順序。
+                         max_attempts=MAX_PROXY_ATTEMPTS):
+    """回傳 [(proxy, scheme), ...]：每個代理把所有 scheme 都試過才換下一個。
 
-    先用主要 scheme（socks5h）掃過最多 max_attempts 個代理；全部失敗才用
-    後備 scheme 再試前 max_fallback 個，總嘗試數因此是有界的。
+    交錯（而非先掃完一種 scheme 再退回另一種）的理由見 MAX_PROXY_ATTEMPTS 的
+    註解——分段式會把當下唯一能通的 scheme 排到最後順位。交錯之後前兩次嘗試
+    就涵蓋兩種 scheme，總次數仍以 max_attempts 為界。
     """
     if not proxy_list or not schemes:
         return []
-    attempts = [(p, schemes[0]) for p in proxy_list[:max_attempts]]
-    for scheme in schemes[1:]:
-        attempts.extend((p, scheme) for p in proxy_list[:max_fallback])
+    attempts = []
+    for proxy in proxy_list:
+        for scheme in schemes:
+            attempts.append((proxy, scheme))
+            if len(attempts) >= max_attempts:
+                return attempts
     return attempts
 
 

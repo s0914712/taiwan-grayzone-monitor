@@ -370,34 +370,57 @@ python3 src/gov_daily_activity.py -o out.png   # 昨日海警／公務船動態�
 ## Architecture Notes
 - No build step. Frontend is plain static files.
 - AIS data fetched via SOCKS5 proxy (pool in `secrets.POOL`, `host:port:user:pass` per line).
-  The scheme is **`socks5h://`**, not `socks5://` (`PROXY_SCHEMES` in `fetch_ais_data.py`;
-  `socks5` stays as a bounded fallback pass, `PROXY_SCHEME` env overrides). `socks5://` makes
+  Both schemes are tried, **interleaved per proxy** (`PROXY_SCHEMES` in
+  `fetch_ais_data.py`, `PROXY_SCHEME` env overrides) — see the 2026-09-17 note below for
+  why neither one can be trusted as *the* answer. `socks5://` makes
   requests resolve DNS **locally** and hand the proxy a bare IP; the provider's allow/blacklist
   matches on hostname, so the AIS endpoint got blocked — 2026-09 Byteful support: "you are
   accessing it via the IP address rather than the hostname". `socks5h` lets the proxy resolve,
-  so `mpbais.motcmpb.gov.tw` is what it sees. Symptom to recognise: `ais_snapshot.updated_at`
+  so `mpbais.motcmpb.gov.tw` is what it sees — which matters only when their resolver
+  can resolve it. Symptom to recognise: `ais_snapshot.updated_at`
   frozen (09-07 → 09-17) while every run stays green, because `save_all()` keeps the old
   snapshot on a 0-vessel fetch — `validate_outputs.py` now fails on a snapshot older than
   `AIS_SNAPSHOT_MAX_AGE_HOURS` (24h).
-- Reading SOCKS5 failures: the REP code in the error string tells you *who* refused.
-  `0x02 Connection not allowed by ruleset` = the **provider's own rule** (this is the
-  blacklist); `0x05 Connection refused` = the proxy dialled out and the far end/path
-  refused; `0x04` usually means proxy-side DNS failed. 2026-09-17 measured across the
-  100-proxy pool: every `socks5` (IP) attempt → 0x02, every `socks5h` (hostname)
-  attempt → 0x05, i.e. the hostname now clears the provider's ruleset and the block
-  moved upstream. `src/diagnose_proxy.py` runs the control probes that separate
-  "provider still blocking" from "MPB refusing this exit IP" — run it before
-  escalating to the provider again. It has no local copy of the pool (POOL lives
-  only in secrets), so run it from the **`proxy-diagnose.yml`** workflow
-  (`workflow_dispatch` only, commits nothing). The repo and its Actions logs are
-  public, so the script prints the proxy's port but not its host, and masks the
-  exit IP to two octets — do not pass `--show-host` there.
-- 2026-09-17, 30 random exits out of the 100-proxy pool, all under `socks5h`:
-  **every one returned 0x05, zero successes**, and the 2 `socks5` fallbacks both
-  returned 0x02. A block that uniform across 30 different exits is a rule, not
-  per-exit-IP luck — so raising `MAX_PROXY_ATTEMPTS` further is not a fix, and
-  the remaining question (provider blocking the hostname under a different code
-  vs. MPB refusing these exits) is what the control probes answer.
+- Reading SOCKS5 failures: the REP code says *who* refused, but **read it against a
+  control probe, never on its own**. `0x02 Connection not allowed by ruleset` is the
+  provider's own rule. `0x05` nominally means "connection refused", but on Byteful's
+  proxies a **DNS failure also comes back as 0x05** (measured: resolving a
+  deliberately non-existent domain returns 0x05, not the expected `0x04`), so 0x05
+  here means "the proxy could not resolve it", not "the far end refused".
+- `src/diagnose_proxy.py` is what settles it, and it exists because a bare failure
+  code is ambiguous. Run it from the **`proxy-diagnose.yml`** workflow
+  (`workflow_dispatch` only, commits nothing) — POOL lives only in secrets, so there
+  is no local copy of the pool. The repo and its Actions logs are public, so the
+  script prints the proxy's port but not its host and masks the exit IP to two
+  octets; do not pass `--show-host` there. It is slow (~29 min for 3 proxies × 7
+  probes): the per-probe `timeout` does not bound the proxy-side DNS stage.
+- **2026-09-17, how it actually resolved — and why the scheme order is now
+  interleaved.** The day ran through three different failure states in a few hours,
+  which is the real lesson: *which* scheme works is a property of the provider's
+  current rules and resolver, not something to hard-code an order around.
+  1. Both schemes blocked. `socks5` (IP form) → 0x02; `socks5h` → 0x05.
+     `proxy-diagnose` at 13:42 showed `mpbais.motcmpb.gov.tw` over `socks5h` → 0x02
+     and port 80 → 0x02 as well (not bound to 443), while `example.com` over the
+     same proxy and scheme returned HTTP 200, and every exit was **Taiwan / Taipei
+     City** on a HiNet residential IP. So: the hostname was on the provider's
+     ruleset blacklist; not geo-blocking, and not MPB refusing foreign exits.
+     Support's "accessing it via the IP address rather than the hostname" did not
+     hold up on its own either — `example.com` over plain `socks5` was also 0x02,
+     i.e. refusing IP-form CONNECT is a blanket rule of theirs, independent of MPB.
+  2. The provider lifted the blacklist. `socks5` (IP form) started working —
+     HTTP 200, 6840 features — which is the **opposite** of what support said.
+  3. `socks5h` still fails, with 0x05 = their resolver cannot resolve
+     `mpbais.motcmpb.gov.tw`. So the hostname path is still dead, for a different
+     reason than before.
+  The near-miss worth remembering: the sequential design (sweep `socks5h`, then a
+  short `socks5` fallback) put the only working path at attempt #31 behind 30
+  useless ones, and a reverted fallback budget of 1 would have failed the run
+  outright. `build_proxy_attempts` now **interleaves** — each proxy tries every
+  scheme before moving on — so both schemes are covered by attempt #2 whichever one
+  the provider happens to allow that day.
+- Raising `MAX_PROXY_ATTEMPTS` is **not** a workaround for a rule-layer block: 30
+  random exits out of the 100-proxy pool behaved identically, which is what a rule
+  looks like, not per-exit-IP luck. It is now 12 = 6 proxies × 2 schemes.
 - CSIS methodology from "Signals in the Swarm" report: cable proximity, zigzag detection, going-dark, identity manipulation.
 - Monitoring area (`TAIWAN_BBOX` in `fetch_ais_data.py`): 19-30°N, 116-130°E (Taiwan Strait, East Taiwan, South/East China Sea).
 - Timestamps in ISO 8601 (UTC). Track points deduplicated by consecutive identical lat/lon.

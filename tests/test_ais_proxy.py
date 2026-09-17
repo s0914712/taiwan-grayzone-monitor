@@ -25,24 +25,40 @@ def test_explicit_scheme_is_honoured():
 
 # ── build_proxy_attempts ───────────────────────────────────────────────────
 
-def test_primary_scheme_sweeps_pool_first():
-    pool = [_p(1000 + i) for i in range(5)]
-    attempts = f.build_proxy_attempts(pool, ('socks5h', 'socks5'),
-                                      max_attempts=5, max_fallback=2)
-    assert [s for _, s in attempts[:5]] == ['socks5h'] * 5
-    assert [s for _, s in attempts[5:]] == ['socks5'] * 2
+def test_schemes_interleave_per_proxy():
+    """兩種 scheme 交錯：同一個代理先試完所有 scheme 才換下一個。
+
+    2026-09-17 的教訓：分段式（先掃完 socks5h 再退回 socks5）把當下唯一能通的
+    socks5 排到第 31 順位，前 30 次全浪費。
+    """
+    pool = [_p(1000), _p(1001)]
+    attempts = f.build_proxy_attempts(pool, ('socks5h', 'socks5'), max_attempts=4)
+    assert attempts == [
+        (pool[0], 'socks5h'), (pool[0], 'socks5'),
+        (pool[1], 'socks5h'), (pool[1], 'socks5'),
+    ]
+
+
+def test_both_schemes_covered_within_first_two_attempts():
+    pool = [_p(1000 + i) for i in range(50)]
+    assert {s for _, s in f.build_proxy_attempts(pool)[:2]} == set(f.PROXY_SCHEMES)
 
 
 def test_total_attempts_are_bounded():
     pool = [_p(1000 + i) for i in range(50)]
-    attempts = f.build_proxy_attempts(pool)
-    assert len(attempts) == f.MAX_PROXY_ATTEMPTS + f.MAX_FALLBACK_ATTEMPTS
+    assert len(f.build_proxy_attempts(pool)) == f.MAX_PROXY_ATTEMPTS
 
 
-def test_single_scheme_means_no_fallback_pass():
+def test_odd_cap_truncates_mid_proxy():
+    pool = [_p(1000), _p(1001)]
+    attempts = f.build_proxy_attempts(pool, ('socks5h', 'socks5'), max_attempts=3)
+    assert len(attempts) == 3 and attempts[-1] == (pool[1], 'socks5h')
+
+
+def test_single_scheme_stays_single():
     pool = [_p(1000), _p(1001)]
     attempts = f.build_proxy_attempts(pool, ('socks5h',))
-    assert {s for _, s in attempts} == {'socks5h'}
+    assert {s for _, s in attempts} == {'socks5h'} and len(attempts) == 2
 
 
 def test_empty_pool_yields_no_attempts():
@@ -83,10 +99,15 @@ def test_describe_ruleset_block_is_labelled_as_provider_side():
     assert out.startswith('0x02') and '代理商自己擋' in out
 
 
-def test_describe_refused_is_labelled_as_upstream():
+def test_describe_refused_is_ambiguous_on_byteful():
+    """0x05 在這家代理上同時代表「對方拒絕」與「DNS 解析失敗」。
+
+    實測：拿不存在的域名去解析，回的是 0x05 而不是標準的 0x04，所以說明文字
+    不能寫死成「對方拒絕」——那會讓人把 DNS 問題誤判成上游拒絕（本案就發生過）。
+    """
     from diagnose_proxy import describe
     out = describe(_err('0x05: Connection refused'))
-    assert out.startswith('0x05') and '代理撥出去了' in out
+    assert out.startswith('0x05') and '解析失敗' in out
 
 
 def test_describe_timeout_without_rep_code():

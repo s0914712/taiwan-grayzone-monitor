@@ -33,12 +33,16 @@ from fetch_ais_data import MPB_URL, MPB_HEADERS, build_proxy_url, get_proxy_list
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # SOCKS5 REP 欄位（RFC 1928 §6）
+# 注意 0x05：協定上是「連線被拒」，但 2026-09-17 實測 Byteful 的代理把「DNS
+# 解析失敗」也回成 0x05（拿一個不存在的域名去試，回的是 0x05 而不是預期的
+# 0x04）。所以在這家代理上看到 0x05，先當成「解析不出來」而不是「對方拒絕」——
+# 這就是為什麼 DNS 基準那一格非跑不可。
 SOCKS5_REPLY = {
     '0x01': '一般性 SOCKS 伺服器失敗',
     '0x02': '代理規則不允許（← 代理商自己擋的，黑名單）',
     '0x03': '網路無法到達',
-    '0x04': '主機無法到達（常見於代理端 DNS 解析失敗）',
-    '0x05': '連線被拒（← 代理撥出去了，對方或路徑上拒絕）',
+    '0x04': '主機無法到達（代理端 DNS 解析失敗的標準碼）',
+    '0x05': '連線被拒／解析失敗（Byteful 兩種都回這個，看 DNS 基準那格）',
     '0x06': 'TTL 逾時',
     '0x07': '不支援的指令',
     '0x08': '不支援的位址型別',
@@ -136,6 +140,7 @@ def main():
                                         得跟 Byteful 要台灣出口
   目標-80埠 ✅ 而 443 ❌              → 規則綁在 443
   DNS 基準 與 目標-主機名 同碼         → 代理端根本沒解析成功，不是對方拒絕
+                                        （Byteful 把 DNS 失敗回成 0x05，非標準的 0x04）
 ''')
     return 0
 
