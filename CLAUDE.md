@@ -370,12 +370,14 @@ python3 src/gov_daily_activity.py -o out.png   # 昨日海警／公務船動態�
 ## Architecture Notes
 - No build step. Frontend is plain static files.
 - AIS data fetched via SOCKS5 proxy (pool in `secrets.POOL`, `host:port:user:pass` per line).
-  The scheme is **`socks5h://`**, not `socks5://` (`PROXY_SCHEMES` in `fetch_ais_data.py`;
-  `socks5` stays as a bounded fallback pass, `PROXY_SCHEME` env overrides). `socks5://` makes
+  Both schemes are tried, **interleaved per proxy** (`PROXY_SCHEMES` in
+  `fetch_ais_data.py`, `PROXY_SCHEME` env overrides) — see the 2026-09-17 note below for
+  why neither one can be trusted as *the* answer. `socks5://` makes
   requests resolve DNS **locally** and hand the proxy a bare IP; the provider's allow/blacklist
   matches on hostname, so the AIS endpoint got blocked — 2026-09 Byteful support: "you are
   accessing it via the IP address rather than the hostname". `socks5h` lets the proxy resolve,
-  so `mpbais.motcmpb.gov.tw` is what it sees. Symptom to recognise: `ais_snapshot.updated_at`
+  so `mpbais.motcmpb.gov.tw` is what it sees — which matters only when their resolver
+  can resolve it. Symptom to recognise: `ais_snapshot.updated_at`
   frozen (09-07 → 09-17) while every run stays green, because `save_all()` keeps the old
   snapshot on a 0-vessel fetch — `validate_outputs.py` now fails on a snapshot older than
   `AIS_SNAPSHOT_MAX_AGE_HOURS` (24h).
@@ -392,20 +394,33 @@ python3 src/gov_daily_activity.py -o out.png   # 昨日海警／公務船動態�
   script prints the proxy's port but not its host and masks the exit IP to two
   octets; do not pass `--show-host` there. It is slow (~29 min for 3 proxies × 7
   probes): the per-probe `timeout` does not bound the proxy-side DNS stage.
-- **2026-09-17 verdict — the AIS endpoint is on Byteful's hostname blacklist, and
-  only they can lift it.** Identical across 3 proxies: `example.com` over `socks5h`
-  → HTTP 200, `mpbais.motcmpb.gov.tw` over `socks5h` → 0x02, port 80 → 0x02 too
-  (so it is not bound to 443), exits all **Taiwan / Taipei City** on HiNet
-  residential IPs (so it is neither geo-blocking nor MPB refusing foreign exits).
-  Support's "you are accessing it via the IP address rather than the hostname" does
-  not hold up on its own: `example.com` over plain `socks5` also returns 0x02, i.e.
-  refusing IP-form CONNECT is a blanket rule of theirs, independent of MPB. Both
-  things are true at once — `socks5h` is necessary (nothing works without it) but
-  not sufficient.
-- Raising `MAX_PROXY_ATTEMPTS` is **not** a workaround and was reverted to 10: 30
+- **2026-09-17, how it actually resolved — and why the scheme order is now
+  interleaved.** The day ran through three different failure states in a few hours,
+  which is the real lesson: *which* scheme works is a property of the provider's
+  current rules and resolver, not something to hard-code an order around.
+  1. Both schemes blocked. `socks5` (IP form) → 0x02; `socks5h` → 0x05.
+     `proxy-diagnose` at 13:42 showed `mpbais.motcmpb.gov.tw` over `socks5h` → 0x02
+     and port 80 → 0x02 as well (not bound to 443), while `example.com` over the
+     same proxy and scheme returned HTTP 200, and every exit was **Taiwan / Taipei
+     City** on a HiNet residential IP. So: the hostname was on the provider's
+     ruleset blacklist; not geo-blocking, and not MPB refusing foreign exits.
+     Support's "accessing it via the IP address rather than the hostname" did not
+     hold up on its own either — `example.com` over plain `socks5` was also 0x02,
+     i.e. refusing IP-form CONNECT is a blanket rule of theirs, independent of MPB.
+  2. The provider lifted the blacklist. `socks5` (IP form) started working —
+     HTTP 200, 6840 features — which is the **opposite** of what support said.
+  3. `socks5h` still fails, with 0x05 = their resolver cannot resolve
+     `mpbais.motcmpb.gov.tw`. So the hostname path is still dead, for a different
+     reason than before.
+  The near-miss worth remembering: the sequential design (sweep `socks5h`, then a
+  short `socks5` fallback) put the only working path at attempt #31 behind 30
+  useless ones, and a reverted fallback budget of 1 would have failed the run
+  outright. `build_proxy_attempts` now **interleaves** — each proxy tries every
+  scheme before moving on — so both schemes are covered by attempt #2 whichever one
+  the provider happens to allow that day.
+- Raising `MAX_PROXY_ATTEMPTS` is **not** a workaround for a rule-layer block: 30
   random exits out of the 100-proxy pool behaved identically, which is what a rule
-  looks like, not per-exit-IP luck. The `socks5` fallback is likewise dead (blanket
-  0x02) and is kept at 1 attempt purely as a detector for them changing the rule.
+  looks like, not per-exit-IP luck. It is now 12 = 6 proxies × 2 schemes.
 - CSIS methodology from "Signals in the Swarm" report: cable proximity, zigzag detection, going-dark, identity manipulation.
 - Monitoring area (`TAIWAN_BBOX` in `fetch_ais_data.py`): 19-30°N, 116-130°E (Taiwan Strait, East Taiwan, South/East China Sea).
 - Timestamps in ISO 8601 (UTC). Track points deduplicated by consecutive identical lat/lon.
