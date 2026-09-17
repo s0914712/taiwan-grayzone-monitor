@@ -1,0 +1,40 @@
+# SOCKS5 代理連線診斷 —— 只能手動觸發，不排程、不 commit 任何檔案。
+#
+# 為什麼要有這條 workflow：POOL 只存在於 GitHub secrets，本機沒有那份清單，
+# 診斷又必須真的從代理撥出去才有意義，所以把它做成按鈕。
+#
+# 注意：這個 repo 是公開的，Actions log 也是公開的。腳本預設只印 port 不印
+# 代理 host，出口 IP 也只印到前兩段，就是為了這件事。不要加 --show-host。
+name: Proxy Diagnose (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      proxies:
+        description: '測幾個代理'
+        required: false
+        default: '3'
+      timeout:
+        description: '每個探針的 timeout 秒數'
+        required: false
+        default: '20'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install requests pysocks
+
+      - name: Run proxy diagnostics
+        env:
+          POOL: ${{ secrets.POOL }}
+        run: |
+          python src/diagnose_proxy.py \
+            --proxies "${{ inputs.proxies }}" \
+            --timeout "${{ inputs.timeout }}"
