@@ -184,14 +184,14 @@ def is_cn_fishing_vessel(name):
 # 可用環境變數 PROXY_SCHEME 覆寫（逗號分隔，依序嘗試）以便臨時驗證。
 PROXY_SCHEMES = ('socks5h', 'socks5')
 
-# 嘗試連線的代理數量上限（主要 scheme）。POOL 有 100 個代理，原本只試 10 個；
-# 失敗回得很快（實測 ~4.6s／次，13 次總共 1 分鐘），所以多掃一些幾乎不花時間，
-# 而且若封鎖是「按出口 IP」而非代理商的全域規則，多試就有機會碰到沒被擋的出口。
-MAX_PROXY_ATTEMPTS = 30
-# 主要 scheme 全掛後，後備 scheme 再試幾個代理。2026-09-17 實測 socks5（送 IP）
-# 每一個代理都回 0x02「Connection not allowed by ruleset」——代理商在規則層就擋
-# 掉 IP 形式的連線，這條路基本上是死的，只留 2 次當作對方改規則時的偵測。
-MAX_FALLBACK_ATTEMPTS = 2
+# 嘗試連線的代理數量上限（主要 scheme）。曾短暫加到 30，賭「封鎖是按出口 IP、
+# 多試就能碰到沒被擋的出口」——2026-09-17 實測否證：30 個隨機出口行為完全一致，
+# 且 proxy-diagnose 證實是代理商規則層針對「主機名」的黑名單，與出口無關。
+# 多掃只是讓每輪多燒 3 分鐘，故砍回 10。
+MAX_PROXY_ATTEMPTS = 10
+# 後備 scheme。socks5（送 IP）已證實不只 MPB、連 example.com 都回 0x02 —— 代理商
+# 一律禁止 IP 形式連線，這條路是死的。留 1 次當作對方改規則時的偵測。
+MAX_FALLBACK_ATTEMPTS = 1
 
 
 def _parse_proxy_line(line):
