@@ -368,7 +368,16 @@ python3 src/gov_daily_activity.py -o out.png   # 昨日海警／公務船動態�
 
 ## Architecture Notes
 - No build step. Frontend is plain static files.
-- AIS data fetched via SOCKS5 proxy (configured in workflow env vars).
+- AIS data fetched via SOCKS5 proxy (pool in `secrets.POOL`, `host:port:user:pass` per line).
+  The scheme is **`socks5h://`**, not `socks5://` (`PROXY_SCHEMES` in `fetch_ais_data.py`;
+  `socks5` stays as a bounded fallback pass, `PROXY_SCHEME` env overrides). `socks5://` makes
+  requests resolve DNS **locally** and hand the proxy a bare IP; the provider's allow/blacklist
+  matches on hostname, so the AIS endpoint got blocked — 2026-09 Byteful support: "you are
+  accessing it via the IP address rather than the hostname". `socks5h` lets the proxy resolve,
+  so `mpbais.motcmpb.gov.tw` is what it sees. Symptom to recognise: `ais_snapshot.updated_at`
+  frozen (09-07 → 09-17) while every run stays green, because `save_all()` keeps the old
+  snapshot on a 0-vessel fetch — `validate_outputs.py` now fails on a snapshot older than
+  `AIS_SNAPSHOT_MAX_AGE_HOURS` (24h).
 - CSIS methodology from "Signals in the Swarm" report: cable proximity, zigzag detection, going-dark, identity manipulation.
 - Monitoring area (`TAIWAN_BBOX` in `fetch_ais_data.py`): 19-30°N, 116-130°E (Taiwan Strait, East Taiwan, South/East China Sea).
 - Timestamps in ISO 8601 (UTC). Track points deduplicated by consecutive identical lat/lon.

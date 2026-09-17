@@ -172,8 +172,22 @@ def is_cn_fishing_vessel(name):
 # 從環境變數 POOL 或 PROXY_LIST 讀取代理清單
 # 格式: 每行一筆 host:port:user:pass（POOL 用換行分隔，PROXY_LIST 用逗號分隔）
 
-# 嘗試連線的代理數量上限
+# 代理 scheme —— 這一行決定 AIS 端點會不會被代理商擋掉：
+#   socks5h  DNS 由「代理端」解析，SOCKS CONNECT 送出的是**主機名**
+#            （mpbais.motcmpb.gov.tw）
+#   socks5   DNS 由「本機」先解析，代理只看得到一個**IP**
+# 2026-09 AIS 連續十天抓不到（ais_snapshot 停在 09-07），代理商 Byteful 客服
+# 回覆：「This looks to be as you are accessing it via the IP address rather
+# than the hostname」—— 也就是他們的黑/白名單是比對主機名，requests 預設的
+# socks5:// 先在本機解析成 IP，名單比不到就落進黑名單。因此主要方案固定用
+# socks5h，socks5 只留作後備（少數代理不支援 domain ATYP 時才用得上）。
+# 可用環境變數 PROXY_SCHEME 覆寫（逗號分隔，依序嘗試）以便臨時驗證。
+PROXY_SCHEMES = ('socks5h', 'socks5')
+
+# 嘗試連線的代理數量上限（主要 scheme）
 MAX_PROXY_ATTEMPTS = 10
+# 主要 scheme 全掛後，後備 scheme 再試幾個代理（避免逾時把 job 拖成兩倍長）
+MAX_FALLBACK_ATTEMPTS = 3
 
 
 def _parse_proxy_line(line):
@@ -208,6 +222,37 @@ def get_proxy_list():
     print("  ❌ 未設定 POOL 或 PROXY_LIST 環境變數 — 無法透過代理擷取 AIS。"
           "請設定 secrets.POOL（每行一筆 host:port:user:pass）")
     return []
+
+
+def get_proxy_schemes():
+    """代理 scheme 順序；PROXY_SCHEME 環境變數可覆寫（逗號分隔）。"""
+    override = os.environ.get('PROXY_SCHEME', '').strip()
+    if override:
+        schemes = tuple(x.strip() for x in override.split(',') if x.strip())
+        if schemes:
+            return schemes
+    return PROXY_SCHEMES
+
+
+def build_proxy_url(proxy, scheme='socks5h'):
+    """組出 requests 用的代理 URL。scheme 決定 DNS 在哪一端解析。"""
+    return f"{scheme}://{proxy['user']}:{proxy['pass']}@{proxy['host']}:{proxy['port']}"
+
+
+def build_proxy_attempts(proxy_list, schemes=PROXY_SCHEMES,
+                         max_attempts=MAX_PROXY_ATTEMPTS,
+                         max_fallback=MAX_FALLBACK_ATTEMPTS):
+    """回傳 [(proxy, scheme), ...] 的嘗試順序。
+
+    先用主要 scheme（socks5h）掃過最多 max_attempts 個代理；全部失敗才用
+    後備 scheme 再試前 max_fallback 個，總嘗試數因此是有界的。
+    """
+    if not proxy_list or not schemes:
+        return []
+    attempts = [(p, schemes[0]) for p in proxy_list[:max_attempts]]
+    for scheme in schemes[1:]:
+        attempts.extend((p, scheme) for p in proxy_list[:max_fallback])
+    return attempts
 
 
 # --- LNG / 天然氣船偵測 ---
@@ -318,25 +363,29 @@ def collect_ais_data():
         geojson = None
         last_error = None
 
-        for attempt, p in enumerate(proxy_list[:MAX_PROXY_ATTEMPTS]):
-            proxy_url = f"socks5://{p['user']}:{p['pass']}@{p['host']}:{p['port']}"
+        attempts = build_proxy_attempts(proxy_list, get_proxy_schemes())
+        for attempt, (p, scheme) in enumerate(attempts):
+            proxy_url = build_proxy_url(p, scheme)
             proxies = {"http": proxy_url, "https": proxy_url}
             try:
-                print(f"  🔄 嘗試代理 #{attempt+1} (port {p['port']})...")
+                print(f"  🔄 嘗試代理 #{attempt+1} (port {p['port']}, {scheme})...")
                 resp = requests.get(MPB_URL, headers=MPB_HEADERS, proxies=proxies,
                                     timeout=60, verify=False)
                 resp.raise_for_status()
                 geojson = resp.json()
-                print(f"  ✅ 代理連線成功 (port {p['port']})")
+                print(f"  ✅ 代理連線成功 (port {p['port']}, {scheme})")
                 last_error = None
                 break
             except requests.RequestException as e:
                 last_error = str(e)
-                print(f"  ❌ 代理 #{attempt+1} 失敗: {last_error}")
+                print(f"  ❌ 代理 #{attempt+1} ({scheme}) 失敗: {last_error}")
                 continue
 
         if last_error or geojson is None:
-            print(f"❌ 所有代理皆失敗")
+            print(f"❌ 所有代理皆失敗（{len(attempts)} 次嘗試）")
+            if 'socks5h' in {sch for _, sch in attempts}:
+                print("  💡 socks5h 也連不上：代理商是以主機名比對名單的，"
+                      "若仍被擋請向 Byteful 確認 mpbais.motcmpb.gov.tw 是否已解封")
             return {}
     else:
         print(f"🚀 正在直接從航港局擷取 AIS 資料（本機模式）...")
