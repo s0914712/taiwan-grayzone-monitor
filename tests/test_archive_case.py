@@ -111,3 +111,72 @@ def test_tag_markers_without_gaps_marks_nothing():
     tagged = ac.tag_markers_in_dark(
         [{"lat": 21.93, "lon": 121.68, "date": "2026-08-21"}], [])
     assert tagged[0]["in_dark_gap"] is False
+
+
+# ── pass_reachability / classify_markers_vs_target ────────────────────────
+# MEDNA 實測：2026-08-20T01:56 關機於 21.807/121.801，08-21T23:14 於
+# 21.285/121.698 復播。該日三次真實 Sentinel-1 過境（data/s1_pass_times.json）。
+MEDNA_GAP = {"start": "2026-08-20T01:56:34+00:00", "end": "2026-08-21T23:14:38+00:00",
+             "last_lat": 21.807262, "last_lon": 121.801007,
+             "resume_lat": 21.284765, "resume_lon": 121.698443}
+MEDNA_PASSES = {
+    "2026-08-20": [("ascending·S1C", ac._epoch("2026-08-20T09:22:07+00:00")),
+                   ("ascending·S1D", ac._epoch("2026-08-20T10:08:56+00:00"))],
+    "2026-08-21": [("ascending·S1C", ac._epoch("2026-08-21T09:57:56+00:00")),
+                   ("ascending·S1D", ac._epoch("2026-08-21T10:48:31+00:00")),
+                   ("descending·S1C", ac._epoch("2026-08-21T22:05:00+00:00"))],
+}
+NEARBY_DETECTION = {"lat": 21.93, "lon": 121.68, "date": "2026-08-21",
+                    "in_dark_gap": True}
+
+
+def test_pass_reachability_rules_out_the_late_pass():
+    """22:05 降軌距離復播只剩 69 分鐘，而偵測點離復播位置 72 公里 ——
+    要 33 節才追得回來，商船做不到，所以那個時刻的偵測不可能是這艘船。
+    早上兩次升軌相隔 12-13 小時，3 節就夠，分不出來。"""
+    checks = ac.pass_reachability(dict(NEARBY_DETECTION), MEDNA_GAP, MEDNA_PASSES)
+    assert len(checks) == 3
+    late = next(c for c in checks if c["pass"].startswith("descending"))
+    assert late["return_kn"] > 30 and late["feasible"] is False
+    assert all(c["feasible"] for c in checks if c["pass"].startswith("ascending"))
+
+
+def test_pass_reachability_skips_passes_outside_the_blackout():
+    """關機區間外的時刻船正在播報 AIS，位置是已知的 —— 不歸這裡判。"""
+    outside = {"2026-08-21": [("ascending·S1C",
+                               ac._epoch("2026-08-25T09:57:56+00:00"))]}
+    assert ac.pass_reachability(dict(NEARBY_DETECTION), MEDNA_GAP, outside) == []
+
+
+def test_classify_markers_verdicts():
+    # 關機第 8 小時、380 公里外（台灣西岸）—— 要 27 節才趕得到，確定是別艘船。
+    # 同一個位置若換成關機第 32 小時的過境就變成「到得了」，所以**距離本身不是
+    # 判準，時間才是**；這正是要靠真實過境時刻而非固定過境窗的原因。
+    far = {"lat": 24.86, "lon": 120.14, "date": "2026-08-20", "in_dark_gap": True}
+    out_of_gap = {"lat": 21.93, "lon": 121.68, "date": "2026-08-25",
+                  "in_dark_gap": False}
+    markers = ac.classify_markers_vs_target(
+        [dict(NEARBY_DETECTION), far, out_of_gap], [MEDNA_GAP], MEDNA_PASSES)
+    assert markers[0]["verdict"] == "could_be_target"
+    assert markers[1]["verdict"] == "not_target"
+    assert "verdict" not in markers[2]                # 不在關機期間，不判
+
+
+def test_same_position_flips_verdict_with_the_pass_time():
+    """同一個偵測位置，換一天的過境就從『不可能』變成『可能』 ——
+    判準是時間不是距離，固定過境窗會把這件事算錯。"""
+    far_early = {"lat": 24.86, "lon": 120.14, "date": "2026-08-20",
+                 "in_dark_gap": True}
+    far_late = {"lat": 24.86, "lon": 120.14, "date": "2026-08-21",
+                "in_dark_gap": True}
+    out = ac.classify_markers_vs_target([far_early, far_late], [MEDNA_GAP],
+                                        MEDNA_PASSES)
+    assert out[0]["verdict"] == "not_target"
+    assert out[1]["verdict"] == "could_be_target"
+
+
+def test_classify_markers_unknown_without_pass_times():
+    """該日沒抓到真實過境時刻就誠實標 unknown，不要猜。"""
+    markers = ac.classify_markers_vs_target(
+        [dict(NEARBY_DETECTION)], [MEDNA_GAP], {})
+    assert markers[0]["verdict"] == "unknown"

@@ -131,3 +131,24 @@ def test_info_lines_report_each_blackout_with_drift_speed():
 def test_info_lines_mention_sar_only_when_drawn():
     lines = pe.info_lines(_case(), markers=[_marker(21.9, 121.7, True, 18.5)])
     assert any("SAR dark detections during blackout: 1" in ln for ln in lines)
+
+
+# ── marker_summary ────────────────────────────────────────────────────────
+def test_marker_summary_reports_ruled_out_passes():
+    m = {"verdict": "could_be_target", "pass_checks": [
+        {"pass": "ascending·S1C", "feasible": True},
+        {"pass": "ascending·S1D", "feasible": True},
+        {"pass": "descending·S1C", "feasible": False}]}
+    text = pe.marker_summary(m)
+    assert "could be target" in text and "1/3 passes ruled out" in text
+
+
+def test_marker_summary_without_checks_is_just_the_verdict():
+    assert pe.marker_summary({"verdict": "unknown"}) == "no pass time"
+
+
+def test_info_lines_break_down_marker_verdicts():
+    lines = pe.info_lines(_case(), markers=[
+        {"verdict": "could_be_target"}, {"verdict": "not_target"}])
+    line = next(ln for ln in lines if "SAR dark detections" in ln)
+    assert "could be target: 1" in line and "not this ship: 1" in line

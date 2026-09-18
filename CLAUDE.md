@@ -303,6 +303,23 @@ final_score = round(raw_behavioral_score × type_multiplier) + high_threat_indic
 對這整件事完全沒有輸出。個案檔與航跡圖：
 `data/cases/medna_620999315_2026-08.json`、`reports/medna_620999315_2026-08.png`。
 
+**關機期間的 SAR 偵測可以先做不可能性檢查**（`archive_case.pass_reachability()`，
+不需要 CDSE 金鑰，只用 `data/s1_pass_times.json` 的真實過境時刻）：關機期間船在哪
+沒人知道，但兩端是知道的，所以對每一次落在關機區間內的過境，算「從最後位置趕到
+偵測點」與「從偵測點趕到重現位置」各需要多少節，超過 `MAX_PLAUSIBLE_SPEED_KN`
+（20 節）就不可能。MEDNA 那筆的結果：
+| 過境 | 趕到偵測點 | 趕回重現位置 | |
+|---|---|---|---|
+| 2026-08-21 09:57 升軌 S1C | 0.3 kn | 2.9 kn | 可能 |
+| 2026-08-21 10:48 升軌 S1D | 0.3 kn | 3.1 kn | 可能 |
+| 2026-08-21 22:05 降軌 S1C | 0.2 kn | **33.4 kn** | 排除 |
+22:05 距離它重新出現只剩 69 分鐘，而偵測點離重現位置 72 公里。所以 `verdict` 是
+`could_be_target`，要分辨仍得靠 `fetch_sar_chip.py` 量船長（VLCC ~330m vs
+Aframax ~250m）；但同一段關機裡另外 4 筆（台灣西岸、380km 外、關機第 8 小時的
+08-20 過境，需 27 節）被判為 `not_target` —— **確定是另外的暗船**。
+判準是時間不是距離：同一個位置換成關機第 32 小時的過境就變成到得了，這正是
+要用真實過境時刻而非固定過境窗的原因。
+
 ---
 
 ## match_sar_ais.py — SAR × Local-AIS Re-matching (dark-vessel de-noising)

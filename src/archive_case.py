@@ -38,8 +38,9 @@ SRC_DIR = BASE_DIR / "src"
 sys.path.insert(0, str(SRC_DIR))
 
 from detect_ship_transfers import build_vessel_timelines, find_dark_gaps  # noqa: E402
-from geo_utils import haversine_km  # noqa: E402
+from geo_utils import NM_TO_KM, haversine_km  # noqa: E402
 from io_utils import atomic_write_json  # noqa: E402
+from match_sar_ais import load_s1_pass_table  # noqa: E402
 
 DEFAULT_BRANCH = "origin/ais-archive"
 DEFAULT_RADIUS_KM = 10.0
@@ -47,6 +48,9 @@ DEFAULT_COMPANIONS = 6
 SAR_DETECTIONS_FILE = BASE_DIR / "data" / "sar_detections.json"
 # SAR 暗船偵測點納入個案的範圍（相對目標船航跡外框）
 SAR_MARGIN_DEG = 0.5
+# 商船能跑多快。超過這個速度就不是「這艘船趕過去」，而是另一艘船。
+# 20 節對滿載 VLCC（12-15 節）很寬鬆，對貨櫃船也還算保守。
+MAX_PLAUSIBLE_SPEED_KN = 20.0
 
 
 def list_archive_files(branch=DEFAULT_BRANCH):
@@ -280,6 +284,68 @@ def tag_markers_in_dark(markers, dark_gaps):
     return markers
 
 
+def pass_reachability(marker, gap, pass_table,
+                      max_speed_kn=MAX_PLAUSIBLE_SPEED_KN):
+    """關機期間的每一次真實 Sentinel-1 過境，目標船有沒有可能就在偵測點上。
+
+    關機期間船在哪沒人知道，但**兩端是知道的**：最後一筆 AIS 與重新出現那筆。
+    對每一次落在關機區間內的過境，算「從最後位置趕到偵測點」與「從偵測點趕到
+    重現位置」各需要多少節 —— 任一段超過商船速度上限，這艘船在那個時刻就不可能
+    在那裡。全部過境都不可能 → 這筆偵測是**另一艘**暗船，而那正是要找的東西。
+
+    只看落在關機區間內的過境：區間外那些時刻船正在播報 AIS，位置是已知的，
+    那是 match_sar_ais 的工作，不是這裡的。
+    """
+    results = []
+    for label, t_epoch in pass_table.get(marker["date"], []):
+        start, end = _epoch(gap["start"]), _epoch(gap["end"])
+        if not start < t_epoch < end:
+            continue
+        to_det_h = (t_epoch - start) / 3600
+        to_res_h = (end - t_epoch) / 3600
+        d_out = haversine_km(gap["last_lat"], gap["last_lon"],
+                             marker["lat"], marker["lon"])
+        d_back = haversine_km(marker["lat"], marker["lon"],
+                              gap["resume_lat"], gap["resume_lon"])
+        out_kn = d_out / to_det_h / NM_TO_KM if to_det_h > 0 else float("inf")
+        back_kn = d_back / to_res_h / NM_TO_KM if to_res_h > 0 else float("inf")
+        results.append({
+            "pass": label,
+            "time": datetime.fromtimestamp(t_epoch, timezone.utc)
+                            .strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "outbound_kn": round(out_kn, 1),
+            "return_kn": round(back_kn, 1),
+            "feasible": out_kn <= max_speed_kn and back_kn <= max_speed_kn,
+        })
+    return results
+
+
+def classify_markers_vs_target(markers, dark_gaps, pass_table):
+    """替每筆關機期間的 SAR 偵測下判讀：可能是目標船本人，還是另一艘暗船。
+
+    `verdict`：
+      * `not_target`       —— 該日所有落在關機區間內的過境都不可能，確定是別艘船
+      * `could_be_target`  —— 至少一次過境的速度需求合理，分不出來（要靠影像量船長）
+      * `unknown`          —— 該日沒有真實過境時刻可用（`fetch_s1_passes.py` 沒抓到）
+    """
+    for m in markers:
+        if not m.get("in_dark_gap"):
+            continue
+        checks = []
+        for g in dark_gaps:
+            if not (g["start"][:10] <= m["date"] <= g["end"][:10]):
+                continue
+            checks.extend(pass_reachability(m, g, pass_table))
+        m["pass_checks"] = checks
+        if not checks:
+            m["verdict"] = "unknown"
+        elif any(c["feasible"] for c in checks):
+            m["verdict"] = "could_be_target"
+        else:
+            m["verdict"] = "not_target"
+    return markers
+
+
 def sar_markers_in_window(track, date_from, date_to,
                           path=SAR_DETECTIONS_FILE, margin=SAR_MARGIN_DEG):
     """同期、同海域的 GFW 未匹配暗船偵測點。
@@ -337,8 +403,11 @@ def build_case(mmsi, date_from, date_to, radius_km=DEFAULT_RADIUS_KM,
         "encounters": encounters[:200],
         "companions": kept,
         "dark_gaps": dark_gaps,
-        "markers": tag_markers_in_dark(
-            sar_markers_in_window(target["track"], date_from, date_to), dark_gaps),
+        "markers": classify_markers_vs_target(
+            tag_markers_in_dark(
+                sar_markers_in_window(target["track"], date_from, date_to),
+                dark_gaps),
+            dark_gaps, load_s1_pass_table()),
     }
 
 
@@ -372,6 +441,12 @@ def main():
           f"{len(case['dark_gaps'])} 段關機、"
           f"{len(case['markers'])} 筆 SAR 暗船點"
           f"（其中 {sum(1 for m in case['markers'] if m['in_dark_gap'])} 筆落在關機期間）")
+    verdicts = [m.get("verdict") for m in case["markers"] if m.get("verdict")]
+    if verdicts:
+        import collections
+        summary = collections.Counter(verdicts)
+        print("   關機期間偵測判讀: " + "、".join(
+            f"{k} {v}" for k, v in sorted(summary.items())))
 
 
 if __name__ == "__main__":

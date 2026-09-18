@@ -44,7 +44,15 @@ MARKER_MAX_KM = 60.0
 BG = '#0a1628'
 TARGET_COLOR = '#ff2d55'      # --sev-critical
 DRIFT_COLOR = '#ffd700'       # --accent-yellow：漂流段
-MARKER_COLOR = '#00ff88'      # SAR 暗船點
+MARKER_COLOR = '#00ff88'      # SAR 暗船點（可能就是目標船）
+# 判讀結果的配色與說明。`not_target` 已被過境時刻排除，畫得比較暗 ——
+# 它仍然是一艘沒在播報 AIS 的船，只是不是這艘。
+VERDICT_COLOR = {"could_be_target": MARKER_COLOR,
+                 "not_target": '#6b86b0',
+                 "unknown": '#8aa4c8'}
+VERDICT_LABEL = {"could_be_target": "could be target",
+                 "not_target": "not this ship",
+                 "unknown": "no pass time"}
 # 伴隨船配色（避開海纜的青色與上面三色）
 COMPANION_COLORS = ['#4d9fff', '#ff6b35', '#9b59b6', '#e8eef7',
                     '#00c2a8', '#ff8fb1', '#8ab4ff', '#b5c7e0']
@@ -134,6 +142,17 @@ def drift_bounds(case, pad=0.12, threshold=DRIFT_SPEED_KN):
     return (min(lats) - pad, max(lats) + pad, min(lons) - pad, max(lons) + pad)
 
 
+def marker_summary(marker):
+    """SAR 偵測點旁的標註文字：判讀結果 + 被過境時刻排除了幾次。"""
+    verdict = marker.get("verdict", "unknown")
+    text = VERDICT_LABEL.get(verdict, verdict)
+    checks = marker.get("pass_checks") or []
+    ruled_out = [c for c in checks if not c["feasible"]]
+    if checks and ruled_out:
+        text += f"\n{len(ruled_out)}/{len(checks)} passes ruled out"
+    return text
+
+
 def info_lines(case, markers):
     """左上資訊框內容（英文 —— 沒有 CJK 字型的 runner 才不會整行變豆腐）。"""
     t = case["target"]
@@ -145,7 +164,14 @@ def info_lines(case, markers):
                      f"{g['gap_hours']}h, {g['distance_km']}km "
                      f"= {g['drift_kn']}kn avg")
     if markers:
-        lines.append(f"SAR dark detections during blackout: {len(markers)}")
+        counts = {}
+        for m in markers:
+            v = m.get("verdict", "unknown")
+            counts[v] = counts.get(v, 0) + 1
+        detail = ", ".join(f"{VERDICT_LABEL.get(v, v)}: {n}"
+                           for v, n in sorted(counts.items()))
+        lines.append(f"SAR dark detections during blackout: {len(markers)}"
+                     f"  ({detail})")
     return lines
 
 
@@ -190,8 +216,15 @@ def render_case(case, output_path, all_markers=False, pad=0.35, frame="target"):
         _draw_dark_gaps(ax, labels)
         _draw_endpoints(ax, labels)
         for m in markers:
-            ax.plot(m["lon"], m["lat"], 'x', color=MARKER_COLOR, markersize=8,
+            color = VERDICT_COLOR.get(m.get("verdict", "unknown"), MARKER_COLOR)
+            ax.plot(m["lon"], m["lat"], 'x', color=color, markersize=8,
                     markeredgewidth=1.6, zorder=6)
+            if labels:
+                # 標到左上：偵測點通常落在關機區間的標註附近，往右會疊字
+                ax.annotate(marker_summary(m), (m["lon"], m["lat"]),
+                            textcoords='offset points', xytext=(-10, 6),
+                            ha='right', fontsize=6, color=color, zorder=7,
+                            path_effects=stroke)
 
     # ── 伴隨船 ──
     def _draw_companions(ax, labels=True):
@@ -310,9 +343,11 @@ def render_case(case, output_path, all_markers=False, pad=0.35, frame="target"):
         Line2D([0], [0], color='#8aa4c8', lw=1, marker='o', markersize=3,
                label='Vessels that came close'),
     ]
-    if markers:
-        handles.append(Line2D([0], [0], color=MARKER_COLOR, lw=0, marker='x',
-                              markersize=8, label='SAR dark detection (in blackout)'))
+    for verdict in sorted({m.get("verdict", "unknown") for m in markers}):
+        handles.append(Line2D(
+            [0], [0], color=VERDICT_COLOR.get(verdict, MARKER_COLOR), lw=0,
+            marker='x', markersize=8,
+            label=f"SAR dark in blackout — {VERDICT_LABEL.get(verdict, verdict)}"))
     handles.append(Line2D([0], [0], color='#00f5ff', lw=1, ls='--', alpha=0.5,
                           label='Submarine cables'))
     # 圖例放在圖框外下方：航跡本來就會延伸到四個角落，放在框內一定會壓到船名
