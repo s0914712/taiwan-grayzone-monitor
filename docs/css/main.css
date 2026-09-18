@@ -641,6 +641,21 @@ body {
     50% { opacity: 0.6; }
 }
 
+/* 「這是最後已知位置，不是即時位置」—— 高風險船圖層畫的是 last_lat/last_lon，
+   可能是好幾天前的。用黃色警示而非紅色：這是資料新鮮度提醒，不是威脅升級。
+   不加 pulse 動畫，免得跟旁邊的制裁警告搶注意力。 */
+.stale-position-warning {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 8px;
+    background: rgba(255, 215, 0, 0.16);
+    border: 1px solid var(--accent-yellow, #ffd700);
+    border-radius: 3px;
+    color: var(--accent-yellow, #ffd700);
+    font-weight: 600;
+    font-size: var(--fs-caption);
+}
+
 .route-lookup-btn {
     display: inline-block;
     margin-top: 6px;
@@ -1732,6 +1747,7 @@ body {
         line-height: 24px;
     }
     .sanction-warning { font-size: 11px; padding: 4px 10px; }
+    .stale-position-warning { font-size: 11px; padding: 4px 10px; }
     #trackInfoPanel { bottom: 70px; right: 8px; left: auto; max-width: 200px; font-size: 12px; }
     .track-clear-btn { padding: 8px 0; font-size: 13px; min-height: 40px; border-radius: 6px; }
     .track-snapshot-btn { padding: 8px 0; font-size: 13px; min-height: 40px; border-radius: 6px; }

@@ -30,6 +30,36 @@ var MapVesselsFactory = function(map, layers) {
 
     let filterFocEnabled = false;
 
+    // 高風險船圖層畫的是 `last_lat`/`last_lon` —— **最後已知位置**，不是即時位置。
+    // 軌跡檔的保留期是筆數不是天數（見 analyze_suspicious.is_recently_active），
+    // 所以一艘船可能好幾天、甚至好幾週沒再出現，紅點卻還留在原地。彈窗不標時間
+    // 的話，看到的人只會理解成「這艘船現在在那裡」——受制裁油輪 MEDNA
+    // （620999315）最後一筆 AIS 是 2026-08-22，到 09-18 仍以 critical 紅點
+    // 掛在巴士海峽，就是這樣被誤讀的。
+    const STALE_POSITION_HOURS = 48;
+
+    /** 位置年齡（小時）；時戳缺失或壞掉回傳 null（不猜、也不標成新鮮） */
+    function positionAgeHours(iso) {
+        if (!iso) return null;
+        const t = Date.parse(iso);
+        if (isNaN(t)) return null;
+        return (Date.now() - t) / 3600000;
+    }
+
+    /** 「最後訊號: 2026-08-22 07:06Z (27 天前)」；未滿一天顯示小時 */
+    function lastSeenLine(iso, t) {
+        const age = positionAgeHours(iso);
+        if (age === null) return '';
+        const stamp = String(iso).slice(0, 16).replace('T', ' ') + 'Z';
+        const rel = age >= 24
+            ? Math.round(age / 24) + ' ' + t('app.ago_days')
+            : Math.round(age) + ' ' + t('app.ago_hours');
+        const warn = age >= STALE_POSITION_HOURS
+            ? '<br><span class="stale-position-warning">' + t('app.stale_position') + '</span>'
+            : '';
+        return '<br>' + t('app.last_seen') + ' ' + stamp + ' (' + rel + ')' + warn;
+    }
+
     /**
      * Draw fishing hotspots on the map
      */
@@ -515,13 +545,18 @@ var MapVesselsFactory = function(map, layers) {
 
         suspiciousData.suspicious_vessels.forEach(sv => {
             if (sv.last_lat && sv.last_lon) {
+                // 舊位置畫成虛線圈、降低不透明度 —— 地圖上一眼看得出哪些紅點
+                // 是即時的、哪些是「最後看到它在這裡」
+                const ageH = positionAgeHours(sv.last_seen);
+                const isStale = ageH !== null && ageH >= STALE_POSITION_HOURS;
                 L.circleMarker([sv.last_lat, sv.last_lon], {
                     radius: 8,
                     fillColor: riskColors[sv.risk_level] || '#ff3366',
                     color: '#ffffff',
                     weight: 2,
-                    opacity: 0.9,
-                    fillOpacity: 0.9
+                    opacity: isStale ? 0.55 : 0.9,
+                    fillOpacity: isStale ? 0.35 : 0.9,
+                    dashArray: isStale ? '3,3' : null
                 }).addTo(layers.suspiciousVessels).bindPopup(() => {
                     const t3 = typeof i18n !== 'undefined' ? i18n.t.bind(i18n) : k => k;
                     var sanctionHit = getSanctionMatch((sv.names && sv.names[0]) || '');
@@ -532,7 +567,8 @@ var MapVesselsFactory = function(map, layers) {
                     var flagName3 = getMidFlag(sv.mmsi);
                     var flagLine3 = flagName3 ? '<br>' + t3('app.flag') + ' ' + flagName3 : '';
                     return '<b style="color:' + (riskColors[sv.risk_level] || '#ff3366') + '">' + ((sv.names && sv.names[0]) || sv.mmsi) + '</b><br>' +
-                        t3('app.mmsi') + ' ' + sv.mmsi + flagLine3 + '<br>' +
+                        t3('app.mmsi') + ' ' + sv.mmsi + flagLine3 +
+                        lastSeenLine(sv.last_seen, t3) + '<br>' +
                         '<b>' + t3('app.risk') + ' ' + sv.risk_level.toUpperCase() + '</b> (' + t3('app.score') + ' ' + sv.risk_score + ')<br>' +
                         (sv.flags || []).map(function(f) { return '- ' + f; }).join('<br>') +
                         sanctionLine + netMarkerNote3 +

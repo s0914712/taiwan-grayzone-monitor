@@ -201,14 +201,57 @@ assert(residualHtml.includes('S1A_IW_GRDH_1SDV_20260609T215239_') && residualHtm
 
 // ── 5. suspicious + gov vessel layers ────────────────────────────────────
 const circlesBefore = countLayers(l => l instanceof window.L.CircleMarker);
+const HOURS = 3600000;
+const freshSeen = new Date(Date.now() - 2 * HOURS).toISOString();
+const staleSeen = new Date(Date.now() - 27 * 24 * HOURS).toISOString();
 MM.displaySuspiciousVessels({
     suspicious_vessels: [
-        { mmsi: '477123456', names: ['EVER GIVEN'], risk_level: 'high', risk_score: 9, last_lat: 23.5, last_lon: 121.0, flags: ['測試'] },
+        { mmsi: '477123456', names: ['EVER GIVEN'], risk_level: 'high', risk_score: 9, last_lat: 23.5, last_lon: 121.0, last_seen: freshSeen, flags: ['測試'] },
+        // 受制裁油輪 MEDNA 的真實情境：最後一筆 AIS 是 27 天前，但 critical
+        // 紅點仍畫在舊位置上。彈窗不標時間就會被讀成「它現在在那裡」。
+        { mmsi: '620999315', names: ['MEDNA'], risk_level: 'critical', risk_score: 21, last_lat: 20.9147, last_lon: 120.9582, last_seen: staleSeen, flags: ['測試'] },
     ],
 });
 MM.displayGovVessels(VESSELS);
 const circlesAfter = countLayers(l => l instanceof window.L.CircleMarker);
-assert.strictEqual(circlesAfter - circlesBefore, 2, 'one suspicious ring + one gov ring added');
+assert.strictEqual(circlesAfter - circlesBefore, 3, 'two suspicious rings + one gov ring added');
+
+// 位置新鮮度：舊位置必須畫成虛線＋半透明，彈窗要標時間與警告
+const suspiciousRings = [];
+map.eachLayer(l => {
+    if (l instanceof window.L.CircleMarker && l.getLatLng &&
+        (l.getLatLng().lat === 20.9147 || l.getLatLng().lat === 23.5)) {
+        suspiciousRings.push(l);
+    }
+});
+const staleRing = suspiciousRings.find(l => l.getLatLng().lat === 20.9147);
+const freshRing = suspiciousRings.find(l => l.getLatLng().lat === 23.5);
+assert(staleRing && freshRing, 'both suspicious rings found');
+assert.strictEqual(staleRing.options.dashArray, '3,3', 'stale position ring is dashed');
+assert.strictEqual(freshRing.options.dashArray, null, 'fresh position ring is solid');
+assert(staleRing.options.fillOpacity < freshRing.options.fillOpacity,
+    'stale position ring is more transparent');
+
+// i18n 在本測試裡是 stub（t 回傳 key 本身），所以斷言看的是 key
+const staleHtml = staleRing.getPopup().getContent()();
+assert(staleHtml.includes('app.last_seen'), 'stale popup states when the position is from');
+assert(staleHtml.includes('27 app.ago_days'), 'stale popup states the age in days');
+assert(staleHtml.includes('stale-position-warning'), 'stale popup carries the not-live warning');
+const freshHtml = freshRing.getPopup().getContent()();
+assert(freshHtml.includes('app.last_seen') && freshHtml.includes('2 app.ago_hours'),
+    'fresh popup still reports its age, in hours');
+assert(!freshHtml.includes('stale-position-warning'),
+    'fresh popup carries no not-live warning');
+
+// 真正的翻譯字串必須存在 —— 上面用 stub 驗不到這件事
+const i18nSrc = fs.readFileSync(path.join(DOCS_JS, 'i18n.js'), 'utf8');
+['app.last_seen', 'app.ago_days', 'app.ago_hours', 'app.stale_position'].forEach(k => {
+    const row = new RegExp("'" + k + "'\\s*:\\s*\\{[^}]*zh:[^}]*en:[^}]*\\}");
+    assert(row.test(i18nSrc), 'i18n.js defines zh+en for ' + k);
+});
+// 舊位置的警示樣式要有對應的 CSS，否則那行字在頁面上毫無標示
+const cssSrc = fs.readFileSync(path.join(DOCS_JS, '..', 'css', 'main.css'), 'utf8');
+assert(cssSrc.includes('.stale-position-warning'), 'main.css styles .stale-position-warning');
 
 // ── 6. layer toggle round-trip ───────────────────────────────────────────
 MM.toggleLayer('vessels', false);

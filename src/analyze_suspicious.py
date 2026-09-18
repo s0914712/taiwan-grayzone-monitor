@@ -1713,26 +1713,57 @@ def load_track_history():
     return tracks
 
 
-def is_recently_active(profile, has_track, now=None):
+def _parse_iso(value):
+    """ISO 時戳 → aware datetime；解析不了回傳 None。"""
+    try:
+        return datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def latest_track_time(track_points):
+    """航跡裡最新一筆的時間；沒有可解析的時戳回傳 None。"""
+    times = [t for t in (_parse_iso(p.get('t')) for p in track_points or [])
+             if t is not None]
+    return max(times) if times else None
+
+
+def is_recently_active(profile, track_points, now=None):
     """判斷船隻是否「近期活躍」（近 ANALYSIS_ACTIVE_DAYS 天內出現過）。
 
-    有航跡點（tier-1/tier-2 皆為 14/28 天滾動）即視為活躍；
-    否則看 profile 最後一次出現時間。早已離開監測海域的船
-    （只剩 90 天 profile）跳過分析，避免舊資料灌水統計。
+    看**最新一筆航跡點的時間**，不是「有沒有航跡點」。
+
+    舊寫法是 `if has_track: return True`，前提是「tier-1/tier-2 皆為 14/28 天
+    滾動」——這個前提不成立。軌跡檔的保留期是**筆數**不是天數
+    （`fetch_ais_data.AIS_TRACK_MAX_ENTRIES` = 168、
+    `AIS_TRACK_COMMERCIAL_MAX_ENTRIES` = 336），「168 筆 = 14 天」只有在
+    update-ais.yml 真的每 2 小時跑一次時才對。實測 tier-1 的 168 筆橫跨
+    **632 小時 = 26.3 天**，tier-2 同 cadence 推算約 52 天。結果是
+    ANALYSIS_ACTIVE_DAYS 對任何有航跡點的船完全失效。
+
+    實例：受制裁油輪 MEDNA（620999315）最後一筆 AIS 是 2026-08-22T07:06，
+    到 2026-09-18 的 data.json 仍以 critical 紅點掛在巴士海峽的舊位置
+    （20.91N/120.96E，`total_snapshots` 凍結在 132，即期間沒有任何新觀測），
+    前端彈窗又不顯示位置時間，看起來就像那艘船還在台灣附近。
+
+    航跡時戳全部解析不了時退回 profile 的最後出現時間，不直接判定為不活躍
+    ——壞掉的時戳不該讓一艘船靜默消失。
     """
-    if has_track:
-        return True
+    if now is None:
+        now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=ANALYSIS_ACTIVE_DAYS)
+
+    latest = latest_track_time(track_points)
+    if latest is not None:
+        return latest >= cutoff
+
     timestamps = profile.get('last_seen_timestamps') or []
     if not timestamps:
         return False
-    if now is None:
-        now = datetime.now(timezone.utc)
-    try:
-        last_seen = datetime.fromisoformat(
-            timestamps[-1].replace('Z', '+00:00'))
-    except (ValueError, AttributeError):
+    last_seen = _parse_iso(timestamps[-1])
+    if last_seen is None:
         return False
-    return (now - last_seen) <= timedelta(days=ANALYSIS_ACTIVE_DAYS)
+    return last_seen >= cutoff
 
 
 def annotate_port_points(track_points):
@@ -2298,7 +2329,7 @@ def main():
     now = datetime.now(timezone.utc)
     active_mmsi = {
         m for m in all_mmsi
-        if is_recently_active(profiles.get(m, {}), m in tracks, now)
+        if is_recently_active(profiles.get(m, {}), tracks.get(m), now)
     }
     stale_skipped = len(all_mmsi) - len(active_mmsi)
     print(f"\n📊 分析 {len(active_mmsi)} 艘活躍船隻"

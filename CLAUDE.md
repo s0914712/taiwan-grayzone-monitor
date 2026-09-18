@@ -48,9 +48,19 @@ GitHub Actions → src/fetch_ais_data.py (AIS via SOCKS5 proxy)
 ### Architecture
 The engine loads multiple data sources, iterates all known vessels (profile ∪ track), and produces a per-vessel risk classification.
 
-**Active-vessel window**: only vessels seen within `ANALYSIS_ACTIVE_DAYS` (14) — has track
-points or profile `last_seen_timestamps[-1]` within the window — are analyzed
-(`is_recently_active()`). Profiles are retained 90 days, but scoring long-gone vessels on
+**Active-vessel window**: only vessels seen within `ANALYSIS_ACTIVE_DAYS` (14) — **最新一筆
+航跡點**或 profile `last_seen_timestamps[-1]` 落在視窗內 — are analyzed
+(`is_recently_active()`). 判準是**最新航跡點的時間**，不是「有沒有航跡點」：
+軌跡檔的保留期是**筆數**不是天數（`fetch_ais_data.AIS_TRACK_MAX_ENTRIES` = 168、
+`AIS_TRACK_COMMERCIAL_MAX_ENTRIES` = 336），「168 筆 = 14 天」只有在 update-ais.yml
+真的每 2 小時跑一次時才成立 —— 實測 2026-09-18 的 tier-1，168 筆橫跨 **641.9 小時
+= 26.7 天**，12,028 艘船裡有 **3,463 艘（28.8%）**最新航跡點已超過 14 天。舊寫法
+`if has_track: return True` 因此讓這整個視窗對任何有航跡點的船完全失效。
+症狀：受制裁油輪 MEDNA（620999315）最後一筆 AIS 是 2026-08-22T07:06，到 09-18 的
+`data.json` 仍以 critical 紅點掛在巴士海峽的舊位置（`total_snapshots` 凍結在 132，
+即期間毫無新觀測），而前端彈窗又不顯示位置時間，看起來就像它還在台灣附近。
+tier-2 是 gitignored（Actions 快取），視窗更長（同 cadence ×336 筆），MEDNA 正是
+從那一層被留下來的。 Profiles are retained 90 days, but scoring long-gone vessels on
 stale data inflated the stats (55k analyzed → dashboard "Top 10%" showed fleet÷10 ≈ 2.5-3.4k).
 Summary carries `stale_skipped` + `active_window_days`; the dashboard stat tile now shows
 `suspicious_count` (score ≥8) instead of the quota-based `top_10pct_count`.

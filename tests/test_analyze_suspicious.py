@@ -484,13 +484,18 @@ def test_visited_taiwan_port_but_now_at_sea_not_excluded():
 # 活躍船過濾：>14 天未見的舊 profile 不進入分析
 # =========================================================================
 
+def _track_at(*iso_times):
+    """只帶時戳的航跡點（is_recently_active 只看 't'）。"""
+    return [{'t': t, 'lat': 21.5, 'lon': 121.6, 'speed': 1.0} for t in iso_times]
+
+
 def test_stale_profile_not_recently_active():
     """無航跡、最後出現 30 天前 → 非活躍，跳過分析。"""
     from datetime import datetime, timezone
     now = datetime(2026, 7, 3, tzinfo=timezone.utc)
     profile = {'mmsi': '412000009',
                'last_seen_timestamps': ['2026-06-01T00:00:00+00:00']}
-    assert asus.is_recently_active(profile, has_track=False, now=now) is False
+    assert asus.is_recently_active(profile, None, now=now) is False
 
 
 def test_recent_profile_is_active():
@@ -499,14 +504,60 @@ def test_recent_profile_is_active():
     now = datetime(2026, 7, 3, tzinfo=timezone.utc)
     profile = {'mmsi': '412000010',
                'last_seen_timestamps': ['2026-06-30T12:00:00+00:00']}
-    assert asus.is_recently_active(profile, has_track=True, now=now) is True
-    assert asus.is_recently_active(profile, has_track=False, now=now) is True
+    assert asus.is_recently_active(
+        profile, _track_at('2026-06-30T12:00:00+00:00'), now=now) is True
+    assert asus.is_recently_active(profile, None, now=now) is True
 
 
 def test_track_only_vessel_is_active():
-    """有航跡但無 profile 時間戳（track-only）→ 活躍（航跡檔本身就是 14 天滾動）。"""
-    assert asus.is_recently_active({}, has_track=True) is True
-    assert asus.is_recently_active({}, has_track=False) is False
+    """有近期航跡但無 profile 時間戳（track-only）→ 活躍。"""
+    from datetime import datetime, timezone
+    now = datetime(2026, 7, 3, tzinfo=timezone.utc)
+    assert asus.is_recently_active(
+        {}, _track_at('2026-07-01T00:00:00+00:00'), now=now) is True
+    assert asus.is_recently_active({}, None, now=now) is False
+
+
+def test_old_track_points_do_not_keep_a_vessel_active():
+    """**有航跡點不等於近期出現。**
+
+    軌跡檔的保留期是筆數（AIS_TRACK_MAX_ENTRIES=168 /
+    AIS_TRACK_COMMERCIAL_MAX_ENTRIES=336）不是天數，「168 筆 = 14 天」只有在
+    update-ais.yml 真的每 2 小時跑一次時才成立；實測 tier-1 的 168 筆橫跨
+    632 小時 = 26.3 天。舊寫法 `if has_track: return True` 因此讓
+    ANALYSIS_ACTIVE_DAYS 對任何有航跡點的船完全失效。
+
+    真實案例：受制裁油輪 MEDNA（620999315）最後一筆 AIS 是 2026-08-22T07:06，
+    到 2026-09-18 的 data.json 仍以 critical 紅點掛在巴士海峽的舊位置上。
+    """
+    from datetime import datetime, timezone
+    now = datetime(2026, 9, 18, 21, 30, tzinfo=timezone.utc)
+    medna_track = _track_at('2026-08-20T01:56:34+00:00',
+                            '2026-08-22T07:06:41+00:00')
+    assert asus.is_recently_active({}, medna_track, now=now) is False
+    # profile 也停在同一天 → 一樣不活躍（不會從另一條路徑漏回來）
+    profile = {'mmsi': '620999315',
+               'last_seen_timestamps': ['2026-08-22T07:06:41+00:00']}
+    assert asus.is_recently_active(profile, medna_track, now=now) is False
+
+
+def test_latest_track_point_wins_regardless_of_order():
+    """航跡點若非依時間排序，仍要取最新那一筆。"""
+    from datetime import datetime, timezone
+    now = datetime(2026, 9, 18, tzinfo=timezone.utc)
+    shuffled = _track_at('2026-09-17T00:00:00+00:00',
+                         '2026-08-20T00:00:00+00:00')
+    assert asus.is_recently_active({}, shuffled, now=now) is True
+
+
+def test_unparseable_track_times_fall_back_to_profile():
+    """時戳壞掉不該讓一艘船靜默消失 —— 退回 profile 的最後出現時間。"""
+    from datetime import datetime, timezone
+    now = datetime(2026, 7, 3, tzinfo=timezone.utc)
+    broken = [{'t': 'not-a-timestamp', 'lat': 21.5, 'lon': 121.6}]
+    profile = {'last_seen_timestamps': ['2026-07-01T00:00:00+00:00']}
+    assert asus.is_recently_active(profile, broken, now=now) is True
+    assert asus.is_recently_active({}, broken, now=now) is False
 
 
 # =========================================================================
