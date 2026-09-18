@@ -5,6 +5,7 @@
 STS 永遠偵測不到。
 """
 import json
+import math
 
 import detect_ship_transfers as dst
 
@@ -103,3 +104,210 @@ def test_merge_keys_on_timestamp_not_period_key(monkeypatch, tmp_path):
     snaps = dst.load_merged_snapshots()
     # 用 timestamp 當鍵 → 2 份；若誤用 period_key → 會塌成 1 份
     assert len(snaps) == 2
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# 漂流會合（10m–5km）與關機事件 —— 旁靠層的 10 公尺門檻對大船形同關閉，
+# 這兩層補的是 VLCC 級過駁：停下來碰面、以及兩邊都關掉 AIS。
+# 座標取巴士海峽外海（21.6N/121.6E），遠離任何港口排除區。
+# ──────────────────────────────────────────────────────────────────────────
+RV_LAT, RV_LON = 21.6000, 121.6000
+# 該緯度下「1 公里」換算成經度差（經線在高緯收窄，須除以 cos(lat)）
+KM_IN_LON_DEG = 1 / (111.0 * math.cos(math.radians(RV_LAT)))
+
+
+def _rv_snaps(v1_factory, v2_factory, hours=(0, 3, 6, 9)):
+    """同一對船在數個時刻的合併快照。"""
+    return [_snap(f"2026-08-18T{h:02d}:00:00+00:00", [v1_factory(), v2_factory()])
+            for h in hours]
+
+
+def _drifting(mmsi, name, typ, km_east=0.0, speed=1.0):
+    return _v(mmsi, name, RV_LAT, RV_LON + km_east * KM_IN_LON_DEG, typ, speed=speed)
+
+
+def test_drift_rendezvous_detected_at_km_scale():
+    """兩艘油輪相距 1.5km、雙方 1kn、持續 9 小時 → 會合事件；旁靠層看不到。"""
+    snaps = _rv_snaps(lambda: _drifting("620999315", "MEDNA", "tanker"),
+                      lambda: _drifting("613002360", "YVICTORY", "tanker", km_east=1.5))
+    assert not dst.process_track_history(snaps)  # 旁靠層（10m）：無事件
+    records = dst.build_rendezvous_records(snaps)
+    assert len(records) == 1
+    rec = records[0]
+    assert rec["duration_hours"] == 9.0
+    assert 1400 < rec["min_distance_m"] < 1600
+    assert {rec["vessel1"]["mmsi"], rec["vessel2"]["mmsi"]} == {"620999315", "613002360"}
+
+
+def test_drift_rendezvous_ignores_fishing_pair():
+    """雙方皆為漁船不計 —— 5km 的窗口放進漁場會把整支船隊兩兩配對。"""
+    snaps = _rv_snaps(lambda: _drifting("416000391", "WANN YIH TZAY", "fishing"),
+                      lambda: _drifting("416000986", "YU FU", "fishing", km_east=1.0))
+    assert dst.build_rendezvous_records(snaps) == []
+
+
+def test_drift_rendezvous_requires_a_commercial_side():
+    """至少一方需為 tanker/cargo/lng；兩艘科研船碰面不走這條規則。"""
+    snaps = _rv_snaps(lambda: _drifting("413547290", "XIANG YANG HONG 05", "research"),
+                      lambda: _drifting("412000001", "SHIYAN 6", "research", km_east=1.0))
+    assert dst.build_rendezvous_records(snaps) == []
+
+
+def test_alongside_band_left_to_the_sts_layer():
+    """相距 9 公尺屬旁靠層，不重複出現在會合層。"""
+    snaps = _rv_snaps(_tanker_A, _tanker_B)
+    assert dst.find_rendezvous_in_snapshot(snaps[0]["vessels"]) == []
+    assert dst.find_pairs_in_snapshot(snaps[0]["vessels"])
+
+
+def test_rendezvous_needs_minimum_duration():
+    """只碰到一個快照（0 小時）不算會合。"""
+    snaps = _rv_snaps(lambda: _drifting("620999315", "MEDNA", "tanker"),
+                      lambda: _drifting("613002360", "YVICTORY", "tanker", km_east=1.5),
+                      hours=(0,))
+    assert dst.build_rendezvous_records(snaps) == []
+
+
+def _dark_snaps(mmsi, name, points):
+    """points: [(ts, lat, lon)] → 每個時刻一份單船快照。"""
+    return [_snap(ts, [_v(mmsi, name, lat, lon, "tanker", speed=1.0)])
+            for ts, lat, lon in points]
+
+
+# MEDNA 實測：2026-08-20T01:56 關機於 21.807/121.801，
+# 08-21T23:14 於 21.285/121.698 復播 —— 45.3 小時只移動 59 公里 = 0.7 節。
+MEDNA_DARK = [("2026-08-20T01:56:00+00:00", 21.8073, 121.8010),
+              ("2026-08-21T23:14:00+00:00", 21.2848, 121.6984)]
+
+
+def test_dark_gap_separates_drifting_from_transiting():
+    """關機後在漂（0.7kn）與關機趕路（3kn）必須分得開。"""
+    timelines = dst.build_vessel_timelines(_dark_snaps("620999315", "MEDNA", MEDNA_DARK))
+    gaps = dst.find_dark_gaps(timelines)
+    assert len(gaps) == 1
+    assert gaps[0]["gap_hours"] == 45.3
+    assert gaps[0]["drift_kn"] < dst.DARK_DRIFT_MAX_KN
+
+    # 同樣長度的靜默，但跑了 300 公里 → 是關機趕路，不是過駁
+    transit = [("2026-08-20T01:56:00+00:00", 21.8073, 121.8010),
+               ("2026-08-21T23:14:00+00:00", 24.5000, 121.8010)]
+    gaps2 = dst.find_dark_gaps(dst.build_vessel_timelines(
+        _dark_snaps("111111111", "TRANSITER", transit)))
+    assert gaps2[0]["drift_kn"] > dst.DARK_DRIFT_MAX_KN
+
+
+def test_dark_gap_ignores_short_and_never_resumed():
+    """未達門檻的空檔、以及駛出監測範圍（沒有下一點）都不是關機。"""
+    short = [("2026-08-20T01:00:00+00:00", 21.80, 121.80),
+             ("2026-08-20T05:00:00+00:00", 21.79, 121.79)]
+    assert dst.find_dark_gaps(dst.build_vessel_timelines(
+        _dark_snaps("222222222", "SHORT GAP", short))) == []
+    one_point = [("2026-08-20T01:00:00+00:00", 21.80, 121.80)]
+    assert dst.find_dark_gaps(dst.build_vessel_timelines(
+        _dark_snaps("333333333", "LEFT AREA", one_point))) == []
+
+
+def test_codark_requires_overlap_and_proximity():
+    """兩船靜默區間重疊 ≥6h 且失訊處 ≤30km 才算共同關機。"""
+    a = dst.find_dark_gaps(dst.build_vessel_timelines(
+        _dark_snaps("620999315", "MEDNA", MEDNA_DARK)))
+    # 同時段、同海域（約 11km 外）一起消失 → 成對
+    near = [("2026-08-20T02:00:00+00:00", 21.9073, 121.8010),
+            ("2026-08-21T22:00:00+00:00", 21.4000, 121.7000)]
+    b = dst.find_dark_gaps(dst.build_vessel_timelines(
+        _dark_snaps("613002360", "YVICTORY", near)))
+    pairs = dst.find_codark_pairs(sorted(a + b, key=lambda g: g["start"]))
+    assert len(pairs) == 1
+    assert pairs[0]["separation_km"] < dst.CODARK_MAX_SEPARATION_KM
+    assert pairs[0]["both_drifting"] is True
+
+    # 同時段但在 400km 外消失 → 不成對
+    far = [("2026-08-20T02:00:00+00:00", 25.4000, 121.8010),
+           ("2026-08-21T22:00:00+00:00", 25.3000, 121.7000)]
+    c = dst.find_dark_gaps(dst.build_vessel_timelines(
+        _dark_snaps("444444444", "FAR AWAY", far)))
+    assert dst.find_codark_pairs(sorted(a + c, key=lambda g: g["start"])) == []
+
+
+def test_zero_speed_blackout_counts_as_drifting():
+    """靜默期間完全沒移動（0.0 kn）最像過駁 —— 不可因為 0 是 falsy 被判成航行。"""
+    still = [("2026-08-20T01:00:00+00:00", 21.8073, 121.8010),
+             ("2026-08-21T23:00:00+00:00", 21.8073, 121.8010)]
+    gaps = dst.find_dark_gaps(dst.build_vessel_timelines(
+        _dark_snaps("555555555", "STILL", still)))
+    assert gaps[0]["drift_kn"] == 0.0
+    assert dst.is_drifting_gap(gaps[0]) is True
+
+
+def test_dark_gaps_skip_fishing_fleet():
+    """漁船停播再漂一天是日常；放行全船隊會把整支船隊兩兩配對成『共同關機』。"""
+    snaps = [_snap(ts, [_v("412345678", "MINDONGYU63179", lat, lon, "fishing", 0.3)])
+             for ts, lat, lon in MEDNA_DARK]
+    assert dst.find_dark_gaps(dst.build_vessel_timelines(snaps)) == []
+    # 關掉船型過濾（分析用）時仍抓得到
+    assert len(dst.find_dark_gaps(dst.build_vessel_timelines(snaps), types=None)) == 1
+
+
+def test_dark_gap_ignores_spans_longer_than_the_window():
+    """頭尾各出現一次不是關機 —— 兩端直線距離除以 600 小時得到的「0.3 節」，
+    只代表這艘船那段期間跑去別的地方了。"""
+    long_span = [("2026-08-22T13:00:00+00:00", 21.8073, 121.8010),
+                 ("2026-09-17T21:00:00+00:00", 24.5000, 118.0000)]
+    gaps = dst.find_dark_gaps(dst.build_vessel_timelines(
+        _dark_snaps("666666666", "LONG SPAN", long_span)))
+    assert gaps == []
+
+
+# 台中外錨地（24.27/120.52，離岸 2.6km）—— 等泊位的船排排站，不是海上過駁
+ANCHORAGE_LAT, ANCHORAGE_LON = 24.2700, 120.5200
+
+
+def test_rendezvous_ignores_coastal_anchorage():
+    """離岸門檻是這一層唯一擋得住錨地的東西。
+
+    港口清單補不完：台中外錨地、麥寮、閩江口都不在 CN_PORTS/PORTS 的半徑內，
+    未設離岸門檻時光是這些地方就灌出上萬組配對。
+    """
+    def _at_anchorage(mmsi, name):
+        return _v(mmsi, name, ANCHORAGE_LAT, ANCHORAGE_LON + 0.02, "tanker", 0.0)
+
+    snaps = [_snap(f"2026-08-18T{h:02d}:00:00+00:00",
+                   [_v("111000001", "WAITING A", ANCHORAGE_LAT, ANCHORAGE_LON,
+                       "tanker", 0.0),
+                    _at_anchorage("111000002", "WAITING B")])
+             for h in (0, 3, 6, 9)]
+    assert dst.build_rendezvous_records(snaps) == []
+
+
+def test_dark_gap_ignores_blackout_at_an_anchorage():
+    """在錨地熄燈是等泊位 —— 關機的地點必須在外海才算數。"""
+    coastal = [("2026-08-20T01:56:00+00:00", ANCHORAGE_LAT, ANCHORAGE_LON),
+               ("2026-08-21T23:14:00+00:00", ANCHORAGE_LAT, ANCHORAGE_LON)]
+    assert dst.find_dark_gaps(dst.build_vessel_timelines(
+        _dark_snaps("777777777", "AT ANCHOR", coastal))) == []
+
+
+def _rec(m1, m2, lat, lon):
+    return {"vessel1": {"mmsi": m1}, "vessel2": {"mmsi": m2},
+            "location": {"lat": lat, "lon": lon}}
+
+
+def test_suppress_crowded_cells_drops_anchorages_keeps_events():
+    """一格裡幾十組不同船對在「會合」＝錨地；單獨一組＝事件。
+
+    離岸門檻擋不住外錨地（廈門外錨地離岸 15-20km），密度才分得開：
+    實測該格 11 天內有 117 組不同船對，其餘每格最多 6 組。
+    """
+    anchorage = [_rec(f"41300{i:04d}", f"41400{i:04d}", 24.11, 118.30)
+                 for i in range(10)]
+    event = [_rec("620999315", "613002360", 21.60, 121.60)]
+    kept, crowded = dst.suppress_crowded_cells(anchorage + event)
+    assert crowded == 1
+    assert [r["vessel1"]["mmsi"] for r in kept] == ["620999315"]
+
+
+def test_suppress_crowded_cells_counts_pairs_not_records():
+    """同一對船在同一格停好幾天會產生多筆紀錄 —— 那是一次事件，不是擁擠。"""
+    repeated = [_rec("620999315", "613002360", 21.60, 121.60) for _ in range(20)]
+    kept, crowded = dst.suppress_crowded_cells(repeated)
+    assert crowded == 0 and len(kept) == 20

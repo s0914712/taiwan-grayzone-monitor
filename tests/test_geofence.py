@@ -133,3 +133,33 @@ def test_anchorages_excluded_from_moored_taiwan_port_rule():
     for name, (lat, lon, radius) in geofence.TW_ANCHORAGES.items():
         assert name not in geofence.PORTS
         assert radius > geofence.PORT_EXCLUSION_KM
+
+
+# ── 離岸距離 ────────────────────────────────────────────────────────────────
+def test_distance_to_land_separates_anchorages_from_open_sea():
+    """錨地離岸數公里、灰區行為離岸數十公里 —— 這條線要分得開。
+
+    座標取自實測的偽陽性熱點與 MEDNA（620999315）2026-08 的關機點。
+    """
+    anchorages = {
+        "閩江口": (26.27, 119.79), "台中外錨": (24.27, 120.52),
+        "麥寮": (23.79, 120.18), "台北港": (25.16, 121.39),
+    }
+    for name, (lat, lon) in anchorages.items():
+        d = geofence.distance_to_land_km(lat, lon)
+        assert d < 10, f"{name} 應判定為近岸，實得 {d}km"
+
+    offshore = {"MEDNA 關機點": (21.8073, 121.8010), "巴士海峽": (21.30, 121.00)}
+    for name, (lat, lon) in offshore.items():
+        d = geofence.distance_to_land_km(lat, lon)
+        assert d >= 15, f"{name} 應判定為外海，實得 {d}km"
+
+
+def test_distance_to_land_caps_at_max_km():
+    """遠洋不必算出精確值，回報上限即可（也讓搜尋圈數有界）。"""
+    assert geofence.distance_to_land_km(20.0, 128.0, max_km=60.0) == 60.0
+
+
+def test_is_offshore_matches_distance():
+    assert geofence.is_offshore(21.8073, 121.8010, 15.0) is True
+    assert geofence.is_offshore(25.16, 121.39, 15.0) is False

@@ -14,6 +14,7 @@ Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates A
 - **`ais-archive` branch** — permanent AIS snapshot archive for offline track-prediction training (the main tier-1/tier-2 files are append-and-trim, 14/28 days, so they drop old snapshots). `update-ais.yml` writes each run's delta as a **new gzipped file** under `archive/<YYYY-MM>/<DD>/ais_{track,commercial}_<YYYYMMDDTHHMMSSZ>.jsonl.gz`. It used to append into one monthly file; `ais_commercial_2026-08.jsonl` reached 99.95 MiB and the next append blew GitHub's 100 MiB blob limit — GH001, push rejected, and every later run of the month would have hit the same wall. One file per run never approaches the limit, and the step clones with `--filter=blob:none --sparse --no-cone` (current day's directory only) so it no longer downloads ~180MB of existing archive each run. The pre-existing `archive/ais_*_2026-0{7,8}.jsonl` monthly files are left frozen in place. Reassemble locally with `cat archive/2026-08/*/ais_track_*.jsonl.gz | gunzip > ais_track_2026-08.jsonl` (filenames sort chronologically). Not in the Pages artifact
 - `.github/workflows/` — 7 CI workflows (AIS hourly daytime / 2h overnight, full pipeline every 12h incl. once-daily 00:00 UTC gov-vessel track map, **網路異常掃描 every 2h（Cloudflare Radar 國家級 + ADM1 分區級 + IODA 全台 22 縣市可達性）**, `radar-region-probe.yml` 手動觸發的 Radar 縣市粒度能力實測, darkship SAR forensics daily 22:00 UTC, Threads weekly, LINE push：日報 00:00 UTC=08:00 TW／**高風險船週報 週一 02:00 UTC=10:00 TW／月報 1 號 02:00 UTC=10:00 TW**（刻意晚兩小時 —— update-data.yml 的 00:00 cron 才剛在產週/月報檔）). All data workflows share the `data-pipeline` concurrency group — they commit to main and would otherwise race on rebase
 - `docs/tw_counties.geojson` — 22 縣市界（geoBoundaries gbOpen TWN ADM1，CC BY 4.0），由 `src/build_tw_counties.py` 精簡後**提交**的靜態資產（81KB）。縣市界幾年才變一次，不進 CI 定期執行。**不要改用 Natural Earth 的 admin-1**：它只有 21 個縣市、缺連江（馬祖），而馬祖正是本專案最關鍵的一塊
+- `data/cases/` — 個案檔（`src/archive_case.py` 從 `ais-archive` 分支重建的單船歷史：航跡 + 伴隨船 + 關機區間 + 同期 SAR 暗船點）。線上資料只留 14-28 天，要查一個月前的船只能走這條路
 - `chips/` + `reports/` — darkship SAR forensics outputs (chip PNGs, `chips/results.json` cumulative log, daily Markdown reports), committed by `darkship-cron.yml`; **not** in the Pages artifact but public in the repo — a deliberate trade-off chosen when the cron was set up. The public daily report page (`docs/reports/<date>.html`, `generate_report.py`) surfaces this work: SAR×AIS 比對成效 funnel + the latest run's chip images (520px thumbnails in `docs/reports/chips/`, 14-day mtime rotation, `<img onerror>` falls back to the raw.githubusercontent original) with verdict badges
 
 ## Tech Stack
@@ -27,7 +28,7 @@ Real-time OSINT monitoring of Taiwan's gray zone maritime activity. Integrates A
 GitHub Actions → src/fetch_ais_data.py (AIS via SOCKS5 proxy)
               → src/fetch_gfw_data.py (SAR dark vessels)
               → src/match_sar_ais.py (re-match GFW dark detections vs local AIS)
-              → src/detect_ship_transfers.py (STS rendezvous detection)
+              → src/detect_ship_transfers.py (旁靠 / 漂流會合 / 關機事件)
               → src/detect_gov_formation.py (公務船編隊／護航科考偵測)
               → src/analyze_suspicious.py (threat scoring)
               → src/aggregate_highrisk.py (高風險船累積 → 週/月報 CSV+JSON)
@@ -250,6 +251,60 @@ final_score = round(raw_behavioral_score × type_multiplier) + high_threat_indic
 
 ---
 
+## detect_ship_transfers.py — 海上過駁的三層偵測
+
+同一件事（兩艘船在海上交換東西）在 AIS 上有三種留痕方式，門檻差了兩個數量級，
+所以分成三層，各自輸出到 `ship_transfers.json` 的不同欄位。
+
+| 層 | 判定 | 輸出欄位 | 針對 |
+|---|---|---|---|
+| 旁靠 STS | 距離 <10m、<5kn、≥1h | `active_transfers` / `history` | 漁船雙拖、小船併靠 |
+| 漂流會合 | 距離 10m–5km、雙方 <3kn、≥3h | `drift_rendezvous` | **VLCC 級過駁**（兩艘 330m 油輪併靠時中心距離就有 50-80m，AIS 位置誤差本身上百公尺 —— 10m 門檻對大船形同關閉） |
+| 關機事件 | 靜默 18–72h | `dark_events.dark_drift` / `.codark_pairs` | 兩邊都關掉 AIS 的過駁；單船版是「關機後在原地漂」 |
+
+**`drift_kn`＝兩端直線距離 ÷ 靜默時數**，是把「關機趕路」與「關機後原地漂」分開的
+那個數字，也是整個關機層的核心。上限 `DARK_MAX_GAP_HOURS`=72h 是必要的：tier-1 的
+視窗實際橫跨 632 小時，一艘船在頭尾各出現一次會得到「620 小時、位移 370km、0.32 節」
+——它其實跑了一趟東南亞。海上過駁本身是 12-30 小時的事。
+
+### 偽陽性控制（實測 11 天真實 tier-2，2,600 艘船）
+漂流會合從 **16,867 組降到 47 組**，四層缺一不可，每一層都是實測逼出來的：
+
+| 過濾 | 剩餘 | 為什麼 |
+|---|---|---|
+| （無） | 16,867 | — |
+| `effective_type()` 名稱修正 | 1,217 | AIS 船型碼對中國船隊不可靠：福建拖網船大量播報成 `cargo`，「至少一方是商船」被整支漁船隊通過。沿用 `analyze_suspicious` 的 `is_cn_fishing_vessel()` |
+| 純數字船名標 `untrusted_id` | 121 | `60322`／`16888`／`00218` 這類船在漁場與 MINLIANYU 拖網船配對 —— 漁獲運搬船在收魚。條件與 `fetch_ais_data.is_gov_candidate()` 相同 |
+| `OFFSHORE_MIN_KM`=15km 離岸門檻 | 224* | **港口清單永遠補不完**：閩江口（26.27/119.79）一處未列入 `CN_PORTS` 的錨地就佔數千組，台中外錨地／麥寮／台北港各再數百組。把 CN 港口排除半徑放大到 25km 只降到 5,022 組；改量「離岸距離」降到 224 組 |
+| 錨地密度抑制 | **47** | 離岸門檻擋不住**外**錨地：廈門外錨地（24.1/118.3）離岸 15-20km，幾何上與過駁一模一樣。但密度分得開 —— 該格 11 天內有 117 組不同船對，其餘每格最多 6 組 |
+
+\* 前三層與離岸門檻的順序不可交換比較，224 是在前三層都套用後的數字。
+
+**`geofence.distance_to_land_km()`** 是離岸門檻的基礎，也是這次新增的共用能力：
+以 `data/land_basemap.geojson`（真實海岸線）的頂點建 0.05° 格網索引，逐圈外擴搜尋，
+單點 <1ms。量頂點而非線段是因為頂點間距約 100m，對 10 公里級門檻綽綽有餘。
+海岸線檔讀不到時回傳上限值（「不知道就不擋」），規則等於停用而非誤擋。
+
+**錨地密度抑制** (`suppress_crowded_cells`) 用**不重複船對數**而非紀錄數：同一對船
+在錨地停數天會產生好幾筆紀錄，用紀錄數會把一次真實事件的多筆觀測也算成擁擠。
+這是 `match_sar_ais.py` 用重複性辨識固定設施的同一個想法。
+
+**已知盲點**：(1) 關機層只看 `DARK_WATCH_TYPES`（tanker/cargo/lng）—— 漁船停播再漂
+一天是日常作業，放行全船隊實測會得到 19,532 段關機、330 萬組「共同關機」；代價是
+漁船參與的過駁抓不到。(2) 外錨地抑制是**單次執行內**的密度，跨執行的錨地累積
+（像 `sar_detection_history.json` 那樣）尚未實作。(3) 共同關機在同一份資料上仍有
+224 組，多數是中國沿岸商船的訊號覆蓋缺口，還需要收斂。
+
+### MEDNA（620999315）— 這兩層的來由
+葛摩籍 VLCC，IMO 9281683，OFAC/EU/SECO/GAC/UANI 五個名單。2026-08-14~20 在巴士海峽
+以 0.2-2.6 節漂了六天（離岸中位數 44km），**2026-08-20T01:56 關閉 AIS，45.3 小時後
+在 59 公里外重新出現 —— 平均 0.70 節**，期間 GFW 有一筆未匹配暗船偵測落在距關機點
+18.5km 處（`data/sar_detections.json` 2026-08-21 21.93N/121.68E）。舊的 10m 旁靠層
+對這整件事完全沒有輸出。個案檔與航跡圖：
+`data/cases/medna_620999315_2026-08.json`、`reports/medna_620999315_2026-08.png`。
+
+---
+
 ## match_sar_ais.py — SAR × Local-AIS Re-matching (dark-vessel de-noising)
 
 GFW's matched/unmatched flag uses GFW's own AIS feed; the Port Bureau AIS feed is
@@ -339,7 +394,10 @@ python3 src/fetch_radar_counties.py    # Radar ADM1 分區（4 個）網速／�
 python3 src/probe_radar_regions.py     # Radar 縣市粒度能力實測（哪些端點吃 geoId）
 python3 src/build_tw_counties.py       # 產生 docs/tw_counties.geojson（22 縣市界，一次性）
 python3 src/match_sar_ais.py           # Re-match GFW dark detections vs local AIS
-python3 src/detect_ship_transfers.py   # Detect STS rendezvous events
+python3 src/detect_ship_transfers.py   # 旁靠 + 漂流會合 + 關機事件偵測
+python3 src/archive_case.py 620999315 --from 2026-08-13 --to 2026-08-23 \
+    -o data/cases/medna.json           # 從 ais-archive 分支重建單船歷史個案
+python3 src/plot_encounter.py data/cases/medna.json -o reports/medna.png  # 個案航跡圖
 python3 src/detect_gov_formation.py    # 公務船編隊偵測（≥2 艘公務/科研船 ≤10km 持續 ≥6h）
 python3 src/analyze_suspicious.py      # Run threat scoring engine
 python3 src/aggregate_highrisk.py --mode accumulate       # 高風險船每日累積（讀 highrisk_snapshot）

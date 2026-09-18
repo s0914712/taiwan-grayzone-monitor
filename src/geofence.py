@@ -26,6 +26,8 @@ from geo_utils import (
 _REPO = Path(__file__).resolve().parent.parent
 BASELINE_FILE = _REPO / "docs" / "data" / "territorial_baseline.json"
 CABLE_GEO_FILE = _REPO / "data" / "cable-geo.json"
+# 真實海岸線（Natural Earth 1:10m 裁切版，build_land_basemap.py 產生並提交）
+LAND_BASEMAP_FILE = _REPO / "data" / "land_basemap.geojson"
 
 # 法域距離門檻（浬）
 TERRITORIAL_SEA_NM = 12.0
@@ -40,6 +42,15 @@ _CABLE_BBOX = (19, 28, 115, 130)  # lat_min, lat_max, lon_min, lon_max
 
 _baselines = None      # list[list[(lat, lon)]]
 _cable_segments = None  # list[dict(points, bbox)]
+
+# ── 離岸距離 ────────────────────────────────────────────────────────────────
+# 海岸線頂點的格網索引：{(lat_cell, lon_cell): [(lat, lon), …]}
+# 港口清單永遠補不完 —— 實測光是閩江口（26.27/119.79）一處未列的錨地，就讓
+# 「漂流會合」多出數千組配對；台中外錨地、麥寮、基隆外海各自再貢獻數百組。
+# 灰區行為的共同點是**離岸**，所以直接量到海岸線的距離，比維護港口表可靠。
+LAND_GRID_DEG = 0.05           # ≈5.5km，與海纜格網索引同一套作法
+LAND_SEARCH_MAX_KM = 60.0      # 超過此距離一律回報為「遠離陸地」，不再往外找
+_land_grid = None
 
 
 # ── 資料載入 ────────────────────────────────────────────────────────────────
@@ -521,6 +532,77 @@ def is_in_port_cached(lat, lon):
     result = is_in_port(lat, lon)
     _in_port_cache[key] = result
     return result
+
+
+def load_land_vertices():
+    """海岸線頂點的格網索引；檔案缺失或損毀時回傳空 dict（規則等於停用）。"""
+    global _land_grid
+    if _land_grid is not None:
+        return _land_grid
+    grid = {}
+    try:
+        with open(LAND_BASEMAP_FILE, encoding="utf-8") as f:
+            geo = json.load(f)
+        for feat in geo.get("features", []):
+            geom = feat.get("geometry") or {}
+            if geom.get("type") != "Polygon":
+                continue
+            for ring in geom.get("coordinates") or []:
+                for c in ring:
+                    if len(c) < 2:
+                        continue
+                    lon, lat = c[0], c[1]       # GeoJSON 為 [lon, lat]
+                    key = (int(lat // LAND_GRID_DEG), int(lon // LAND_GRID_DEG))
+                    grid.setdefault(key, []).append((lat, lon))
+    except (OSError, ValueError, TypeError) as e:
+        print(f"⚠️ 讀取海岸線 {LAND_BASEMAP_FILE} 失敗，離岸距離規則停用: {e}")
+        grid = {}
+    _land_grid = grid
+    return _land_grid
+
+
+def distance_to_land_km(lat, lon, max_km=LAND_SEARCH_MAX_KM):
+    """到最近海岸線的距離（公里），上限 max_km。
+
+    量的是到海岸線**頂點**的距離而非線段 —— land_basemap 的頂點間距約 100m
+    （build_land_basemap.py 取 3 位小數），對 10 公里級的門檻綽綽有餘，
+    而且能靠格網索引做到 O(1) 預篩。海岸線資料讀不到時回傳 max_km，
+    亦即「不知道就不擋」：寧可讓偽陽性留著被人看到，也不要靜默漏掉真的事件。
+    """
+    grid = load_land_vertices()
+    if not grid:
+        return max_km
+    lat_cell = int(lat // LAND_GRID_DEG)
+    lon_cell = int(lon // LAND_GRID_DEG)
+    # 逐圈往外找，找到就不必再擴大範圍
+    max_ring = int(max_km / (LAND_GRID_DEG * 111.0)) + 1
+    best = max_km
+    for ring in range(max_ring + 1):
+        # 已經找到的距離比這一圈的最近可能距離還短 → 不會再更近
+        if best <= (ring - 1) * LAND_GRID_DEG * 111.0:
+            break
+        for dla in range(-ring, ring + 1):
+            for dlo in range(-ring, ring + 1):
+                if ring and max(abs(dla), abs(dlo)) != ring:
+                    continue            # 只掃這一圈新增的格子
+                for vlat, vlon in grid.get((lat_cell + dla, lon_cell + dlo), ()):
+                    d = haversine_km(lat, lon, vlat, vlon)
+                    if d < best:
+                        best = d
+    return best
+
+
+_offshore_cache = {}
+
+
+def is_offshore(lat, lon, min_km):
+    """離岸是否達 min_km。以 ~1km 網格 memo（偵測器會問上萬個點）。"""
+    key = (round(lat, 2), round(lon, 2))
+    hit = _offshore_cache.get(key)
+    if hit is None:
+        hit = distance_to_land_km(key[0], key[1])
+        _offshore_cache[key] = hit
+    return hit >= min_km
 
 
 def _main(argv):
