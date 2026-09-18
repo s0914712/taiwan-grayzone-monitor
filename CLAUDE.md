@@ -85,7 +85,14 @@ Summary carries `stale_skipped` + `active_window_days`; the dashboard stat tile 
 ### Two-Tier Track Storage
 - **Tier-1** (`ais_track_history.json`): CN fishing vessels + suspicious → used for animation + analysis
 - **Tier-2** (`ais_track_commercial.json`): cargo, tanker, LNG, identity-changed vessels → analysis + route extraction only
-- Both files: append-and-trim, 14-day / 168-entry max retention per tier
+- Both files: append-and-trim, retention is **by entry count, not by age**
+  (`fetch_ais_data.trim_track_history`; tier-1 168 / tier-2 336). 正常節奏下約等於
+  14/28 天，但那是副產品不是保證 —— **抓取中斷時視窗會自動拉長**，這是刻意的：
+  2026-09-07~17 的 Byteful 代理封鎖停擺 244.8 小時，按天數修剪會在剛恢復時把僅存
+  的歷史一起丟掉（實測拿 09-18 的 tier-1 套 14 天：168 筆→36 筆、12,028 艘船→
+  8,565 艘），而海纜徘徊／Z 字型／割草式測線全靠軌跡密度。代價是保留**期間**會
+  伸縮（實測 26.7 天），所以**下游不可以拿「檔案裡有這艘船」當成「近期出現過」**
+  —— 一律自己看時戳
 
 ### Exclusion Rules (early return, skips expensive analysis)
 Defined in `EXCLUSION_RULES` list. Each rule is a dict with `id`, `label`, `check(mmsi, names) -> bool`.

@@ -49,13 +49,21 @@ IDENTITY_EVENTS_MAX = 5000
 
 # AIS 歷史快照：每天保留 12 筆（每 2 小時一筆），共保留 90 天 = 1080 筆
 AIS_HISTORY_MAX_ENTRIES = 1080
-# AIS 軌跡歷史：保留 14 天，每 2 小時一筆 = 168 筆
-# (14 天完整檔供 analyze_suspicious / detect_ship_transfers / 航跡查詢使用)
+# AIS 軌跡歷史：保留**最近 N 次觀測**，不是 N 天。正常節奏（每 2 小時一筆）
+# 下 168 筆約等於 14 天，但那是副產品不是保證 —— 抓取中斷時視窗會自動拉長。
+# 這是**刻意的**：2026-09-07~17 的 Byteful 代理封鎖讓 AIS 停擺 244.8 小時，
+# 按天數修剪會在剛恢復時把僅存的歷史一起丟掉（實測：168 筆→36 筆，
+# 12,028 艘船→8,565 艘），而海纜徘徊、Z 字型、測線這些行為偵測正是靠軌跡
+# 密度。按筆數留則安然度過，中斷期間的分析還有資料可用。
+# ⚠️ 代價是視窗會伸縮（實測 2026-09-18 為 26.7 天），所以**下游不可以假設
+# 這個檔就是 14 天**，要自己看時戳 —— analyze_suspicious.is_recently_active()
+# 當初就是假設了才讓 MEDNA 那種早已離開的船留在地圖上。
+# (完整檔供 analyze_suspicious / detect_ship_transfers / 航跡查詢使用)
 AIS_TRACK_MAX_ENTRIES = 168
 # 動畫專用精簡檔：僅最近 7 天，檔案約減半，加速動畫頁載入
 # (前端 ais-animation / cn-fishing-animation 優先抓此檔)
 AIS_TRACK_ANIMATION_DAYS = 7
-# 商船軌跡歷史：同 28 天
+# 商船軌跡歷史：同樣按筆數，約 28 天
 AIS_TRACK_COMMERCIAL_MAX_ENTRIES = 336
 
 MPB_URL = "https://mpbais.motcmpb.gov.tw/aismpb/tools/geojsonais.ashx"
@@ -166,6 +174,23 @@ def is_cn_fishing_vessel(name):
     if _CN_YU_PATTERN.search(n):
         return True
     return False
+
+
+def trim_track_history(history, max_entries):
+    """保留最近 `max_entries` **次觀測**（不是天數）。
+
+    為什麼不按天數修剪 —— 這點被試過而且是錯的：AIS 抓取會中斷
+    （2026-09-07~17 的 Byteful 代理封鎖停擺 244.8 小時，見 CLAUDE.md），
+    按天數修剪會在剛恢復時把僅存的歷史連同中斷前的資料一起丟掉。實測拿
+    2026-09-18 的 tier-1 套 14 天：168 筆 → 36 筆、12,028 艘船 → 8,565 艘，
+    而海纜徘徊（需連續 ≥3h）、Z 字型（需 ≥3 次轉向）、割草式測線這些偵測
+    全靠軌跡密度 —— 等於在最需要回溯的時候把偵測能力砍掉四分之三。
+    按筆數留則中斷期間仍有資料可分析。
+
+    代價是保留**期間**會伸縮（正常 ~14 天，中斷後可達 26.7 天），所以
+    下游不可以拿這個檔的存在當成「近期」的證據，必須自己看時戳。
+    """
+    return history[-max_entries:]
 
 
 # --- SOCKS5 代理設定 ---
@@ -762,7 +787,7 @@ def save_all(vessels, stats):
     track_history = load_json(AIS_TRACK_FILE, [], expect_type=list)
 
     track_history.append(track_entry)
-    track_history = track_history[-AIS_TRACK_MAX_ENTRIES:]
+    track_history = trim_track_history(track_history, AIS_TRACK_MAX_ENTRIES)
     # Compact JSON: file is large, whitespace adds ~40% overhead
     atomic_write_json(AIS_TRACK_FILE, track_history, compact=True)
     print(f"  🎬 軌跡歷史已更新: {AIS_TRACK_FILE} ({len(track_history)} 筆, {len(track_vessels)} 艘船)")
@@ -821,7 +846,8 @@ def save_all(vessels, stats):
     commercial_history = load_json(AIS_TRACK_COMMERCIAL_FILE, [], expect_type=list)
 
     commercial_history.append(commercial_entry)
-    commercial_history = commercial_history[-AIS_TRACK_COMMERCIAL_MAX_ENTRIES:]
+    commercial_history = trim_track_history(
+        commercial_history, AIS_TRACK_COMMERCIAL_MAX_ENTRIES)
     # Compact JSON (see tier-1 note)
     atomic_write_json(AIS_TRACK_COMMERCIAL_FILE, commercial_history, compact=True)
     print(f"  🚢 商船軌跡已更新: {AIS_TRACK_COMMERCIAL_FILE} ({len(commercial_history)} 筆, {len(commercial_vessels)} 艘船)")

@@ -364,7 +364,9 @@ def correlate_with_vessels(events, track_entries, cable_index,
     if port_lookup is None:
         port_lookup = _default_port_lookup()
 
-    # tier-1 軌跡只留 14 天，但 Radar 視窗是 28 天：比軌跡更早的異常永遠比不到船。
+    # 軌跡檔保留的是最近 N 次觀測（約 14 天，抓取中斷時會更長），而 Radar 視窗
+    # 是 28 天：比軌跡更早的異常永遠比不到船。界線由**實際資料**決定而非寫死天數
+    # —— 保留期間會伸縮（見 fetch_ais_data.trim_track_history）。
     # 那和「比對過但沒有嫌疑船」是完全不同的結論，必須分開標記，否則報告會把
     # 「查不到」講成「沒有」。
     track_times = [t for t in (_parse_ts(e.get("timestamp")) for e in track_entries)
