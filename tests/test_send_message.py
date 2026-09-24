@@ -252,3 +252,61 @@ def test_run_period_push_image_cap(monkeypatch):
                         lambda messages, t, u: sent.update(m=messages) or True)
     sm.run_period_push('weekly')
     assert len(sent['m']) == 1 + sm.LINE_MAX_IMAGES
+
+
+# ══════════════════════════════════════════════════════════════════
+# 日報挑船：只看近期徘徊，不讓一段舊事件天天霸榜
+# ══════════════════════════════════════════════════════════════════
+
+from datetime import datetime, timezone  # noqa: E402
+
+NOW = datetime(2026, 9, 24, tzinfo=timezone.utc)
+
+
+def _vessel(mmsi, events, score=20, last_seen='2026-09-23T21:00:00+00:00',
+            vtype='cargo'):
+    return {
+        'mmsi': mmsi, 'names': [mmsi], 'vessel_type': vtype,
+        'risk_score': score, 'last_seen': last_seen,
+        'cable_details': {
+            'loiter_slow_hours': max((e['hours'] for e in events), default=0),
+            'loiter_events': events,
+        },
+    }
+
+
+def _ev(end, hours):
+    return {'start': end, 'end': end, 'hours': hours}
+
+
+def test_recent_loiter_hours_ignores_old_events():
+    v = _vessel('A', [_ev('2026-08-23T08:00:00+00:00', 175.2),
+                      _ev('2026-09-21T23:00:00+00:00', 8.2),
+                      _ev('2026-09-20T05:00:00+00:00', 8.0)])
+    assert sm.recent_loiter_hours(v, NOW) == 16.2
+
+
+def test_recent_loiter_hours_legacy_without_events():
+    v = {'cable_details': {'loiter_slow_hours': 42}}
+    assert sm.recent_loiter_hours(v, NOW) == 42
+
+
+def test_select_top_prefers_recent_loiter_over_stale_long_event():
+    neptune = _vessel('620999951', [_ev('2026-08-23T08:00:00+00:00', 175.2),
+                                    _ev('2026-09-21T23:00:00+00:00', 8.2)],
+                      score=23)
+    fresh = _vessel('352003569', [_ev('2026-09-22T00:00:00+00:00', 30.0)],
+                    score=21)
+    data = {'suspicious_analysis': {'suspicious_vessels': [neptune, fresh]}}
+    top = sm.select_top_commercial_vessel(data, now=NOW)
+    assert top['mmsi'] == '352003569'
+    assert top['_recent_loiter_hours'] == 30.0
+    assert '近 7 天' in sm._vessel_brief_line(top)
+
+
+def test_select_top_skips_cargo_not_seen_recently():
+    gone = _vessel('A', [_ev('2026-09-20T00:00:00+00:00', 50)],
+                   last_seen='2026-09-01T00:00:00+00:00')
+    here = _vessel('B', [], score=9)
+    data = {'suspicious_analysis': {'suspicious_vessels': [gone, here]}}
+    assert sm.select_top_commercial_vessel(data, now=NOW)['mmsi'] == 'B'

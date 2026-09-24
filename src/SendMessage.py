@@ -67,6 +67,8 @@ LLM_MODEL = os.environ.get("LLM_MODEL", "gemini-2.0-flash")
 
 CARGO_TYPES = {"cargo", "tanker", "lng"}
 MIN_TRACK_POINTS = 15
+# 日報「本週」挑船：只看近 7 天的徘徊事件與近 7 天內出現過的船
+RECENT_LOITER_DAYS = 7
 CHART_DIR = "data/charts"
 # 昨日海警船動態圖檔名（固定名稱：每天覆寫同一路徑，不累積歷史圖檔）
 GOV_MAP_NAME = "line_gov_daily.png"
@@ -90,28 +92,64 @@ def _get_env(*names):
     return None
 
 
-def select_top_commercial_vessel(data):
+def _parse_ts(ts):
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def recent_loiter_hours(v, now=None, days=RECENT_LOITER_DAYS):
+    """近 `days` 天內結束的海纜旁徘徊事件時數合計。
+
+    `loiter_slow_hours` 是整段航跡窗口（tier-2 最長 28 天，AIS 斷線時更久）
+    內最長的一段徘徊；拿它排序，同一段一個月前的舊事件會天天把同一艘船
+    推上日報。有 `loiter_events` 時只算近期事件；舊資料沒有這欄才退回原值。
+    """
+    cable_det = v.get("cable_details", {}) or {}
+    events = cable_det.get("loiter_events")
+    if events is None:
+        return cable_det.get("loiter_slow_hours", 0) or 0
+    cutoff = (now or datetime.now(timezone.utc)) - timedelta(days=days)
+    total = 0.0
+    for ev in events:
+        end = _parse_ts(ev.get("end"))
+        if end and end >= cutoff:
+            total += ev.get("hours", 0) or 0
+    return round(total, 1)
+
+
+def select_top_commercial_vessel(data, now=None):
     """從 data.json 的 suspicious_analysis 挑出本週危險係數最高的商船。
 
-    優先：cargo/tanker/lng，依海纜旁低速滯留時數（loiter_slow_hours）排序，
-    其次比 risk_score。若沒有商船，退回整體分數最高的可疑船隻。
+    優先：近 RECENT_LOITER_DAYS 天有出現過的 cargo/tanker/lng，依近期海纜旁
+    低速滯留時數（recent_loiter_hours）排序，其次比 risk_score。
+    若沒有商船，退回整體分數最高的可疑船隻。
+    回傳的 dict 帶 `_recent_loiter_hours`，供文字與航跡圖顯示。
     """
+    now = now or datetime.now(timezone.utc)
     sa = data.get("suspicious_analysis", {})
     vessels = sa.get("suspicious_vessels", []) or []
-
-    def _loiter(v):
-        return v.get("cable_details", {}).get("loiter_slow_hours", 0) or 0
 
     def _score(v):
         return v.get("risk_score", 0) or 0
 
-    cargo = [v for v in vessels if v.get("vessel_type") in CARGO_TYPES]
-    cargo.sort(key=lambda v: (_loiter(v), _score(v)), reverse=True)
+    def _recent(v):
+        seen = _parse_ts(v.get("last_seen"))
+        return seen is None or seen >= now - timedelta(days=RECENT_LOITER_DAYS)
+
+    def _tag(v):
+        return {**v, "_recent_loiter_hours": recent_loiter_hours(v, now)}
+
+    cargo = [_tag(v) for v in vessels
+             if v.get("vessel_type") in CARGO_TYPES and _recent(v)]
+    cargo.sort(key=lambda v: (v["_recent_loiter_hours"], _score(v)), reverse=True)
     if cargo:
         return cargo[0]
 
     if vessels:
-        return max(vessels, key=_score)
+        return _tag(max(vessels, key=_score))
     return None
 
 
@@ -138,14 +176,17 @@ def _vessel_brief_line(v):
     name_raw = (v.get("names") or ["Unknown"])[0]
     name = name_raw.split("--")[0]
     cable_det = v.get("cable_details", {})
-    loiter_h = round(cable_det.get("loiter_slow_hours", 0) or 0)
+    loiter_h = round(v.get("_recent_loiter_hours",
+                           cable_det.get("loiter_slow_hours", 0)) or 0)
     loiter_days = round(loiter_h / 24, 1)
     loiter_str = f"{loiter_days} 天（{loiter_h} 小時）" if loiter_h >= 24 else f"{loiter_h} 小時"
+    loiter_label = (f"海纜旁低速滯留（近 {RECENT_LOITER_DAYS} 天）"
+                    if "_recent_loiter_hours" in v else "海纜旁低速滯留")
     cables = cable_det.get("cables_nearby", []) or []
     vtype = v.get("vessel_type", "unknown")
     return (
         f"- MMSI {v.get('mmsi', '?')}｜船型 {vtype}｜名稱 {name}\n"
-        f"  海纜旁低速滯留：{loiter_str}\n"
+        f"  {loiter_label}：{loiter_str}\n"
         f"  靠近海纜：{', '.join(cables[:3]) if cables else 'N/A'}\n"
         f"  風險等級 {v.get('risk_level', '?')}｜分數 {v.get('risk_score', '?')}"
     )
@@ -530,8 +571,9 @@ def main():
     image_local = None
     if top_vessel:
         name = (top_vessel.get("names") or ["?"])[0].split("--")[0]
-        loiter_h = top_vessel.get("cable_details", {}).get("loiter_slow_hours", 0)
-        print(f"  → {name} (MMSI: {top_vessel.get('mmsi')}, loiter: {loiter_h}h)")
+        loiter_h = top_vessel.get("_recent_loiter_hours", 0)
+        print(f"  → {name} (MMSI: {top_vessel.get('mmsi')}, "
+              f"loiter {RECENT_LOITER_DAYS}d: {loiter_h}h)")
 
         track = load_vessel_track(top_vessel["mmsi"])
         if track:
