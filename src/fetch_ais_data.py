@@ -57,6 +57,11 @@ AIS_TRACK_MAX_ENTRIES = 168
 AIS_TRACK_ANIMATION_DAYS = 7
 # 商船軌跡歷史：同 28 天
 AIS_TRACK_COMMERCIAL_MAX_ENTRIES = 336
+# 筆數上限之外再加時間上限：只靠筆數時，AIS 斷線期間（例：09-07→09-17 零筆）
+# 不會新增 entry，舊 entry 就一直留著 —— tier-2 曾留到 39 天前的資料，
+# 一段 8 月的海纜徘徊因此連續 20 天把同一艘船推上 LINE 日報。
+AIS_TRACK_MAX_DAYS = 14
+AIS_TRACK_COMMERCIAL_MAX_DAYS = 28
 
 MPB_URL = "https://mpbais.motcmpb.gov.tw/aismpb/tools/geojsonais.ashx"
 MPB_HEADERS = {
@@ -569,6 +574,27 @@ def detect_identity_changes(vessels, profiles):
 
 # --- 儲存 ---
 
+def trim_track_history(history, max_entries, max_days, now=None):
+    """保留最後 max_entries 筆，且丟掉早於 max_days 天的 entry。
+
+    時間戳無法解析的 entry 保留（交給筆數上限處理），避免格式意外把整檔清空。
+    """
+    history = history[-max_entries:]
+    cutoff = (now or datetime.now(timezone.utc)) - timedelta(days=max_days)
+    kept = []
+    for entry in history:
+        try:
+            ts = datetime.fromisoformat(str(entry.get('timestamp', '')).replace('Z', '+00:00'))
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+        except ValueError:
+            kept.append(entry)
+            continue
+        if ts >= cutoff:
+            kept.append(entry)
+    return kept
+
+
 def save_all(vessels, stats):
     """統一儲存入口，確保輸出檔案格式一致"""
     now_str = datetime.now(timezone.utc).isoformat()
@@ -762,7 +788,8 @@ def save_all(vessels, stats):
     track_history = load_json(AIS_TRACK_FILE, [], expect_type=list)
 
     track_history.append(track_entry)
-    track_history = track_history[-AIS_TRACK_MAX_ENTRIES:]
+    track_history = trim_track_history(track_history, AIS_TRACK_MAX_ENTRIES,
+                                       AIS_TRACK_MAX_DAYS)
     # Compact JSON: file is large, whitespace adds ~40% overhead
     atomic_write_json(AIS_TRACK_FILE, track_history, compact=True)
     print(f"  🎬 軌跡歷史已更新: {AIS_TRACK_FILE} ({len(track_history)} 筆, {len(track_vessels)} 艘船)")
@@ -821,7 +848,9 @@ def save_all(vessels, stats):
     commercial_history = load_json(AIS_TRACK_COMMERCIAL_FILE, [], expect_type=list)
 
     commercial_history.append(commercial_entry)
-    commercial_history = commercial_history[-AIS_TRACK_COMMERCIAL_MAX_ENTRIES:]
+    commercial_history = trim_track_history(commercial_history,
+                                            AIS_TRACK_COMMERCIAL_MAX_ENTRIES,
+                                            AIS_TRACK_COMMERCIAL_MAX_DAYS)
     # Compact JSON (see tier-1 note)
     atomic_write_json(AIS_TRACK_COMMERCIAL_FILE, commercial_history, compact=True)
     print(f"  🚢 商船軌跡已更新: {AIS_TRACK_COMMERCIAL_FILE} ({len(commercial_history)} 筆, {len(commercial_vessels)} 艘船)")

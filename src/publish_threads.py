@@ -242,7 +242,8 @@ def generate_track_map(vessel, output_path):
     mmsi = vessel.get("mmsi", "?")
     cable_det = vessel.get("cable_details", {})
     zigzag_det = vessel.get("zigzag_details", {})
-    loiter_h = round(cable_det.get("loiter_slow_hours", 0))
+    loiter_h = round(vessel.get("_recent_loiter_hours",
+                                cable_det.get("loiter_slow_hours", 0)) or 0)
     turns = zigzag_det.get("turn_count", 0)
     n_names = len(vessel.get("names", []))
 
