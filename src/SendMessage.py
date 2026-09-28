@@ -540,11 +540,16 @@ def main():
     parser.add_argument("--mode", choices=["daily", "weekly", "monthly"],
                         default="daily",
                         help="daily=每日簡報（預設）；weekly/monthly=高風險船週/月報（含熱區圖）")
+    parser.add_argument("--fallback-daily", action="store_true",
+                        help="weekly/monthly 找不到本期報表檔時改推每日簡報（LINEBot 排程一天只推一次）")
     args = parser.parse_args()
 
     # 週/月報走獨立流程：讀 docs/reports/ 的彙整結果，附熱區圖與統計圖
     if args.mode in ("weekly", "monthly"):
-        sys.exit(run_period_push(args.mode, dry_run=args.dry_run))
+        label, report = load_period_report(args.mode)
+        if report or not args.fallback_daily:
+            sys.exit(run_period_push(args.mode, dry_run=args.dry_run))
+        print(f"⏭️ 找不到 {label} 的報表檔，改推每日簡報")
 
     print("📊 產生每日摘要...")
     data = load_data()
