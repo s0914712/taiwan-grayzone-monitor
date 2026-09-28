@@ -166,6 +166,8 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'docs', 'js', 'networ
     assert(elements.countyLegend.innerHTML.includes('Mbps'), 'legend shows the metric unit');
     assert(elements.countyLegend.innerHTML.includes('4 個'),
         'legend states Radar only has 4 Taiwan regions, not 22 counties');
+    assert(!elements.countyLegend.innerHTML.includes('全國單一值'),
+        'differentiated data does not carry the national-only disclaimer');
     assert(withData[0].layer.popup.includes('非本縣市單獨量測'),
         'popup says the value belongs to the Radar region, not the county alone');
     assert(withData[0].layer.tooltip.includes('福建省'),
