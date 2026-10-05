@@ -429,3 +429,53 @@ def test_geoid_lookups_drop_the_ignored_country_alpha2_param():
     """`countryAlpha2=TW` 實測被忽略（回 183 筆全球清單），別再送。"""
     for _, params in M.GEOID_LOOKUPS:
         assert "countryAlpha2" not in params
+
+
+# ── geoId 被靜默忽略的守衛（實跑管線抓到的假陽性）──────────────────────────
+
+def _group(gid, values, speed=None):
+    return {"group_id": gid, "status": "available",
+            "series": {"timestamps": [], "values": values, "bucket_hours": 3},
+            "speed_test": speed, "level": "normal", "metric_id": "iqi_bandwidth",
+            "label_zh": gid, "label_en": gid, "members": [], "anomalies": []}
+
+
+def test_identical_series_across_regions_is_detected_as_geoid_ignored():
+    """臺北／高雄／金馬／臺灣省不可能連續 28 天逐點相同——那是同一份全國資料。"""
+    groups = [_group("taipei", [14.2, 14.3], {"bandwidth_download": 124.69}),
+              _group("takao", [14.2, 14.3], {"bandwidth_download": 124.69}),
+              _group("fukien", [14.2, 14.3], {"bandwidth_download": 124.69})]
+    assert M.detect_geoid_ignored(groups) is True
+
+
+def test_differing_series_are_not_flagged():
+    groups = [_group("taipei", [14.2, 14.3]), _group("fukien", [4.1, 4.4])]
+    assert M.detect_geoid_ignored(groups) is False
+
+
+def test_same_series_but_different_speed_test_still_counts_as_differentiated():
+    groups = [_group("taipei", [14.2], {"bandwidth_download": 124.7}),
+              _group("fukien", [14.2], {"bandwidth_download": 31.2})]
+    assert M.detect_geoid_ignored(groups) is False
+
+
+def test_single_group_cannot_be_judged():
+    assert M.detect_geoid_ignored([_group("taipei", [1, 2])]) is False
+
+
+def test_national_only_counties_are_not_offered_as_regional_values():
+    """Radar 忽略 geoId 時，縣市記錄必須自我標記，前端才不會拿全國值上色。"""
+    groups = [_group("fukien", [14.2, 14.3])]
+    groups[0]["members"] = ["TW-KIN", "TW-LIE"]
+    counties = M.county_records_from_groups(groups, differentiated=False)
+    kinmen = next(c for c in counties if c["iso"] == "TW-KIN")
+    assert kinmen["status"] == "national_only"
+    assert kinmen["is_group_value"] is False
+    assert kinmen["error_reason"] == "geoid_ignored_by_radar"
+
+
+def test_summary_flags_whether_geoid_was_differentiated():
+    groups = [{"group_id": "a", "status": "available", "level": "normal",
+               "metric_id": "iqi_bandwidth", "is_speed": True, "anomalies": [],
+               "differentiated": False}]
+    assert M.build_summary(groups, [])["geoid_differentiated"] is False
