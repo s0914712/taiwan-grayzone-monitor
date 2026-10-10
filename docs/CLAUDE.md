@@ -16,6 +16,7 @@ Zero-build static site. All HTML/CSS/JS served directly by GitHub Pages. No fram
 | `ais-animation.html` | AIS track playback animation + gray-zone events, focus narrative, AOI/tripwire, going-dark, export. Nav label "軌跡動畫" points here. | `ais_track_history.json`, `data.json`, `ship_transfers.json`, `identity_events.json` |
 | `cn-fishing-animation.html` | Chinese fishing vessel animation | `ais_track_history.json` |
 | `ship-transfers.html` | STS rendezvous detection results table + map. The `.ai-summary` abstract and the 4 stat tiles (active / suspicious / pair trawling / vessels) were removed to cut information load — the map is the page's subject; `summary` counts still exist in the JSON. | `ship_transfers.json` |
+| `research-minfudingyu-07902-escort.html` | **OSINT 個案研究（中文單語，無 `/en/` 鏡像）**：路透社 2026-10-08 報導的民兵漁船閩福鼎漁07902 × 向陽紅03 × 海警2502/1306，以 `ais-archive` 分支 2026-08 航跡交叉驗證（伴航起點、8/16 同框距離、同步停播 + 商船對照組排除接收端失效）。圖 `research-minfudingyu-07902-tracks.webp`。不在 `STATIC_PAGES`，因此 blog.html ItemList 的英文名走 `generate_i18n_pages.EN_ITEMLIST_NAMES`。 | Static（數字取自 `ais-archive`）|
 | `intro.html` | Project introduction / about page. Hosts the bilingual 12-card About/Methodology sections (`#aboutSection` / `#aboutSectionEn`, moved from index.html) between FAQ and the article grid. | Static |
 
 ### Desktop header nav (all data pages + index + blog)

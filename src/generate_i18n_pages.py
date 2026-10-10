@@ -478,6 +478,14 @@ EN_HOWTO = {
 # title tooltips, stat callouts with Chinese units, and bilingual incident
 # names (kept as the English side). Applied to whole text nodes and to title=""
 # attributes on the /en/ mirror only.
+# English names for blog-index ItemList entries that have no /en/ mirror
+# (Chinese-only pages, e.g. OSINT case studies) — EN_META only covers
+# mirrored pages, and the English index must not carry Chinese names.
+EN_ITEMLIST_NAMES = {
+    "research-minfudingyu-07902-escort.html":
+        "Minfudingyu 07902 × Xiang Yang Hong 03: A Chinese Militia Boat Off Eastern Taiwan",
+}
+
 EN_TEXT = {
     # weekly-report card chips (blog.html)
     "報表": "Reports",
@@ -544,6 +552,7 @@ EN_TEXT = {
     "海巡署": "Coast Guard",
     "權宜船": "Flag of Convenience",
     "法律戰": "Lawfare",
+    "海上民兵": "Maritime Militia",
     "參考 ⏱": "Reference ⏱",
     # series-dot reading-time subtitles (blog index)
     "基礎知識 · 8 min": "Basics · 8 min",
@@ -682,6 +691,8 @@ def _translate_node(node: dict, page: str, has_ai_summary: bool) -> None:
                 fn = u[len(BASE):].split("#")[0].split("?")[0]
                 if fn in EN_META:
                     item["name"] = EN_META[fn]["social"]
+                elif fn in EN_ITEMLIST_NAMES:
+                    item["name"] = EN_ITEMLIST_NAMES[fn]
 
     # DefinedTermSet / DefinedTerm — make the glossary schema English-only:
     # drop the Chinese alternateName and the Chinese half of bilingual
