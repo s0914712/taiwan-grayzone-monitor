@@ -240,24 +240,6 @@
         </div>
     </header>
 
-    <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
-    <section class="ai-summary" aria-label="頁面摘要 Page summary">
-        <h2 class="lang-zh-only">本頁重點</h2>
-        <h2 class="lang-en-only">What this page shows</h2>
-        <p class="lang-zh-only">
-            高風險船舶（威脅評分 ≥8）在台灣周邊海域的分布：海纜旁 0.1° 低速徘徊熱區地圖，
-            以及該期高風險船的船種與船籍分布。熱區的判定條件是「船速 &lt;5 節、距海纜 5 公里內、
-            連續 ≥3 小時」，港內點與 &gt;5 節的過境已在後端排除。評分是線索排序，並非違法認定。
-        </p>
-        <p class="lang-en-only">
-            Where high-risk vessels (threat score ≥8) concentrate around Taiwan: a 0.1° map of
-            low-speed loitering hotspots near submarine cables, plus the vessel-type and flag-state
-            breakdown for the period. A hotspot counts loitering sustained ≥3 h at &lt;5 kn within
-            5 km of a cable; in-port positions and &gt;5 kn transits are excluded upstream. Scores
-            rank leads, not legal findings.
-        </p>
-    </section>
-
     <div class="main-content">
 
         <!-- 期別選擇 -->
@@ -322,6 +304,25 @@
             </p>
         </div>
     </div>
+
+    <!-- 本頁重點 — GEO abstract for answer engines. Deliberately at the bottom and
+         muted (data-placement="footnote"): the interactive map / data is the page's subject. -->
+    <section class="ai-summary" data-placement="footnote" aria-label="頁面摘要 Page summary">
+        <h2 class="lang-zh-only">本頁重點</h2>
+        <h2 class="lang-en-only">What this page shows</h2>
+        <p class="lang-zh-only">
+            高風險船舶（威脅評分 ≥8）在台灣周邊海域的分布：海纜旁 0.1° 低速徘徊熱區地圖，
+            以及該期高風險船的船種與船籍分布。熱區的判定條件是「船速 &lt;5 節、距海纜 5 公里內、
+            連續 ≥3 小時」，港內點與 &gt;5 節的過境已在後端排除。評分是線索排序，並非違法認定。
+        </p>
+        <p class="lang-en-only">
+            Where high-risk vessels (threat score ≥8) concentrate around Taiwan: a 0.1° map of
+            low-speed loitering hotspots near submarine cables, plus the vessel-type and flag-state
+            breakdown for the period. A hotspot counts loitering sustained ≥3 h at &lt;5 kn within
+            5 km of a cable; in-port positions and &gt;5 kn transits are excluded upstream. Scores
+            rank leads, not legal findings.
+        </p>
+    </section>
 
     <script defer src="js/i18n.js"></script>
     <!-- 熱區色階／幾何：與 weekly-report.html 共用，須在頁面 script 之前載入 -->

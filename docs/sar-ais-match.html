@@ -105,7 +105,7 @@
 
         .stats-row { max-width: 1400px; margin: 0 auto; }
         .chip-report { max-width: 1400px; margin: 0 auto; padding: 10px var(--spacing-md) 24px; }
-        .chip-report .ai-summary { max-width: none; margin: 0 0 12px; }
+        .chip-report .ai-summary { max-width: none; margin: 24px 0 0; }
 
         .chip-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 12px; font-size: 12px; color: var(--text-secondary); }
         .chip-filter { font: inherit; font-size: 12px; color: var(--text-secondary); background: var(--bg-card); border: 1px solid var(--border-glow); border-radius: 14px; padding: 4px 12px; cursor: pointer; }
@@ -196,8 +196,20 @@
     </div>
 
     <main class="chip-report">
-        <!-- AI / GEO summary — visible, quotable abstract for answer engines -->
-        <section class="ai-summary" aria-label="頁面摘要 Page summary">
+        <div class="chip-toolbar" role="group" aria-label="判定篩選 Verdict filter">
+            <button class="chip-filter active" data-filter="all"><span class="lang-zh-only">全部</span><span class="lang-en-only">All</span></button>
+            <button class="chip-filter" data-filter="hit"><span class="lang-zh-only">有目標（✅＋🟡）</span><span class="lang-en-only">Hits (✅+🟡)</span></button>
+            <button class="chip-filter" data-filter="confirmed">✅ <span class="lang-zh-only">確認</span><span class="lang-en-only">Confirmed</span></button>
+            <button class="chip-filter" data-filter="none">⚪ <span class="lang-zh-only">無目標</span><span class="lang-en-only">No target</span></button>
+            <span class="chip-note"><span class="lang-zh-only">點切片開啟原圖（Sentinel-1 GRD，VV 極化、dB 尺度；青色十字＝偵測座標，紅圈＝找到的亮目標）</span><span class="lang-en-only">Click a chip for the full image (Sentinel-1 GRD, VV, dB; cyan cross = detection, red circle = bright target found)</span></span>
+        </div>
+
+        <div id="chipReport">
+            <div class="empty-state" data-i18n="common.loading">載入中...</div>
+        </div>
+        <!-- 本頁重點 — GEO abstract for answer engines. Deliberately at the bottom and
+             muted (data-placement="footnote"): the interactive map / data is the page's subject. -->
+        <section class="ai-summary" data-placement="footnote" aria-label="頁面摘要 Page summary">
             <h2 class="lang-zh-only">本頁重點</h2>
             <h2 class="lang-en-only">What this page shows</h2>
             <p class="lang-zh-only">
@@ -215,17 +227,6 @@
             </p>
         </section>
 
-        <div class="chip-toolbar" role="group" aria-label="判定篩選 Verdict filter">
-            <button class="chip-filter active" data-filter="all"><span class="lang-zh-only">全部</span><span class="lang-en-only">All</span></button>
-            <button class="chip-filter" data-filter="hit"><span class="lang-zh-only">有目標（✅＋🟡）</span><span class="lang-en-only">Hits (✅+🟡)</span></button>
-            <button class="chip-filter" data-filter="confirmed">✅ <span class="lang-zh-only">確認</span><span class="lang-en-only">Confirmed</span></button>
-            <button class="chip-filter" data-filter="none">⚪ <span class="lang-zh-only">無目標</span><span class="lang-en-only">No target</span></button>
-            <span class="chip-note"><span class="lang-zh-only">點切片開啟原圖（Sentinel-1 GRD，VV 極化、dB 尺度；青色十字＝偵測座標，紅圈＝找到的亮目標）</span><span class="lang-en-only">Click a chip for the full image (Sentinel-1 GRD, VV, dB; cyan cross = detection, red circle = bright target found)</span></span>
-        </div>
-
-        <div id="chipReport">
-            <div class="empty-state" data-i18n="common.loading">載入中...</div>
-        </div>
     </main>
 
     <div class="update-info" id="updateInfo" data-i18n="common.update_time">資料更新時間: --</div>

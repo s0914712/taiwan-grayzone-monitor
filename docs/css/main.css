@@ -2754,6 +2754,31 @@ body:not(.lang-en):not(.lang-zh) .lang-en-only { display: none !important; }
     }
 }
 
+/* 本頁重點 on the data pages: moved below the content and toned down so it
+   reads as a footnote, not a banner competing with the interactive map.
+   (Articles keep the default cyan abstract at the top.) Attribute selector so
+   the .ai-summary class string that generate_i18n_pages.py matches is untouched. */
+.ai-summary[data-placement="footnote"] {
+    margin-top: 28px;
+    margin-bottom: 8px;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-top: 1px solid rgba(138, 164, 200, 0.2);
+    border-radius: 0;
+    opacity: 0.85;
+}
+body .ai-summary[data-placement="footnote"] h2 {
+    font-size: 12px;
+    color: var(--text-secondary, #8aa4c8);
+}
+body .ai-summary[data-placement="footnote"] p,
+body .ai-summary[data-placement="footnote"] li {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-secondary, #8aa4c8);
+}
+
 /* ============================================================================
    Desktop readability — larger fonts on wider screens (≥901px).
    Mobile-first base sizes are intentionally compact; on desktop we scale up

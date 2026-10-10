@@ -52,6 +52,9 @@ Every app page's header (index, dark-vessels, sar-ais-match, ship-transfers, ide
 --text-secondary: #8aa4c8; --accent-yellow: #ffd700;
 ```
 
+### 本頁重點 (`.ai-summary`) on data pages
+On the data pages (statistics, weekly-report, identity-history, sar-ais-match, dark-vessels, network-traffic) the GEO abstract sits **at the bottom of the content** and carries `data-placement="footnote"`, which main.css renders muted (no card/cyan border, secondary-colour text) — the interactive map / data is each page's subject, the abstract is for answer engines. Articles (`blog-*.html`) keep the default prominent abstract at the top. Use the attribute, not an extra class: `generate_i18n_pages.py` matches the literal `class="ai-summary"`.
+
 ### Typography floor (desktop)
 `:root` carries `--fs-label: 10px` (micro labels) / `--fs-caption: 11px` / `--fs-body: 12px` (lists, table cells, popups) / `--fs-title: 13px` (section & panel titles). **Nothing may go below 10px** — the old 6–9px sidebar/legend/popup sizes were raised to these tokens; new UI text should reference the tokens, not raw px. The ≤900px mobile block keeps its own 12px+ sizes; the `@media (min-width: 901px)` "desktop readability" block now only bumps numeric *values* (stat numbers), not labels. Desktop sidebar rail is 320px (`.app-container` grid).
 
