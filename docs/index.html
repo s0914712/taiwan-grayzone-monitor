@@ -229,18 +229,6 @@
             </div>
         </header>
 
-        <!-- 今日態勢 — one-line situation brief (desktop). Populated by app.js -->
-        <section class="today-brief" aria-labelledby="briefTitle">
-            <div class="brief-main">
-                <div class="brief-heading">
-                    <h2 id="briefTitle" data-i18n="brief.title">今日態勢</h2>
-                    <span class="brief-badge" id="briefBadge" data-i18n="brief.level_loading">● 判定中</span>
-                </div>
-                <p class="brief-summary" id="briefSummary" data-i18n="brief.loading">彙整海纜狀態與可疑船舶資料中…</p>
-            </div>
-            <span class="brief-updated" id="briefUpdated"></span>
-        </section>
-
         <div class="main-grid">
         <section class="map-pane" aria-labelledby="mapPaneTitle">
             <div class="pane-heading">
@@ -326,6 +314,18 @@
              ≤900px 由 .metrics-row / .metric-panels 的既有規則隱藏，
              手機仍走 map-first + bottom sheet。 -->
         <aside class="metrics-rail" aria-label="今日關鍵指標 Key metrics">
+            <!-- 今日態勢 — situation brief, top of the right rail (desktop). Populated by app.js -->
+            <section class="today-brief" aria-labelledby="briefTitle">
+                <div class="brief-main">
+                    <div class="brief-heading">
+                        <h2 id="briefTitle" data-i18n="brief.title">今日態勢</h2>
+                        <span class="brief-badge" id="briefBadge" data-i18n="brief.level_loading">● 判定中</span>
+                    </div>
+                    <p class="brief-summary" id="briefSummary" data-i18n="brief.loading">彙整海纜狀態與可疑船舶資料中…</p>
+                </div>
+                <span class="brief-updated" id="briefUpdated"></span>
+            </section>
+
             <!-- 今日關鍵指標 — 4 tiles. Hover (or click to pin) slides the matching
                  detail panel out below the row. Values populated by app.js. -->
             <section class="metrics-row">

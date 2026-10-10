@@ -59,30 +59,19 @@ body {
    ============================================================================= */
 
 /* Homepage shell (index.html only). Desktop reading order:
-   header → 今日態勢 brief (full width) → .main-grid = map (left) +
-   .metrics-rail (right: 4 key-metric tiles + their slide-out panels)
+   header → .main-grid = map (left) + .metrics-rail (right: 今日態勢 brief
+   card on top, then 4 key-metric tiles + their slide-out panels)
    → page sections.
-   Vertical flow (not a 100vh grid) so the brief sits above the fold and the
-   page scrolls into the sections below. The tiles moved out of a full-width
-   4-across row into the rail, so the map gets the width and the numbers stay
-   beside it instead of pushing it below the fold. */
+   The brief used to be a full-width band between the header and the map; it
+   moved into the rail so the map starts right under the header and the
+   situation text sits beside the numbers it summarises. */
 .app-container {
     display: flex;
     flex-direction: column;
 }
 
-/* 今日態勢 runs at 2× the dashboard typography floor — it is read at a glance
-   from a distance, unlike the map chrome (legend, layer panel, Leaflet popups)
-   which keeps the compact --fs-* defaults so it doesn't swallow the map. */
-.today-brief {
-    --fs-label: 20px;
-    --fs-caption: 22px;
-    --fs-body: 24px;
-    --fs-title: 26px;
-}
-
-/* The rail is ~360px, not a full-width row, so the tiles run at ~1.4× instead
-   of the brief's 2× — at 2× a sub-line like「critical 639 · high 1,128（評分
+/* The rail is ~360px, not a full-width row, so the tiles run at ~1.4× the
+   dashboard floor — at 2× a sub-line like「critical 639 · high 1,128（評分
    ≥8）」wraps to three lines and the four tiles no longer fit beside the map.
    Overriding the tokens cascades into every descendant that references them
    (.metric-label, .suspicious-item, .section-title…). */
@@ -93,13 +82,15 @@ body {
     --fs-title: 16px;
 }
 
-/* ---- 今日態勢 brief ---- */
+/* ---- 今日態勢 brief (card at the top of the rail) ---- */
 .today-brief {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: var(--spacing-md);
-    padding: 14px var(--spacing-md) 10px;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glow);
+    border-radius: 8px;
 }
 
 .brief-main { min-width: 0; }
@@ -107,17 +98,18 @@ body {
 .brief-heading {
     display: flex;
     align-items: center;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .brief-heading h2 {
-    font-size: 32px;
+    font-size: 22px;
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .brief-badge {
-    padding: 2px 10px;
+    padding: 1px 10px;
     border-radius: 999px;
     border: 1px solid var(--text-secondary);
     color: var(--text-secondary);
@@ -144,18 +136,19 @@ body {
 }
 
 .brief-summary {
-    margin-top: 6px;
-    font-size: 28px;
-    line-height: 1.5;
+    margin-top: 8px;
+    font-size: 16px;
+    line-height: 1.6;
     color: var(--text-primary);
 }
 
 .brief-updated {
     font-family: 'JetBrains Mono', monospace;
-    font-size: var(--fs-caption);
+    font-size: var(--fs-label);
     color: var(--text-secondary);
-    white-space: nowrap;
 }
+
+.brief-updated:empty { display: none; }
 
 /* ---- Key metric tiles (stacked in the right rail) ---- */
 .metrics-row {
