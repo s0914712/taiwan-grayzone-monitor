@@ -3,14 +3,10 @@ name: LINE Bot Report Push
 on:
   schedule:
     # GitHub cron 使用 UTC 時間。格式：分 時 日 月 星期
-    # 台灣時間 (UTC+8) 每天早上 08:00 推送每日簡報 → UTC 00:00
+    # 每天只推一次：台灣時間 08:00 → UTC 00:00。
+    # 週一改推「高風險船週報」、每月 1 號改推「月報」，取代當天的每日簡報
+    # （原本週/月報是另一條 02:00 UTC cron，週一/1 號會收到兩次推送）。
     - cron: '0 0 * * *'
-    # 高風險船「週報」：每週一 台灣 10:00 → UTC 02:00。
-    # 刻意晚兩小時 —— update-data.yml 的 0 0 * * * cron 才剛在產生上一週的
-    # 報表檔，同時段推送會抓不到檔（或抓到上一期的）。
-    - cron: '0 2 * * 1'
-    # 高風險船「月報」：每月 1 號 台灣 10:00 → UTC 02:00（同上理由）
-    - cron: '0 2 1 * *'
 
   # 允許在 GitHub 網頁上手動觸發測試，不用等排程
   workflow_dispatch:
@@ -21,8 +17,8 @@ on:
         default: daily
         options: [daily, weekly, monthly]
 
-# 週一 08:00 的日報與 10:00 的週報是兩次獨立執行；1 號適逢週一時更會有三次。
-# 它們都會透過 Contents API 寫圖進 main，排隊執行避免互相踩踏。
+# 排程一天只跑一次，但手動觸發可能與排程重疊；兩者都會透過 Contents API
+# 寫圖進 main，排隊執行避免互相踩踏。
 concurrency:
   group: line-push
   cancel-in-progress: false
@@ -58,19 +54,40 @@ jobs:
       - name: 安裝中文字型
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-wqy-zenhei
 
-      # 依「觸發的那條 cron」判斷模式，而非牆上時鐘：GitHub 排程常延遲
-      # 2-3 小時，比對 date +%H 會失準（update-data.yml 有同樣的教訓註解）。
+      # 排程只有一條 cron，依台灣日期決定今天推哪一種（1 號優先於週一）。
+      # GitHub 排程常延遲 2-3 小時，但 00:00 UTC = 08:00 台灣，延遲後仍是同一天。
       - name: 決定推送模式
         id: mode
         run: |
-          case "${{ github.event.schedule }}" in
-            "0 2 * * 1")  MODE=weekly ;;
-            "0 2 1 * *")  MODE=monthly ;;
-            "0 0 * * *")  MODE=daily ;;
-            *)            MODE="${{ github.event.inputs.mode || 'daily' }}" ;;
-          esac
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            if [ "$(TZ=Asia/Taipei date +%d)" = "01" ]; then MODE=monthly
+            elif [ "$(TZ=Asia/Taipei date +%u)" = "1" ]; then MODE=weekly
+            else MODE=daily
+            fi
+          else
+            MODE="${{ github.event.inputs.mode || 'daily' }}"
+          fi
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "推送模式：$MODE"
+
+      # 週/月報檔由 update-data.yml 的同一條 00:00 UTC cron 產生，兩邊幾乎同時
+      # 起跑，這裡 checkout 到的 main 多半還沒有本期檔。輪詢 main 最多 3 小時
+      # 等檔案出現；等不到就由 SendMessage.py --fallback-daily 改推每日簡報，
+      # 確保當天仍有一則推送。
+      - name: 等待週/月報檔產出
+        if: steps.mode.outputs.mode != 'daily'
+        run: |
+          MODE=${{ steps.mode.outputs.mode }}
+          LABEL=$(cd src && python -c "from datetime import datetime, timezone; import aggregate_highrisk as a; d = datetime.now(timezone.utc).date(); print((a.previous_iso_week(d) if '$MODE' == 'weekly' else a.previous_month(d))[0])")
+          FILE="docs/reports/$MODE/$LABEL.json"
+          for i in $(seq 1 18); do
+            if [ -f "$FILE" ]; then echo "✅ 找到 $FILE"; exit 0; fi
+            git fetch --depth=1 origin main && \
+              git checkout FETCH_HEAD -- "$FILE" 2>/dev/null && continue
+            echo "⏳ $FILE 尚未產出（第 $i 次），10 分鐘後再查"
+            sleep 600
+          done
+          echo "⚠️ 等不到 $FILE，將改推每日簡報"
 
       - name: 產生並推送報告
         env:
@@ -84,4 +101,4 @@ jobs:
           # 航跡改存 Supabase：vessel-data 分支缺檔時由此點查（見 supabase_store.py）
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: python src/SendMessage.py --mode ${{ steps.mode.outputs.mode }}
+        run: python src/SendMessage.py --mode ${{ steps.mode.outputs.mode }} --fallback-daily

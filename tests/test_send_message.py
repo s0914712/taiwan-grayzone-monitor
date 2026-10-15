@@ -183,6 +183,41 @@ def test_run_period_push_skips_when_report_missing(monkeypatch, capsys):
     assert '略過推送' in capsys.readouterr().out
 
 
+class _DailyReached(Exception):
+    pass
+
+
+def _run_main(monkeypatch, argv, report):
+    """跑 main()；走到每日簡報流程（load_data）時丟 _DailyReached 中斷。"""
+    monkeypatch.setattr(sm.sys, 'argv', ['SendMessage.py'] + argv)
+    monkeypatch.setattr(sm, 'load_period_report',
+                        lambda mode, **kw: ('2026-W35', report))
+    monkeypatch.setattr(sm, 'run_period_push', lambda mode, **kw: 0)
+
+    def _daily():
+        raise _DailyReached()
+    monkeypatch.setattr(sm, 'load_data', _daily)
+    sm.main()
+
+
+def test_main_fallback_daily_when_report_missing(monkeypatch):
+    """排程一天只推一次：週/月報檔還沒產出時改推每日簡報，不能整天沒推送。"""
+    with pytest.raises(_DailyReached):
+        _run_main(monkeypatch, ['--mode', 'weekly', '--fallback-daily'], None)
+
+
+def test_main_no_fallback_without_flag(monkeypatch):
+    with pytest.raises(SystemExit) as e:
+        _run_main(monkeypatch, ['--mode', 'weekly'], None)
+    assert e.value.code == 0
+
+
+def test_main_period_report_present_skips_daily(monkeypatch):
+    with pytest.raises(SystemExit) as e:
+        _run_main(monkeypatch, ['--mode', 'monthly', '--fallback-daily'], REPORT)
+    assert e.value.code == 0
+
+
 def test_run_period_push_dry_run_does_not_push(monkeypatch):
     monkeypatch.setattr(sm, 'load_period_report',
                         lambda mode, **kw: ('2026-W35', REPORT))
