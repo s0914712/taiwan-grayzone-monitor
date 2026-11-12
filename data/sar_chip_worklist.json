@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-12T06:49:44.185101Z",
+  "updated_at": "2026-11-12T19:28:40.864795Z",
   "zones": {
     "east": {
       "name": "台灣東部海域",
@@ -20,21 +20,36 @@
   },
   "summary": {
     "residual_total": 1200,
-    "in_zone": 94,
-    "listed": 94,
-    "covered": 94,
+    "in_zone": 95,
+    "listed": 95,
+    "covered": 95,
     "no_coverage": 0,
     "by_zone": {
-      "east": 42,
-      "southwest": 52
+      "east": 44,
+      "southwest": 51
     },
-    "products_indexed": 62,
+    "products_indexed": 66,
     "date_range": {
       "start": "2026-10-14",
-      "end": "2026-11-08"
+      "end": "2026-11-09"
     }
   },
   "targets": [
+    {
+      "lat": 25.24,
+      "lon": 122.07,
+      "date": "2026-11-09",
+      "zone": "east",
+      "maritime_zone": "territorial_sea",
+      "in_ais_coverage": true,
+      "covered": true,
+      "product": "S1D_IW_GRDH_1SDV_20261109T215139_20261109T215208_005396_00A4AB_0845_COG.SAFE",
+      "time": "21:51:39",
+      "command": "python fetch_sar_chip.py 25.24 122.07 2026-11-09 --time 21:51",
+      "alt_times": [
+        "21:51:39"
+      ]
+    },
     {
       "lat": 24.73,
       "lon": 122.44,
@@ -1191,21 +1206,6 @@
       ]
     },
     {
-      "lat": 22.92,
-      "lon": 120.01,
-      "date": "2026-10-16",
-      "zone": "southwest",
-      "maritime_zone": "internal_waters",
-      "in_ais_coverage": true,
-      "covered": true,
-      "product": "S1D_IW_GRDH_1SDV_20261016T215209_20261016T215242_005046_0098A1_D5F6_COG.SAFE",
-      "time": "21:52:09",
-      "command": "python fetch_sar_chip.py 22.92 120.01 2026-10-16 --time 21:52",
-      "alt_times": [
-        "21:52:09"
-      ]
-    },
-    {
       "lat": 22.82,
       "lon": 119.38,
       "date": "2026-10-16",
@@ -1366,6 +1366,21 @@
       "product": "S1C_IW_GRDH_1SDV_20261015T095208_20261015T095249_009894_013BA8_D6D4.SAFE",
       "time": "09:52:08",
       "command": "python fetch_sar_chip.py 24.59 122.39 2026-10-15 --time 09:52",
+      "alt_times": [
+        "09:52:08"
+      ]
+    },
+    {
+      "lat": 24.22,
+      "lon": 122.03,
+      "date": "2026-10-15",
+      "zone": "east",
+      "maritime_zone": "contiguous_zone",
+      "in_ais_coverage": true,
+      "covered": true,
+      "product": "S1C_IW_GRDH_1SDV_20261015T095208_20261015T095249_009894_013BA8_D6D4.SAFE",
+      "time": "09:52:08",
+      "command": "python fetch_sar_chip.py 24.22 122.03 2026-10-15 --time 09:52",
       "alt_times": [
         "09:52:08"
       ]
