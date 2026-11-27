@@ -60,6 +60,7 @@ begin
     end if;
     -- One locked singleton serializes claims across manual runs and all runners.
     select * into s from public.mst_ccg_state where id = 1 for update;
+    if not found then raise exception 'Tracking state is not initialized'; end if;
     if exists (select 1 from public.mst_ccg_runs where run_id = p_run_id) then
         return jsonb_build_object('claimed', false, 'reason', 'duplicate_run');
     end if;

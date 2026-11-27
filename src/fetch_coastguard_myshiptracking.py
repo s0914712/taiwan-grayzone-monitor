@@ -50,9 +50,14 @@ def optional_number(value, lower, upper):
 
 
 def load_watchlist(path=WATCHLIST):
-    items = json.loads(Path(path).read_text(encoding='utf-8'))['vessels']
+    document = json.loads(Path(path).read_text(encoding='utf-8'))
+    if not isinstance(document, dict) or not isinstance(document.get('vessels'), list):
+        raise ValueError('Invalid watchlist document')
+    items = document['vessels']
     seen = set()
     for item in items:
+        if not isinstance(item, dict):
+            raise ValueError('Invalid watchlist entry')
         mmsi = item.get('mmsi')
         if (not isinstance(mmsi, str) or not re.fullmatch(r'\d{9}', mmsi)
                 or not mmsi.startswith(('412', '413', '414')) or mmsi in seen

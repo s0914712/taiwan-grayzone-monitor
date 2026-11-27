@@ -74,6 +74,14 @@ def test_duplicate_watchlist_rejected(tmp_path):
         ccg.load_watchlist(path)
 
 
+@pytest.mark.parametrize('document', [[], {'vessels': None}, {'vessels': [None]}, {'vessels': []}])
+def test_malformed_watchlist_fails_closed(tmp_path, document):
+    path = tmp_path / 'list.json'
+    path.write_text(json.dumps(document))
+    with pytest.raises(ValueError):
+        ccg.load_watchlist(path)
+
+
 def test_normalization_preserves_provider_time_and_type_namespace():
     point = ccg.normalize(row(received=(NOW-timedelta(minutes=30)).isoformat(), course=511), NOW)
     assert point['mmsi'] == '413875010'

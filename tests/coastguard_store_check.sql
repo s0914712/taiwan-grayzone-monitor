@@ -71,6 +71,18 @@ end;
 $$;
 
 -- Verify granted access works under the actual restricted execution role.
+do $$
+begin
+    delete from public.mst_ccg_state;
+    begin
+        perform public.mst_ccg_claim('missing-state', 1, 10);
+        raise exception 'Missing state was accepted';
+    exception when others then
+        if sqlerrm <> 'Tracking state is not initialized' then raise; end if;
+    end;
+    insert into public.mst_ccg_state(id,last_attempt_at) values(1,now());
+end;
+$$;
 set local role service_role;
 select public.mst_ccg_claim('five', 1, 4)->>'reason' = 'not_due' as cooldown_enforced;
 reset role;

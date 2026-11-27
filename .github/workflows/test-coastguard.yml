@@ -41,6 +41,11 @@ jobs:
       PGDATABASE: coastguard_test
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /sql/coastguard_private.sql
+            /tests/coastguard_store_check.sql
+          sparse-checkout-cone-mode: false
       - name: Create Supabase-like roles in disposable test database
         run: |
           psql -v ON_ERROR_STOP=1 -c 'create role anon; create role authenticated; create role service_role bypassrls; grant usage on schema public to anon, authenticated, service_role;'
