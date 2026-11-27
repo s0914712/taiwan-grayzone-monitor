@@ -1,0 +1,51 @@
+name: CoastGuard private storage tests
+
+on:
+  pull_request:
+    paths:
+      - 'src/*coastguard*'
+      - 'sql/coastguard_private.sql'
+      - 'config/coastguard_watchlist.json'
+      - 'tests/*coastguard*'
+      - '.github/workflows/*coastguard*'
+  push:
+    branches: [main]
+    paths:
+      - 'src/*coastguard*'
+      - 'sql/coastguard_private.sql'
+      - 'tests/*coastguard*'
+      - '.github/workflows/*coastguard*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-storage:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: coastguard_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: coastguard_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create Supabase-like roles in disposable test database
+        run: |
+          psql -v ON_ERROR_STOP=1 -c 'create role anon; create role authenticated; create role service_role bypassrls; grant usage on schema public to anon, authenticated, service_role;'
+      - name: Validate migration, permissions, budget, deduplication and retention
+        run: |
+          psql -v ON_ERROR_STOP=1 -f sql/coastguard_private.sql
+          psql -v ON_ERROR_STOP=1 -f sql/coastguard_private.sql
+          psql -v ON_ERROR_STOP=1 -f tests/coastguard_store_check.sql

@@ -1,0 +1,45 @@
+name: Track CoastGuard (MyShipTracking, private)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'No network calls or credits; configuration-only check'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: data-pipeline
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - name: Track approved identities into private storage only
+        env:
+          MST_TRACKING_ENABLED: ${{ vars.MST_TRACKING_ENABLED }}
+          MST_STORAGE_READY: ${{ vars.MST_STORAGE_READY }}
+          MST_API_KEY: ${{ secrets.MyshipTracking }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          MST_MAX_CREDITS_PER_RUN: ${{ vars.MST_MAX_CREDITS_PER_RUN || '25' }}
+          MST_DAILY_CREDIT_LIMIT: ${{ vars.MST_DAILY_CREDIT_LIMIT || '100' }}
+          MST_MIN_BALANCE_RESERVE: ${{ vars.MST_MIN_BALANCE_RESERVE || '100' }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            python src/fetch_coastguard_myshiptracking.py --dry-run
+          else
+            python src/fetch_coastguard_myshiptracking.py --live
+          fi
+      # No git add/commit, public artifacts, Pages deployment, or public route upserts.

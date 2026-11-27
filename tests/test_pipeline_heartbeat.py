@@ -123,3 +123,39 @@ def test_dry_run_sends_nothing(monkeypatch):
     monkeypatch.setattr(hb, 'gh', fake_gh)
     hb.main(['--dry-run'])
     assert sent == []
+
+
+def test_coastguard_due_at_six_hours_not_before():
+    now = at(15)
+    r = runs(ais_ago=10, radar_ago=10, now=now)
+    managed = hb.MANAGED + (hb.COASTGUARD,)
+    r[hb.COASTGUARD[0]] = [run(now - timedelta(minutes=359))]
+    assert hb.plan_dispatch(now, r, managed=managed)[0] == []
+    r[hb.COASTGUARD[0]] = [run(now - timedelta(minutes=360))]
+    assert hb.plan_dispatch(now, r, managed=managed)[0] == [hb.COASTGUARD[0]]
+
+
+def test_queued_coastguard_does_not_get_displaced():
+    now = at(3)
+    r = runs(ais_ago=500, radar_ago=500, now=now)
+    r[hb.COASTGUARD[0]] = [run(now, status='queued', conclusion=None)]
+    assert hb.plan_dispatch(now, r)[0] == []
+
+
+def test_enabled_coastguard_dispatch_is_live_but_not_enabled_by_default(monkeypatch):
+    monkeypatch.setenv('MST_TRACKING_ENABLED', 'true')
+    sent = []
+
+    def fake_gh(*args):
+        if args[:2] == ('run', 'list'):
+            workflow = args[args.index('--workflow') + 1]
+            if workflow != hb.COASTGUARD[0]:
+                return '[{"createdAt":"2099-01-01T00:00:00Z","status":"completed","conclusion":"success"}]'
+            return '[]'
+        sent.append(args)
+        return ''
+
+    monkeypatch.setattr(hb, 'gh', fake_gh)
+    assert hb.main(['--ref', 'main']) == 0
+    assert sent == [('workflow', 'run', hb.COASTGUARD[0], '--ref', 'main', '-f', 'dry_run=false')]
+
