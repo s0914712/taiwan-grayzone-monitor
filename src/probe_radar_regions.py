@@ -122,6 +122,18 @@ ENDPOINT_MATRIX = [
      "note": "縣市級 NetFlows 流量時間序列"},
 ]
 
+# ── geoId 到底有沒有作用（差異化測試）────────────────────────────────────
+# ⚠️ 第一輪與第二輪探測只驗了「HTTP 200 且有值」，那**不足以證明篩選有效**。
+# 實際跑管線才發現：四個分區的序列逐點完全相同、連 Speed Test 的每個欄位都一樣，
+# 代表 Radar 對 quality 端點是**靜默忽略 `geoId`**（不是回錯誤，是照樣回全國值）。
+# 因此每個端點都要做 A/B：同一個端點分別帶兩個差很遠的 geoId、再加一次不帶，
+# 三組值一樣就是「篩選無效」。
+DIFF_TEST_GEOIDS = [
+    ("taipei", "7280290"),      # 臺北市
+    ("fukien", "7280288"),      # 金門＋馬祖（離島，值理應差很多）
+    ("none", None),             # 不帶 geoId＝全國
+]
+
 # 對照組：舊寫法（ISO 3166-2 塞進 location）現在還是不是 400
 LEGACY_ATTEMPTS = [
     {"id": "legacy_location_iso2", "path": "radar/netflows/timeseries",
@@ -130,6 +142,57 @@ LEGACY_ATTEMPTS = [
 
 # 完整矩陣先只測這幾個縣市（避免打太多請求）：直轄市、離島、本島小縣各一
 PREFERRED_SAMPLE_ISO = ["TW-TPE", "TW-LIE", "TW-PEN", "TW-KIN", "TW-HUA"]
+
+# ── 對外連線（各國）能力探測 ────────────────────────────────────────────────
+# Radar 量的是「使用者 → Cloudflare」，本質上不是國對國的路徑量測；能拿到的是
+# **各國各自的連線品質**，可以拿來做對照：海纜斷時台灣掉、鄰國不動，這個落差
+# 本身就是判讀。以下逐一實測哪些寫法真的可用（`location` 國家碼已知可用，
+# 多國逗號分隔、top/ranking、BGP 這幾條則要驗）。
+INTERNATIONAL_PROBES = [
+    {"id": "iqi_latency_multi_location",
+     "path": "radar/quality/iqi/timeseries_groups", "kind": "timeseries",
+     "params": {"metric": "latency", "location": "TW,JP,KR,SG,PH,US",
+                "aggInterval": "1h"},
+     "note": "多國延遲時間序列（台灣 vs 鄰國對照）"},
+    {"id": "iqi_bandwidth_multi_location",
+     "path": "radar/quality/iqi/timeseries_groups", "kind": "timeseries",
+     "params": {"metric": "bandwidth", "location": "TW,JP,KR,SG,PH,US",
+                "aggInterval": "1h"},
+     "note": "多國頻寬時間序列"},
+    {"id": "iqi_summary_multi_location",
+     "path": "radar/quality/iqi/summary", "kind": "any",
+     "params": {"metric": "latency", "location": "TW,JP,US"},
+     "note": "多國延遲摘要"},
+    {"id": "speed_top_locations",
+     "path": "radar/quality/speed/top/locations", "kind": "any",
+     "params": {"limit": 25},
+     "note": "各國測速排行（含台灣名次）"},
+    {"id": "speed_summary_tw_vs_jp",
+     "path": "radar/quality/speed/summary", "kind": "any",
+     "params": {"location": "JP"},
+     "note": "單一他國 Speed Test 摘要（驗 location 是否真的有作用）"},
+    {"id": "http_top_locations",
+     "path": "radar/http/top/locations", "kind": "any", "params": {"limit": 25},
+     "note": "各國 HTTP 請求排行"},
+    {"id": "netflows_top_locations",
+     "path": "radar/netflows/top/locations", "kind": "any", "params": {"limit": 25},
+     "note": "各國流量排行"},
+    {"id": "traffic_anomalies_tw",
+     "path": "radar/traffic_anomalies", "kind": "any",
+     "params": {"location": "TW", "dateRange": "28d", "limit": 25},
+     "note": "台灣的流量異常標註（Cloudflare 自己判定的）"},
+    {"id": "bgp_timeseries_tw",
+     "path": "radar/bgp/timeseries", "kind": "timeseries",
+     "params": {"location": "TW", "aggInterval": "1d"},
+     "note": "台灣 BGP 更新量（海纜斷會先反映在路由）"},
+    {"id": "bgp_routes_stats_tw",
+     "path": "radar/bgp/routes/stats", "kind": "any", "params": {"location": "TW"},
+     "note": "台灣前綴／來源 ASN 統計"},
+    {"id": "as3462_iqi_latency",
+     "path": "radar/quality/iqi/timeseries_groups", "kind": "timeseries",
+     "params": {"metric": "latency", "asn": "3462", "aggInterval": "1h"},
+     "note": "中華電信 HiNet 延遲（離島對外連線掛在這個 ASN 底下）"},
+]
 
 
 def probe(session, token, path, params, dump=False):
@@ -293,6 +356,78 @@ except Exception:                                    # pragma: no cover
     TW_NAME_HINTS = set()
 
 
+def sample_signature(result, kind):
+    """把一次回應壓成可比較的「值指紋」——用來判斷換參數後值有沒有變。"""
+    if not result.get("ok"):
+        return None
+    payload = result.get("payload") or {}
+    if kind == "timeseries":
+        _, values = parse_timeseries_payload(payload)
+        real = [v for v in values if v is not None]
+        return json.dumps(real[:8])
+    body = payload.get("result") or {}
+    trimmed = {k: v for k, v in sorted(body.items()) if k != "meta"}
+    return json.dumps(trimmed, ensure_ascii=False, sort_keys=True)[:600]
+
+
+def run_differentiation_tests(session, token, matrix=None, dump=False):
+    """同一個端點換不同 geoId，值到底變不變。
+
+    這是第一、二輪探測漏掉的一步：HTTP 200 且有值**不等於**篩選有效。實跑管線
+    才發現四個分區的序列逐點相同——Radar 對 quality 端點是靜默忽略 `geoId`。
+    """
+    out = []
+    for spec in (matrix or ENDPOINT_MATRIX):
+        signatures = {}
+        for label, geo_id in DIFF_TEST_GEOIDS:
+            params = dict(spec["params"])
+            if geo_id:
+                params["geoId"] = geo_id
+            res = probe(session, token, spec["path"], params, dump=dump)
+            signatures[label] = {
+                "status": res.get("status"),
+                "signature": sample_signature(res, spec["kind"]),
+                "error": res.get("error"),
+            }
+        values = [v["signature"] for v in signatures.values()
+                  if v["signature"] is not None]
+        differentiated = len(set(values)) > 1 if len(values) >= 2 else None
+        row = {"id": spec["id"], "note": spec.get("note", ""),
+               "path": spec["path"], "differentiated": differentiated,
+               "signatures": signatures}
+        out.append(row)
+        verdict = ("✅ geoId 有作用" if differentiated
+                   else ("❌ geoId 被忽略（三組值相同）" if differentiated is False
+                         else "⚠️ 樣本不足，無法判定"))
+        print(f"   ↳ {spec['id']}: {verdict}")
+        for label, info in signatures.items():
+            print(f"      · {label:<7} HTTP {info['status']} "
+                  f"{str(info['signature'])[:120]}")
+    return out
+
+
+def run_international_probes(session, token, dump=False):
+    """對外連線（各國）能力探測。"""
+    out = []
+    for spec in INTERNATIONAL_PROBES:
+        res = probe(session, token, spec["path"], spec["params"], dump=dump)
+        summary = summarize_result(res, spec["kind"])
+        row = {"id": spec["id"], "note": spec["note"], "path": spec["path"],
+               "params": {k: v for k, v in spec["params"].items()},
+               "status": res.get("status"), "ok": res.get("ok"),
+               "error": res.get("error"), **summary}
+        if res.get("ok"):
+            # 多國序列：把 result 底下的 key 列出來（每個國家一條 serie）
+            body = (res.get("payload") or {}).get("result") or {}
+            row["result_keys"] = [k for k in body if k != "meta"][:20]
+        out.append(row)
+        print(f"   ↳ {spec['id']}: HTTP {res.get('status')} "
+              f"{'有值' if summary.get('has_values') else '無值'}"
+              + (f"｜keys={row.get('result_keys')}" if row.get("result_keys") else "")
+              + (f"｜{str(res.get('error'))[:100]}" if not res.get("ok") else ""))
+    return out
+
+
 def markdown_matrix(report):
     """把結果排成 Markdown 表（寫進 GitHub job summary）。"""
     lines = ["## Cloudflare Radar 縣市（ADM1）粒度探測", "",
@@ -316,9 +451,38 @@ def markdown_matrix(report):
                      f"| {row.get('status')} | {'✅' if row.get('has_values') else '❌'} "
                      f"| {detail[:80]} |")
 
+    if report.get("differentiation"):
+        lines += ["", "### geoId 到底有沒有作用（A/B：換 geoId 值會不會變）", "",
+                  "| 端點 | 判定 | 台北 | 金馬 | 不帶 geoId |",
+                  "|---|---|---|---|---|"]
+        for row in report["differentiation"]:
+            verdict = ("✅ 有作用" if row["differentiated"]
+                       else ("❌ **被忽略**" if row["differentiated"] is False
+                             else "⚠️ 無法判定"))
+            sig = row["signatures"]
+            lines.append(
+                f"| `{row['id']}` | {verdict} "
+                f"| {str(sig.get('taipei', {}).get('signature'))[:40]} "
+                f"| {str(sig.get('fukien', {}).get('signature'))[:40]} "
+                f"| {str(sig.get('none', {}).get('signature'))[:40]} |")
+
+    if report.get("international"):
+        lines += ["", "### 對外連線（各國）能力", "",
+                  "| 端點 | 說明 | HTTP | 有數值 | result keys／錯誤 |",
+                  "|---|---|---|---|---|"]
+        for row in report["international"]:
+            detail = (", ".join(row.get("result_keys") or [])
+                      or (row.get("error") or ""))
+            lines.append(f"| `{row['id']}` | {row['note']} | {row.get('status')} "
+                         f"| {'✅' if row.get('has_values') else '❌'} "
+                         f"| {detail[:90]} |")
+
     lines += ["", "### 結論（給 fetch_radar_counties.py 的指標階梯）", ""]
     for metric, ok in report["capabilities"].items():
         lines.append(f"- `{metric}`：{'可用 ✅' if ok else '不可用 ❌'}")
+    lines += ["", "⚠️ 「可用」只代表 HTTP 200 且有值。**篩選是否真的生效看上面的 "
+              "A/B 表**——第一、二輪就是漏了這一步，才把「被忽略的 geoId」誤讀成"
+              "縣市級網速。"]
     return "\n".join(lines) + "\n"
 
 
@@ -367,6 +531,12 @@ def main():
                   f"{'有值' if summary.get('has_values') else '無值'}"
                   + (f"｜{str(res.get('error'))[:80]}" if not res.get("ok") else ""))
 
+    print("🔬 geoId 差異化測試（換 geoId 值會不會變）…")
+    differentiation = run_differentiation_tests(session, token, dump=args.dump_raw)
+
+    print("🌏 對外連線（各國）能力探測 …")
+    international = run_international_probes(session, token, dump=args.dump_raw)
+
     legacy = []
     for spec in LEGACY_ATTEMPTS:
         res = probe(session, token, spec["path"], spec["params"])
@@ -386,6 +556,8 @@ def main():
         "resolution_attempts": attempts,
         "counties": counties,
         "matrix": matrix,
+        "differentiation": differentiation,
+        "international": international,
         "legacy_attempts": legacy,
         "capabilities": capabilities,
     }
