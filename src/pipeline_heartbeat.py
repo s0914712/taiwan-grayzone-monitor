@@ -45,7 +45,8 @@ MANAGED = (
     ('cloudflare-radar.yml', 110, 110),
 )
 # 共用 data-pipeline 併發群組的全部 workflow（判斷群組是否閒置用）
-GROUP_WORKFLOWS = ('update-ais.yml', 'cloudflare-radar.yml', 'update-data.yml')
+COASTGUARD = ('track-coastguard.yml', 360, 360)
+GROUP_WORKFLOWS = ('update-ais.yml', 'cloudflare-radar.yml', 'update-data.yml', COASTGUARD[0])
 DAY_HOURS_UTC = range(0, 9)
 
 WAITING_STATUSES = {'queued', 'waiting', 'requested', 'pending'}
@@ -138,14 +139,18 @@ def main(argv=None):
         print(f'❌ 查詢執行紀錄失敗，本次不派發：{detail}', file=sys.stderr)
         return 1
 
-    chosen, reasons = plan_dispatch(datetime.now(timezone.utc), runs_by_wf)
+    managed = MANAGED
+    if os.environ.get('MST_TRACKING_ENABLED', '').lower() == 'true':
+        managed = MANAGED + (COASTGUARD,)
+    chosen, reasons = plan_dispatch(datetime.now(timezone.utc), runs_by_wf, managed=managed)
     for r in reasons:
         print(f'  {r}')
     for wf in chosen:
         if args.dry_run:
             print(f'🧪 [dry-run] 會派發 {wf}（ref={args.ref}）')
             continue
-        gh('workflow', 'run', wf, '--ref', args.ref)
+        inputs = ('-f', 'dry_run=false') if wf == COASTGUARD[0] else ()
+        gh('workflow', 'run', wf, '--ref', args.ref, *inputs)
         print(f'🚀 已派發 {wf}（ref={args.ref}）')
     if not chosen:
         print('💤 本次不派發')
@@ -154,3 +159,4 @@ def main(argv=None):
 
 if __name__ == '__main__':
     sys.exit(main())
+
