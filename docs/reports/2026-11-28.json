@@ -1,0 +1,147 @@
+{
+  "date": "2026-11-28",
+  "generated_at": "2026-11-28T07:23:29.595637Z",
+  "data_updated_at": "2026-11-28T07:23:28.783609Z",
+  "ais_vessels": 9812,
+  "dark_vessels": 29697,
+  "dark_ratio": 100.0,
+  "suspicious_count": 826,
+  "critical_count": 189,
+  "high_count": 637,
+  "cable_near_count": 619,
+  "sts_active": 78,
+  "sts_suspicious": 104,
+  "top_suspicious": [
+    {
+      "mmsi": "413000000",
+      "name": "DONGTINGHU",
+      "risk_score": 30,
+      "risk_level": "critical",
+      "vessel_type": "cargo",
+      "zone": "eez",
+      "cable_band": "within_5km"
+    },
+    {
+      "mmsi": "241625000",
+      "name": "ALPHA PRIDE",
+      "risk_score": 20,
+      "risk_level": "critical",
+      "vessel_type": "cargo",
+      "zone": "eez",
+      "cable_band": "within_5km"
+    },
+    {
+      "mmsi": "416000000",
+      "name": "AIS 30",
+      "risk_score": 19,
+      "risk_level": "critical",
+      "vessel_type": "fishing",
+      "zone": "internal_waters",
+      "cable_band": "within_10km"
+    },
+    {
+      "mmsi": "413361670",
+      "name": "HANG JIE 2006",
+      "risk_score": 19,
+      "risk_level": "critical",
+      "vessel_type": "cargo",
+      "zone": "eez",
+      "cable_band": "beyond_10km"
+    },
+    {
+      "mmsi": "800123456",
+      "name": "85-D19",
+      "risk_score": 19,
+      "risk_level": "critical",
+      "vessel_type": "fishing",
+      "zone": "eez",
+      "cable_band": "beyond_10km"
+    }
+  ],
+  "sar_ais_matching": {
+    "dark_total": 29697,
+    "infrastructure_filtered": 14705,
+    "rematched_local": 527,
+    "residual_dark": 14465,
+    "in_ais_coverage": 14913,
+    "no_ais_coverage": 79,
+    "rematch_rate_of_coverage_pct": 3.5,
+    "false_dark_removed_pct": 51.3,
+    "ais_vessels_indexed": 20450,
+    "s1_real_pass_dates": 28,
+    "ais_coverage_start": "2026-10-30T02:48:26.328841Z",
+    "ais_coverage_end": "2026-11-27T00:05:25.510812Z",
+    "updated_at": "2026-11-28T07:19:16.732154Z"
+  },
+  "darkship_forensics": {
+    "latest_run": "2026-11-28",
+    "run_count": 2,
+    "total_count": 949,
+    "verdict_counts_run": {
+      "weak": 1,
+      "none": 1
+    },
+    "verdict_counts_total": {
+      "weak": 208,
+      "none": 619,
+      "confirmed": 119,
+      "land": 1,
+      "error": 2
+    },
+    "confirmed_rate_pct": 12.6,
+    "featured_source": "latest_run",
+    "featured": [
+      {
+        "date": "2026-11-17",
+        "lat": 23.14,
+        "lon": 117.86,
+        "time": "10:16",
+        "zone": "southwest",
+        "jurisdiction": "eez",
+        "verdict": "weak",
+        "length_m": 42.4,
+        "peak_ratio": 4.8,
+        "n_pixels": 7,
+        "product": "S1D_IW_GRDH_1SDV_20261117T101649_20261117T101719_005506_00A86B_A91A.SAFE",
+        "png": "chips/2026-11-17_23.14_117.86.png",
+        "chip_url": "https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/chips/2026-11-17_23.14_117.86.png",
+        "thumb": "chips/2026-11-17_23.14_117.86.jpg"
+      }
+    ],
+    "run_targets": [
+      {
+        "date": "2026-11-17",
+        "lat": 23.14,
+        "lon": 117.86,
+        "time": "10:16",
+        "zone": "southwest",
+        "jurisdiction": "eez",
+        "verdict": "weak",
+        "length_m": 42.4,
+        "peak_ratio": 4.8,
+        "n_pixels": 7,
+        "product": "S1D_IW_GRDH_1SDV_20261117T101649_20261117T101719_005506_00A86B_A91A.SAFE",
+        "png": "chips/2026-11-17_23.14_117.86.png",
+        "chip_url": "https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/chips/2026-11-17_23.14_117.86.png",
+        "thumb": null
+      },
+      {
+        "date": "2026-11-17",
+        "lat": 22.97,
+        "lon": 118.23,
+        "time": "10:16",
+        "zone": "southwest",
+        "jurisdiction": "eez",
+        "verdict": "none",
+        "length_m": null,
+        "peak_ratio": null,
+        "n_pixels": null,
+        "product": "S1D_IW_GRDH_1SDV_20261117T101649_20261117T101719_005506_00A86B_A91A.SAFE",
+        "png": "chips/2026-11-17_22.97_118.23.png",
+        "chip_url": "https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/chips/2026-11-17_22.97_118.23.png",
+        "thumb": null
+      }
+    ],
+    "report_md_url": "https://raw.githubusercontent.com/s0914712/taiwan-grayzone-monitor/main/reports/darkship_report_2026-11-28.md"
+  }
+}
